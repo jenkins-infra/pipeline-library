@@ -7,7 +7,7 @@ void call(String goals       = 'clean install',
           String options     = '-B -U -e -Dmaven.test.failure.ignore=true',
           String jdk         = 'jdk7',
           String testReports = 'target/surefire-reports/**/*.xml',
-          String artifacts   = 'target/**/*.jar',
+          String artifacts   = 'target/**/*.jar'
 ) {
 
     node {
