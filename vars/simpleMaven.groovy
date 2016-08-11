@@ -5,22 +5,22 @@
  */
 void call(String goals       = 'clean install',
           String options     = '-B -U -e -Dmaven.test.failure.ignore=true',
-          String jdk         = 'jdk7',
+          String jdk         = '8-jdk',
           String testReports = 'target/surefire-reports/**/*.xml',
           String artifacts   = 'target/**/*.jar'
 ) {
 
-    node {
+    node('docker') {
         stage 'Checkout'
         checkout scm
 
         stage 'Build'
-        withEnv([
-            "JAVA_HOME=${tool jdk}",
-            "PATH+MAVEN=${tool 'mvn'}/bin",
-            "PATH+JAVA=${env.JAVA_HOME}/bin",
-        ]) {
-            sh "mvn ${goals} ${options}"
+        docker.image("java:${jdk}").inside {
+            withEnv([
+                "PATH+MAVEN=${tool 'mvn'}/bin",
+            ]) {
+                sh "mvn ${goals} ${options}"
+            }
         }
 
         stage 'Archive'
