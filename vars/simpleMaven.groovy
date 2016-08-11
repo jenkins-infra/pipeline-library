@@ -17,9 +17,17 @@ void call(String goals       = 'clean install',
         checkout scm
 
         stage 'Build'
+        /* https://github.com/carlossg/docker-maven#running-as-non-root */
+        def runArgs = '-v $HOME/.m2:/var/maven/.m2'
+        sh 'ls -lah $HOME'
+        sh 'ls -lah $HOME/.m2'
+        sh 'id'
+
         /* invoke maven inside of the official container */
-        docker.image("maven:${version}-${jdk}").inside {
-            sh "mvn ${goals} ${options}"
+        docker.image("maven:${version}-${jdk}").inside(runArgs) {
+            timestamps {
+                sh "mvn ${goals} ${options} -Duser.home=/var/maven"
+            }
         }
 
         stage 'Archive'
