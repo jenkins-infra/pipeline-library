@@ -19,9 +19,10 @@ void call(String goals       = 'clean install',
         stage 'Build'
         /* https://github.com/carlossg/docker-maven#running-as-non-root */
         def runArgs = '-v $HOME/.m2:/var/maven/.m2'
-        sh 'ls -lah $HOME'
-        sh 'ls -lah $HOME/.m2'
-        sh 'id'
+        /* Make sure our ~/.m2 directory is there, if we let Docker create it,
+         * it will be chowned to root!
+         */
+        sh 'mkdir -p $HOME/.m2'
 
         /* invoke maven inside of the official container */
         docker.image("maven:${version}-${jdk}").inside(runArgs) {
