@@ -5,6 +5,7 @@
  */
 void call(String goals       = 'clean install',
           String options     = '-B -U -e -Dmaven.test.failure.ignore=true',
+          String version     = '3.3.9',
           String jdk         = 'jdk-7',
           String testReports = 'target/surefire-reports/**/*.xml',
           String artifacts   = 'target/**/*.jar'
@@ -12,10 +13,12 @@ void call(String goals       = 'clean install',
 
     node('docker') {
         stage 'Checkout'
+        /* make sure we have our source tree on this node */
         checkout scm
 
         stage 'Build'
-        docker.image("maven:3.3.9-${jdk}").inside {
+        /* invoke maven inside of the official container */
+        docker.image("maven:${version}-${jdk}").inside {
             sh "mvn ${goals} ${options}"
         }
 
