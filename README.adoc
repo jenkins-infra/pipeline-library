@@ -1,0 +1,4 @@
+= Pipeline Global Library
+
+This repository contains a series of steps and variables for use inside of the
+Jenkins project's own link:https://ci.jenkins.io[Jenkins] instance(s).
