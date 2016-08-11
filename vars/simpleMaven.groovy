@@ -3,7 +3,7 @@
 /**
  *
  */
-void call(String goals       = 'clean install',
+void call(String goals,
           String options     = '-B -U -e -Dmaven.test.failure.ignore=true',
           String version     = '3.3.9',
           String jdk         = 'jdk-7',
