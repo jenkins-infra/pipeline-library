@@ -86,5 +86,10 @@ def buildPlugin(List<Integer> jdkVersions,
         }
     }
 
-    return parallel(tasks)
+    /* If we cannot complete in 60 minutes, we should fail the build. Compute
+     * isn't free!
+     */
+    timeout(60) {
+        return parallel(tasks)
+    }
 }
