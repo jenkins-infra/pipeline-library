@@ -5,16 +5,16 @@
  */
 def call(Map options = [:]) {
     Map defaults = [
-        jdkVersion : '7',
+        jdkVersions : [7, 8],
         repo       : null,
         failFast   : true,
         platforms  : ['linux', 'windows'],
     ]
     options = defaults << options
-    return buildPlugin(options.jdkVersion, options.failFast, options.repo, options.platforms)
+    return buildPlugin(options.jdkVersions, options.failFast, options.repo, options.platforms)
 }
 
-def buildPlugin(String jdkVersion,
+def buildPlugin(List<Integer> jdkVersions,
                 Boolean failFast,
                 String repo,
                 List<String> platforms
@@ -22,60 +22,64 @@ def buildPlugin(String jdkVersion,
     Map tasks = [:]
 
     for (int i = 0; i < platforms.size(); ++i) {
-        String label = platforms[i]
+        for (int j = 0; j < jdkVersions.size(); ++j) {
+            String label = platforms[i]
+            String jdk = jdkVersions[j]
+            String stageIdentifier = "${label}-${jdk}"
 
-        tasks[label] = {
-            node(label) {
-                stage("Checkout (${label})") {
-                    if (env.BRANCH_NAME) {
-                        timestamps {
-                            checkout scm
-                        }
-                    }
-                    else if ((env.BRANCH_NAME == null) && (repo)) {
-                        timestamps {
-                            git repo
-                        }
-                    }
-                    else {
-                        error 'buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided'
-                    }
-                }
-
-                stage("Build (${label})") {
-                    List<String> mavenOptions = [
-                        '--batch-mode',
-                        '--errors',
-                        '--update-snapshots',
-                        '-Dmaven.test.failure.ignore=true',
-                        "-DskipAfterFailureCount=${failFast}",
-                    ]
-                    String mavenCommand = "mvn ${mavenOptions.join(' ')} clean install"
-                    String jdkTool = "jdk${jdkVersion}"
-
-                    withEnv([
-                        "JAVA_HOME=${tool jdkTool}",
-                        "PATH+MAVEN=${tool 'mvn'}/bin",
-                        'PATH+JAVA=${JAVA_HOME}/bin',
-                    ]) {
-                        if (isUnix()) {
+            tasks["${label}-${jdk}"] = {
+                node(label) {
+                    stage("Checkout (${stageIdentifier})") {
+                        if (env.BRANCH_NAME) {
                             timestamps {
-                                sh mavenCommand
+                                checkout scm
+                            }
+                        }
+                        else if ((env.BRANCH_NAME == null) && (repo)) {
+                            timestamps {
+                                git repo
                             }
                         }
                         else {
-                            timestamps {
-                                bat mavenCommand
+                            error 'buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided'
+                        }
+                    }
+
+                    stage("Build (${stageIdentifier})") {
+                        List<String> mavenOptions = [
+                            '--batch-mode',
+                            '--errors',
+                            '--update-snapshots',
+                            '-Dmaven.test.failure.ignore=true',
+                            "-DskipAfterFailureCount=${failFast}",
+                        ]
+                        String mavenCommand = "mvn ${mavenOptions.join(' ')} clean install"
+                        String jdkTool = "jdk${jdk}"
+
+                        withEnv([
+                            "JAVA_HOME=${tool jdkTool}",
+                            "PATH+MAVEN=${tool 'mvn'}/bin",
+                            'PATH+JAVA=${JAVA_HOME}/bin',
+                        ]) {
+                            if (isUnix()) {
+                                timestamps {
+                                    sh mavenCommand
+                                }
+                            }
+                            else {
+                                timestamps {
+                                    bat mavenCommand
+                                }
                             }
                         }
                     }
-                }
 
-                stage("Archive (${label})") {
-                    timestamps {
-                        junit '**/target/surefire-reports/**/*.xml'
-                        archiveArtifacts artifacts: '**/target/*.hpi,**/target/*.jpi',
-                                       fingerprint: true
+                    stage("Archive (${stageIdentifier})") {
+                        timestamps {
+                            junit '**/target/surefire-reports/**/*.xml'
+                            archiveArtifacts artifacts: '**/target/*.hpi,**/target/*.jpi',
+                                        fingerprint: true
+                        }
                     }
                 }
             }
