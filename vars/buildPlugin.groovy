@@ -28,10 +28,14 @@ def buildPlugin(String jdkVersion,
             node(label) {
                 stage("Checkout (${label})") {
                     if (env.BRANCH_NAME) {
-                        checkout scm
+                        timestamps {
+                            checkout scm
+                        }
                     }
                     else if ((env.BRANCH_NAME == null) && (repo)) {
-                        git repo
+                        timestamps {
+                            git repo
+                        }
                     }
                     else {
                         error 'buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided'
@@ -49,17 +53,23 @@ def buildPlugin(String jdkVersion,
                     String mavenCommand = "mvn ${mavenOptions.join(' ')} clean install"
 
                     if (isUnix()) {
-                        sh mavenCommand
+                        timestamps {
+                            sh mavenCommand
+                        }
                     }
                     else {
-                        bat mavenCommand
+                        timestamps {
+                            bat mavenCommand
+                        }
                     }
                 }
 
                 stage("Archive (${label})") {
-                    junit '**/target/surefire-reports/**/*.xml'
-                    archiveArtifacts artifacts: '**/target/*.hpi,**/target/*.jpi',
-                                fingerprint: true
+                    timestamps {
+                        junit '**/target/surefire-reports/**/*.xml'
+                        archiveArtifacts artifacts: '**/target/*.hpi,**/target/*.jpi',
+                                       fingerprint: true
+                    }
                 }
             }
         }
