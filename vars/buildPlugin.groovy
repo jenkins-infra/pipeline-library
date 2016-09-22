@@ -51,15 +51,22 @@ def buildPlugin(String jdkVersion,
                         "-DskipAfterFailureCount=${failFast}",
                     ]
                     String mavenCommand = "mvn ${mavenOptions.join(' ')} clean install"
+                    String jdkTool = "jdk${jdkVersion}"
 
-                    if (isUnix()) {
-                        timestamps {
-                            sh mavenCommand
+                    withEnv([
+                        "JAVA_HOME=${tool jdkTool}",
+                        "PATH+MAVEN=${tool 'mvn'}/bin",
+                        'PATH+JAVA=${JAVA_HOME}/bin',
+                    ]) {
+                        if (isUnix()) {
+                            timestamps {
+                                sh mavenCommand
+                            }
                         }
-                    }
-                    else {
-                        timestamps {
-                            bat mavenCommand
+                        else {
+                            timestamps {
+                                bat mavenCommand
+                            }
                         }
                     }
                 }
