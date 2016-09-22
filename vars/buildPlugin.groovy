@@ -6,13 +6,15 @@
 def call(Map options = [:]) {
     Map defaults = [
         jdkVersion : '7',
+        repo       : null,
         platforms  : ['linux', 'windows'],
     ]
     options = defaults << options
-    return buildPlugin(options.jdkVersion, options.platforms)
+    return buildPlugin(options.jdkVersion, options.repo, options.platforms)
 }
 
 def buildPlugin(String jdkVersion,
+                String repo,
                 List<String> platforms
 ) {
     Map tasks = [:]
@@ -23,11 +25,19 @@ def buildPlugin(String jdkVersion,
         tasks[label] = {
             node(label) {
                 stage("Checkout (${label})") {
-                    checkout scm
+                    if (env.BRANCH_NAME) {
+                        checkout scm
+                    }
+                    else if ((env.BRANCH_NAME == null) && (repo)) {
+                        git repo
+                    }
+                    else {
+                        error 'buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided'
+                    }
                 }
 
                 stage("Build (${label})") {
-                    String mavenCommand = 'mvn -B -U -e -Dmaven.test.failure.ignore=true clean install',
+                    String mavenCommand = 'mvn -B -U -e -Dmaven.test.failure.ignore=true clean install'
 
                     if (isUnix()) {
                         sh mavenCommand
