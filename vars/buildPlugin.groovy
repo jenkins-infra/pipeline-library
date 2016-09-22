@@ -7,13 +7,15 @@ def call(Map options = [:]) {
     Map defaults = [
         jdkVersion : '7',
         repo       : null,
+        failFast   : true,
         platforms  : ['linux', 'windows'],
     ]
     options = defaults << options
-    return buildPlugin(options.jdkVersion, options.repo, options.platforms)
+    return buildPlugin(options.jdkVersion, options.failFast, options.repo, options.platforms)
 }
 
 def buildPlugin(String jdkVersion,
+                Boolean failFast,
                 String repo,
                 List<String> platforms
 ) {
@@ -37,7 +39,7 @@ def buildPlugin(String jdkVersion,
                 }
 
                 stage("Build (${label})") {
-                    String mavenCommand = 'mvn -B -U -e -Dmaven.test.failure.ignore=true clean install'
+                    String mavenCommand = "mvn -B -U -e -Dmaven.test.failure.ignore=true DskipAfterFailureCount=${failFast} clean install"
 
                     if (isUnix()) {
                         sh mavenCommand
