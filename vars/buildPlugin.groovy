@@ -39,7 +39,14 @@ def buildPlugin(String jdkVersion,
                 }
 
                 stage("Build (${label})") {
-                    String mavenCommand = "mvn -B -U -e -Dmaven.test.failure.ignore=true DskipAfterFailureCount=${failFast} clean install"
+                    List<String> mavenOptions = [
+                        '--batch-mode',
+                        '--errors',
+                        '--update-snapshots',
+                        '-Dmaven.test.failure.ignore=true',
+                        "-DskipAfterFailureCount=${failFast}",
+                    ]
+                    String mavenCommand = "mvn ${mavenOptions.join(' ')} clean install"
 
                     if (isUnix()) {
                         sh mavenCommand
