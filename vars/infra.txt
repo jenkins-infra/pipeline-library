@@ -1,0 +1,10 @@
+<strong>infra.isTrusted()</strong>
+
+<p>
+    Returns true if this Pipeline is executing a trusted CI environment
+</p>
+
+
+<!--
+vim: ft=html
+-->
