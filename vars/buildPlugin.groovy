@@ -3,22 +3,10 @@
 /**
  * Simple wrapper step for building a plugin
  */
-def call(Map options = [:]) {
-    Map defaults = [
-        jdkVersions : [7, 8],
-        repo       : null,
-        failFast   : true,
-        platforms  : ['linux', 'windows'],
-    ]
-    options = defaults << options
-    return buildPlugin(options.jdkVersions, options.failFast, options.repo, options.platforms)
-}
-
-def buildPlugin(List<Integer> jdkVersions,
-                Boolean failFast,
-                String repo,
-                List<String> platforms
-) {
+def call(List<Integer> jdkVersions = [7, 8],
+        String repo = null,
+        Boolean failFast = true,
+        List<String> platforms = ['linux', 'windows']) {
     Map tasks = [:]
 
     for (int i = 0; i < platforms.size(); ++i) {
