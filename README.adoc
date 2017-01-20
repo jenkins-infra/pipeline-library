@@ -2,3 +2,41 @@
 
 This repository contains a series of steps and variables for use inside of the
 Jenkins project's own link:https://ci.jenkins.io[Jenkins] instance(s).
+
+
+== Useful steps:
+
+=== buildPlugin
+
+Applies the appropriate defaults for building a Maven-based plugin project on
+Linux and Windows.
+
+
+.Jenkinsfile
+[source,groovy]
+----
+buildPlugin
+----
+
+==== Optional arguments
+
+* `jdkVersions` (default: `[7, 8]`) - JDK version numbers, must match a version
+  number jdk tool installed
+* `repo` (default: `null`  inherit from Multibranch) - custom Git repository to check out
+* `failFast` (default: `true`) - instruct Maven tests to fail fast
+* `platforms` (default: `['linux', 'windows']`) - Labels matching platforms to
+  execute the steps against in parallel
+
+
+=== infra.isTrusted()
+
+Determine whether the Pipeline is executing in an internal "trusted" Jenkins
+environment
+
+.Jenkinsfile
+[source,groovy]
+----
+if (infra.isTrusted()) {
+    /* perform some trusted action like a deployment */
+}
+----
