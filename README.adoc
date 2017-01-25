@@ -20,7 +20,7 @@ buildPlugin
 
 ==== Optional arguments
 
-* `jdkVersions` (default: `[7, 8]`) - JDK version numbers, must match a version
+* `jdkVersions` (default: `[8]`) - JDK version numbers, must match a version
   number jdk tool installed
 * `repo` (default: `null`  inherit from Multibranch) - custom Git repository to check out
 * `failFast` (default: `true`) - instruct Maven tests to fail fast
