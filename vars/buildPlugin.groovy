@@ -3,7 +3,7 @@
 /**
  * Simple wrapper step for building a plugin
  */
-def call(List<Integer> jdkVersions = [7, 8],
+def call(List<Integer> jdkVersions = [8],
         String repo = null,
         Boolean failFast = true,
         List<String> platforms = ['linux', 'windows']) {

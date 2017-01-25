@@ -11,6 +11,7 @@ Jenkins project's own link:https://ci.jenkins.io[Jenkins] instance(s).
 Applies the appropriate defaults for building a Maven-based plugin project on
 Linux and Windows.
 
+You are advised to be using a link:https://github.com/jenkinsci/plugin-pom/blob/master/README.md[2.x parent POM].
 
 .Jenkinsfile
 [source,groovy]
@@ -20,7 +21,7 @@ buildPlugin()
 
 ==== Optional arguments
 
-* `jdkVersions` (default: `[7, 8]`) - JDK version numbers, must match a version
+* `jdkVersions` (default: `[8]`) - JDK version numbers, must match a version
   number jdk tool installed
 * `repo` (default: `null`  inherit from Multibranch) - custom Git repository to check out
 * `failFast` (default: `true`) - instruct Maven tests to fail fast
