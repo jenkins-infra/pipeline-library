@@ -27,7 +27,7 @@ buildPlugin()
 * `failFast` (default: `true`) - instruct Maven tests to fail fast
 * `platforms` (default: `['linux', 'windows']`) - Labels matching platforms to
   execute the steps against in parallel
-
+* `jenkinsVersions`: (default: `[null]`) - a matrix of Jenkins baseline versions to build/test against in parallel (null means default)
 
 === infra.isTrusted()
 
