@@ -18,7 +18,7 @@ def call(Map params = [:]) {
                 String jenkinsVersion = jenkinsVersions[k]
                 String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
 
-                tasks["${label}-${jdk}"] = {
+                tasks[stageIdentifier] = {
                     node(label) {
                         stage("Checkout (${stageIdentifier})") {
                             if (env.BRANCH_NAME) {
