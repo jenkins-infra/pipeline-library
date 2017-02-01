@@ -16,7 +16,7 @@ You are advised to be using a link:https://github.com/jenkinsci/plugin-pom/blob/
 .Jenkinsfile
 [source,groovy]
 ----
-buildPlugin2()
+buildPlugin()
 ----
 
 ==== Optional arguments
@@ -34,7 +34,7 @@ Usage:
 .Jenkinsfile
 [source,groovy]
 ----
-buildPlugin2(platforms: ['linux'], jdkVersions: [7, 8])
+buildPlugin(platforms: ['linux'], jdkVersions: [7, 8])
 ----
 
 === infra.isTrusted()
