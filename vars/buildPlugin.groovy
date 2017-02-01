@@ -6,16 +6,14 @@
 def call(List<Integer> jdkVersions = [8],
         String repo = null,
         Boolean failFast = true,
-        List<String> platforms = ['linux', 'windows'],
-        List<String> jenkinsVersions = [null]) {
+        List<String> platforms = ['linux', 'windows']) {
     Map tasks = [:]
+
     for (int i = 0; i < platforms.size(); ++i) {
         for (int j = 0; j < jdkVersions.size(); ++j) {
-        for (int k = 0; k < jenkinsVersions.size(); ++k) {
             String label = platforms[i]
             String jdk = jdkVersions[j]
-            String jenkinsVersion = jenkinsVersions[k]
-            String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
+            String stageIdentifier = "${label}-${jdk}"
 
             tasks["${label}-${jdk}"] = {
                 node(label) {
@@ -43,9 +41,6 @@ def call(List<Integer> jdkVersions = [8],
                             '-Dmaven.test.failure.ignore=true',
                             "-DskipAfterFailureCount=${failFast}",
                         ]
-                        if (jenkinsVersion) {
-                            mavenOptions += "-Djenkins.version=${jenkinsVersion}"
-                        }
                         String mavenCommand = "mvn ${mavenOptions.join(' ')} clean install"
                         String jdkTool = "jdk${jdk}"
 
@@ -76,7 +71,6 @@ def call(List<Integer> jdkVersions = [8],
                     }
                 }
             }
-        }
         }
     }
 

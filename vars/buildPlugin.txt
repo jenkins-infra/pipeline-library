@@ -1,7 +1,5 @@
-<strong>buildPlugin(jdkVersion='7', platforms=['linux', 'windows'])</strong>
-
 <p>
-    Builds a Jenkins plugin following a standard build/test/archive pattern
+    Deprecated, use <code>buildPlugin2</code> instead.
 </p>
 
 <!--

@@ -16,7 +16,7 @@ You are advised to be using a link:https://github.com/jenkinsci/plugin-pom/blob/
 .Jenkinsfile
 [source,groovy]
 ----
-buildPlugin()
+buildPlugin2()
 ----
 
 ==== Optional arguments
@@ -28,6 +28,14 @@ buildPlugin()
 * `platforms` (default: `['linux', 'windows']`) - Labels matching platforms to
   execute the steps against in parallel
 * `jenkinsVersions`: (default: `[null]`) - a matrix of Jenkins baseline versions to build/test against in parallel (null means default)
+
+Usage:
+
+.Jenkinsfile
+[source,groovy]
+----
+buildPlugin2(platforms: ['linux'], jdkVersions: [7, 8])
+----
 
 === infra.isTrusted()
 
