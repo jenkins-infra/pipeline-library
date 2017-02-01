@@ -4,12 +4,12 @@
  * Simple wrapper step for building a plugin
  */
 def call(Map params = [:]) {
-    Map tasks = [:]
     def platforms = params.containsKey('platforms') ? params.platforms : ['linux', 'windows']
     def jdkVersions = params.containsKey('jdkVersions') ? params.jdkVersions : [8]
     def jenkinsVersions = params.containsKey('jenkinsVersions') ? params.jenkinsVersions : [null]
     def repo = params.containsKey('repo') ? params.repo : null
     def failFast = params.containsKey('failFast') ? params.failFast : true
+    Map tasks = [failFast: failFast]
     for (int i = 0; i < platforms.size(); ++i) {
         for (int j = 0; j < jdkVersions.size(); ++j) {
             for (int k = 0; k < jenkinsVersions.size(); ++k) {
@@ -71,6 +71,9 @@ def call(Map params = [:]) {
                         stage("Archive (${stageIdentifier})") {
                             timestamps {
                                 junit '**/target/surefire-reports/**/*.xml'
+                                if (failFast && currentBuild.result == 'UNSTABLE') {
+                                    error 'There were test failures; halting early'
+                                }
                                 archiveArtifacts artifacts: '**/target/*.hpi,**/target/*.jpi',
                                             fingerprint: true
                             }
