@@ -8,7 +8,7 @@ Jenkins project's own link:https://ci.jenkins.io[Jenkins] instance(s).
 
 === buildPlugin
 
-Applies the appropriate defaults for building a Maven-based plugin project on
+Applies the appropriate defaults for building a Maven- or Gradle-based plugin project on
 Linux and Windows.
 
 You are advised to be using a link:https://github.com/jenkinsci/plugin-pom/blob/master/README.md[2.x parent POM].
@@ -27,7 +27,8 @@ buildPlugin()
 * `failFast` (default: `true`) - instruct Maven tests to fail fast
 * `platforms` (default: `['linux', 'windows']`) - Labels matching platforms to
   execute the steps against in parallel
-* `jenkinsVersions`: (default: `[null]`) - a matrix of Jenkins baseline versions to build/test against in parallel (null means default)
+* `jenkinsVersions`: (default: `[null]`) - a matrix of Jenkins baseline versions to build/test against in parallel (null means default,
+  only available for Maven projects)
 
 Usage:
 

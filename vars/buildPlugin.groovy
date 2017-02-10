@@ -20,6 +20,8 @@ def call(Map params = [:]) {
 
                 tasks[stageIdentifier] = {
                     node(label) {
+                        boolean isMaven
+
                         stage("Checkout (${stageIdentifier})") {
                             if (env.BRANCH_NAME) {
                                 timestamps {
@@ -34,47 +36,73 @@ def call(Map params = [:]) {
                             else {
                                 error 'buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided'
                             }
+
+                            isMaven = fileExists('pom.xml')
                         }
 
                         stage("Build (${stageIdentifier})") {
-                            List<String> mavenOptions = [
-                                '--batch-mode',
-                                '--errors',
-                                '--update-snapshots',
-                                '-Dmaven.test.failure.ignore=true',
-                                "-DskipAfterFailureCount=${failFast}",
-                            ]
-                            if (jenkinsVersion) {
-                                mavenOptions += "-Djenkins.version=${jenkinsVersion}"
-                            }
-                            String mavenCommand = "mvn ${mavenOptions.join(' ')} clean install"
                             String jdkTool = "jdk${jdk}"
+                            List<String> env = [
+                                    "JAVA_HOME=${tool jdkTool}",
+                                    'PATH+JAVA=${JAVA_HOME}/bin',
+                            ]
+                            String command
+                            if (isMaven) {
+                                List<String> mavenOptions = [
+                                        '--batch-mode',
+                                        '--errors',
+                                        '--update-snapshots',
+                                        '-Dmaven.test.failure.ignore=true',
+                                        "-DskipAfterFailureCount=${failFast}",
+                                ]
+                                if (jenkinsVersion) {
+                                    mavenOptions += "-Djenkins.version=${jenkinsVersion}"
+                                }
+                                command = "mvn ${mavenOptions.join(' ')} clean install"
+                                env << "PATH+MAVEN=${tool 'mvn'}/bin"
+                            } else {
+                                List<String> gradleOptions = [
+                                        '--no-daemon',
+                                        'cleanTest',
+                                        'build',
+                                ]
+                                command = "gradlew ${gradleOptions.join(' ')}"
+                                if (isUnix()) {
+                                    command = "./" + command
+                                }
+                            }
 
-                            withEnv([
-                                "JAVA_HOME=${tool jdkTool}",
-                                "PATH+MAVEN=${tool 'mvn'}/bin",
-                                'PATH+JAVA=${JAVA_HOME}/bin',
-                            ]) {
+                            withEnv(env) {
                                 if (isUnix()) {
                                     timestamps {
-                                        sh mavenCommand
+                                        sh command
                                     }
                                 }
                                 else {
                                     timestamps {
-                                        bat mavenCommand
+                                        bat command
                                     }
                                 }
                             }
                         }
 
                         stage("Archive (${stageIdentifier})") {
+                            String testReports
+                            String artifacts
+                            if (isMaven) {
+                                testReports = '**/target/surefire-reports/**/*.xml'
+                                artifacts = '**/target/*.hpi,**/target/*.jpi'
+                            } else {
+                                testReports = '**/build/test-results/**/*.xml'
+                                artifacts = '**/build/*.hpi,**/build/*.jpi'
+                            }
+
                             timestamps {
-                                junit '**/target/surefire-reports/**/*.xml'
+                                junit testReports
                                 if (failFast && currentBuild.result == 'UNSTABLE') {
                                     error 'There were test failures; halting early'
                                 }
-                                archiveArtifacts artifacts: '**/target/*.hpi,**/target/*.jpi',
+                                archiveArtifacts artifacts: artifacts,
                                             fingerprint: true
                             }
                         }
