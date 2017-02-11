@@ -94,7 +94,7 @@ def call(Map params = [:]) {
                                 artifacts = '**/target/*.hpi,**/target/*.jpi'
                             } else {
                                 testReports = '**/build/test-results/**/*.xml'
-                                artifacts = '**/build/*.hpi,**/build/*.jpi'
+                                artifacts = '**/build/libs/*.hpi,**/build/libs/*.jpi'
                             }
 
                             timestamps {
