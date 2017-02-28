@@ -38,6 +38,23 @@ Usage:
 buildPlugin(platforms: ['linux'], jdkVersions: [7, 8])
 ----
 
+=== buildModule
+
+This is a wrapper command for building Jenkins modules.
+Currently the logic is similar to `buildPlugin()`, but it may change in the future.
+
+Usage:
+
+.Jenkinsfile
+[source,groovy]
+----
+buildModule()
+----
+
+==== Optional arguments
+
+The command offers the same options as `buildPlugin()`.
+
 === infra.isTrusted()
 
 Determine whether the Pipeline is executing in an internal "trusted" Jenkins
