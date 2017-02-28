@@ -30,7 +30,7 @@ buildPlugin()
 * `jenkinsVersions`: (default: `[null]`) - a matrix of Jenkins baseline versions to build/test against in parallel (null means default,
   only available for Maven projects)
 * `allowEmptyTestResults` (default: `false`) - Do not fail the build if the test results are missing.
-   It may be used for components, which have no tests within the repo
+   It may be used for components which have no tests within the repo
 
 Usage:
 
