@@ -9,6 +9,8 @@ def call(Map params = [:]) {
     def jenkinsVersions = params.containsKey('jenkinsVersions') ? params.jenkinsVersions : [null]
     def repo = params.containsKey('repo') ? params.repo : null
     def failFast = params.containsKey('failFast') ? params.failFast : true
+    def allowEmptyTestResults = params.containsKey('allowEmptyTestResults') ? params.allowEmptyTestResults : false
+    
     Map tasks = [failFast: failFast]
     for (int i = 0; i < platforms.size(); ++i) {
         for (int j = 0; j < jdkVersions.size(); ++j) {
@@ -98,7 +100,7 @@ def call(Map params = [:]) {
                             }
 
                             timestamps {
-                                junit testReports
+                                junit allowEmptyResults: allowEmptyTestResults, testResults: testReports
                                 if (failFast && currentBuild.result == 'UNSTABLE') {
                                     error 'There were test failures; halting early'
                                 }
