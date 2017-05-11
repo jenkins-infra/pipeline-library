@@ -13,12 +13,14 @@ def call(List<String> files, Map params = [:]) {
     }
 
     withCredentials([
-        string(credentialsId: 'azure-reports-access-key', variable: 'AZURE_STORAGE_ACCESS_KEY'),
+        string(credentialsId: 'azure-reports-access-key', variable: 'AZURE_STORAGE_KEY'),
     ]) {
         docker.image('azuresdk/azure-cli-python:0.1.5').inside {
             for(int i = 0; i < files.size(); ++i) {
                 String filename = files[i]
-                sh "az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${timeout} --file=${filename} --name=${filename}"
+                withEnv(['HOME=/tmp']) {
+                    sh "az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${timeout} --file=${filename} --name=${filename}"
+                }
             }
         }
     }
