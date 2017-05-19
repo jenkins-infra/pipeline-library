@@ -52,8 +52,7 @@ def call(Map params = [:]) {
                                         '--batch-mode',
                                         '--errors',
                                         '--update-snapshots',
-                                        '-Dmaven.test.failure.ignore=true',
-                                        "-DskipAfterFailureCount=${failFast}",
+                                        '-Dmaven.test.failure.ignore',
                                 ]
                                 if (jenkinsVersion) {
                                     mavenOptions += "-Djenkins.version=${jenkinsVersion}"
