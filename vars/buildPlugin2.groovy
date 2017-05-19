@@ -49,7 +49,7 @@ def call(Map params = [:]) {
                             String command
                             if (isMaven) {
                                 def settingsXml = "${pwd tmp: true}/settings-azure.xml"
-                                writeFile file: settingsXml, text: libraryResource('resources/settings-azure.xml')
+                                writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
                                 List<String> mavenOptions = [
                                         '--batch-mode',
                                         '--errors',
