@@ -19,7 +19,11 @@ def call(List<String> files, Map params = [:]) {
             for(int i = 0; i < files.size(); ++i) {
                 String filename = files[i]
                 withEnv(['HOME=/tmp']) {
-                    sh "az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${timeout} --file=${filename} --name=${filename}"
+                    String uploadFlags = ''
+                    if (filename.matches(/.*\.html/) {
+                        uploadFlags = '--content-type="text/html"'
+                    }
+                    sh "az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${timeout} --file=${filename} --name=${filename} ${uploadFlags}"
                 }
             }
         }
