@@ -29,6 +29,8 @@ buildPlugin()
   execute the steps against in parallel
 * `jenkinsVersions`: (default: `[null]`) - a matrix of Jenkins baseline versions to build/test against in parallel (null means default,
   only available for Maven projects)
+* `allowEmptyTestResults` (default: `false`) - Do not fail the build if the test results are missing.
+   It may be used for components which have no tests within the repo
 
 Usage:
 
@@ -37,6 +39,23 @@ Usage:
 ----
 buildPlugin(platforms: ['linux'], jdkVersions: [7, 8])
 ----
+
+=== buildModule
+
+This is a wrapper command for building Jenkins modules.
+Currently the logic is similar to `buildPlugin()`, but it may change in the future.
+
+Usage:
+
+.Jenkinsfile
+[source,groovy]
+----
+buildModule()
+----
+
+==== Optional arguments
+
+The command offers the same options as `buildPlugin()`.
 
 === infra.isTrusted()
 
