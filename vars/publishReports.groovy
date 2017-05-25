@@ -20,7 +20,7 @@ def call(List<String> files, Map params = [:]) {
                 String filename = files[i]
                 withEnv(['HOME=/tmp']) {
                     String uploadFlags = ''
-                    if (filename.matches(/.*\.html/) {
+                    if (filename.matches(/.*\.html/)) {
                         uploadFlags = '--content-type="text/html"'
                     }
                     sh "az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${timeout} --file=${filename} --name=${filename} ${uploadFlags}"
