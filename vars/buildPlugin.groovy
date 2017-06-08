@@ -48,15 +48,18 @@ def call(Map params = [:]) {
                             ]
                             String command
                             if (isMaven) {
-                                def settingsXml = "${pwd tmp: true}/settings-azure.xml"
-                                writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
                                 List<String> mavenOptions = [
                                         '--batch-mode',
                                         '--errors',
                                         '--update-snapshots',
                                         '-Dmaven.test.failure.ignore',
-                                        "-s $settingsXml",
                                 ]
+                                if (jdk.toInteger() > 7) {
+                                    /* Azure mirror only works for Java 8+ due to Letsencrypt cert */
+                                    def settingsXml = "${pwd tmp: true}/settings-azure.xml"
+                                    writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
+                                    mavenOptions += "-s $settingsXml"
+                                }
                                 if (jenkinsVersion) {
                                     mavenOptions += "-Djenkins.version=${jenkinsVersion}"
                                 }
