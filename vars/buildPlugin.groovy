@@ -24,14 +24,10 @@ def call(Map params = [:]) {
 
                         stage("Checkout (${stageIdentifier})") {
                             if (env.BRANCH_NAME) {
-                                timestamps {
-                                    checkout scm
-                                }
+                                checkout scm
                             }
                             else if ((env.BRANCH_NAME == null) && (repo)) {
-                                timestamps {
-                                    git repo
-                                }
+                                git repo
                             }
                             else {
                                 error 'buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided'
@@ -55,7 +51,7 @@ def call(Map params = [:]) {
                                         '-Dmaven.test.failure.ignore',
                                 ]
                                 if (jdk.toInteger() > 7) {
-                                    /* Azure mirror only works for Java 8+ due to Letsencrypt cert */
+                                    /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
                                     def settingsXml = "${pwd tmp: true}/settings-azure.xml"
                                     writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
                                     mavenOptions += "-s $settingsXml"
@@ -78,15 +74,11 @@ def call(Map params = [:]) {
                             }
 
                             withEnv(env) {
-                                if (isUnix()) {
-                                    timestamps {
-                                        sh command
-                                    }
+                                if (isUnix()) { // TODO JENKINS-44231 candidate for simplification
+                                    sh command
                                 }
                                 else {
-                                    timestamps {
-                                        bat command
-                                    }
+                                    bat command
                                 }
                             }
                         }
@@ -102,14 +94,11 @@ def call(Map params = [:]) {
                                 artifacts = '**/build/libs/*.hpi,**/build/libs/*.jpi'
                             }
 
-                            timestamps {
-                                junit testReports
-                                if (failFast && currentBuild.result == 'UNSTABLE') {
-                                    error 'There were test failures; halting early'
-                                }
-                                archiveArtifacts artifacts: artifacts,
-                                            fingerprint: true
+                            junit testReports // TODO do this in a finally-block so we capture all test results even if one branch aborts early
+                            if (failFast && currentBuild.result == 'UNSTABLE') {
+                                error 'There were test failures; halting early'
                             }
+                            archiveArtifacts artifacts: artifacts, fingerprint: true
                         }
                     }
                 }
@@ -121,6 +110,8 @@ def call(Map params = [:]) {
      * isn't free!
      */
     timeout(60) {
-        return parallel(tasks)
+        timestamps {
+            return parallel(tasks)
+        }
     }
 }
