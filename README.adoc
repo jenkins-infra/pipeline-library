@@ -32,13 +32,13 @@ buildPlugin()
 * `findbugs`: (default: `null`) - a map of parameters to run findbugs and/or archive findbugs reports. (only available for Maven projects)
 ** `run`: set to `true` to add the `findbugs:findbugs` goal to the maven command.
 ** `archive`: set to `true` to collect the findbugs report.
-** `pattern`: (default: `'**/findbugsXml.xml'`) the file pattern for the report.
+** `pattern`: (default: `'**/target/findbugsXml.xml'`) the file pattern for the report.
 ** `unstableTotalAll`: (default: `null`) the warnings threshold for when to mark the build as unstable, see the `findbugs` step for additional details.
 ** `unstableNewAll`:  (default: `null`) the new warnings threshold for when to mark the build as unstable, see the `findbugs` step for additional details.
 * `checkstyle`: (default: `null`) - a map of parameters to run checkstyle and/or archive checkstyle reports. (only available for Maven projects)
 ** `run`: set to `true` to add the `checkstyle:checkstyle` goal to the maven command.
 ** `archive`: set to `true` to collect the checkstyle report.
-** `pattern`: (default: `'**/findbugsXml.xml'`) the file pattern for the report.
+** `pattern`: (default: `'**/target/checkstyle-result.xml'`) the file pattern for the report.
 ** `unstableTotalAll`: (default: `null`) the violations threshold for when to mark the build as unstable, see the `checkstyle` step for additional details.
 ** `unstableNewAll`:  (default: `null`) the new violations threshold for when to mark the build as unstable, see the `checkstyle` step for additional details.
 
@@ -49,7 +49,7 @@ Usage:
 .Jenkinsfile
 [source,groovy]
 ----
-buildPlugin(platforms: ['linux'], jdkVersions: [7, 8], findbugs: [run: true, archive: true, unstableTotalAll: '0'], checkstyle: [archive: true])
+buildPlugin(platforms: ['linux'], jdkVersions: [7, 8], findbugs: [archive: true, unstableTotalAll: '0'], checkstyle: [run: true, archive: true])
 ----
 
 === infra.isTrusted()

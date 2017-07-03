@@ -70,17 +70,14 @@ def call(Map params = [:]) {
                                 if (runCheckstyle || archiveCheckstyle) {
                                     mavenOptions += "-Dcheckstyle.failOnViolation=false -Dcheckstyle.failsOnError=false"
                                 }
-                                List<String> mavenGoals = [
-                                        'clean',
-                                        'install',
-                                ]
+                                mavenOptions += "clean install"
                                 if (runFindbugs) {
-                                    mavenGoals += "findbugs:findbugs"
+                                    mavenOptions += "findbugs:findbugs"
                                 }
                                 if (runCheckstyle) {
-                                    mavenGoals += "checkstyle:checkstyle"
+                                    mavenOptions += "checkstyle:checkstyle"
                                 }
-                                command = "mvn ${mavenOptions.join(' ')} ${mavenGoals.join(' ')}"
+                                command = "mvn ${mavenOptions.join(' ')}"
                                 env << "PATH+MAVEN=${tool 'mvn'}/bin"
                             } else {
                                 List<String> gradleOptions = [
@@ -117,7 +114,7 @@ def call(Map params = [:]) {
 
                             junit testReports // TODO do this in a finally-block so we capture all test results even if one branch aborts early
                             if (isMaven && archiveFindbugs) {
-                                def fp = [pattern: params?.findbugs?.pattern ?: '**/findbugsXml.xml']
+                                def fp = [pattern: params?.findbugs?.pattern ?: '**/target/findbugsXml.xml']
                                 if (params?.findbugs?.unstableNewAll) {
                                     fp['unstableNewAll'] ="${params.findbugs.unstableNewAll}"
                                 }
@@ -127,7 +124,7 @@ def call(Map params = [:]) {
                                 findbugs(fp)
                             }
                             if (isMaven && archiveCheckstyle) {
-                                def cp = [pattern: params?.checkstyle?.pattern ?: '**/checkstyle-result.xml']
+                                def cp = [pattern: params?.checkstyle?.pattern ?: '**/target/checkstyle-result.xml']
                                 if (params?.checkstyle?.unstableNewAll) {
                                     cp['unstableNewAll'] ="${params.checkstyle.unstableNewAll}"
                                 }
