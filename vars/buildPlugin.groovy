@@ -64,10 +64,10 @@ def call(Map params = [:]) {
                                 if (jenkinsVersion) {
                                     mavenOptions += "-Djenkins.version=${jenkinsVersion}"
                                 }
-                                if (runFindbugs || archiveFindbugs) {
+                                if (params?.findbugs?.run || params?.findbugs?.archive) {
                                     mavenOptions += "-Dfindbugs.failOnError=false"
                                 }
-                                if (runCheckstyle || archiveCheckstyle) {
+                                if (params?.checkstyle?.run || params?.checkstyle?.archive) {
                                     mavenOptions += "-Dcheckstyle.failOnViolation=false -Dcheckstyle.failsOnError=false"
                                 }
                                 mavenOptions += "clean install"
