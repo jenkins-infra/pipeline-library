@@ -3,7 +3,7 @@
 This repository contains a series of steps and variables for use inside of the
 Jenkins project's own link:https://ci.jenkins.io[Jenkins] instance(s).
 
-Check [this description](https://github.com/jenkins-infra/documentation/blob/master/ci.adoc) of available services.
+Check link:https://github.com/jenkins-infra/documentation/blob/master/ci.adoc[this description] of available services.
 
 == Useful steps:
 
