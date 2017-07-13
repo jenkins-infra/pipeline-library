@@ -54,7 +54,7 @@ def call(Map params = [:]) {
                                     /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
                                     def settingsXml = "${pwd tmp: true}/settings-azure.xml"
                                     writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
-                                    mavenOptions += "-s $settingsXml"
+                                    mavenOptions += "-s '$settingsXml'"
                                 }
                                 if (jenkinsVersion) {
                                     mavenOptions += "-Djenkins.version=${jenkinsVersion}"
