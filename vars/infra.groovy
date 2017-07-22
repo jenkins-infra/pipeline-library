@@ -1,5 +1,13 @@
 #!/usr/bin/env groovy
 
+Boolean isRunsOnJenkinsAzure() {
+    return isJenkinsIO() || isTrusted()
+}
+
+Boolean isJenkinsIO() {
+    return env.JENKINS_URL == 'https://ci.jenkins.io'
+}
+
 Boolean isTrusted() {
     return env.JENKINS_URL == 'https://trusted.ci.jenkins.io:1443/'
 }

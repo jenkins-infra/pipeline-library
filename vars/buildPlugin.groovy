@@ -50,7 +50,7 @@ def call(Map params = [:]) {
                                         '--update-snapshots',
                                         '-Dmaven.test.failure.ignore',
                                 ]
-                                if (jdk.toInteger() > 7) {
+                                if (jdk.toInteger() > 7 && infra.isRunsOnJenkinsAzure()) {
                                     /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
                                     def settingsXml = "${pwd tmp: true}/settings-azure.xml"
                                     writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
