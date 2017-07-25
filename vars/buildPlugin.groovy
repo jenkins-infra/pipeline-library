@@ -9,6 +9,7 @@ def call(Map params = [:]) {
     def jenkinsVersions = params.containsKey('jenkinsVersions') ? params.jenkinsVersions : [null]
     def repo = params.containsKey('repo') ? params.repo : null
     def failFast = params.containsKey('failFast') ? params.failFast : true
+    def artifactTypes = params.containsKey('artifactTypes') ? params.artifactTypes : ['jpi', 'hpi']
     Map tasks = [failFast: failFast]
     for (int i = 0; i < platforms.size(); ++i) {
         for (int j = 0; j < jdkVersions.size(); ++j) {
@@ -88,11 +89,17 @@ def call(Map params = [:]) {
                             String artifacts
                             if (isMaven) {
                                 testReports = '**/target/surefire-reports/**/*.xml'
-                                artifacts = '**/target/*.hpi,**/target/*.jpi'
+                                for(m = 0; m < artifactTypes.size(); m++) {
+                                    artifactTypes[m] = "**/target/*.${artifactTypes[m]}"
+                                }
+
                             } else {
                                 testReports = '**/build/test-results/**/*.xml'
-                                artifacts = '**/build/libs/*.hpi,**/build/libs/*.jpi'
+                                for(m = 0; m < artifactTypes.size(); m++) {
+                                    artifactTypes[m] = "**/build/libs/*.${artifactTypes[m]}"
+                                }
                             }
+                            artifacts = String.join(',', artifactTypes)
 
                             junit testReports // TODO do this in a finally-block so we capture all test results even if one branch aborts early
                             if (failFast && currentBuild.result == 'UNSTABLE') {

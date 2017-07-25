@@ -30,6 +30,8 @@ buildPlugin()
   execute the steps against in parallel
 * `jenkinsVersions`: (default: `[null]`) - a matrix of Jenkins baseline versions to build/test against in parallel (null means default,
   only available for Maven projects)
+* `artifactTypes`: (default: `['jpi', 'hpi']`) - List of artifact extensions to
+  archive
 
 Usage:
 
@@ -37,6 +39,12 @@ Usage:
 [source,groovy]
 ----
 buildPlugin(platforms: ['linux'], jdkVersions: [7, 8])
+----
+
+.Jenkinsfile
+[source,groovy]
+----
+buildPlugin(artifactTypes: ['jar'])
 ----
 
 === infra.isTrusted()
