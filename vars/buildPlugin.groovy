@@ -92,7 +92,6 @@ def call(Map params = [:]) {
                                 for(m = 0; m < artifactTypes.size(); m++) {
                                     artifactTypes[m] = "**/target/*.${artifactTypes[m]}"
                                 }
-
                             } else {
                                 testReports = '**/build/test-results/**/*.xml'
                                 for(m = 0; m < artifactTypes.size(); m++) {
