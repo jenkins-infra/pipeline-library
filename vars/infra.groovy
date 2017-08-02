@@ -1,7 +1,7 @@
 #!/usr/bin/env groovy
 
 Boolean isRunningOnJenkinsInfra() {
-    return env.JENKINS_URL == 'https://ci.jenkins.io' || isTrusted()
+    return env.JENKINS_URL == 'https://ci.jenkins.io/' || isTrusted()
 }
 
 Boolean isTrusted() {
