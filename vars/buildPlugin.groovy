@@ -20,6 +20,7 @@ def call(Map params = [:]) {
 
                 tasks[stageIdentifier] = {
                     node(label) {
+                        timeout(60) {
                         boolean isMaven
 
                         stage("Checkout (${stageIdentifier})") {
@@ -101,17 +102,13 @@ def call(Map params = [:]) {
                             archiveArtifacts artifacts: artifacts, fingerprint: true
                         }
                     }
+                    }
                 }
             }
         }
     }
 
-    /* If we cannot complete in 60 minutes, we should fail the build. Compute
-     * isn't free!
-     */
-    timeout(60) {
-        timestamps {
-            return parallel(tasks)
-        }
+    timestamps {
+        return parallel(tasks)
     }
 }
