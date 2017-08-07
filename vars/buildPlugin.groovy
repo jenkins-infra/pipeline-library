@@ -17,6 +17,11 @@ def call(Map params = [:]) {
                 String jdk = jdkVersions[j]
                 String jenkinsVersion = jenkinsVersions[k]
                 String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
+                boolean first = i == 0 && j == 0 && k == 0
+                boolean runFindbugs = first && params?.findbugs?.run
+                boolean runCheckstyle = first && params?.checkstyle?.run
+                boolean archiveFindbugs = first && params?.findbugs?.archive
+                boolean archiveCheckstyle = first && params?.checkstyle?.archive
 
                 tasks[stageIdentifier] = {
                     node(label) {
@@ -60,7 +65,20 @@ def call(Map params = [:]) {
                                 if (jenkinsVersion) {
                                     mavenOptions += "-Djenkins.version=${jenkinsVersion}"
                                 }
-                                command = "mvn ${mavenOptions.join(' ')} clean install"
+                                if (params?.findbugs?.run || params?.findbugs?.archive) {
+                                    mavenOptions += "-Dfindbugs.failOnError=false"
+                                }
+                                if (params?.checkstyle?.run || params?.checkstyle?.archive) {
+                                    mavenOptions += "-Dcheckstyle.failOnViolation=false -Dcheckstyle.failsOnError=false"
+                                }
+                                mavenOptions += "clean install"
+                                if (runFindbugs) {
+                                    mavenOptions += "findbugs:findbugs"
+                                }
+                                if (runCheckstyle) {
+                                    mavenOptions += "checkstyle:checkstyle"
+                                }
+                                command = "mvn ${mavenOptions.join(' ')}"
                                 env << "PATH+MAVEN=${tool 'mvn'}/bin"
                             } else {
                                 List<String> gradleOptions = [
@@ -96,6 +114,26 @@ def call(Map params = [:]) {
                             }
 
                             junit testReports // TODO do this in a finally-block so we capture all test results even if one branch aborts early
+                            if (isMaven && archiveFindbugs) {
+                                def fp = [pattern: params?.findbugs?.pattern ?: '**/target/findbugsXml.xml']
+                                if (params?.findbugs?.unstableNewAll) {
+                                    fp['unstableNewAll'] ="${params.findbugs.unstableNewAll}"
+                                }
+                                if (params?.findbugs?.unstableTotalAll) {
+                                    fp['unstableTotalAll'] ="${params.findbugs.unstableTotalAll}"
+                                }
+                                findbugs(fp)
+                            }
+                            if (isMaven && archiveCheckstyle) {
+                                def cp = [pattern: params?.checkstyle?.pattern ?: '**/target/checkstyle-result.xml']
+                                if (params?.checkstyle?.unstableNewAll) {
+                                    cp['unstableNewAll'] ="${params.checkstyle.unstableNewAll}"
+                                }
+                                if (params?.checkstyle?.unstableTotalAll) {
+                                    cp['unstableTotalAll'] ="${params.checkstyle.unstableTotalAll}"
+                                }
+                                checkstyle(cp)
+                            }
                             if (failFast && currentBuild.result == 'UNSTABLE') {
                                 error 'There were test failures; halting early'
                             }
