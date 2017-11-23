@@ -1,0 +1,3 @@
+<p>
+    Run tests in parallel and then reports them. Supports only Maven projects.
+</p>
