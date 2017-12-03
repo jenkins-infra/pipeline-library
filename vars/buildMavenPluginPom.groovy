@@ -4,27 +4,19 @@
  * Builds a component, which implements Jenkins Plugin POM.
  * It may be either Jenkins plugin or module, depending on the packaging.
  *
- * @param stageIdentifier Textual identifier for operations
- * @param label Node label, which should be used for the build
- * @param jdk JDK version, which should be used for the build. E.g. {@code 8}
- * @param jenkinsVersion Jenkins version, which should be used for the build. {@code null} for default defined in POM.xml
- * @param repo Repository to be used. {@code null} can be used in Multi-branch build
+ * @param stageIdentifier Stage identifier
+ * @param label Node label to be used, {@code linux} by default
+ * @param jdk JDK version to be used, {@code 8} by default
+ * @param jenkinsVersion Version of Jenkins to be used. {@code null} if the default version in pom.xml should be used
+ * @param repo Repository to be used for Git checkout. Use {@code null} for Multi-Branch
+ * @parem failFast Fail the build if one of the branches fails
+ * @param testParallelism Number of parallel test builds, {@code 1} by default
  */
-Boolean call(Map params = [:]) {
-
-    def stageIdentifier = params.stageIdentifier
-    def label = params.containsKey('label') ? params.label : 'linux'
-    def jdk = params.containsKey('jdk') ? params.jdk : 8
-    def jenkinsVersion = params.containsKey('jenkinsVersion') ? params.jenkinsVersion : [null]
-    def repo = params.containsKey('repo') ? params.repo : null
-    def failFast = params.containsKey('failFast') ? params.failFast : true
-    def testParallelism = params.containsKey('testParallelism') ? params.testParallelism : 1
-    boolean runFindbugs = params.containsKey('runFindbugs') ? params.runFindbugs : true
-    boolean archiveFindbugs = params.containsKey('archiveFindbugs') ? params.archiveFindbugs : true
-    boolean runCheckstyle = params.containsKey('runCheckstyle') ? params.runCheckstyle : true
-    boolean archiveCheckstyle = params.containsKey('archiveCheckstyle') ? params.archiveCheckstyle : true
-    boolean runCobertura = params.containsKey('runCobertura') ? params.runCobertura : true
-
+def call(String stageIdentifier, String label = "linux", String jdk = "8", String jenkinsVersion = null,
+             String repo = null, boolean failFast = true, int testParallelism = 1,
+             boolean runFindbugs = true, boolean archiveFindbugs = true,
+             boolean runCheckstyle = true, boolean archiveCheckstyle = true,
+             boolean runCobertura = true) {
 
     node(label) {
         timeout(60) {
@@ -136,5 +128,4 @@ Boolean call(Map params = [:]) {
             }
         }
     }
-    return true
 }

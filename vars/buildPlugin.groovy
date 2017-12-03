@@ -49,27 +49,34 @@ def call(Map params = [:]) {
 
                 tasks[stageIdentifier] = {
                     if (isMaven) {
-                        boolean runFindbugs = first && params?.findbugs?.run
-                        boolean runCheckstyle = first && params?.checkstyle?.run
-                        boolean runCobertura = first && params?.cobertura?.run
-                        boolean archiveFindbugs = first && params?.findbugs?.archive
-                        boolean archiveCheckstyle = first && params?.checkstyle?.archive
+                        boolean runFindbugs = (first && params?.findbugs?.run) ?: false
+                        boolean runCheckstyle = (first && params?.checkstyle?.run) ?: false
+                        boolean runCobertura = (first && params?.cobertura?.run) ?: false
+                        boolean archiveFindbugs = (first && params?.findbugs?.archive) ?: false
+                        boolean archiveCheckstyle = (first && params?.checkstyle?.archive) ?: false
 
                         buildMavenPluginPom(
-                            stageIdentifier: stageIdentifier,
-                            label: label,
-                            jdk: jdk,
-                            jenkinsVersion: jenkinsVersion,
-                            repo: repo,
-                            testParallelism: testParallelism,
-                            runFindbugs: runFindbugs,
-                            archiveFindbugs: archiveFindbugs,
-                            runCheckstyle: runCheckstyle,
-                            archiveCheckstyle: archiveCheckstyle,
-                            runCobertura: runCobertura);
+                            stageIdentifier,
+                            label,
+                            jdk,
+                            jenkinsVersion,
+                            repo,
+                            failFast,
+                            testParallelism,
+                            runFindbugs,
+                            archiveFindbugs,
+                            runCheckstyle,
+                            archiveCheckstyle,
+                            runCobertura);
                     } else {
                         //TODO: add support of Jenkins Version
-                         buildGradleComponent(stageIdentifier, label, jdk, failFast)
+                         buildGradleComponent(
+                             stageIdentifier,
+                             label,
+                             jdk,
+                             jenkinsVersion,
+                             repo,
+                             failFast)
                     }
                 }
             }
