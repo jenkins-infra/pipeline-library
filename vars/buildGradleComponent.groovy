@@ -9,7 +9,7 @@
  * @param jdk JDK version to be used, {@code 8} by default
  * @param jenkinsVersion Version of Jenkins to be used. {@code null} if the default version in pom.xml should be used
  * @param repo Repository to be used for Git checkout. Use {@code null} for Multi-Branch
- * @parem failFast Fail the build if one of the branches fails
+ * @param failFast Fail the build if one of the branches fails
  */
 def call(String stageIdentifier, String label = "linux", String jdk = 8, String jenkinsVersion = null,
          String repo = null, boolean failFast = true) {
