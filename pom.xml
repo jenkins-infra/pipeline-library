@@ -1,0 +1,103 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- Depends on Jenkins plugin POM to retrieve the default tooling for Groovy -->
+  <!-- TODO: create a new Parent POM for Pipeline libs?-->
+  <parent>
+    <groupId>org.jenkins-ci.plugins</groupId>
+    <artifactId>plugin</artifactId>
+    <version>3.2</version>
+  </parent>
+
+  <groupId>org.jenkins-ci.infra.ci</groupId>
+  <artifactId>pipeline-library</artifactId>
+  <version>1.2-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  <name>jenkins.io Pipeline Library</name>
+  <url>https://github.com/jenkins-infra/pipeline-library</url>
+
+  <properties>
+    <jenkins.version>2.73.3</jenkins.version>
+    <java.level>8</java.level>
+  </properties>
+
+  <licenses>
+    <license>
+      <name>The MIT license</name>
+      <url>http://www.opensource.org/licenses/mit-license.php</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <connection>scm:git:ssh://github.com/jenkins-infra/pipeline-library.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/jenkins-infra/pipeline-library.git</developerConnection>
+    <url>https://github.com/jenkinsci/jenkins-infra/pipeline-library</url>
+  </scm>
+
+  <build>
+    <sourceDirectory>./src</sourceDirectory>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.gmaven</groupId>
+        <artifactId>gmaven-plugin</artifactId>
+        <version>1.5-jenkins-4-20171204.003627-2</version>
+        <executions>
+          <execution>
+            <id>groovy-stubs</id>
+            <goals>
+              <goal>generateStubs</goal>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>2.0.6</version>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <sources>
+            <source>
+              <directory>${project.basedir}/src/</directory>
+              <includes>
+                <include>**/*.groovy</include>
+              </includes>
+            </source>
+            <source>
+              <directory>${project.basedir}/vars/</directory>
+              <includes>
+                <include>**/*.groovy</include>
+              </includes>
+            </source>
+          </sources>
+          <testSources>
+            <testSource>
+              <directory>${project.basedir}/src/test/java</directory>
+              <includes>
+                <include>**/*.groovy</include>
+              </includes>
+            </testSource>
+          </testSources>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+
+  <repositories>
+    <repository>
+      <id>repo.jenkins-ci.org</id>
+      <url>https://repo.jenkins-ci.org/public/</url>
+    </repository>
+  </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>repo.jenkins-ci.org</id>
+      <url>https://repo.jenkins-ci.org/public/</url>
+    </pluginRepository>
+  </pluginRepositories>
+</project>  
