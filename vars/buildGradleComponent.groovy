@@ -20,7 +20,7 @@ def call(String stageIdentifier, String label = "linux", String jdk = 8, String 
             String artifacts
 
             stage("Checkout (${stageIdentifier})") {
-                commonSteps.checkout(repo)
+                commons.checkout(repo)
                 testReports = '**/build/test-results/**/*.xml'
                 artifacts = '**/build/libs/*.hpi,**/build/libs/*.jpi'
             }
@@ -36,7 +36,7 @@ def call(String stageIdentifier, String label = "linux", String jdk = 8, String 
                     command = "./" + command
                 }
 
-                commonSteps.runWithJava(command, jdk)
+                commons.runWithJava(command, jdk)
             }
 
             stage("Archive (${stageIdentifier})") {

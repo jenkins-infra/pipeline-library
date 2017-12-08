@@ -28,7 +28,7 @@ def call(String stageIdentifier, String label = "linux", String jdk = "8", Strin
             def mavenEnvVars = ["PATH+MAVEN=${tool 'mvn'}/bin"];
 
             stage("Checkout (${stageIdentifier})") {
-                commonSteps.checkout(repo)
+                commons.checkout(repo)
 
                 // Manage test parallelism
                 if (testParallelism > 1) {
@@ -82,7 +82,7 @@ def call(String stageIdentifier, String label = "linux", String jdk = "8", Strin
                     profiles << "coverage"
                 }
 
-                commonSteps.runWithJava("mvn ${mavenOptions.join(' ')}", jdk, mavenEnvVars)
+                commons.runWithJava("mvn ${mavenOptions.join(' ')}", jdk, mavenEnvVars)
             }
 
             if (isParallelTestMode) {

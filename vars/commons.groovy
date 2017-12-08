@@ -1,9 +1,10 @@
-Object checkout(String repo = null) {
+Object checkout(String repo = null, String branch = null) {
     if (env.BRANCH_NAME) {
+        // Multi-branch Pipeline
         checkout scm
     }
     else if ((env.BRANCH_NAME == null) && (repo)) {
-        git repo
+        git url: repo, branch: branch
     }
     else {
         error 'buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided'
@@ -25,6 +26,19 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null)
             sh command
         } else {
             bat command
+        }
+    }
+}
+
+Object withErrorHandlers(int timeout, Closure body) {
+    timeout(timeout) {
+        timestamps {
+            try {
+                body()
+            } catch (Exception ex) {
+                echo "Caught exception: ${ex}"
+                throw ex // Propagate it
+            }
         }
     }
 }

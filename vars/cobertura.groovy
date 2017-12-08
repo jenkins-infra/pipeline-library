@@ -1,15 +1,15 @@
 /**
  * Publishes Cobertura report.
- * @param coberturaReportFile Report File to publish
+ * @param file Report File to publish
  * @param failUnhealthy Fail if the coverage is unhealthy
  * @param failUnstable Fail if the build is unstable
  * @return nothing
  */
-def publish(String coberturaReportFile, boolean failUnhealthy=false, boolean failUnstable=false) {
+def call(String file = target/coverage.xml, boolean failUnhealthy=false, boolean failUnstable=false) {
     step([$class: 'CoberturaPublisher',
           autoUpdateHealth: false,
           autoUpdateStability: false,
-          coberturaReportFile: 'target/coverage.xml',
+          coberturaReportFile: file,
           failNoReports: false,
           failUnhealthy: failUnhealthy,
           failUnstable: failUnstable,

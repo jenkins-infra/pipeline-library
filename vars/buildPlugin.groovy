@@ -19,7 +19,7 @@ def call(Map params = [:]) {
         stage("Determine the project type") {
             timeout(10) {
                 node("docker") {
-                    commonSteps.checkout(repo)
+                    commons.checkout(repo)
                     if (fileExists('pom.xml')) {
                         projectType = "maven"
                         isMaven = true

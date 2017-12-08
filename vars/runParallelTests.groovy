@@ -23,7 +23,7 @@ def call(String prefix, String label, List<String> mavenOptions, String jdk = 8,
         /* all known tests to run any tests not seen during the previous run.  */
         testGroups["${prefix}-split-${splitNo}"] = {  // example, "split3"
             node(label) {
-                commonSteps.checkout(repo)
+                commons.checkout(repo)
 
                 def command = "mvn clean verify -DMaven.test.failure.ignore=true ${mavenOptions.join(' ')}"
 
@@ -37,7 +37,7 @@ def call(String prefix, String label, List<String> mavenOptions, String jdk = 8,
                     command += " -Dsurefire.excludesFile=tmp/parallel-test-excludes-${splitNo}.txt"
                 }
 
-                commonSteps.runWithJava(command, jdk, extraEnvVars);
+                commons.runWithJava(command, jdk, extraEnvVars);
 
                 /* Archive the test results */
                 junit '**/target/surefire-reports/TEST-*.xml'
