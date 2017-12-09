@@ -19,3 +19,18 @@ def call(String file = target/coverage.xml, boolean failUnhealthy=false, boolean
           zoomCoverageChart: false]
     )
 }
+
+def mergeStashes(int testParallelism) {
+    node('linux') {
+        for (int I = 0; I < testParallelism; i++) {
+            unstash"coverage-${i}.xml"
+        }
+        cobertura.merge("coverage-*.xml", "coverage-merged.xml")
+        cobertura(file: "coverage-merged.xml")
+    }
+}
+
+def merge(String pattern, String out) {
+    //TODO: Write your own impl
+    sh "cp coverage-1.xml ${out}"
+}
