@@ -16,7 +16,7 @@ def call(Map params = [:]) {
                 String label = platforms[i]
                 String jdk = jdkVersions[j]
                 String jenkinsVersion = jenkinsVersions[k]
-                String stageIdentifier = "${label}{jdkVersions.size() > 1 ? '-' + jdk : ''}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
+                String stageIdentifier = "${label}${jdkVersions.size() > 1 ? '-' + jdk : ''}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
                 boolean first = i == 0 && j == 0 && k == 0
                 boolean runFindbugs = first && params?.findbugs?.run
                 boolean runCheckstyle = first && params?.checkstyle?.run
