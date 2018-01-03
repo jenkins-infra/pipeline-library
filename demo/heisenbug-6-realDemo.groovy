@@ -4,9 +4,7 @@ node('linux') {
     }
     try {
         stage("Build") {
-            commons.withErrorHandlers(10) {
-                sh "mvn clean verify -DskipTests"
-            }
+            sh "mvn clean verify -DskipTests"
         }
     } finally {
         stage("Archive") {
