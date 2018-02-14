@@ -1,4 +1,4 @@
-Object checkout(String repo = null, String branch = null) {
+Object checkout(String repo = null, String branch = "master") {
     if (env.BRANCH_NAME) {
         // Multi-branch Pipeline
         checkout scm
