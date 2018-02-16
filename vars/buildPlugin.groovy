@@ -4,6 +4,11 @@
  * Simple wrapper step for building a plugin
  */
 def call(Map params = [:]) {
+    // Faster build and reduces IO needs
+    properties([
+        durabilityHint('PERFORMANCE_OPTIMIZED')
+    ])
+
     def platforms = params.containsKey('platforms') ? params.platforms : ['linux', 'windows']
     def jdkVersions = params.containsKey('jdkVersions') ? params.jdkVersions : [8]
     def jenkinsVersions = params.containsKey('jenkinsVersions') ? params.jenkinsVersions : [null]
