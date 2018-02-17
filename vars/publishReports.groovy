@@ -27,6 +27,9 @@ def call(List<String> files, Map params = [:]) {
                         case ~/(?i).*\.css/:
                             uploadFlags = '--content-type="text/css"'
                             break
+                        case ~/(?i).*\json/:
+                            uploadFlags = '--content-type="application/json"'
+                            break
                         case ~/(?i).*\.js/:
                             uploadFlags = '--content-type="application/javascript"'
                             break
