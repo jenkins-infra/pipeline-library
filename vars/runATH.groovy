@@ -117,27 +117,31 @@ def call(Map params = [:]) {
 
                 if (testsToRun) {
                     testingbranches["ATH individual tests-${currentBrowser}"] = {
-                        unstash name: "athSources"
-                        unstash name: "jenkinsWar"
-                        def command = commandBase + " -Dtest=${testsToRun}"
-                        athContainerImage.inside(containerArgs) {
-                            realtimeJUnit(testResults: 'target/surefire-reports/TEST-*.xml', testDataPublishers: [[$class: 'AttachmentPublisher']]) {
-                                sh 'eval "$(./vnc.sh)" && ' + command
-                            }
+                        dir("test${currentBrowser}") {
+                            unstash name: "athSources"
+                            unstash name: "jenkinsWar"
+                            def command = commandBase + " -Dtest=${testsToRun}"
+                            athContainerImage.inside(containerArgs) {
+                                realtimeJUnit(testResults: 'target/surefire-reports/TEST-*.xml', testDataPublishers: [[$class: 'AttachmentPublisher']]) {
+                                    sh 'eval "$(./vnc.sh)" && ' + command
+                                }
 
+                            }
                         }
                     }
                 }
                 if (categoriesToRun) {
                     testingbranches["ATH categories-${currentBrowser}"] = {
-                        unstash name: "athSources"
-                        unstash name: "jenkinsWar"
-                        def command = commandBase + " -Dgroups=${categoriesToRun}"
-                        athContainerImage.inside(containerArgs) {
-                            realtimeJUnit(testResults: 'target/surefire-reports/TEST-*.xml', testDataPublishers: [[$class: 'AttachmentPublisher']]) {
-                                sh 'eval "$(./vnc.sh)" && ' + command
-                            }
+                        dir("categories${currentBrowser}") {
+                            unstash name: "athSources"
+                            unstash name: "jenkinsWar"
+                            def command = commandBase + " -Dgroups=${categoriesToRun}"
+                            athContainerImage.inside(containerArgs) {
+                                realtimeJUnit(testResults: 'target/surefire-reports/TEST-*.xml', testDataPublishers: [[$class: 'AttachmentPublisher']]) {
+                                    sh 'eval "$(./vnc.sh)" && ' + command
+                                }
 
+                            }
                         }
                     }
                 }
