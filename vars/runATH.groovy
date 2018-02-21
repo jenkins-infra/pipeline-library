@@ -13,6 +13,9 @@ def call(Map params = [:]) {
 
     def isLocalATH = athUrl.startsWith("file://")
     def isVersionNumber = (jenkins =~ /^(\d+\.)?(\d+\.)?(\*|\d+)$/).matches()
+    // Workaround for https://issues.jenkins-ci.org/browse/JENKINS-27092
+    def shouldStop = false
+    // End of workaround
 
     def mirror = "http://mirrors.jenkins.io/"
     def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
@@ -27,6 +30,7 @@ def call(Map params = [:]) {
         // Start validation
         if (!fileExists(metadataFile)) {
             echo "The metadata file does not exist. Current value is ${metadataFile}"
+            shouldStop = true
             return
         } else {
             metadata = readYaml(file: metadataFile).ath
@@ -83,6 +87,12 @@ def call(Map params = [:]) {
         stash includes: '*.war', name: 'jenkinsWar'
 
     }
+    // Workaround for https://issues.jenkins-ci.org/browse/JENKINS-27092
+    if (shouldStop) {
+
+        return
+    }
+    // End of workaround
 
     stage("Running ATH") {
         def testsToRun = metadata.tests?.join(",")
