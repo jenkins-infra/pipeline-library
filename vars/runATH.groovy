@@ -38,7 +38,7 @@ def call(Map params = [:]) {
                 error "The provided metadata file seems invalid as it does not contain the ath section"
             }
             if (metadata.browsers == null) {
-                error "The provided metadata file seems invalid as it does not include the browser property"
+                echo "The provided metadata file does not include the browsers property, using firefox as default"
             }
         }
         if (!isLocalATH) {
@@ -97,7 +97,7 @@ def call(Map params = [:]) {
     stage("Running ATH") {
         def testsToRun = metadata.tests?.join(",")
         def categoriesToRun = metadata.categories?.join(",")
-        def browsers = metadata.browsers
+        def browsers = metadata.browsers ?: ["firefox"]
         def failFast = metadata.failFast ?: false
         def rerunCount = metadata.rerunFailingTestsCount ?: 0
         def localSnapshots = metadata.useLocalSnapshots ?: true
