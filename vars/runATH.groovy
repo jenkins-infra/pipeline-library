@@ -111,7 +111,11 @@ def call(Map params = [:]) {
 
                 def currentBrowser = browser
                 def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -v \$HOME/.m2/repository:/home/ath-user/.m2/repository -e LOCAL_SNAPSHOTS=${localSnapshots} -e SHARED_DOCKER_SERVICE=true -u ath-user"
-                def commandBase = "./run.sh ${currentBrowser} jenkins.war -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
+                if (infra.isRunningOnJenkinsInfra()) {
+                    def settingsXml = "${pwd tmp: true}/settings-azure.xml"
+                    writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
+                }
+                def commandBase = "./run.sh ${currentBrowser} jenkins.war -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount} -s $settingsXml"
 
                 if (testsToRun) {
                     testingbranches["ATH individual tests-${currentBrowser}"] = {
@@ -119,6 +123,7 @@ def call(Map params = [:]) {
                             unstash name: "athSources"
                             unstash name: "jenkinsWar"
                             def command = commandBase + " -Dtest=${testsToRun}"
+
                             athContainerImage.inside(containerArgs) {
                                 realtimeJUnit(testResults: 'target/surefire-reports/TEST-*.xml', testDataPublishers: [[$class: 'AttachmentPublisher']]) {
                                     sh 'eval "$(./vnc.sh)" && ' + command
