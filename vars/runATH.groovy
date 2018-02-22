@@ -60,10 +60,8 @@ def call(Map params = [:]) {
             jenkinsURl = mirror + "war-stable-rc/latest/jenkins.war"
         }
 
-        def canFindJenkinsWar = sh(script: "curl --output /dev/null --silent --fail -r 0-0 -L ${jenkinsURl}", returnStatus: true) == 0
-        if (!canFindJenkinsWar) {
-            error "Is not possible to find the given jenkins war file, please review it. Current value for jenkins is ${jenkins}"
-        }
+        echo 'Checking whether Jenkins WAR is available…'
+        sh "curl -ILf ${jenkinsURl}"
         // Validation ended
 
         // ATH
