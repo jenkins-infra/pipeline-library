@@ -45,10 +45,8 @@ def call(Map params = [:]) {
             }
         }
         if (!isLocalATH) {
-            def canConnectToGitRepo = sh(script: "git ls-remote --exit-code -h ${athUrl}", returnStatus: true) == 0
-            if (!canConnectToGitRepo) {
-                error "Is not possible to connect to the given athUrl, please review it. Current value for athUrl is ${athUrl}"
-            }
+            echo 'Checking connectivity to ATH sources…'
+            sh "git ls-remote --exit-code -h ${athUrl}"
         }
         if (isVersionNumber) {
             jenkinsURl = mirror + "war/${jenkins}/jenkins.war"
@@ -62,7 +60,7 @@ def call(Map params = [:]) {
             jenkinsURl = mirror + "war-stable-rc/latest/jenkins.war"
         }
 
-        def canFindJenkinsWar = sh(script: "curl --output /dev/null --silent --fail -r 0-0 -L '${jenkinsURl}'", returnStatus: true) == 0
+        def canFindJenkinsWar = sh(script: "curl --output /dev/null --silent --fail -r 0-0 -L ${jenkinsURl}", returnStatus: true) == 0
         if (!canFindJenkinsWar) {
             error "Is not possible to find the given jenkins war file, please review it. Current value for jenkins is ${jenkins}"
         }
