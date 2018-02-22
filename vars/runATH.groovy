@@ -39,6 +39,7 @@ def call(Map params = [:]) {
             }
             if (metadata == 'default') {
                 echo "Using default configuration for ATH"
+                metadata = [:]
             } else if (metadata.browsers == null) {
                 echo "The provided metadata file does not include the browsers property, using firefox as default"
             }
