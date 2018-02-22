@@ -110,7 +110,7 @@ def call(Map params = [:]) {
             if (browser == "firefox") {
 
                 def currentBrowser = browser
-                def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -v ~/.m2/repository:/home/ath-user/.m2/repository -e LOCAL_SNAPSHOTS=${localSnapshots} -e SHARED_DOCKER_SERVICE=true -u ath-user"
+                def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -v \$HOME/.m2/repository:/home/ath-user/.m2/repository -e LOCAL_SNAPSHOTS=${localSnapshots} -e SHARED_DOCKER_SERVICE=true -u ath-user"
                 def commandBase = "./run.sh ${currentBrowser} jenkins.war -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
 
                 if (testsToRun) {
