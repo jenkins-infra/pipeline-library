@@ -12,7 +12,7 @@ def call(Map params = [:]) {
     def String jenkins = params.get('jenkins', 'latest')
 
     def isLocalATH = athUrl.startsWith("file://")
-    def isVersionNumber = (jenkins =~ /^(\d+\.)?(\d+\.)?(\*|\d+)$/).matches()
+    def isVersionNumber = (jenkins =~ /^\d+([.]\d+)*$/).matches()
     // Workaround for https://issues.jenkins-ci.org/browse/JENKINS-27092
     def shouldStop = false
     // End of workaround
@@ -35,9 +35,11 @@ def call(Map params = [:]) {
         } else {
             metadata = readYaml(file: metadataFile).ath
             if (metadata == null) {
-                error "The provided metadata file seems invalid as it does not contain the ath section"
+                error "The provided metadata file seems invalid as it does not contain a valid ath section"
             }
-            if (metadata.browsers == null) {
+            if (metadata == 'default') {
+                echo "Using default configuration for ATH"
+            } else if (metadata.browsers == null) {
                 echo "The provided metadata file does not include the browsers property, using firefox as default"
             }
         }
@@ -89,7 +91,6 @@ def call(Map params = [:]) {
     }
     // Workaround for https://issues.jenkins-ci.org/browse/JENKINS-27092
     if (shouldStop) {
-
         return
     }
     // End of workaround
