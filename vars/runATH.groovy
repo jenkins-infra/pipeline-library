@@ -69,8 +69,8 @@ def call(Map params = [:]) {
             athSourcesFolder = athUrl - "file://"
         } else {
             dir(athSourcesFolder) {
-                checkout changelog: true, poll: false, scm: [$class           : 'GitSCM', branches: [[name: "${athRevision}"]],
-                                                             userRemoteConfigs: [[url: "${athUrl}"]]]
+                checkout changelog: true, poll: false, scm: [$class           : 'GitSCM', branches: [[name: athRevision]],
+                                                             userRemoteConfigs: [[url: athUrl]]]
             }
         }
         dir(athSourcesFolder) {
