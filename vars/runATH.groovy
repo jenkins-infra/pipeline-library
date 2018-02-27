@@ -53,9 +53,7 @@ def call(Map params = [:]) {
             echo 'Checking connectivity to ATH sources…'
             sh "git ls-remote --exit-code -h ${athUrl}"
         }
-        if (isVersionNumber) {
-            jenkinsURl = mirror + "war/${jenkins}/jenkins.war"
-        } else if (jenkins == "latest") {
+        if (jenkins == "latest") {
             jenkinsURl = mirror + "war/latest/jenkins.war"
         } else if (jenkins == "latest-rc") {
             jenkinsURl = mirror + "/war-rc/latest/jenkins.war"
@@ -87,8 +85,21 @@ def call(Map params = [:]) {
         }
 
         // Jenkins war
-        sh("curl -o jenkins.war -L ${jenkinsURl}")
-        stash includes: '*.war', name: 'jenkinsWar'
+        if(isVersionNumber) {
+            def downloadCommand = "mvn dependency:copy -Dartifact=org.jenkins-ci.main:jenkins-war:${jenkins}:war -DoutputDirectory=deps"
+            if (infra.isRunningOnJenkinsInfra()) {
+                def settingsXml = "${pwd tmp: true}/settings-azure.xml"
+                writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
+                downloadCommand = downloadCommand + " -s settings-azure.xml"
+            }
+            sh downloadCommand
+            dir("deps") {
+                stash includes: '*.war', name: 'jenkinsWar'
+            }
+        } else {
+            sh("curl -o jenkins.war -L ${jenkinsURl}")
+            stash includes: '*.war', name: 'jenkinsWar'
+        }
 
     }
 
