@@ -11,39 +11,43 @@ def call(Map params = [:]) {
     def String metadataFile = params.get('metadataFile', 'essentials.yml')
     def String jenkins = params.get('jenkins', 'latest')
 
-    def isLocalATH = athUrl.startsWith("file://")
-    def isVersionNumber = (jenkins =~ /^\d+([.]\d+)*$/).matches()
-    // Workaround for https://issues.jenkins-ci.org/browse/JENKINS-27092
-    def shouldStop = false
-    // End of workaround
-
     def mirror = "http://mirrors.jenkins.io/"
     def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
     def jenkinsURl = jenkins
     def metadata
     def athContainerImage
+    def isLocalATH
+    def isVersionNumber
 
 
     def athSourcesFolder = "athSources"
 
+    if (!fileExists(metadataFile)) {
+        echo "Skipping ATH execution because the metadata file does not exist. Current value is ${metadataFile}."
+        return
+    }
+
     stage("Getting ATH sources and Jenkins war") {
         // Start validation
-        if (!fileExists(metadataFile)) {
-            echo "The metadata file does not exist. Current value is ${metadataFile}"
-            shouldStop = true
-            return
-        } else {
-            metadata = readYaml(file: metadataFile).ath
-            if (metadata == null) {
-                error "The provided metadata file seems invalid as it does not contain a valid ath section"
-            }
-            if (metadata == 'default') {
-                echo "Using default configuration for ATH"
-                metadata = [:]
-            } else if (metadata.browsers == null) {
-                echo "The provided metadata file does not include the browsers property, using firefox as default"
-            }
+        metadata = readYaml(file: metadataFile).ath
+        if (metadata == null) {
+            error "The provided metadata file seems invalid as it does not contain a valid ath section"
         }
+        if (metadata == 'default') {
+            echo "Using default configuration for ATH"
+            metadata = [:]
+        } else if (metadata.browsers == null) {
+            echo "The provided metadata file does not include the browsers property, using firefox as default"
+        }
+        // Allow to override athUrl and athRevision from metadata file
+        athUrl = metadata.athUrl ?: athUrl
+        isLocalATH = athUrl.startsWith("file://")
+        athRevision = metadata.athRevision ?: athRevision
+
+        // Allow override of jenkins version from metadata file
+        jenkins = metadata.jenkins ?: jenkins
+        isVersionNumber = (jenkins =~ /^\d+([.]\d+)*$/).matches()
+
         if (!isLocalATH) {
             echo 'Checking connectivity to ATH sources…'
             sh "git ls-remote --exit-code -h ${athUrl}"
@@ -86,11 +90,6 @@ def call(Map params = [:]) {
         stash includes: '*.war', name: 'jenkinsWar'
 
     }
-    // Workaround for https://issues.jenkins-ci.org/browse/JENKINS-27092
-    if (shouldStop) {
-        return
-    }
-    // End of workaround
 
     stage("Running ATH") {
         def testsToRun = metadata.tests?.join(",")
