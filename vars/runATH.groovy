@@ -19,8 +19,9 @@ def call(Map params = [:]) {
     def isLocalATH
     def isVersionNumber
 
-
     def athSourcesFolder = "athSources"
+
+    def supportedBrowsers = ["firefox"]
 
     if (!fileExists(metadataFile)) {
         echo "Skipping ATH execution because the metadata file does not exist. Current value is ${metadataFile}."
@@ -105,8 +106,7 @@ def call(Map params = [:]) {
 
         def testingbranches = ["failFast": failFast]
         for (browser in browsers) {
-            // TODO remove this if else block once other browser are supported by infra
-            if (browser == "firefox") {
+            if (supportedBrowsers.contains(browser)) {
 
                 def currentBrowser = browser
                 def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e LOCAL_SNAPSHOTS=${localSnapshots} -e SHARED_DOCKER_SERVICE=true -u ath-user"
