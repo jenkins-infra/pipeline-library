@@ -63,8 +63,10 @@ def call(Map params = [:]) {
             jenkinsURl = mirror + "war-stable-rc/latest/jenkins.war"
         }
 
-        echo 'Checking whether Jenkins WAR is available…'
-        sh "curl -ILf ${jenkinsURl}"
+        if (!isVersionNumber) {
+            echo 'Checking whether Jenkins WAR is available…'
+            sh "curl -ILf ${jenkinsURl}"
+        }
         // Validation ended
 
         // ATH
@@ -94,7 +96,8 @@ def call(Map params = [:]) {
             }
             sh downloadCommand
             dir("deps") {
-                stash includes: '*.war', name: 'jenkinsWar'
+                sh "cp jenkins-war-*.war jenkins.war"
+                stash includes: 'jenkins.war', name: 'jenkinsWar'
             }
         } else {
             sh("curl -o jenkins.war -L ${jenkinsURl}")
@@ -121,7 +124,7 @@ def call(Map params = [:]) {
 
                 def currentBrowser = browser
                 def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e LOCAL_SNAPSHOTS=${localSnapshots} -e SHARED_DOCKER_SERVICE=true -u ath-user"
-                def commandBase = "./run.sh ${currentBrowser} jenkins.war -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
+                def commandBase = "./run.sh ${currentBrowser} ./jenkins.war -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
                 if (infra.isRunningOnJenkinsInfra()) {
                     def settingsXml = "${pwd tmp: true}/settings-azure.xml"
                     writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
