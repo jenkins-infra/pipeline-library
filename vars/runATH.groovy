@@ -23,6 +23,13 @@ def call(Map params = [:]) {
 
     def supportedBrowsers = ["firefox"]
 
+    List<String> env = [
+            "JAVA_HOME=${tool jdkTool}",
+            'PATH+JAVA=${JAVA_HOME}/bin',
+            "PATH+MAVEN=${tool 'mvn'}/bin"
+
+    ]
+
     if (!fileExists(metadataFile)) {
         echo "Skipping ATH execution because the metadata file does not exist. Current value is ${metadataFile}."
         return
@@ -95,9 +102,10 @@ def call(Map params = [:]) {
                     writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
                     downloadCommand = downloadCommand + " -s ${settingsXml}"
                 }
-                sh downloadCommand
-
-                sh "cp jenkins-war-*.war jenkins.war"
+                withEnv(env) {
+                    sh command
+                }
+                sh "cp jenkins-war.war jenkins.war"
                 stash includes: 'jenkins.war', name: 'jenkinsWar'
             }
         } else {
