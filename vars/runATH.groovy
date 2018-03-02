@@ -103,7 +103,7 @@ def call(Map params = [:]) {
                     downloadCommand = downloadCommand + " -s ${settingsXml}"
                 }
                 withEnv(env) {
-                    sh command
+                    sh downloadCommand
                 }
                 sh "cp jenkins-war.war jenkins.war"
                 stash includes: 'jenkins.war', name: 'jenkinsWar'
