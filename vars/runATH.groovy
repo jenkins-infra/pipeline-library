@@ -24,7 +24,7 @@ def call(Map params = [:]) {
     def supportedBrowsers = ["firefox"]
 
     List<String> env = [
-            "JAVA_HOME=${tool jdkTool}",
+            "JAVA_HOME=${tool 'jdk8'}",
             'PATH+JAVA=${JAVA_HOME}/bin',
             "PATH+MAVEN=${tool 'mvn'}/bin"
 
