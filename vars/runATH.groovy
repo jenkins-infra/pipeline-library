@@ -87,15 +87,16 @@ def call(Map params = [:]) {
         }
 
         // Jenkins war
-        if(isVersionNumber) {
-            def downloadCommand = "mvn dependency:copy -Dartifact=org.jenkins-ci.main:jenkins-war:${jenkins}:war -DoutputDirectory=deps"
-            if (infra.isRunningOnJenkinsInfra()) {
-                def settingsXml = "${pwd tmp: true}/settings-azure.xml"
-                writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
-                downloadCommand = downloadCommand + " -s settings-azure.xml"
-            }
-            sh downloadCommand
+        if (isVersionNumber) {
+            def downloadCommand = "mvn dependency:copy -Dartifact=org.jenkins-ci.main:jenkins-war:${jenkins}:war -DoutputDirectory=. -Dmdep.stripVersion=true"
             dir("deps") {
+                if (infra.isRunningOnJenkinsInfra()) {
+                    def settingsXml = "${pwd tmp: true}/settings-azure.xml"
+                    writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
+                    downloadCommand = downloadCommand + " -s ${settingsXml}"
+                }
+                sh downloadCommand
+
                 sh "cp jenkins-war-*.war jenkins.war"
                 stash includes: 'jenkins.war', name: 'jenkinsWar'
             }
@@ -128,7 +129,7 @@ def call(Map params = [:]) {
                 if (infra.isRunningOnJenkinsInfra()) {
                     def settingsXml = "${pwd tmp: true}/settings-azure.xml"
                     writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
-                    commandBase = commandBase + " -s $settingsXml"
+                    commandBase = commandBase + " -s ${settingsXml}"
                 }
 
                 if (testsToRun) {
