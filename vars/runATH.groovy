@@ -24,7 +24,6 @@ def call(Map params = [:]) {
 
     def skipExecution = false
 
-
     ensureInNode(env, env.RUN_ATH_SOURCES_AND_VALIDATION_NODE ?: "linux", {
         List<String> env = [
                 "JAVA_HOME=${tool 'jdk8'}",
@@ -145,7 +144,7 @@ def call(Map params = [:]) {
                 if (supportedBrowsers.contains(browser)) {
 
                     def currentBrowser = browser
-                    def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e LOCAL_SNAPSHOTS=${localSnapshots} -e SHARED_DOCKER_SERVICE=true -u ath-user"
+                    def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e LOCAL_SNAPSHOTS=${localSnapshots} -e SHARED_DOCKER_SERVICE=true -e EXERCISEDPLUGINREPORTER=textfile -u ath-user"
                     def commandBase = "./run.sh ${currentBrowser} ./jenkins.war -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
                     if (infra.isRunningOnJenkinsInfra()) {
                         def settingsXml = "${pwd tmp: true}/settings-azure.xml"
