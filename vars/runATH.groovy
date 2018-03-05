@@ -1,7 +1,7 @@
 #!/usr/bin/env groovy
 
 /**
- * Simple wrapper for running the ATH
+ * Wrapper for running the ATH
  */
 
 def call(Map params = [:]) {
@@ -24,7 +24,8 @@ def call(Map params = [:]) {
 
     def skipExecution = false
 
-    ensureInNode(env, "linux", {
+
+    ensureInNode(env, env.RUN_ATH_SOURCES_AND_VALIDATION_NODE ?: "linux", {
         List<String> env = [
                 "JAVA_HOME=${tool 'jdk8'}",
                 'PATH+JAVA=${JAVA_HOME}/bin',
@@ -116,7 +117,7 @@ def call(Map params = [:]) {
         }
     })
 
-    ensureInNode(env, 'docker && highmem', {
+    ensureInNode(env, env.RUN_ATH_DOCKER_NODE ?: 'docker && highmem', {
         if (skipExecution) {
             return
         }
