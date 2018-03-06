@@ -24,7 +24,7 @@ def call(Map params = [:]) {
 
     def skipExecution = false
 
-    def localPluginsStashName = env.RUN_ATH_LOCAL_PLUGINS_STASH_NAME
+    def localPluginsStashName = env.RUN_ATH_LOCAL_PLUGINS_STASH_NAME ?: "localPlugins"
 
     ensureInNode(env, env.RUN_ATH_SOURCES_AND_VALIDATION_NODE ?: "linux", {
         List<String> env = [
@@ -146,7 +146,7 @@ def call(Map params = [:]) {
                 if (supportedBrowsers.contains(browser)) {
 
                     def currentBrowser = browser
-                    def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e LOCAL_SNAPSHOTS=${localSnapshots} -e SHARED_DOCKER_SERVICE=true -e EXERCISEDPLUGINREPORTER=textfile -e PLUGIN_DIR=localPlugins -u ath-user"
+                    def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e SHARED_DOCKER_SERVICE=true -e EXERCISEDPLUGINREPORTER=textfile -e PLUGINS_DIR=localPlugins -u ath-user"
                     def commandBase = "./run.sh ${currentBrowser} ./jenkins.war -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
                     if (infra.isRunningOnJenkinsInfra()) {
                         def settingsXml = "${pwd tmp: true}/settings-azure.xml"
@@ -160,7 +160,7 @@ def call(Map params = [:]) {
                                 unstash name: "athSources"
                                 unstash name: "jenkinsWar"
                                 dir("localPlugins") {
-                                    if (localPluginsStashName) {
+                                    if (localSnapshots && localPluginsStashName) {
                                         unstash name: localPluginsStashName
                                     }
                                 }
@@ -181,7 +181,7 @@ def call(Map params = [:]) {
                                 unstash name: "athSources"
                                 unstash name: "jenkinsWar"
                                 dir("localPlugins") {
-                                    if (localPluginsStashName) {
+                                    if (localSnapshots && localPluginsStashName) {
                                         unstash name: localPluginsStashName
                                     }
                                 }
