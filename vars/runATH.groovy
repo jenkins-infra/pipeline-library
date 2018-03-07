@@ -135,7 +135,8 @@ def call(Map params = [:]) {
             def browsers = metadata.browsers ?: ["firefox"]
             def failFast = metadata.failFast ?: false
             def rerunCount = metadata.rerunFailingTestsCount ?: 0
-            def localSnapshots = metadata.useLocalSnapshots ?: true
+            // Elvis fails in case useLocalSnapshots == false in metadata File
+            def localSnapshots = metadata.useLocalSnapshots != null ? metadata.useLocalSnapshots : true
 
             if (testsToRun == null && categoriesToRun == null) {
                 categoriesToRun = defaultCategory
@@ -146,7 +147,7 @@ def call(Map params = [:]) {
                 if (supportedBrowsers.contains(browser)) {
 
                     def currentBrowser = browser
-                    def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e SHARED_DOCKER_SERVICE=true -e EXERCISEDPLUGINREPORTER=textfile -e PLUGINS_DIR=localPlugins -u ath-user"
+                    def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e SHARED_DOCKER_SERVICE=true -e EXERCISEDPLUGINREPORTER=textfile -u ath-user"
                     def commandBase = "./run.sh ${currentBrowser} ./jenkins.war -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
                     if (infra.isRunningOnJenkinsInfra()) {
                         def settingsXml = "${pwd tmp: true}/settings-azure.xml"
@@ -157,41 +158,16 @@ def call(Map params = [:]) {
                     if (testsToRun) {
                         testingbranches["ATH individual tests-${currentBrowser}"] = {
                             dir("test${currentBrowser}") {
-                                unstash name: "athSources"
-                                unstash name: "jenkinsWar"
-                                dir("localPlugins") {
-                                    if (localSnapshots && localPluginsStashName) {
-                                        unstash name: localPluginsStashName
-                                    }
-                                }
-                                def command = commandBase + " -Dtest=${testsToRun}"
-
-                                athContainerImage.inside(containerArgs) {
-                                    realtimeJUnit(testResults: 'target/surefire-reports/TEST-*.xml', testDataPublishers: [[$class: 'AttachmentPublisher']]) {
-                                        sh 'eval "$(./vnc.sh)" && ' + command
-                                    }
-
-                                }
+                                def discriminator = "-Dtest=${testsToRun}"
+                                test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage)
                             }
                         }
                     }
                     if (categoriesToRun) {
                         testingbranches["ATH categories-${currentBrowser}"] = {
                             dir("categories${currentBrowser}") {
-                                unstash name: "athSources"
-                                unstash name: "jenkinsWar"
-                                dir("localPlugins") {
-                                    if (localSnapshots && localPluginsStashName) {
-                                        unstash name: localPluginsStashName
-                                    }
-                                }
-                                def command = commandBase + " -Dgroups=${categoriesToRun}"
-                                athContainerImage.inside(containerArgs) {
-                                    realtimeJUnit(testResults: 'target/surefire-reports/TEST-*.xml', testDataPublishers: [[$class: 'AttachmentPublisher']]) {
-                                        sh 'eval "$(./vnc.sh)" && ' + command
-                                    }
-
-                                }
+                                def discriminator = "-Dgroups=${categoriesToRun}"
+                                test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage)
                             }
                         }
                     }
@@ -204,6 +180,39 @@ def call(Map params = [:]) {
         }
 
     })
+}
+
+private void test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage) {
+    unstashResources(localSnapshots, localPluginsStashName)
+    athContainerImage.inside(containerArgs) {
+        realtimeJUnit(testResults: 'target/surefire-reports/TEST-*.xml', testDataPublishers: [[$class: 'AttachmentPublisher']]) {
+            sh 'eval "$(./vnc.sh)" && ' + prepareCommand(commandBase, discriminator, localSnapshots, localPluginsStashName)
+        }
+    }
+}
+
+private String prepareCommand(commandBase, discriminator, localSnapshots, localPluginsStashName ) {
+    def command = commandBase + " ${discriminator}"
+    if (localSnapshots && localPluginsStashName) {
+        command = "LOCAL_JARS=${getLocalPluginsList()} " + command
+    }
+    command
+}
+
+private void unstashResources(localSnapshots, localPluginsStashName) {
+    unstash name: "athSources"
+    unstash name: "jenkinsWar"
+    dir("localPlugins") {
+        if (localSnapshots && localPluginsStashName) {
+            unstash name: localPluginsStashName
+        }
+    }
+}
+
+private String getLocalPluginsList() {
+    dir("localPlugins") {
+       return sh(script : "ls -p -d -1 ${pwd()}/*.* | tr '\n' ':'| sed 's/.\$//'", returnStdout: true).trim()
+    }
 }
 
 private void ensureInNode(env, nodeLabel, body) {
