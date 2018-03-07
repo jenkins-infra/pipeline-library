@@ -5,10 +5,10 @@
  */
 
 def call(Map params = [:]) {
-    def String athUrl = params.get('athUrl', 'https://github.com/jenkinsci/acceptance-test-harness.git')
-    def String athRevision = params.get('athRevision', 'master')
-    def String metadataFile = params.get('metadataFile', 'essentials.yml')
-    def String jenkins = params.get('jenkins', 'latest')
+    def athUrl = params.get('athUrl', 'https://github.com/jenkinsci/acceptance-test-harness.git')
+    def athRevision = params.get('athRevision', 'master')
+    def metadataFile = params.get('metadataFile', 'essentials.yml')
+    def jenkins = params.get('jenkins', 'latest')
 
     def mirror = "http://mirrors.jenkins.io/"
     def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
