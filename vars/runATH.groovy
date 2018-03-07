@@ -100,8 +100,8 @@ def call(Map params = [:]) {
                 def downloadCommand = "mvn dependency:copy -Dartifact=org.jenkins-ci.main:jenkins-war:${jenkins}:war -DoutputDirectory=. -Dmdep.stripVersion=true"
                 dir("deps") {
                     if (infra.isRunningOnJenkinsInfra()) {
-                        def settingsXml = "${pwd tmp: true}/settings-azure.xml"
-                        writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
+                        def settingsXml = "${pwd tmp: true}/repo-settings.xml"
+                        writeFile file: settingsXml, text: libraryResource('repo-settings.xml')
                         downloadCommand = downloadCommand + " -s ${settingsXml}"
                     }
                     withEnv(env) {
@@ -149,11 +149,6 @@ def call(Map params = [:]) {
                     def currentBrowser = browser
                     def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e SHARED_DOCKER_SERVICE=true -e EXERCISEDPLUGINREPORTER=textfile -u ath-user"
                     def commandBase = "./run.sh ${currentBrowser} ./jenkins.war -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
-                    if (infra.isRunningOnJenkinsInfra()) {
-                        def settingsXml = "${pwd tmp: true}/settings-azure.xml"
-                        writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
-                        commandBase = commandBase + " -s ${settingsXml}"
-                    }
 
                     if (testsToRun) {
                         testingbranches["ATH individual tests-${currentBrowser}"] = {
