@@ -42,7 +42,7 @@ def call(Map params = [:]) {
 
         stage("Getting ATH sources and Jenkins war") {
             // Start validation
-            metadata = readYaml(file: metadataFile).ath
+            metadata = readYaml(file: metadataFile)?.ath
             if (metadata == null) {
                 error "The provided metadata file seems invalid as it does not contain a valid ath section"
             }
@@ -210,6 +210,10 @@ private String getLocalPluginsList() {
     }
 }
 
+/*
+ Make sure the code block is run in a node with the specified nodeLabel as label or name, if already running in that
+ it simply executes the code block, if not allocates the desired node and runs the code inside it
+  */
 private void ensureInNode(env, nodeLabel, body) {
     if (env.NODE_NAME != nodeLabel && (env.NODE_LABELS == null || !env.NODE_LABELS.contains(nodeLabel))) {
         node(nodeLabel) {
