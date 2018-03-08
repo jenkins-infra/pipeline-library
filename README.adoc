@@ -72,7 +72,8 @@ Runs the link:https://github.com/jenkinsci/acceptance-test-harness[Acceptance Te
 
 The configuration is divided into two parts, one related to the step itself and another related to how the ATH is run.
 To configure the step just use the step's parameters described below, to configure the ATH runs a metadata file (in YAML format)
-is used. Further sections describe the metadata file in detail. *Note that if the metadata file does not exist this step will do nothing at all*
+is used. Further sections describe the metadata file in detail. *Note that if the metadata file does not exist this step
+will do nothing at all.*
 
 The list of step's params and the related default values are:
 
@@ -182,3 +183,5 @@ In case you want to use the defaults for all properties you can use
 ----
 ath: "default"
 ----
+
+*Please note that a blank metadata file will result in an error*
