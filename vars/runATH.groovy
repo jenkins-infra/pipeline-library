@@ -12,7 +12,7 @@ def call(Map params = [:]) {
 
     def mirror = "http://mirrors.jenkins.io/"
     def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
-    def jenkinsURl = jenkins
+    def jenkinsURL = jenkins
     def metadata
     def athContainerImage
     def isLocalATH
@@ -66,18 +66,18 @@ def call(Map params = [:]) {
                 sh "git ls-remote --exit-code -h ${athUrl}"
             }
             if (jenkins == "latest") {
-                jenkinsURl = mirror + "war/latest/jenkins.war"
+                jenkinsURL = mirror + "war/latest/jenkins.war"
             } else if (jenkins == "latest-rc") {
-                jenkinsURl = mirror + "/war-rc/latest/jenkins.war"
+                jenkinsURL = mirror + "/war-rc/latest/jenkins.war"
             } else if (jenkins == "lts") {
-                jenkinsURl = mirror + "war-stable/latest/jenkins.war"
+                jenkinsURL = mirror + "war-stable/latest/jenkins.war"
             } else if (jenkins == "lts-rc") {
-                jenkinsURl = mirror + "war-stable-rc/latest/jenkins.war"
+                jenkinsURL = mirror + "war-stable-rc/latest/jenkins.war"
             }
 
             if (!isVersionNumber) {
                 echo 'Checking whether Jenkins WAR is available…'
-                sh "curl -ILf ${jenkinsURl}"
+                sh "curl -ILf ${jenkinsURL}"
             }
             // Validation ended
 
@@ -111,7 +111,7 @@ def call(Map params = [:]) {
                     stash includes: 'jenkins.war', name: 'jenkinsWar'
                 }
             } else {
-                sh("curl -o jenkins.war -L ${jenkinsURl}")
+                sh("curl -o jenkins.war -L ${jenkinsURL}")
                 stash includes: '*.war', name: 'jenkinsWar'
             }
 
