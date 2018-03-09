@@ -68,7 +68,7 @@ def call(Map params = [:]) {
                                     mavenOptions += "-s $settingsXml"
                                 }
                                 if (jenkinsVersion) {
-                                    mavenOptions += "-Djenkins.version=${jenkinsVersion}"
+                                    mavenOptions += "-Djenkins.version=${jenkinsVersion} -Dfindbugs.failOnError=false"
                                 }
                                 if (params?.findbugs?.run || params?.findbugs?.archive) {
                                     mavenOptions += "-Dfindbugs.failOnError=false"
