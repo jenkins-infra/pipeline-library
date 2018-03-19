@@ -142,7 +142,9 @@ def call(Map params = [:]) {
                             if (failFast && currentBuild.result == 'UNSTABLE') {
                                 error 'There were test failures; halting early'
                             }
-                            archiveArtifacts artifacts: artifacts, fingerprint: true
+                            if (!jenkinsVersion) {
+                                archiveArtifacts artifacts: artifacts, fingerprint: true
+                            }
                         }
                     }
                     }
