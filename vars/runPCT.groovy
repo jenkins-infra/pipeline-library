@@ -59,7 +59,7 @@ def call(Map params = [:]) {
             // Validation ended
 
             // Jenkins war
-            stashJenkinsWar(jenkins)
+            infra.stashJenkinsWar(jenkins)
             // PCT
             // Only validate PCT if not running a remote docker image
             if (!isPublishedImage) {
@@ -125,64 +125,6 @@ def call(Map params = [:]) {
         }
 
     })
-}
-
-private void stashJenkinsWar(jenkins, stashName = "jenkinsWar") {
-    def isVersionNumber = (jenkins =~ /^\d+([.]\d+)*$/).matches()
-    def isLocalJenkins = jenkins.startsWith("file://")
-    def mirror = "http://mirrors.jenkins.io/"
-
-    def jenkinsURL
-
-    if (jenkins == "latest") {
-        jenkinsURL = mirror + "war/latest/jenkins.war"
-    } else if (jenkins == "latest-rc") {
-        jenkinsURL = mirror + "/war-rc/latest/jenkins.war"
-    } else if (jenkins == "lts") {
-        jenkinsURL = mirror + "war-stable/latest/jenkins.war"
-    } else if (jenkins == "lts-rc") {
-        jenkinsURL = mirror + "war-stable-rc/latest/jenkins.war"
-    }
-
-    if (isLocalJenkins) {
-        if (!fileExists(jenkins - "file://")) {
-            error "Specified Jenkins file does not exists"
-        }
-    }
-    if (!isVersionNumber && !isLocalJenkins) {
-        echo 'Checking whether Jenkins WAR is available…'
-        sh "curl -ILf ${jenkinsURL}"
-    }
-
-    List<String> toolsEnv = [
-            "JAVA_HOME=${tool 'jdk8'}",
-            'PATH+JAVA=${JAVA_HOME}/bin',
-            "PATH+MAVEN=${tool 'mvn'}/bin"
-
-    ]
-    if (isVersionNumber) {
-        def downloadCommand = "mvn dependency:copy -Dartifact=org.jenkins-ci.main:jenkins-war:${jenkins}:war -DoutputDirectory=. -Dmdep.stripVersion=true"
-        dir("deps") {
-            if (infra.isRunningOnJenkinsInfra()) {
-                def settingsXml = "${pwd tmp: true}/repo-settings.xml"
-                writeFile file: settingsXml, text: libraryResource('repo-settings.xml')
-                downloadCommand = downloadCommand + " -s ${settingsXml}"
-            }
-            withEnv(toolsEnv) {
-                sh downloadCommand
-            }
-            sh "cp jenkins-war.war jenkins.war"
-            stash includes: 'jenkins.war', name: stashName
-        }
-    } else if (isLocalJenkins) {
-        dir(pwd(tmp: true)) {
-            sh "mv ${jenkins - 'file://'} jenkins.war"
-            stash includes: "*.war", name: "jenkinsWar"
-        }
-    } else {
-        sh("curl -o jenkins.war -L ${jenkinsURL}")
-        stash includes: '*.war', name: 'jenkinsWar'
-    }
 }
 
 /*
