@@ -26,7 +26,7 @@ def call(Map params = [:]) {
 
     def localPluginsStashName = env.RUN_ATH_LOCAL_PLUGINS_STASH_NAME ?: "localPlugins"
 
-    ensureInNode(env, env.RUN_ATH_SOURCES_AND_VALIDATION_NODE ?: "linux", {
+    ensureInNode(env, env.RUN_ATH_SOURCES_AND_VALIDATION_NODE ?: "docker && highmem", {
         List<String> env = [
                 "JAVA_HOME=${tool 'jdk8'}",
                 'PATH+JAVA=${JAVA_HOME}/bin',
