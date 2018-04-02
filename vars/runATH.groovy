@@ -26,7 +26,7 @@ def call(Map params = [:]) {
 
     def localPluginsStashName = env.RUN_ATH_LOCAL_PLUGINS_STASH_NAME ?: "localPlugins"
 
-    ensureInNode(env, env.RUN_ATH_SOURCES_AND_VALIDATION_NODE ?: "docker && highmem", {
+    ensureInNode(env, env.RUN_ATH_SOURCES_AND_VALIDATION_NODE ?: ['docker', 'highmem'], {
         List<String> env = [
                 "JAVA_HOME=${tool 'jdk8'}",
                 'PATH+JAVA=${JAVA_HOME}/bin',
@@ -118,7 +118,7 @@ def call(Map params = [:]) {
         }
     })
 
-    ensureInNode(env, env.RUN_ATH_DOCKER_NODE ?: 'docker && highmem', {
+    ensureInNode(env, env.RUN_ATH_DOCKER_NODE ?: ['docker','highmem'], {
         if (skipExecution) {
             return
         }
@@ -211,15 +211,27 @@ private String getLocalPluginsList() {
 }
 
 /*
- Make sure the code block is run in a node with the specified nodeLabel as label or name, if already running in that
+ Make sure the code block is run in a node with the all the specified nodeLabels as labels, if already running in that
  it simply executes the code block, if not allocates the desired node and runs the code inside it
   */
-private void ensureInNode(env, nodeLabel, body) {
-    if (env.NODE_NAME != nodeLabel && (env.NODE_LABELS == null || !env.NODE_LABELS.contains(nodeLabel))) {
-        node(nodeLabel) {
+private void ensureInNode(env, nodeLabels, body) {
+    def inCorrectNode = true
+    if (env.NODE_LABELS == null) {
+        inCorrectNode = false
+    } else {
+        for (label in nodeLabels) {
+            if (!env.NODE_LABELS.contains(label)) {
+                inCorrectNode = false
+                break
+            }
+        }
+    }
+
+    if (inCorrectNode) {
+        body()
+    } else {
+        node(nodeLabels.join("&&")) {
             body()
         }
-    } else {
-        body()
     }
 }
