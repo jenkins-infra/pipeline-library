@@ -26,7 +26,7 @@ def call(Map params = [:]) {
 
     def localPluginsStashName = env.RUN_ATH_LOCAL_PLUGINS_STASH_NAME ?: "localPlugins"
 
-    ensureInNode(env, env.RUN_ATH_SOURCES_AND_VALIDATION_NODE ?: ['docker', 'highmem'], {
+    ensureInNode(env, env.RUN_ATH_SOURCES_AND_VALIDATION_NODE ?: "docker,highmem", {
         List<String> env = [
                 "JAVA_HOME=${tool 'jdk8'}",
                 'PATH+JAVA=${JAVA_HOME}/bin',
@@ -118,7 +118,7 @@ def call(Map params = [:]) {
         }
     })
 
-    ensureInNode(env, env.RUN_ATH_DOCKER_NODE ?: ['docker','highmem'], {
+    ensureInNode(env, env.RUN_ATH_DOCKER_NODE ?: "docker,highmem", {
         if (skipExecution) {
             return
         }
@@ -216,10 +216,11 @@ private String getLocalPluginsList() {
   */
 private void ensureInNode(env, nodeLabels, body) {
     def inCorrectNode = true
+    def splitted = nodeLabels.split(",")
     if (env.NODE_LABELS == null) {
         inCorrectNode = false
     } else {
-        for (label in nodeLabels) {
+        for (label in splitted) {
             if (!env.NODE_LABELS.contains(label)) {
                 inCorrectNode = false
                 break
@@ -230,7 +231,7 @@ private void ensureInNode(env, nodeLabels, body) {
     if (inCorrectNode) {
         body()
     } else {
-        node(nodeLabels.join("&&")) {
+        node(splitted.join("&&")) {
             body()
         }
     }
