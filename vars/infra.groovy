@@ -29,8 +29,28 @@ Object checkout(String repo = null) {
     }
 }
 
-Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null) {
+/**
+ * Runs Maven for the specified options in the current workspace.
+ * Azure settings will be added by default if running on Jenkins Infra.
+ * @param jdk JDK to be used
+ * @param options Options to be passed to the Maven command
+ * @return
+ */
+Object runMaven(List<String> options, String jdk = 8) {
     String jdkTool = "jdk${jdk}"
+    List<String> mvnOptions = [ "mvn" ]
+    if (jdk.toInteger() > 7 && infra.isRunningOnJenkinsInfra()) {
+        /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
+        def settingsXml = "${pwd tmp: true}/settings-azure.xml"
+        writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
+        mavenOptions += "-s $settingsXml"
+    }
+    mvnOptions.addAll(options)
+    command = "mvn ${mvnOptions.join(' ')}"
+    infra.runWithMaven(command, jdk, env)
+}
+
+Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null) {
     List<String> env = [
         "PATH+MAVEN=${tool 'mvn'}/bin"
     ]

@@ -47,12 +47,6 @@ def call(Map params = [:]) {
                                         '--update-snapshots',
                                         '-Dmaven.test.failure.ignore',
                                 ]
-                                if (jdk.toInteger() > 7 && infra.isRunningOnJenkinsInfra()) {
-                                    /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
-                                    def settingsXml = "${pwd tmp: true}/settings-azure.xml"
-                                    writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
-                                    mavenOptions += "-s $settingsXml"
-                                }
                                 if (jenkinsVersion) {
                                     mavenOptions += "-Djenkins.version=${jenkinsVersion} -Daccess-modifier-checker.failOnError=false"
                                 }
@@ -69,8 +63,7 @@ def call(Map params = [:]) {
                                 if (runCheckstyle) {
                                     mavenOptions += "checkstyle:checkstyle"
                                 }
-                                command = "mvn ${mavenOptions.join(' ')}"
-                                infra.runWithMaven(command, jdk)
+                                infra.runMaven(mavenOptions, jdk)
                             } else {
                                 List<String> gradleOptions = [
                                         '--no-daemon',
