@@ -12,7 +12,6 @@ def call(Map params = [:]) {
 
     def mirror = "http://mirrors.jenkins.io/"
     def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
-    def jenkinsURL = jenkins
     def metadata
     def athContainerImage
     def isLocalATH
@@ -73,25 +72,6 @@ def call(Map params = [:]) {
             dir(athSourcesFolder) {
                 // We may need to run things in parallel later, so avoid several checkouts
                 stash name: "athSources"
-            }
-
-            // Jenkins war
-            if (isVersionNumber) {
-                List<String> downloadCommand = [
-                    "dependency:copy",
-                    "-Dartifact=org.jenkins-ci.main:jenkins-war:${jenkins}:war",
-                    "-DoutputDirectory=.",
-                    "-Dmdep.stripVersion=true"
-                ]
-
-                dir("deps") {
-                    infra.runMaven(downloadCommand)
-                    sh "cp jenkins-war.war jenkins.war"
-                    stash includes: 'jenkins.war', name: 'jenkinsWar'
-                }
-            } else {
-                sh("curl -o jenkins.war -L ${jenkinsURL}")
-                stash includes: '*.war', name: 'jenkinsWar'
             }
 
         }
