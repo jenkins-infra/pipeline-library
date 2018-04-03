@@ -26,8 +26,7 @@ def call(Map params = [:]) {
 
     def localPluginsStashName = env.RUN_ATH_LOCAL_PLUGINS_STASH_NAME ?: "localPlugins"
 
-    ensureInNode(env, env.RUN_ATH_SOURCES_AND_VALIDATION_NODE ?: "docker,highmem", {
-
+    infra.ensureInNode(env, env.RUN_ATH_SOURCES_AND_VALIDATION_NODE ?: "docker,highmem", {
         if (!fileExists(metadataFile)) {
             echo "Skipping ATH execution because the metadata file does not exist. Current value is ${metadataFile}."
             skipExecution = true
@@ -59,20 +58,7 @@ def call(Map params = [:]) {
                 echo 'Checking connectivity to ATH sources…'
                 sh "git ls-remote --exit-code -h ${athUrl}"
             }
-            if (jenkins == "latest") {
-                jenkinsURL = mirror + "war/latest/jenkins.war"
-            } else if (jenkins == "latest-rc") {
-                jenkinsURL = mirror + "/war-rc/latest/jenkins.war"
-            } else if (jenkins == "lts") {
-                jenkinsURL = mirror + "war-stable/latest/jenkins.war"
-            } else if (jenkins == "lts-rc") {
-                jenkinsURL = mirror + "war-stable-rc/latest/jenkins.war"
-            }
-
-            if (!isVersionNumber) {
-                echo 'Checking whether Jenkins WAR is available…'
-                sh "curl -ILf ${jenkinsURL}"
-            }
+            infra.stashJenkinsWar(jenkins)
             // Validation ended
 
             // ATH
@@ -111,7 +97,7 @@ def call(Map params = [:]) {
         }
     })
 
-    ensureInNode(env, env.RUN_ATH_DOCKER_NODE ?: "docker,highmem", {
+    infra.ensureInNode(env, env.RUN_ATH_DOCKER_NODE ?: "docker,highmem", {
         if (skipExecution) {
             return
         }
@@ -200,32 +186,5 @@ private void unstashResources(localSnapshots, localPluginsStashName) {
 private String getLocalPluginsList() {
     dir("localPlugins") {
        return sh(script : "ls -p -d -1 ${pwd()}/*.* | tr '\n' ':'| sed 's/.\$//'", returnStdout: true).trim()
-    }
-}
-
-/*
- Make sure the code block is run in a node with the all the specified nodeLabels as labels, if already running in that
- it simply executes the code block, if not allocates the desired node and runs the code inside it
-  */
-private void ensureInNode(env, nodeLabels, body) {
-    def inCorrectNode = true
-    def splitted = nodeLabels.split(",")
-    if (env.NODE_LABELS == null) {
-        inCorrectNode = false
-    } else {
-        for (label in splitted) {
-            if (!env.NODE_LABELS.contains(label)) {
-                inCorrectNode = false
-                break
-            }
-        }
-    }
-
-    if (inCorrectNode) {
-        body()
-    } else {
-        node(splitted.join("&&")) {
-            body()
-        }
     }
 }
