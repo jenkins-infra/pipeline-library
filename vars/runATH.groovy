@@ -27,12 +27,6 @@ def call(Map params = [:]) {
     def localPluginsStashName = env.RUN_ATH_LOCAL_PLUGINS_STASH_NAME ?: "localPlugins"
 
     ensureInNode(env, env.RUN_ATH_SOURCES_AND_VALIDATION_NODE ?: "docker,highmem", {
-        List<String> env = [
-                "JAVA_HOME=${tool 'jdk8'}",
-                'PATH+JAVA=${JAVA_HOME}/bin',
-                "PATH+MAVEN=${tool 'mvn'}/bin"
-
-        ]
 
         if (!fileExists(metadataFile)) {
             echo "Skipping ATH execution because the metadata file does not exist. Current value is ${metadataFile}."
@@ -104,9 +98,7 @@ def call(Map params = [:]) {
                         writeFile file: settingsXml, text: libraryResource('repo-settings.xml')
                         downloadCommand = downloadCommand + " -s ${settingsXml}"
                     }
-                    withEnv(env) {
-                        sh downloadCommand
-                    }
+                    infra.runWithMaven(downloadCommand)
                     sh "cp jenkins-war.war jenkins.war"
                     stash includes: 'jenkins.war', name: 'jenkinsWar'
                 }

@@ -34,25 +34,11 @@ def call(Map params = [:]) {
                         boolean isMaven
 
                         stage("Checkout (${stageIdentifier})") {
-                            if (env.BRANCH_NAME) {
-                                checkout scm
-                            }
-                            else if ((env.BRANCH_NAME == null) && (repo)) {
-                                git repo
-                            }
-                            else {
-                                error 'buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided'
-                            }
-
+                            infra.checkout(repo)
                             isMaven = fileExists('pom.xml')
                         }
 
                         stage("Build (${stageIdentifier})") {
-                            String jdkTool = "jdk${jdk}"
-                            List<String> env = [
-                                    "JAVA_HOME=${tool jdkTool}",
-                                    'PATH+JAVA=${JAVA_HOME}/bin',
-                            ]
                             String command
                             if (isMaven) {
                                 List<String> mavenOptions = [
@@ -84,7 +70,7 @@ def call(Map params = [:]) {
                                     mavenOptions += "checkstyle:checkstyle"
                                 }
                                 command = "mvn ${mavenOptions.join(' ')}"
-                                env << "PATH+MAVEN=${tool 'mvn'}/bin"
+                                infra.runWithMaven(command, jdk)
                             } else {
                                 List<String> gradleOptions = [
                                         '--no-daemon',
@@ -95,15 +81,7 @@ def call(Map params = [:]) {
                                 if (isUnix()) {
                                     command = "./" + command
                                 }
-                            }
-
-                            withEnv(env) {
-                                if (isUnix()) { // TODO JENKINS-44231 candidate for simplification
-                                    sh command
-                                }
-                                else {
-                                    bat command
-                                }
+                                infra.runWithJava(command, jdk)
                             }
                         }
 
