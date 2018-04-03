@@ -183,3 +183,30 @@ void stashJenkinsWar(jenkins, stashName = "jenkinsWar") {
         stash includes: '*.war', name: 'jenkinsWar'
     }
 }
+
+/*
+ Make sure the code block is run in a node with the all the specified nodeLabels as labels, if already running in that
+ it simply executes the code block, if not allocates the desired node and runs the code inside it
+  */
+void ensureInNode(env, nodeLabels, body) {
+    def inCorrectNode = true
+    def splitted = nodeLabels.split(",")
+    if (env.NODE_LABELS == null) {
+        inCorrectNode = false
+    } else {
+        for (label in splitted) {
+            if (!env.NODE_LABELS.contains(label)) {
+                inCorrectNode = false
+                break
+            }
+        }
+    }
+
+    if (inCorrectNode) {
+        body()
+    } else {
+        node(splitted.join("&&")) {
+            body()
+        }
+    }
+}
