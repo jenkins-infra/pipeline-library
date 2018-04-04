@@ -34,10 +34,11 @@ Object checkout(String repo = null) {
  * Azure settings will be added by default if running on Jenkins Infra.
  * @param jdk JDK to be used
  * @param options Options to be passed to the Maven command
- * @return
+ * @param extraEnv Extra environment variables to be passed when invoking the command
+ * @return nothing
  */
 Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = null) {
-    List<String> mvnOptions = [ "mvn" ]
+    List<String> mvnOptions = [ ]
     if (jdk.toInteger() > 7 && isRunningOnJenkinsInfra()) {
         /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
         def settingsXml = "${pwd tmp: true}/settings-azure.xml"
@@ -49,6 +50,14 @@ Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = nu
     runWithMaven(command, jdk, extraEnv)
 }
 
+/**
+ * Runs the command with Java  and Maven environment.
+ * The command may be either Batch or Shell depending on the OS.
+ * @param command Command to be executed
+ * @param jdk JDK version to be used
+ * @param extraEnv Extra environment variables to be passed
+ * @return nothing
+ */
 Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null) {
     List<String> env = [
         "PATH+MAVEN=${tool 'mvn'}/bin"
@@ -60,6 +69,14 @@ Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null
     runWithJava(command, jdk, env)
 }
 
+/**
+ * Runs the command with Java environment.
+ * The command may be either Batch or Shell depending on the OS.
+ * @param command Command to be executed
+ * @param jdk JDK version to be used
+ * @param extraEnv Extra environment variables to be passed
+ * @return nothing
+ */
 Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null) {
     String jdkTool = "jdk${jdk}"
     List<String> env = [
