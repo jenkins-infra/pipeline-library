@@ -22,7 +22,7 @@ def call(Map params = [:]) {
 
     def localPluginsStashName = env.RUN_PCT_LOCAL_PLUGIN_SOURCES_STASH_NAME ?: "localPlugins"
 
-    ensureInNode(env, env.RUN_PCT_SOURCES_AND_VALIDATION_NODE ?: "linux", {
+    infra.ensureInNode(env, env.RUN_PCT_SOURCES_AND_VALIDATION_NODE ?: "linux", {
 
         if (!fileExists(metadataFile)) {
             echo "Skipping PCT execution because the metadata file does not exist. Current value is ${metadataFile}."
@@ -83,7 +83,7 @@ def call(Map params = [:]) {
         return
     }
 
-    ensureInNode(env, env.RUN_PCT_DOCKER_NODE ?: 'docker', {
+    infra.ensureInNode(env, env.RUN_PCT_DOCKER_NODE ?: 'docker', {
 
         stage("Running PCT") {
             if (!isPublishedImage) {
@@ -127,19 +127,5 @@ def call(Map params = [:]) {
         }
 
     })
-}
-
-/*
- Make sure the code block is run in a node with the specified nodeLabel as label or name, if already running in that
- it simply executes the code block, if not allocates the desired node and runs the code inside it
-  */
-private void ensureInNode(env, nodeLabel, body) {
-    if (env.NODE_NAME != nodeLabel && (env.NODE_LABELS == null || !env.NODE_LABELS.contains(nodeLabel))) {
-        node(nodeLabel) {
-            body()
-        }
-    } else {
-        body()
-    }
 }
 
