@@ -37,9 +37,8 @@ Object checkout(String repo = null) {
  * @return
  */
 Object runMaven(List<String> options, String jdk = 8) {
-    String jdkTool = "jdk${jdk}"
     List<String> mvnOptions = [ "mvn" ]
-    if (jdk.toInteger() > 7 && infra.isRunningOnJenkinsInfra()) {
+    if (jdk.toInteger() > 7 && isRunningOnJenkinsInfra()) {
         /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
         def settingsXml = "${pwd tmp: true}/settings-azure.xml"
         writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
@@ -47,7 +46,7 @@ Object runMaven(List<String> options, String jdk = 8) {
     }
     mvnOptions.addAll(options)
     command = "mvn ${mvnOptions.join(' ')}"
-    infra.runWithMaven(command, jdk, env)
+    runWithMaven(command, jdk, env)
 }
 
 Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null) {
@@ -58,7 +57,7 @@ Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null
         env.addAll(extraEnv)
     }
 
-    infra.runWithJava(command, jdk, env)
+    runWithJava(command, jdk, env)
 }
 
 Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null) {
