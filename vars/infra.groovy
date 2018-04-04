@@ -187,6 +187,8 @@ void stashJenkinsWar(jenkins, stashName = "jenkinsWar") {
 /*
  Make sure the code block is run in a node with the all the specified nodeLabels as labels, if already running in that
  it simply executes the code block, if not allocates the desired node and runs the code inside it
+
+ Node labels must be specified as String formed by a comma separated list of labels
   */
 void ensureInNode(env, nodeLabels, body) {
     def inCorrectNode = true
