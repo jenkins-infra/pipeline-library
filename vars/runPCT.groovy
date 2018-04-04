@@ -22,7 +22,7 @@ def call(Map params = [:]) {
 
     def localPluginsStashName = env.RUN_PCT_LOCAL_PLUGIN_SOURCES_STASH_NAME ?: "localPlugins"
 
-    infra.ensureInNode(env, env.RUN_PCT_SOURCES_AND_VALIDATION_NODE ?: "linux", {
+    infra.ensureInNode(env, env.RUN_PCT_SOURCES_AND_VALIDATION_NODE ?: "docker", {
 
         if (!fileExists(metadataFile)) {
             echo "Skipping PCT execution because the metadata file does not exist. Current value is ${metadataFile}."
@@ -98,7 +98,7 @@ def call(Map params = [:]) {
 
             def plugins = metadata.plugins
 
-            def localSnapshots = metadata.useLocalSnapshots != null ? metadata.useLocalSnapshots : true
+            def localSnapshots = metadata.useLocalSnapshots != null ? metadata.useLocalSnapshots : false
 
             def testingBranches = [:]
             def containerArgsBase = "-v /var/run/docker.sock:/var/run/docker.sock -v jenkins.war:/pct/jenkins.war:ro -u root"
