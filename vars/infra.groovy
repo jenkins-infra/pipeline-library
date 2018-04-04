@@ -36,7 +36,7 @@ Object checkout(String repo = null) {
  * @param options Options to be passed to the Maven command
  * @return
  */
-Object runMaven(List<String> options, String jdk = 8) {
+Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = null) {
     List<String> mvnOptions = [ "mvn" ]
     if (jdk.toInteger() > 7 && isRunningOnJenkinsInfra()) {
         /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
@@ -46,7 +46,7 @@ Object runMaven(List<String> options, String jdk = 8) {
     }
     mvnOptions.addAll(options)
     String command = "mvn ${mvnOptions.join(' ')}"
-    runWithMaven(command, jdk, env)
+    runWithMaven(command, jdk, extraEnv)
 }
 
 Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null) {
