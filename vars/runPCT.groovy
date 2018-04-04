@@ -97,6 +97,7 @@ def call(Map params = [:]) {
             }
 
             def plugins = metadata.plugins
+
             def localSnapshots = metadata.useLocalSnapshots != null ? metadata.useLocalSnapshots : true
 
             def testingBranches = [:]
@@ -105,16 +106,17 @@ def call(Map params = [:]) {
                 def plugin = plugins[i]
                 testingBranches["PCT-${plugin}"] = {
                     unstash "jenkinsWar"
-                    def containerArgs = containerArgsBase + " -e ARTIFACT_ID=${plugin}"
-                    pctContainerImage.inside(containerArgs) {
+                    pctContainerImage.inside(containerArgsBase) {
+                        def command = 'run-pct'
                         if (localSnapshots && localPluginsStashName) {
                             dir("localPlugins") {
                                 unstash name: localPluginsStashName
                             }
+                            sh "cp -R localPlugins/${plugin}/* /pct/plugin-src"
+                        } else {
+                            command = "ARTIFACT_ID=${plugin} run-pct"
                         }
-                        sh "mv localPlugins/${plugin} /pct/plugin-src"
-
-                        sh 'run-pct'
+                        sh command
                         sh "mkdir reports${plugin} && cp /pct/tmp/work/*/target/surefire-reports/*.xml reports${plugin}"
                         junit healthScaleFactor: 0.0, testResults: "reports${plugin}/*.xml"
                     }
