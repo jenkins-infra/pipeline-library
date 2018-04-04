@@ -45,7 +45,7 @@ Object runMaven(List<String> options, String jdk = 8) {
         mavenOptions += "-s $settingsXml"
     }
     mvnOptions.addAll(options)
-    command = "mvn ${mvnOptions.join(' ')}"
+    String command = "mvn ${mvnOptions.join(' ')}"
     runWithMaven(command, jdk, env)
 }
 
