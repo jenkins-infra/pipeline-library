@@ -32,6 +32,11 @@ The list of step's params and the related default values are:
 </p>
 
 <p>
+    The step installs java and maven in order to build jenkins. To specify custom tool names, use <tt>JDK_TOOL_NAME</tt> or
+    <tt>MVN_TOOL_NAME</tt> environment variable respectively.
+</p>
+
+<p>
     To make it usable in PR builders this step allows users to run the ATH using custom (typically previously built in the same Jenkinsfile) versions of any plugin, for that you need to set the metadata file's <i>useLocalSnapshots</i> property to true and stash the
      plugins you want to use in the ATH run. By default you need to stash them with the name<i>localPlugins</i> the step will unstash them when appropriate and use the ATH`s <i>LOCAL_JARS</i> property to run the ATH. You can stash any number of plugins, all of
      them will be used. You can also stash under other name by setting the env variable <i>RUN_ATH_LOCAL_PLUGINS_STASH_NAME</i>

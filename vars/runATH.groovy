@@ -25,12 +25,14 @@ def call(Map params = [:]) {
     def skipExecution = false
 
     def localPluginsStashName = env.RUN_ATH_LOCAL_PLUGINS_STASH_NAME ?: "localPlugins"
+    def jdkToolName = env.JDK_TOOL_NAME ?: 'jdk8'
+    def mvnToolName = env.MVN_TOOL_NAME ?: 'mvn'
 
     ensureInNode(env, env.RUN_ATH_SOURCES_AND_VALIDATION_NODE ?: "docker,highmem", {
         List<String> env = [
-                "JAVA_HOME=${tool 'jdk8'}",
+                "JAVA_HOME=${tool jdkToolName}",
                 'PATH+JAVA=${JAVA_HOME}/bin',
-                "PATH+MAVEN=${tool 'mvn'}/bin"
+                "PATH+MAVEN=${tool mvnToolName}/bin"
 
         ]
 
