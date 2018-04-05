@@ -43,7 +43,7 @@ Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = nu
         /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
         def settingsXml = "${pwd tmp: true}/settings-azure.xml"
         writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
-        mavenOptions += "-s $settingsXml"
+        mvnOptions += "-s $settingsXml"
     }
     mvnOptions.addAll(options)
     String command = "mvn ${mvnOptions.join(' ')}"
