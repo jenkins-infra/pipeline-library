@@ -64,6 +64,21 @@
     See method Javadoc in the repository for more information.
 </p>
 
+<strong>infra.stashJenkinsWar(jenkins, stashName)</strong>
+
+<p>
+    Gets a specification for a jenkins version or war and downloads and stashes it under the name provided
+</p>
+
+<strong>infra.ensureInNode(env, nodeLabels, body)</strong>
+
+<p>
+    Runs a code block in a node with the all the specified nodeLabels as labels, if already running in that node it simply
+    executes the code block, if not allocates the desired node and runs the code inside it. Node labels must be specified
+    as String formed by a comma separated list of labels
+    <b>Please note that this step is not able to manage complex labels and checks for them literally, so do not try to use labels like 'docker,(lowmemory&&linux)' as it will result in
+    the step launching a new node as is unable to find the label '(lowmemory&&linux)' in the list of labels for the current node</b>
+
 <!--
 vim: ft=html
 -->
