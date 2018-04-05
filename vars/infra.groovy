@@ -158,23 +158,15 @@ void stashJenkinsWar(String jenkins, String stashName = "jenkinsWar") {
         sh "curl -ILf ${jenkinsURL}"
     }
 
-    List<String> toolsEnv = [
-            "JAVA_HOME=${tool 'jdk8'}",
-            'PATH+JAVA=${JAVA_HOME}/bin',
-            "PATH+MAVEN=${tool 'mvn'}/bin"
-
-    ]
     if (isVersionNumber) {
-        def downloadCommand = "mvn dependency:copy -Dartifact=org.jenkins-ci.main:jenkins-war:${jenkins}:war -DoutputDirectory=. -Dmdep.stripVersion=true"
+        List<String> downloadCommand = [
+                "dependency:copy",
+                "-Dartifact=org.jenkins-ci.main:jenkins-war:${jenkins}:war",
+                "-DoutputDirectory=.",
+                "-Dmdep.stripVersion=true"
+        ]
         dir("deps") {
-            if (isRunningOnJenkinsInfra()) {
-                def settingsXml = "${pwd tmp: true}/repo-settings.xml"
-                writeFile file: settingsXml, text: libraryResource('repo-settings.xml')
-                downloadCommand = downloadCommand + " -s ${settingsXml}"
-            }
-            withEnv(toolsEnv) {
-                sh downloadCommand
-            }
+            runMaven(downloadCommand)
             sh "cp jenkins-war.war jenkins.war"
             stash includes: 'jenkins.war', name: stashName
         }
