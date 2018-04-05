@@ -27,12 +27,6 @@ def call(Map params = [:]) {
     def localPluginsStashName = env.RUN_ATH_LOCAL_PLUGINS_STASH_NAME ?: "localPlugins"
 
     ensureInNode(env, env.RUN_ATH_SOURCES_AND_VALIDATION_NODE ?: "docker,highmem", {
-        List<String> env = [
-                "JAVA_HOME=${tool 'jdk8'}",
-                'PATH+JAVA=${JAVA_HOME}/bin',
-                "PATH+MAVEN=${tool 'mvn'}/bin"
-
-        ]
 
         if (!fileExists(metadataFile)) {
             echo "Skipping ATH execution because the metadata file does not exist. Current value is ${metadataFile}."
@@ -97,16 +91,15 @@ def call(Map params = [:]) {
 
             // Jenkins war
             if (isVersionNumber) {
-                def downloadCommand = "mvn dependency:copy -Dartifact=org.jenkins-ci.main:jenkins-war:${jenkins}:war -DoutputDirectory=. -Dmdep.stripVersion=true"
+                List<String> downloadCommand = [
+                    "dependency:copy",
+                    "-Dartifact=org.jenkins-ci.main:jenkins-war:${jenkins}:war",
+                    "-DoutputDirectory=.",
+                    "-Dmdep.stripVersion=true"
+                ]
+
                 dir("deps") {
-                    if (infra.isRunningOnJenkinsInfra()) {
-                        def settingsXml = "${pwd tmp: true}/repo-settings.xml"
-                        writeFile file: settingsXml, text: libraryResource('repo-settings.xml')
-                        downloadCommand = downloadCommand + " -s ${settingsXml}"
-                    }
-                    withEnv(env) {
-                        sh downloadCommand
-                    }
+                    infra.runMaven(downloadCommand)
                     sh "cp jenkins-war.war jenkins.war"
                     stash includes: 'jenkins.war', name: 'jenkinsWar'
                 }

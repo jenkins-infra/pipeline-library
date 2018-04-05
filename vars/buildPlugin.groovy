@@ -34,25 +34,11 @@ def call(Map params = [:]) {
                         boolean isMaven
 
                         stage("Checkout (${stageIdentifier})") {
-                            if (env.BRANCH_NAME) {
-                                checkout scm
-                            }
-                            else if ((env.BRANCH_NAME == null) && (repo)) {
-                                git repo
-                            }
-                            else {
-                                error 'buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided'
-                            }
-
+                            infra.checkout(repo)
                             isMaven = fileExists('pom.xml')
                         }
 
                         stage("Build (${stageIdentifier})") {
-                            String jdkTool = "jdk${jdk}"
-                            List<String> env = [
-                                    "JAVA_HOME=${tool jdkTool}",
-                                    'PATH+JAVA=${JAVA_HOME}/bin',
-                            ]
                             String command
                             if (isMaven) {
                                 List<String> mavenOptions = [
@@ -61,12 +47,6 @@ def call(Map params = [:]) {
                                         '--update-snapshots',
                                         '-Dmaven.test.failure.ignore',
                                 ]
-                                if (jdk.toInteger() > 7 && infra.isRunningOnJenkinsInfra()) {
-                                    /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
-                                    def settingsXml = "${pwd tmp: true}/settings-azure.xml"
-                                    writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
-                                    mavenOptions += "-s $settingsXml"
-                                }
                                 if (jenkinsVersion) {
                                     mavenOptions += "-Djenkins.version=${jenkinsVersion} -Daccess-modifier-checker.failOnError=false"
                                 }
@@ -83,8 +63,7 @@ def call(Map params = [:]) {
                                 if (runCheckstyle) {
                                     mavenOptions += "checkstyle:checkstyle"
                                 }
-                                command = "mvn ${mavenOptions.join(' ')}"
-                                env << "PATH+MAVEN=${tool 'mvn'}/bin"
+                                infra.runMaven(mavenOptions, jdk)
                             } else {
                                 List<String> gradleOptions = [
                                         '--no-daemon',
@@ -95,15 +74,7 @@ def call(Map params = [:]) {
                                 if (isUnix()) {
                                     command = "./" + command
                                 }
-                            }
-
-                            withEnv(env) {
-                                if (isUnix()) { // TODO JENKINS-44231 candidate for simplification
-                                    sh command
-                                }
-                                else {
-                                    bat command
-                                }
+                                infra.runWithJava(command, jdk)
                             }
                         }
 
