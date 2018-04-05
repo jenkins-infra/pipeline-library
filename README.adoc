@@ -307,3 +307,7 @@ pct: "default"
 ----
 
 *Please note that a blank metadata file will result in an error*
+
+=== Design documents for runATH and runPCT
+
+The design and some more details about the runATH and runPCT steps can be found link:https://wiki.jenkins.io/display/JENKINS/runATH+and+runPCT+step+design[here]
