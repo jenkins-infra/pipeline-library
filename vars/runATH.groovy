@@ -214,7 +214,7 @@ private String getLocalPluginsList() {
  Make sure the code block is run in a node with the all the specified nodeLabels as labels, if already running in that
  it simply executes the code block, if not allocates the desired node and runs the code inside it
   */
-private void ensureInNode(env, nodeLabels, body) {
+private void ensureInNode(env, String nodeLabels, Closure body) {
     def inCorrectNode = true
     def splitted = nodeLabels.split(",")
     if (env.NODE_LABELS == null) {
