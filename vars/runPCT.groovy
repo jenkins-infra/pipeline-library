@@ -98,7 +98,7 @@ def call(Map params = [:]) {
 
             def plugins = metadata.plugins
 
-            def localSnapshots = metadata.useLocalSnapshots != null ? metadata.useLocalSnapshots : false
+            def localSnapshots = metadata.useLocalSnapshots != null ? metadata.useLocalSnapshots : true
 
             def testingBranches = [:]
             def containerArgsBase = "-v /var/run/docker.sock:/var/run/docker.sock -v jenkins.war:/pct/jenkins.war:ro -u root"
