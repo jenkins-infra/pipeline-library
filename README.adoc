@@ -66,6 +66,29 @@ if (infra.isTrusted()) {
 }
 ----
 
+=== infra.ensureInNode(env, nodeLabels, body)
+
+Ensures that the given code block is runs in a node with the specified labels
+
+.Jenkinsfile
+[source,groovy]
+----
+infra.ensureInNode(env, "docker,highmem", {
+    sh "docker -v"
+})
+----
+
+=== infra.stashJenkinsWar(jenkins, stashName)
+
+Given a version of jenkins downloads it if neccesary and stashes it under the given name (which defaults to "jenkinsWar",
+see the step doc for more documentation about he allowed versions
+
+.Jenkinsfile
+[source,groovy]
+----
+infra.stashJenkinsWar("2.110")
+----
+
 === runATH
 
 Runs the link:https://github.com/jenkinsci/acceptance-test-harness[Acceptance Test Harness] in a configurable way.
@@ -194,6 +217,93 @@ In case you want to use the defaults for all properties you can use
 [source,yaml]
 ----
 ath: "default"
+----
+
+*Please note that a blank metadata file will result in an error*
+
+=== runPCT
+
+Runs the link:https://github.com/jenkinsci/plugin-compat-tester[Plugin Compat Tester] in a configurable way.
+
+The configuration is divided into two parts, one related to the step itself and another related to how the PCT is run.
+To configure the step just use the step's parameters described below, to configure the PCT runs a metadata file (in YAML format)
+is used. Further sections describe the metadata file in detail. *Note that if the metadata file does not exist this step
+will do nothing at all.*
+
+The list of step's params and the related default values are:
+
+
+`pctUrl`::
+ The URL to get the PCT Dockerfile or the pct docker image to use. It can point to a local path of PCT sources (by using the file:// protocol) or a github destination. You can also use this to directly
+      specify a prebuilt PCT docker image by using the docker:// protocol, for example "docker://jenkins/pct". *Can be overridden from the metadata file*
+`pctRevision`::
+The PCT revision to use in case that pctUrl points to a github destination, can be a branch or tag name or a commit id. Defaults to branch master. *Can be overridden from the metadata file*
+`metadataFile`::
+ A String indicating the file path (relative to where this step is executed) to use as metadata file for the build, more details about the metadata file are provided belows. *Defaults to `essentials.yml` at the location where this step is invoked*
+`jenkins`::
+ URI to the jenkins.war, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol in the URI. *Can be overriden from the metadata file*
+
+.Step call example
+[source,groovy]
+----
+runPCT(metadataFile:"metadata.yml", pctUrl:"docker://mynamspace/pct", jenkins: "2.110")
+----
+
+
+To make it usable in PR builders this step allows users to run the PCT using custom (typically previously built in the same Jenkinsfile) versions of any plugin, for that you need to set the metadata file's <i>useLocalSnapshots</i> property to true and stash the
+     plugins you want to use in the PCT run. By default you need to stash them with the name<i>localPlugins</i> the step will unstash them when appropriate and use the PCT`s docker image <i>/pct/plugin-src</i> volume to access the sources. You can stash any number of plugins, all of
+     them will be tested as long as they are specified in the metadata file. You can also stash under other name by setting the env variable <i>RUN_PCT_LOCAL_PLUGIN_SOURCES_STASH_NAME</i>
+
+.Using development versions of plugins
+[source,groovy]
+----
+node("docker&&highmem") {
+    deleteDir()
+    dir("localPlugins") {
+        sh "git clone https://github.com/jenkinsci/ssh-slaves-plugin.git ssh-slaves -b ssh-slaves-1.25"
+        sh "git clone https://github.com/jenkinsci/credentials-plugin.git Credentials"
+        stash 'localPlugins'
+    }
+    runPCT()
+}
+----
+
+
+The metadata file is a YAML file with the following structure:
+
+.metadata
+[source,yaml]
+----
+pct:
+  pctUrl: "https://github.com/jenkinsci/plugin-compat-tester.git"
+  pctRevision: "master"
+  jenkins: 2.89.4
+  useLocalSnapshots: true
+  plugins:
+    - Credentials
+----
+
+Where:
+
+
+`pctUrl`::
+ (Optional) The URL to get the PCT Dockerfile or the pct docker image to use. It can point to a local path of PCT sources (by using the file:// protocol) or a github destination. You can also use this to directly
+      specify a prebuilt PCT docker image by using the docker:// protocol, for example "docker://jenkins/pct".
+`pctRevision`::
+(Optional) The PCT revision to use in case that pctUrl points to a github destination, can be a branch or tag name or a commit id. Defaults to branch master.
+`jenkins`::
+ (Optional) URI to the jenkins.war file, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". If specified it will override the parameter in the runATH step
+`useLocalSnapshots`::
+ If the ATH should use local versions of the plugins. Defaults to true. *Note that if true the runPCT expects the local plugins to be stashed, setting this to true without the stash will make the step fail*
+`plugins`::
+ The list of plugins to run, you must specify the artifactID of the plugin. Defaults to nothing
+
+In case you want to use the defaults for all properties you can use
+
+.metadata
+[source,yaml]
+----
+pct: "default"
 ----
 
 *Please note that a blank metadata file will result in an error*
