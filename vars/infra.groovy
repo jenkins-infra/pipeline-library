@@ -126,7 +126,12 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null)
     }
 }
 
-void stashJenkinsWar(jenkins, stashName = "jenkinsWar") {
+/**
+ * Gets a specification for a jenkins version or war and downloads and stash it under the name provided
+ * @param Specification for a jenkins war, can be a jenkins URI to the jenkins.war, a Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol
+ * @param stashName The name used to stash the jenkins war file, defaults to "jenkinsWar"
+ */
+void stashJenkinsWar(String jenkins, String stashName = "jenkinsWar") {
     def isVersionNumber = (jenkins =~ /^\d+([.]\d+)*$/).matches()
     def isLocalJenkins = jenkins.startsWith("file://")
     def mirror = "http://mirrors.jenkins.io/"
@@ -184,12 +189,17 @@ void stashJenkinsWar(jenkins, stashName = "jenkinsWar") {
     }
 }
 
-/*
- Make sure the code block is run in a node with the all the specified nodeLabels as labels, if already running in that
- it simply executes the code block, if not allocates the desired node and runs the code inside it
-
- Node labels must be specified as String formed by a comma separated list of labels
-  */
+/**
+ * Make sure the code block is run in a node with the all the specified nodeLabels as labels, if already running in that
+ * it simply executes the code block, if not allocates the desired node and runs the code inside it
+ * Node labels must be specified as String formed by a comma separated list of labels
+ * Please note that this step is not able to manage complex labels and checks for them literally, so do not try to use labels like 'docker,(lowmemory&&linux)' as it will result in
+ * the step launching a new node as is unable to find the label '(lowmemory&&linux)' in the list of labels for the current node
+ *
+ * @param env The run environment, used to access the current node labels
+ * @param nodeLabels The node labels, a string containing the comma separated labels
+ * @param body The code to run in the desired node
+ */
 void ensureInNode(env, nodeLabels, body) {
     def inCorrectNode = true
     def splitted = nodeLabels.split(",")
