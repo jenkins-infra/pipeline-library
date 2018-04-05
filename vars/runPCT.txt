@@ -1,0 +1,97 @@
+<p>
+    Runs the <a href='https://github.com/jenkinsci/plugin-compat-tester'>Plugin Compat Tester</a> in a configurable way
+</p>
+
+<p>
+    The configuration is divided into two parts, one related to the step itself and another related to how the PCT is run.
+    To configure the step just use the step's parameters described below, to configure the PCT runs a metadata file (in YAML format)
+    is used. Further sections describe the metadata file in detail. <b>Note that if the metadata file does not exist this step will do nothing at all</b>
+</p>
+
+<p>
+The list of step's params and the related default values are:
+
+<ul>
+    <li>pctUrl: The URL to get the PCT Dockerfile or the pct docker image to use. It can point to a local path of PCT sources (by using the file:// protocol) or a github destination. You can also use this to directly
+     specify a prebuilt PCT docker image by using the docker:// protocol, for example "docker://jenkins/pct" <b>Can be overridden from the metadata file</b></li>
+    <li>pctRevision: The PCT revision to use in case that pctUrl points to a github destination, can be a branch or tag name or a commit id. Defaults to branch master. <b>Can be overridden from the metadata file</b></li>
+    <li>metadataFile: A String indicating the file path (relative to the where this step is executed) to use as metadata file for the build, more details about the metadata file are provided belows. <b>Defaults to <i>essentials.yml</i> at the location where this step is invoked</b></li>
+    <li>jenkins: URI to the jenkins.war, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol in the URI. <b>Can be overriden from the metadata file</b></li>
+</ul>
+
+<pre>
+    runPCT(metadataFile:"metadata.yml", jenkins: "2.110")
+</pre>
+
+<p>
+    <b>Note that this step uses the <i>docker</i> nodes in case that you need to run in different nodes
+    you can use the env variables <i>RUN_PCT_SOURCES_AND_VALIDATION_NODE</i> and <i>RUN_PCT_DOCKER_NODE</i> respectively to overwrite
+    the node to use</b>. If you need to specify more than one label just use a comma separated list of labels
+    Nodes are allocated automatically by the step if needed, but if the step is already running in the appropriate node no allocation is done
+    <b> Please note that this step is not able to manage complex labels and checks for them literally, so do not try to use labels like 'docker,(lowmemory&&linux)' as it will result in
+    the step launching a new node as is unable to find the label '(lowmemory&&linux)' in the list of labels for the current node</b>
+</p>
+
+<p>
+    To make it usable in PR builders this step allows users to run the PCT using custom (typically previously built in the same Jenkinsfile) versions of any plugin, for that you need to set the metadata file's <i>useLocalSnapshots</i> property to true and stash the
+     plugins you want to use in the PCT run. By default you need to stash them with the name<i>localPlugins</i> the step will unstash them when appropriate and use the PCT`s docker image <i>/pct/plugin-src</i> volume to access the sources. You can stash any number of plugins, all of
+     them will be tested as long as they are specified in the metadata file. You can also stash under other name by setting the env variable <i>RUN_PCT_LOCAL_PLUGIN_SOURCES_STASH_NAME</i>
+</p>
+
+<pre>
+    node("docker") {
+        deleteDir()
+        def warUri
+        sh "git clone https://github.com/jenkinsci/jenkins.git jenkins"
+        dir("jenkins") {
+            sh "mvn package -DskipTests"
+            dir ("war/target"){
+                warUri = "file://" + pwd() + "/jenkins.war"
+            }
+        }
+        dir("localPlugins") {
+            sh "git clone https://github.com/jenkinsci/credentials-plugin.git Credentials"
+            stash 'localPlugins'
+        }
+        }
+        runPCT(metadataFile: "metadata.yml", jenkins: warUri)
+</pre>
+
+<p>
+    The metadata file is a YAML file with the following structure:
+</p>
+
+<pre>
+---
+pct:
+  pctUrl: "https://github.com/jenkinsci/plugin-compat-tester.git"
+  pctRevision: "master"
+  jenkins: 2.89.4
+  useLocalSnapshots: true
+  plugins:
+    - Credentials
+</pre>
+
+<p>
+    Where:
+</p>
+
+<ul>
+    <li>pctUrl: (Optional) The URL to get the PCT Dockerfile or the pct docker image to use. It can point to a local path of PCT sources (by using the file:// protocol) or a github destination. You can also use this to directly
+                                specify a prebuilt PCT docker image by using the docker:// protocol, for example "docker://jenkins/pct". If specified it will override the parameter in the runPCT step</li>
+    <li>pctRevision: (Optional) The PCT revision to use in case pctUrl is a github destination can be a branch or tag name or a commit id. If specified it will override the parameter in the runPCT step</li>
+    <li>jenkins: (Optional) URI to the jenkins.war file, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". If specified it will override the parameter in the runPCT step</li>
+    <li>useLocalSnapshots: If the PCT should use local versions of the plugins. Defaults to true. <b>Note that if true the runPCT expects the local plugins to be stashed, setting this to true without the stash will make the step fail</b></li>
+</ul>
+
+<p>
+    In case you want to use the defaults for all properties you can use
+</p>
+
+<pre>
+---
+pct: "default"
+</pre>
+
+
+
