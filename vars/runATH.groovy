@@ -141,7 +141,7 @@ def call(Map params = [:]) {
 
                     def currentBrowser = browser
                     def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e SHARED_DOCKER_SERVICE=true -e EXERCISEDPLUGINREPORTER=textfile -u ath-user"
-                    def commandBase = "./run.sh ${currentBrowser} ./jenkins.war -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
+                    def commandBase = "./run.sh ${currentBrowser} ./jenkins.war -B -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
 
                     if (testsToRun) {
                         testingbranches["ATH individual tests-${currentBrowser}"] = {
