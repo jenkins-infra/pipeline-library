@@ -9,6 +9,7 @@ def call(Map params = [:]) {
     def pctRevision = params.get('pctRevision', 'master')
     def metadataFile = params.get('metadataFile', 'essentials.yml')
     def jenkins = params.get('jenkins', 'latest')
+    def pctExtraOptions = params.get('pctExtraOptions', [])
 
     def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
     def metadata
@@ -114,7 +115,7 @@ def call(Map params = [:]) {
                             }
                             sh "cp -R localPlugins/${plugin}/* /pct/plugin-src"
                         } else {
-                            command = "ARTIFACT_ID=${plugin} run-pct"
+                            command = "ARTIFACT_ID=${plugin} run-pct ${pctExtraOptions.join(' ')}"
                         }
                         sh command
                         sh "mkdir reports${plugin} && cp /pct/tmp/work/*/target/surefire-reports/*.xml reports${plugin}"

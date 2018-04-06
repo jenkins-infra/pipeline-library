@@ -17,6 +17,7 @@ The list of step's params and the related default values are:
     <li>pctRevision: The PCT revision to use in case that pctUrl points to a github destination, can be a branch or tag name or a commit id. Defaults to branch master. <b>Can be overridden from the metadata file</b></li>
     <li>metadataFile: A String indicating the file path (relative to the where this step is executed) to use as metadata file for the build, more details about the metadata file are provided belows. <b>Defaults to <i>essentials.yml</i> at the location where this step is invoked</b></li>
     <li>jenkins: URI to the jenkins.war, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol in the URI. <b>Can be overriden from the metadata file</b></li>
+    <li>pctExtraOptions: List of extra options to be passed to the PCT executable. Defaults to empty list</li>
 </ul>
 
 <pre>
