@@ -102,7 +102,8 @@ def call(Map params = [:]) {
             def localSnapshots = metadata.useLocalSnapshots != null ? metadata.useLocalSnapshots : true
 
             def testingBranches = [:]
-            def containerArgsBase = "-v /var/run/docker.sock:/var/run/docker.sock -v jenkins.war:/pct/jenkins.war:ro -u root"
+            def warAbsolutePath = pwd() + "/jenkins.war"
+            def containerArgsBase = "-v /var/run/docker.sock:/var/run/docker.sock -v ${warAbsolutePath}:/pct/jenkins.war:ro -u root"
             for (def i = 0; i < plugins.size(); i++) {
                 def plugin = plugins[i]
                 testingBranches["PCT-${plugin}"] = {
