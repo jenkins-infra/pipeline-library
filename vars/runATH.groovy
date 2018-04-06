@@ -11,7 +11,6 @@ def call(Map params = [:]) {
     def jenkins = params.get('jenkins', 'latest')
 
     def mirror = "http://mirrors.jenkins.io/"
-    def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
     def jenkinsURL = jenkins
     def metadata
     def athContainerImage
@@ -131,10 +130,6 @@ def call(Map params = [:]) {
             // Elvis fails in case useLocalSnapshots == false in metadata File
             def localSnapshots = metadata.useLocalSnapshots != null ? metadata.useLocalSnapshots : true
 
-            if (testsToRun == null && categoriesToRun == null) {
-                categoriesToRun = defaultCategory
-            }
-
             def testingbranches = ["failFast": failFast]
             for (browser in browsers) {
                 if (supportedBrowsers.contains(browser)) {
@@ -155,6 +150,14 @@ def call(Map params = [:]) {
                         testingbranches["ATH categories-${currentBrowser}"] = {
                             dir("categories${currentBrowser}") {
                                 def discriminator = "-Dgroups=${categoriesToRun}"
+                                test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage)
+                            }
+                        }
+                    }
+                    if (testsToRun == null && categoriesToRun == null) {
+                        testingbranches["ATH ${currentBrowser}"] = {
+                            dir("ath${currentBrowser}") {
+                                def discriminator = ""
                                 test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage)
                             }
                         }
