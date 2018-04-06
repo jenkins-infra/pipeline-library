@@ -11,6 +11,7 @@ def call(Map params = [:]) {
     def jenkins = params.get('jenkins', 'latest')
 
     def mirror = "http://mirrors.jenkins.io/"
+    def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
     def jenkinsURL = jenkins
     def metadata
     def athContainerImage
@@ -129,6 +130,15 @@ def call(Map params = [:]) {
             def rerunCount = metadata.rerunFailingTestsCount ?: 0
             // Elvis fails in case useLocalSnapshots == false in metadata File
             def localSnapshots = metadata.useLocalSnapshots != null ? metadata.useLocalSnapshots : true
+
+            if (testsToRun == null && categoriesToRun == null) {
+                categoriesToRun = defaultCategory
+            }
+
+            // Shorthand for running all tests
+            if (testsToRun == "all") {
+                testsToRun = categoriesToRun = null
+            }
 
             def testingbranches = ["failFast": failFast]
             for (browser in browsers) {
