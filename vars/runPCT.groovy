@@ -109,6 +109,7 @@ def call(Map params = [:]) {
                     pctContainerImage.inside(containerArgsBase) {
                         unstash "jenkinsWar"
                         def warAbsolutePath = pwd() + "/jenkins.war"
+                        def command = 'JENKINS_WAR_PATH=${warAbsolutePath} run-pct'
                         if (localSnapshots && localPluginsStashName) {
                             dir("localPlugins") {
                                 unstash name: localPluginsStashName
