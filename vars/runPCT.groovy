@@ -110,6 +110,8 @@ def call(Map params = [:]) {
                     pctContainerImage.inside(containerArgsBase) {
                         unstash "jenkinsWar"
                         def warAbsolutePath = pwd() + "/jenkins.war"
+                        def pctBranchOptions = []
+                        pctBranchOptions.addAll(pctExtraOptions)
                         if(metadata.jth != null) {
                             def mavenOptions = []
                             if (metadata.jth.version != null) {
@@ -118,10 +120,10 @@ def call(Map params = [:]) {
                             if(metadata.jth.passCustomJenkinsWAR) {
                                 mavenOptions << "jth.jenkins-war.path=${warAbsolutePath}"
                             }
-                            pctExtraOptions << "-mavenProperties"
-                            pctExtraOptions << "${mavenOptions.join(':')}"
+                            pctBranchOptions << "-mavenProperties"
+                            pctBranchOptions << "${mavenOptions.join(':')}"
                         }
-                        def command = "JENKINS_WAR_PATH=${warAbsolutePath} run-pct ${pctExtraOptions.join(' ')}"
+                        def command = "JENKINS_WAR_PATH=${warAbsolutePath} run-pct ${pctBranchOptions.join(' ')}"
                         if (!javaOptions.isEmpty()) {
                             command = "JAVA_OPTS=${javaOptions.join(' ')} ${command}"
                         }
