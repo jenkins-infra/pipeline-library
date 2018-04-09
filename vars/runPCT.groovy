@@ -95,6 +95,7 @@ def call(Map params = [:]) {
                 }
             } else {
                 def tag = pctUrl - "docker://"
+                sh "docker pull ${tag}"
                 pctContainerImage = docker.image(tag)
             }
 
