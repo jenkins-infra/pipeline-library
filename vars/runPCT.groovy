@@ -102,21 +102,20 @@ def call(Map params = [:]) {
             def localSnapshots = metadata.useLocalSnapshots != null ? metadata.useLocalSnapshots : true
 
             def testingBranches = [:]
-            def warAbsolutePath = pwd() + "/jenkins.war"
-            def containerArgsBase = "-v /var/run/docker.sock:/var/run/docker.sock -v ${warAbsolutePath}:/pct/jenkins.war:ro -u root"
+            def containerArgsBase = "-v /var/run/docker.sock:/var/run/docker.sock -u root"
             for (def i = 0; i < plugins.size(); i++) {
                 def plugin = plugins[i]
                 testingBranches["PCT-${plugin}"] = {
-                    unstash "jenkinsWar"
                     pctContainerImage.inside(containerArgsBase) {
-                        def command = 'run-pct'
+                        unstash "jenkinsWar"
+                        def warAbsolutePath = pwd() + "/jenkins.war"
                         if (localSnapshots && localPluginsStashName) {
                             dir("localPlugins") {
                                 unstash name: localPluginsStashName
                             }
                             sh "cp -R localPlugins/${plugin}/* /pct/plugin-src"
                         } else {
-                            command = "ARTIFACT_ID=${plugin} run-pct ${pctExtraOptions.join(' ')}"
+                            command = "JENKINS_WAR_PATH=${warAbsolutePath} ARTIFACT_ID=${plugin} run-pct ${pctExtraOptions.join(' ')}"
                         }
                         sh command
                         sh "mkdir reports${plugin} && cp /pct/tmp/work/*/target/surefire-reports/*.xml reports${plugin}"
