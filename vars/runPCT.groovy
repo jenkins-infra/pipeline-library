@@ -110,6 +110,17 @@ def call(Map params = [:]) {
                     pctContainerImage.inside(containerArgsBase) {
                         unstash "jenkinsWar"
                         def warAbsolutePath = pwd() + "/jenkins.war"
+                        if(metadata.jth) {
+                            def mavenOptions = []
+                            if (metadata.jth.version) {
+                                mavenOptions << "jenkins-test-harness.version=${metadata.jth.version}"
+                            }
+                            if(metadata.jth.passCustomJenkinsWAR) {
+                                mavenOptions << "jth.jenkins-war.path=${warAbsolutePath}"
+                            }
+                            pctExtraOptions << "-mavenProperties"
+                            pctExtraOptions << "${mavenOptions.join(':')}"
+                        }
                         def command = "JENKINS_WAR_PATH=${warAbsolutePath} run-pct ${pctExtraOptions.join(' ')}"
                         if (!javaOptions.isEmpty()) {
                             command = "JAVA_OPTS=${javaOptions.join(' ')} ${command}"
