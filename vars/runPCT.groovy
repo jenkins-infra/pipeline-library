@@ -10,6 +10,7 @@ def call(Map params = [:]) {
     def metadataFile = params.get('metadataFile', 'essentials.yml')
     def jenkins = params.get('jenkins', 'latest')
     def pctExtraOptions = params.get('pctExtraOptions', [])
+    def javaOptions = params.get('javaOptions', [])
 
     def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
     def metadata
@@ -109,15 +110,19 @@ def call(Map params = [:]) {
                     pctContainerImage.inside(containerArgsBase) {
                         unstash "jenkinsWar"
                         def warAbsolutePath = pwd() + "/jenkins.war"
-                        def command = 'JENKINS_WAR_PATH=${warAbsolutePath} run-pct'
+                        def command = "JENKINS_WAR_PATH=${warAbsolutePath} run-pct ${pctExtraOptions.join(' ')}"
+                        if (!javaOptions.isEmpty()) {
+                            command = "JAVA_OPTS=${javaOptions.join(' ')} ${command}"
+                        }
                         if (localSnapshots && localPluginsStashName) {
                             dir("localPlugins") {
                                 unstash name: localPluginsStashName
                             }
                             sh "cp -R localPlugins/${plugin}/* /pct/plugin-src"
                         } else {
-                            command = "JENKINS_WAR_PATH=${warAbsolutePath} ARTIFACT_ID=${plugin} run-pct ${pctExtraOptions.join(' ')}"
+                            command = "ARTIFACT_ID=${plugin} ${command}"
                         }
+
                         sh command
                         sh "mkdir reports${plugin} && cp /pct/tmp/work/*/target/surefire-reports/*.xml reports${plugin}"
                         junit healthScaleFactor: 0.0, testResults: "reports${plugin}/*.xml"
