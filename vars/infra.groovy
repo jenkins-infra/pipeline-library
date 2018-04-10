@@ -35,9 +35,10 @@ Object checkout(String repo = null) {
  * configuration ID provided by Config File Provider Plugin.
  * Otherwise it will fallback to a standard Jenkins infra resolution logic.
  * @param settingsXml Absolute path to the destination settings file
+ * @param jdk Version of JDK to be used
  * @return {@code true} if the file has been defined
  */
-boolean retrieveMavenSettingsFile(String settingsXml) {
+boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
     if (env.MAVEN_SETTINGS_FILE_ID != null) {
         configFileProvider([configFile(fileId: env.MAVEN_SETTINGS_FILE_ID, variable: 'mvnSettingsFile')]) {
             if (isUnix()) {
