@@ -110,6 +110,10 @@ def call(Map params = [:]) {
                 def plugin = plugins[i]
                 testingBranches["PCT-${plugin}"] = {
                     pctContainerImage.inside(containerArgsBase) {
+                        def createdSettings = infra.retrieveMavenSettingsFile("tmp_settings.xml")
+                        if (createdSettings) {
+                            sh "cp tmp_settings.xml /pct/m2-settings/settings.xml"
+                        }
                         unstash "jenkinsWar"
                         def warAbsolutePath = pwd() + "/jenkins.war"
                         def pctBranchOptions = []
