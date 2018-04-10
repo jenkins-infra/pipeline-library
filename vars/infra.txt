@@ -1,9 +1,68 @@
 <strong>infra.isTrusted()</strong>
 
 <p>
-    Returns true if this Pipeline is executing a trusted CI environment
+    Returns true if this Pipeline is executing on a trusted CI environment
 </p>
 
+<strong>infra.isRunningOnJenkinsInfra()</strong>
+
+<p>
+    Returns true if this Pipeline is executing on Jenkins infrastructure.
+    It may be ci.jenkins.io or trusted CI environment
+</p>
+
+<strong>infra.withDockerCredentials(Closure body)</strong>
+
+<p>
+    Runs the specified Closure with Docker credentials.
+    Note that the credentials are available only on trusted CI environment, execution will fail on other CI instances
+</p>
+
+<strong>infra.retrieveMavenSettingsFile(String settingsXml)</strong>
+
+<p>
+    Retrieves a custom Maven settings file to the specified path if needed
+    (depending on the environment where the Pipeline runs).
+    Returns true if the file has been retrieved.
+</p>
+
+<p>
+    See method Javadoc in the repository for more information.
+</p>
+
+<strong>infra.runMaven(List&lt;String&gt; options, String jdk = 8, List&lt;String&gt; extraEnv = null)</strong>
+
+<p>
+    Runs Maven for the specified options in the current workspace.
+    Maven settings will be added by default if needed.
+</p>
+
+<p>
+    See method Javadoc in the repository for more information.
+</p>
+
+<strong>runWithMaven(String command, String jdk = 8, List&lt;String&gt; extraEnv = null)</strong>
+
+<p>
+     Runs the specified command with Java and Maven environments.
+     The command may be either Batch or Shell depending on the OS.
+</p>
+
+<p>
+    See method Javadoc in the repository for more information.
+</p>
+
+<strong>runWithJava(String command, String jdk = 8, List&lt;String&gt; extraEnv = null)</strong>
+
+<p>
+     Runs the specified command with Java tool.
+     <code>PATH</code> and <code>JAVA_HOME</code> will be set.
+     The command may be either Batch or Shell depending on the OS.
+</p>
+
+<p>
+    See method Javadoc in the repository for more information.
+</p>
 
 <!--
 vim: ft=html
