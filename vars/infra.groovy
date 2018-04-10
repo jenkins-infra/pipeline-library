@@ -30,20 +30,48 @@ Object checkout(String repo = null) {
 }
 
 /**
+ * Retrieves Settings file to be used with Maven.
+ * If {@code MAVEN_SETTINGS_FILE_ID} variable is defined, the file will be retrieved from the specified
+ * configuration ID provided by Config File Provider Plugin.
+ * Otherwise it will fallback to a standard Jenkins infra resolution logic.
+ * @param settingsXml Absolute path to the destination settings file
+ * @return {@code true} if the file has been defined
+ */
+boolean retrieveMavenSettingsFile(String settingsXml) {
+    if (env.MAVEN_SETTINGS_FILE_ID != null) {
+        configFileProvider([configFile(fileId: env.MAVEN_SETTINGS_FILE_ID, variable: 'mvnSettingsFile')]) {
+            if (isUnix()) {
+                sh "cp ${mvnSettingsFile} ${settingsXml}"
+            } else {
+                bat "copy ${mvnSettingsFile} ${settingsXml}"
+            }
+            return true
+        }
+    } else if (jdk.toInteger() > 7 && isRunningOnJenkinsInfra()) {
+        /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
+        writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
+        return true
+    }
+    return false
+}
+
+/**
  * Runs Maven for the specified options in the current workspace.
- * Azure settings will be added by default if running on Jenkins Infra.
+ * Maven settings will be added by default if needed.
  * @param jdk JDK to be used
  * @param options Options to be passed to the Maven command
  * @param extraEnv Extra environment variables to be passed when invoking the command
  * @return nothing
+ * @see #retrieveMavenSettingsFile(String)
  */
 Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = null) {
     List<String> mvnOptions = [ ]
     if (jdk.toInteger() > 7 && isRunningOnJenkinsInfra()) {
         /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
         def settingsXml = "${pwd tmp: true}/settings-azure.xml"
-        writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
-        mvnOptions += "-s $settingsXml"
+        if (retrieveMavenSettingsFile(settingsXml)) {
+            mvnOptions += "-s $settingsXml"
+        }
     }
     mvnOptions.addAll(options)
     String command = "mvn ${mvnOptions.join(' ')}"
@@ -51,7 +79,7 @@ Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = nu
 }
 
 /**
- * Runs the command with Java  and Maven environment.
+ * Runs the command with Java and Maven environments.
  * The command may be either Batch or Shell depending on the OS.
  * @param command Command to be executed
  * @param jdk JDK version to be used
@@ -71,6 +99,7 @@ Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null
 
 /**
  * Runs the command with Java environment.
+ * {@code PATH} and {@code JAVA_HOME} will be set.
  * The command may be either Batch or Shell depending on the OS.
  * @param command Command to be executed
  * @param jdk JDK version to be used
