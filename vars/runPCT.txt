@@ -19,6 +19,7 @@ The list of step's params and the related default values are:
     <li>jenkins: URI to the jenkins.war, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol in the URI. <b>Can be overriden from the metadata file</b></li>
     <li>pctExtraOptions: List of extra PCT options to be passed to the PCT executable. Defaults to empty list</li>
     <li>javaOptions: List of extra Java options to be passed to the PCT executable. Defaults to empty list</li>
+    <li>dockerOptions: List of extra options to be passed to PCT containers ( e.g. &qt;-v maven-repo:/root/.m2&qt;)</p>
 </ul>
 
 <pre>

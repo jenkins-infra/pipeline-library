@@ -11,6 +11,7 @@ def call(Map params = [:]) {
     def jenkins = params.get('jenkins', 'latest')
     def pctExtraOptions = params.get('pctExtraOptions', [])
     def javaOptions = params.get('javaOptions', [])
+    def dockerOptions = params.get('dockerOptions', [])
 
     def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
     def metadata
@@ -104,7 +105,7 @@ def call(Map params = [:]) {
             def localSnapshots = metadata.useLocalSnapshots != null ? metadata.useLocalSnapshots : true
 
             def testingBranches = [:]
-            def containerArgsBase = "-v /var/run/docker.sock:/var/run/docker.sock -u root"
+            def containerArgsBase = "-v /var/run/docker.sock:/var/run/docker.sock -u root ${dockerOptions.join(' ')}"
             for (def i = 0; i < plugins.size(); i++) {
                 def plugin = plugins[i]
                 testingBranches["PCT-${plugin}"] = {
