@@ -36,7 +36,9 @@ def call(Map params = [:]) {
             // Start validation
             metadata = readYaml(file: metadataFile)?.ath
             if (metadata == null) {
-                error "The provided metadata file seems invalid as it does not contain a valid ath section"
+                echo "Skipping ATH execution because the metadata file does not contain an ath section"
+                skipExecution = true
+                return
             }
             if (metadata == 'default') {
                 echo "Using default configuration for ATH"
