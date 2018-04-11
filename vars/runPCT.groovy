@@ -110,10 +110,6 @@ def call(Map params = [:]) {
                 def plugin = plugins[i]
                 testingBranches["PCT-${plugin}"] = {
                     pctContainerImage.inside(containerArgsBase) {
-                        def createdSettings = infra.retrieveMavenSettingsFile("tmp_settings.xml")
-                        if (createdSettings) {
-                            sh "cp tmp_settings.xml /pct/m2-settings/settings.xml"
-                        }
                         unstash "jenkinsWar"
                         def warAbsolutePath = pwd() + "/jenkins.war"
                         def pctBranchOptions = []
@@ -140,6 +136,11 @@ def call(Map params = [:]) {
                             sh "cp -R localPlugins/${plugin}/* /pct/plugin-src"
                         } else {
                             command = "ARTIFACT_ID=${plugin} ${command}"
+                        }
+                        def createdSettings = infra.retrieveMavenSettingsFile("tmp_settings.xml")
+                        if (createdSettings) {
+                            sh "cp tmp_settings.xml /pct/m2-settings.xml/settings.xml"
+                            command = "M2_SETTINGS_FILE=/pct/m2-settings.xml/settings.xml ${command}"
                         }
 
                         sh command
