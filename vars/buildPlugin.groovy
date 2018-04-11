@@ -45,6 +45,7 @@ def call(Map params = [:]) {
                                         '--batch-mode',
                                         '--errors',
                                         '--update-snapshots',
+                                        '-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn',
                                         '-Dmaven.test.failure.ignore',
                                 ]
                                 if (jenkinsVersion) {
