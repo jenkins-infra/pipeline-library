@@ -186,7 +186,7 @@ void stashJenkinsWar(String jenkins, String stashName = "jenkinsWar") {
  * it simply executes the code block, if not allocates the desired node and runs the code inside it
  * Node labels must be specified as String formed by a comma separated list of labels
  * Please note that this step is not able to manage complex labels and checks for them literally, so do not try to use labels like 'docker,(lowmemory&&linux)' as it will result in
- * the step launching a new node as is unable to find the label '(lowmemory&&linux)' in the list of labels for the current node
+ * the step launching a new node as is unable to find the label '(lowmemory&amp;&amp;linux)' in the list of labels for the current node
  *
  * @param env The run environment, used to access the current node labels
  * @param nodeLabels The node labels, a string containing the comma separated labels
