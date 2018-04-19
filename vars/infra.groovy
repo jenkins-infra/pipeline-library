@@ -125,3 +125,92 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null)
         }
     }
 }
+
+/**
+ * Gets a specification for a jenkins version or war and downloads and stash it under the name provided
+ * @param Specification for a jenkins war, can be a jenkins URI to the jenkins.war, a Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol
+ * @param stashName The name used to stash the jenkins war file, defaults to "jenkinsWar"
+ */
+void stashJenkinsWar(String jenkins, String stashName = "jenkinsWar") {
+    def isVersionNumber = (jenkins =~ /^\d+([.]\d+)*$/).matches()
+    def isLocalJenkins = jenkins.startsWith("file://")
+    def mirror = "http://mirrors.jenkins.io/"
+
+    def jenkinsURL
+
+    if (jenkins == "latest") {
+        jenkinsURL = mirror + "war/latest/jenkins.war"
+    } else if (jenkins == "latest-rc") {
+        jenkinsURL = mirror + "/war-rc/latest/jenkins.war"
+    } else if (jenkins == "lts") {
+        jenkinsURL = mirror + "war-stable/latest/jenkins.war"
+    } else if (jenkins == "lts-rc") {
+        jenkinsURL = mirror + "war-stable-rc/latest/jenkins.war"
+    }
+
+    if (isLocalJenkins) {
+        if (!fileExists(jenkins - "file://")) {
+            error "Specified Jenkins file does not exists"
+        }
+    }
+    if (!isVersionNumber && !isLocalJenkins) {
+        echo 'Checking whether Jenkins WAR is available…'
+        sh "curl -ILf ${jenkinsURL}"
+    }
+
+    if (isVersionNumber) {
+        List<String> downloadCommand = [
+                "dependency:copy",
+                "-Dartifact=org.jenkins-ci.main:jenkins-war:${jenkins}:war",
+                "-DoutputDirectory=.",
+                "-Dmdep.stripVersion=true"
+        ]
+        dir("deps") {
+            runMaven(downloadCommand)
+            sh "cp jenkins-war.war jenkins.war"
+            stash includes: 'jenkins.war', name: stashName
+        }
+    } else if (isLocalJenkins) {
+        dir(pwd(tmp: true)) {
+            sh "cp ${jenkins - 'file://'} jenkins.war"
+            stash includes: "*.war", name: "jenkinsWar"
+        }
+    } else {
+        sh("curl -o jenkins.war -L ${jenkinsURL}")
+        stash includes: '*.war', name: 'jenkinsWar'
+    }
+}
+
+/**
+ * Make sure the code block is run in a node with the all the specified nodeLabels as labels, if already running in that
+ * it simply executes the code block, if not allocates the desired node and runs the code inside it
+ * Node labels must be specified as String formed by a comma separated list of labels
+ * Please note that this step is not able to manage complex labels and checks for them literally, so do not try to use labels like 'docker,(lowmemory&&linux)' as it will result in
+ * the step launching a new node as is unable to find the label '(lowmemory&amp;&amp;linux)' in the list of labels for the current node
+ *
+ * @param env The run environment, used to access the current node labels
+ * @param nodeLabels The node labels, a string containing the comma separated labels
+ * @param body The code to run in the desired node
+ */
+void ensureInNode(env, nodeLabels, body) {
+    def inCorrectNode = true
+    def splitted = nodeLabels.split(",")
+    if (env.NODE_LABELS == null) {
+        inCorrectNode = false
+    } else {
+        for (label in splitted) {
+            if (!env.NODE_LABELS.contains(label)) {
+                inCorrectNode = false
+                break
+            }
+        }
+    }
+
+    if (inCorrectNode) {
+        body()
+    } else {
+        node(splitted.join("&&")) {
+            body()
+        }
+    }
+}
