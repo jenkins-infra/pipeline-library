@@ -46,6 +46,7 @@ def call(Map params = [:]) {
                                         '--errors',
                                         '--update-snapshots',
                                         '-Dmaven.test.failure.ignore',
+                                        '-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'
                                 ]
                                 if (jenkinsVersion) {
                                     mavenOptions += "-Djenkins.version=${jenkinsVersion} -Daccess-modifier-checker.failOnError=false"
