@@ -214,3 +214,13 @@ void ensureInNode(env, nodeLabels, body) {
         }
     }
 }
+
+/**
+ * When appropriate, publish artifacts from the current build to the Incrementals repository.
+ * See INFRA-1571 and JEP-305.
+ */
+void maybePublishIncrementals() {
+    if (isRunningOnJenkinsInfra() && currentBuild.result == 'SUCCESS') {
+        // TODO ping incrementals-publisher webhook with BUILD_URL
+    }
+}
