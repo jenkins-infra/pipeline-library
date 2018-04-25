@@ -166,7 +166,5 @@ private void unstashResources(localSnapshots, localPluginsStashName) {
 }
 
 private String getLocalPluginsList() {
-    dir("localPlugins") {
-       return sh(script : "ls -p -d -1 ${pwd()}/*.* | tr '\n' ':'| sed 's/.\$//'", returnStdout: true).trim()
-    }
+       return sh(script : "ls -p -d -1 localPlugins/*.* | tr '\n' ':'| sed 's/.\$//'", returnStdout: true).trim()
 }
