@@ -221,6 +221,20 @@ void ensureInNode(env, nodeLabels, body) {
  */
 void maybePublishIncrementals() {
     if (isRunningOnJenkinsInfra() && currentBuild.result == 'SUCCESS') {
-        // TODO ping incrementals-publisher webhook with BUILD_URL
+        stage('Deploy') {
+            node('linux') {
+                withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
+                    // https://superuser.com/a/590170/129406 for why not just --fail:
+                    sh '''
+STATUS=`curl --silent --output /dev/stderr --write-out '%{http_code}' -d '{"build_url":"'$BUILD_URL'"}' "https://jenkins-infra-functions.azurewebsites.net/api/incrementals-publisher?code=$FUNCTION_TOKEN"`
+if [ $STATUS -ne 200 ]
+then
+    echo "Deployment failed with code $STATUS"
+    exit 1
+fi
+                    '''
+                }
+            }
+        }
     }
 }
