@@ -10,7 +10,7 @@ def call(Map params = [:]) {
     def metadataFile = params.get('metadataFile', 'essentials.yml')
     def jenkins = params.get('jenkins', 'latest')
     def pctExtraOptions = params.get('pctExtraOptions', [])
-    def javaOptions = params.get('javaOptions', [])
+    def javaOptions = params.get('javaOptions', ["-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"])
     def dockerOptions = params.get('dockerOptions', [])
 
     def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
@@ -133,7 +133,7 @@ def call(Map params = [:]) {
                             dir("localPlugins") {
                                 unstash name: localPluginsStashName
                             }
-                            sh "cp -R localPlugins/${plugin}/* /pct/plugin-src"
+                            sh "cp -r localPlugins/${plugin}/. /pct/plugin-src"
                         } else {
                             command = "ARTIFACT_ID=${plugin} ${command}"
                         }
