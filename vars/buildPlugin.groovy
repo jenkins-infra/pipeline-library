@@ -33,7 +33,7 @@ def call(Map params = [:]) {
                     node(label) {
                         timeout(60) {
                         boolean isMaven
-                        boolean doArchiveArtifacts = /* default platform */ i == 0 && /* default baseline */ !jenkinsVersion
+                        boolean doArchiveArtifacts = /* default platform */ label == platforms[0] && /* default baseline */ !jenkinsVersion
                         boolean incrementals // cf. JEP-305
 
                         stage("Checkout (${stageIdentifier})") {
