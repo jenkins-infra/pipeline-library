@@ -133,7 +133,7 @@ def call(Map params = [:]) {
                             dir("localPlugins") {
                                 unstash name: localPluginsStashName
                             }
-                            sh "cp -R localPlugins/${plugin}/* /pct/plugin-src"
+                            sh "cp -r localPlugins/${plugin}/. /pct/plugin-src"
                         } else {
                             command = "ARTIFACT_ID=${plugin} ${command}"
                         }
