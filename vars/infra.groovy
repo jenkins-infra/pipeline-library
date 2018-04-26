@@ -220,7 +220,7 @@ void ensureInNode(env, nodeLabels, body) {
  * See INFRA-1571 and JEP-305.
  */
 void maybePublishIncrementals() {
-    if (isRunningOnJenkinsInfra() && currentBuild.result == 'SUCCESS') {
+    if (isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
         stage('Deploy') {
             node('linux') {
                 withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
@@ -236,5 +236,7 @@ fi
                 }
             }
         }
+    } else {
+        echo 'Skipping deployment to Incrementals'
     }
 }
