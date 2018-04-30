@@ -15,6 +15,7 @@ def call(Map params = [:]) {
     def repo = params.containsKey('repo') ? params.repo : null
     def failFast = params.containsKey('failFast') ? params.failFast : true
     Map tasks = [failFast: failFast]
+    boolean publishingIncrementals = false
     for (int i = 0; i < platforms.size(); ++i) {
         for (int j = 0; j < jdkVersions.size(); ++j) {
             for (int k = 0; k < jenkinsVersions.size(); ++k) {
@@ -32,22 +33,38 @@ def call(Map params = [:]) {
                     node(label) {
                         timeout(60) {
                         boolean isMaven
+                        boolean doArchiveArtifacts = /* default platform */ label == platforms[0] && /* default baseline */ !jenkinsVersion
+                        boolean incrementals // cf. JEP-305
 
                         stage("Checkout (${stageIdentifier})") {
                             infra.checkout(repo)
                             isMaven = fileExists('pom.xml')
+                            incrementals = fileExists('.mvn/extensions.xml') &&
+                                           readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')
                         }
+
+                        String changelistF
+                        String m2repo
 
                         stage("Build (${stageIdentifier})") {
                             String command
                             if (isMaven) {
+                                m2repo = "${pwd tmp: true}/m2repo"
                                 List<String> mavenOptions = [
                                         '--batch-mode',
                                         '--errors',
                                         '--update-snapshots',
+                                        "-Dmaven.repo.local=$m2repo",
                                         '-Dmaven.test.failure.ignore',
                                         '-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'
                                 ]
+                                if (incrementals) { // set changelist and activate produce-incrementals profile
+                                    mavenOptions += '-Dset.changelist'
+                                    if (doArchiveArtifacts) { // ask Maven for the value of -rc999.abc123def456
+                                        changelistF = "${pwd tmp: true}/changelist"
+                                        mavenOptions += "help:evaluate -Dexpression=changelist -Doutput=$changelistF"
+                                    }
+                                }
                                 if (jenkinsVersion) {
                                     mavenOptions += "-Djenkins.version=${jenkinsVersion} -Daccess-modifier-checker.failOnError=false"
                                 }
@@ -81,15 +98,11 @@ def call(Map params = [:]) {
 
                         stage("Archive (${stageIdentifier})") {
                             String testReports
-                            String artifacts
                             if (isMaven) {
                                 testReports = '**/target/surefire-reports/**/*.xml'
-                                artifacts = '**/target/*.hpi,**/target/*.jpi'
                             } else {
                                 testReports = '**/build/test-results/**/*.xml'
-                                artifacts = '**/build/libs/*.hpi,**/build/libs/*.jpi'
                             }
-
                             junit testReports // TODO do this in a finally-block so we capture all test results even if one branch aborts early
                             if (isMaven && archiveFindbugs) {
                                 def fp = [pattern: params?.findbugs?.pattern ?: '**/target/findbugsXml.xml']
@@ -114,8 +127,23 @@ def call(Map params = [:]) {
                             if (failFast && currentBuild.result == 'UNSTABLE') {
                                 error 'There were test failures; halting early'
                             }
-                            if (!jenkinsVersion) {
-                                archiveArtifacts artifacts: artifacts, fingerprint: true
+                            if (doArchiveArtifacts) {
+                                if (incrementals) {
+                                    String changelist = readFile(changelistF)
+                                    dir(m2repo) {
+                                        fingerprint '**/*-rc*.*/*-rc*.*' // includes any incrementals consumed
+                                        archiveArtifacts artifacts: "**/*$changelist/*$changelist*", excludes: '**/*.lastUpdated'
+                                    }
+                                    publishingIncrementals = true
+                                } else {
+                                    String artifacts
+                                    if (isMaven) {
+                                        artifacts = '**/target/*.hpi,**/target/*.jpi'
+                                    } else {
+                                        artifacts = '**/build/libs/*.hpi,**/build/libs/*.jpi'
+                                    }
+                                    archiveArtifacts artifacts: artifacts, fingerprint: true
+                                }
                             }
                         }
                     }
@@ -126,6 +154,9 @@ def call(Map params = [:]) {
     }
 
     timestamps {
-        return parallel(tasks)
+        parallel(tasks)
+        if (publishingIncrementals) {
+            infra.maybePublishIncrementals()
+        }
     }
 }

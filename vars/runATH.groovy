@@ -114,7 +114,7 @@ def call(Map params = [:]) {
 
                     def currentBrowser = browser
                     def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e SHARED_DOCKER_SERVICE=true -e EXERCISEDPLUGINREPORTER=textfile -u ath-user"
-                    def commandBase = "./run.sh ${currentBrowser} ./jenkins.war -B -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
+                    def commandBase = "./run.sh ${currentBrowser} ./jenkins.war -B -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount} -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
 
                     if (testsToRun) {
                         testingbranches["ATH individual tests-${currentBrowser}"] = {
@@ -179,7 +179,5 @@ private void unstashResources(localSnapshots, localPluginsStashName) {
 }
 
 private String getLocalPluginsList() {
-    dir("localPlugins") {
-       return sh(script : "ls -p -d -1 ${pwd()}/*.* | tr '\n' ':'| sed 's/.\$//'", returnStdout: true).trim()
-    }
+       return sh(script : "ls -p -d -1 localPlugins/*.* | tr '\n' ':'| sed 's/.\$//'", returnStdout: true).trim()
 }

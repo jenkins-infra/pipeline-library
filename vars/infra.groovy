@@ -46,8 +46,8 @@ boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
             } else {
                 bat "copy ${mvnSettingsFile} ${settingsXml}"
             }
-            return true
         }
+        return true
     } else if (jdk.toInteger() > 7 && isRunningOnJenkinsInfra()) {
         /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
         writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
@@ -212,5 +212,25 @@ void ensureInNode(env, nodeLabels, body) {
         node(splitted.join("&&")) {
             body()
         }
+    }
+}
+
+/**
+ * When appropriate, publish artifacts from the current build to the Incrementals repository.
+ * See INFRA-1571 and JEP-305.
+ */
+void maybePublishIncrementals() {
+    if (isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
+        stage('Deploy') {
+            node('linux') {
+                withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
+                    sh '''
+curl --fail -d '{"build_url":"'$BUILD_URL'"}' "https://jenkins-infra-functions.azurewebsites.net/api/incrementals-publisher?code=$FUNCTION_TOKEN"
+                    '''
+                }
+            }
+        }
+    } else {
+        echo 'Skipping deployment to Incrementals'
     }
 }
