@@ -14,6 +14,7 @@ def call(Map params = [:]) {
     def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
     def metadata
     def athContainerImage
+    def athContainerImageTag = "jenkins/ath"
     def isLocalATH
     def isVersionNumber
 
@@ -86,9 +87,15 @@ def call(Map params = [:]) {
         stage("Running ATH") {
             dir("athSources") {
                 unstash name: "athSources"
-                def uid = sh(script: "id -u", returnStdout: true)
-                def gid = sh(script: "id -g", returnStdout: true)
-                athContainerImage = docker.build('jenkins/ath', "--build-arg=uid='$uid' --build-arg=gid='$gid' -f src/main/resources/ath-container/Dockerfile .")
+                if (athContainerImageTag == "local") {
+                    echo "'local' ATH container image specified, building it"
+                    def uid = sh(script: "id -u", returnStdout: true)
+                    def gid = sh(script: "id -g", returnStdout: true)
+                    athContainerImage = docker.build('jenkins/ath', "--build-arg=uid='$uid' --build-arg=gid='$gid' -f src/main/resources/ath-container/Dockerfile .")
+                } else {
+                    echo "No building ATH docker container image. Using ${athContainerImageTag} as specified"
+                    athContainerImage = docker.image(athContainerImageTag)
+                }
             }
 
             def testsToRun = metadata.tests?.join(",")
@@ -142,7 +149,7 @@ private void test(discriminator, commandBase, localSnapshots, localPluginsStashN
     unstashResources(localSnapshots, localPluginsStashName)
     athContainerImage.inside(containerArgs) {
         realtimeJUnit(testResults: 'target/surefire-reports/TEST-*.xml', testDataPublishers: [[$class: 'AttachmentPublisher']]) {
-            sh 'eval "$(./vnc.sh)" && ' + prepareCommand(commandBase, discriminator, localSnapshots, localPluginsStashName)
+            sh 'eval "$(./vnc.sh)" && export DISPLAY=$BROWSER_DISPLAY && ' + prepareCommand(commandBase, discriminator, localSnapshots, localPluginsStashName)
         }
     }
 }
