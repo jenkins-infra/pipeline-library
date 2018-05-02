@@ -9,12 +9,12 @@ def call(Map params = [:]) {
     def athRevision = params.get('athRevision', 'master')
     def metadataFile = params.get('metadataFile', 'essentials.yml')
     def jenkins = params.get('jenkins', 'latest')
+    def athContainerImageTag = params.get("athImage", "jenkins/ath");
 
     def mirror = "http://mirrors.jenkins.io/"
     def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
     def metadata
     def athContainerImage
-    def athContainerImageTag = "jenkins/ath"
     def isLocalATH
     def isVersionNumber
 
@@ -51,6 +51,7 @@ def call(Map params = [:]) {
             athUrl = metadata.athUrl ?: athUrl
             isLocalATH = athUrl.startsWith("file://")
             athRevision = metadata.athRevision ?: athRevision
+            athContainerImageTag = metadata.athImage ?: athContainerImageTag
 
             // Allow override of jenkins version from metadata file
             jenkins = metadata.jenkins ?: jenkins
