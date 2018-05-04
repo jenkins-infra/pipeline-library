@@ -14,6 +14,7 @@ The list of step's params and the related default values are:
 <ul>
     <li>athUrl: The URL to get the ATH sources. It can point to a local path (by using the file:// protocol) or a github destination. Defaults to https://github.com/jenkinsci/acceptance-test-harness.git. <b>Can be overridden from the metadata file</b></li>
     <li>athRevision: The ATH revision to use, can be a branch or tag name or a commit id. Defaults to branch master. <b>Can be overridden from the metadata file</b></li>
+    <li>athImage: The docker image used for the environment where to run the ATH. Defaults to "jenkins/ath". Use "local" to build the image directly from the ATH sources <b>Can be overridden from the metadata file</b></li>
     <li>metadataFile: A String indicating the file path (relative to the where this step is executed) to use as metadata file for the build, more details about the metadata file are provided belows. <b>Defaults to <i>essentials.yml</i> at the location where this step is invoked</b></li>
     <li>jenkins: URI to the jenkins.war, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol in the URI. <b>Can be overriden from the metadata file</b></li>
 </ul>
@@ -86,6 +87,7 @@ The list of step's params and the related default values are:
 ath:
   athUrl: https://github.com/jenkinsci/acceptance-test-harness.git
   athRevision: acceptance-test-harness-1.59
+  athImage: "jenkins/ath"
   jenkins: 2.89.4
   failFast: false
   rerunFailingTestsCount: 0
@@ -109,6 +111,7 @@ ath:
 <ul>
     <li>athUrl: (Optional) The URL to get the ATH sources. It can point to a local path or a github destination. If specified it will override the parameter in the runATH step</li>
     <li>athRevision: (Optional) The ATH revision to use can be a branch or tag name or a commit id. If specified it will override the parameter in the runATH step</li>
+    <li>athImage: The docker image used for the environment where to run the ATH. Defaults to "jenkins/ath". Use "local" to build the image directly from the ATH sources</li>
     <li>jenkins: (Optional) URI to the jenkins.war file, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". If specified it will override the parameter in the runATH step</li>
     <li>failFast: If the run has to fail fast or not. Defaults to false if not specified</li>
     <li>rerunFailingTestsCount: The number of runs per failing test (a la maven). Defaults to zero</li>
