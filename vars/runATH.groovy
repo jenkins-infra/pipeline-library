@@ -96,6 +96,7 @@ def call(Map params = [:]) {
                 } else {
                     echo "No building ATH docker container image. Using ${athContainerImageTag} as specified"
                     athContainerImage = docker.image(athContainerImageTag)
+                    athContainerImage.pull() //Use the latest available version
                 }
             }
 
