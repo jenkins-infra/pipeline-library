@@ -103,6 +103,11 @@ def call(Map params = [:]) {
                 categoriesToRun = defaultCategory
             }
 
+            // Shorthand for running all tests
+            if (testsToRun == "all") {
+                testsToRun = categoriesToRun = null
+            }
+
             def testingbranches = ["failFast": failFast]
             for (browser in browsers) {
                 if (supportedBrowsers.contains(browser)) {
@@ -123,6 +128,14 @@ def call(Map params = [:]) {
                         testingbranches["ATH categories-${currentBrowser}"] = {
                             dir("categories${currentBrowser}") {
                                 def discriminator = "-Dgroups=${categoriesToRun}"
+                                test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage)
+                            }
+                        }
+                    }
+                    if (testsToRun == null && categoriesToRun == null) {
+                        testingbranches["ATH ${currentBrowser}"] = {
+                            dir("ath${currentBrowser}") {
+                                def discriminator = ""
                                 test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage)
                             }
                         }
