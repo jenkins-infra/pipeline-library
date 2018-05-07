@@ -31,9 +31,7 @@ def call(Map params = [:]) {
 
             if (!metadata.ath.disabled) {
                 stage("Run PCT") {
-                    runPCT jenkins: customWarURI, metadataFile: metadataPath,
-                        javaOptions: ["-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn",
-                                      "-Dcdkata-test.enabled=true"]
+                    runPCT jenkins: customWarURI, metadataFile: metadataPath
                 }
             }
         }
