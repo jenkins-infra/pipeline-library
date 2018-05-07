@@ -132,7 +132,9 @@ def call(Map params = [:]) {
                                     String changelist = readFile(changelistF)
                                     dir(m2repo) {
                                         fingerprint '**/*-rc*.*/*-rc*.*' // includes any incrementals consumed
-                                        archiveArtifacts artifacts: "**/*$changelist/*$changelist*", excludes: '**/*.lastUpdated'
+                                        archiveArtifacts artifacts: "**/*$changelist/*$changelist*",
+                                                         excludes: '**/*.lastUpdated',
+                                                         allowEmptyArchive: true // in case we forgot to reincrementalify
                                     }
                                     publishingIncrementals = true
                                 } else {
