@@ -13,6 +13,10 @@
  */
 def build(String metadataFile, String outputWAR, String outputBOM, String mvnSettingsFile) {
     def metadata = readYaml(file: metadataFile)
+    if (metadata.packaging == null) {
+        error "No 'packaging' section in the metadata file ${metadataFile}"
+    }
+
     def bomFilePath = metadata.packaging.bom ?: null
     def environment = metadata.packaging.environment
     def jdk = metadata.packaging.jdk ?: "8"
@@ -34,6 +38,7 @@ def build(String metadataFile, String outputWAR, String outputBOM, String mvnSet
     // Resolve the Maven configuration file if not passed
     if (mvnSettingsFile == null) {
         mvnSettingsFile = "${pwd tmp: true}/settings-azure.xml"
+        infra.retrieveMavenSettingsFile(mvnSettingsFile)
     }
 
     // In order to run packager, we require artifactId and version for packaging
