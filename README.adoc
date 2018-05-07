@@ -105,6 +105,8 @@ The list of step's params and the related default values are:
  The URL to get the ATH sources. It can point to a local path (by using the file:// protocol) or a github destination. Defaults to https://github.com/jenkinsci/acceptance-test-harness.git. *Can be overridden from the metadata file*
 `athRevision`::
 The ATH revision to use, can be a branch or tag name or a commit id. Defaults to branch master. *Can be overridden from the metadata file*
+`athImage` ::
+The docker image used for the environment where to run the ATH. Defaults to "jenkins/ath". Use "local" to build the image directly from the ATH sources. *Can be overridden from the metadata file*
 `metadataFile`::
  A String indicating the file path (relative to where this step is executed) to use as metadata file for the build, more details about the metadata file are provided belows. *Defaults to `essentials.yml` at the location where this step is invoked*
 `jenkins`::
@@ -174,6 +176,7 @@ The metadata file is a YAML file with the following structure:
 ath:
   athUrl: https://github.com/jenkinsci/acceptance-test-harness.git
   athRevision: acceptance-test-harness-1.59
+  athImage: "jenkins/ath"
   jenkins: 2.89.4
   failFast: false
   rerunFailingTestsCount: 0
@@ -196,6 +199,8 @@ Where:
  (Optional) The URL to get the ATH sources. It can point to a local path or a github destination. If specified it will override the parameter in the runATH step
 `athRevision`::
  (Optional) The ATH revision to use can be a branch or tag name or a commit id. If specified it will override the parameter in the runATH step
+`athImage` ::
+ (Optional) The docker image used for the environment where to run the ATH. Defaults to "jenkins/ath". Use "local" to build the image directly from the ATH sources.
 `jenkins`::
  (Optional) URI to the jenkins.war file, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". If specified it will override the parameter in the runATH step
 `failFast`::
