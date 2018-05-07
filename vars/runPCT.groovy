@@ -127,7 +127,7 @@ def call(Map params = [:]) {
                         }
                         def command = "JENKINS_WAR_PATH=${warAbsolutePath} run-pct ${pctBranchOptions.join(' ')}"
                         if (!javaOptions.isEmpty()) {
-                            command = "JAVA_OPTS=${javaOptions.join(' ')} ${command}"
+                            command = """JAVA_OPTS="${javaOptions.join(' ')}" ${command}"""
                         }
                         if (localSnapshots && localPluginsStashName) {
                             dir("localPlugins") {
