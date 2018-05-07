@@ -1,0 +1,7 @@
+<p>
+    Builds a Jenkins component following a standard build/test/archive pattern. See repository description for usage.
+</p>
+
+<!--
+vim: ft=html
+-->
