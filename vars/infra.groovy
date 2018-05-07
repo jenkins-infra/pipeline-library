@@ -65,9 +65,11 @@ boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
  * @return nothing
  * @see #retrieveMavenSettingsFile(String)
  */
-Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = null) {
+Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = null, String settingsFile = null) {
     List<String> mvnOptions = [ ]
-    if (jdk.toInteger() > 7 && isRunningOnJenkinsInfra()) {
+    if (settingsFile != null) {
+        mvnOptions += "-s $settingsFile"
+    } else if (jdk.toInteger() > 7 && isRunningOnJenkinsInfra()) {
         /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
         def settingsXml = "${pwd tmp: true}/settings-azure.xml"
         if (retrieveMavenSettingsFile(settingsXml)) {

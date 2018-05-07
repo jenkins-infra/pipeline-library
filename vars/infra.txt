@@ -30,11 +30,11 @@
     See method Javadoc in the repository for more information.
 </p>
 
-<strong>infra.runMaven(List&lt;String&gt; options, String jdk = 8, List&lt;String&gt; extraEnv = null)</strong>
+<strong>infra.runMaven(List&lt;String&gt; options, String jdk = 8, List&lt;String&gt; extraEnv = null, String settingsFile = null)</strong>
 
 <p>
     Runs Maven for the specified options in the current workspace.
-    Maven settings will be added by default if needed.
+    If <code>settingsFile</code> is <code>null</code>, Maven settings will be added usin <code>retrieveMavenSettingsFile</code>.
 </p>
 
 <p>
