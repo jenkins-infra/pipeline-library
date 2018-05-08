@@ -11,7 +11,7 @@
  *                  If {@code null}, it will be determined automatically.
  * @return nothing
  */
-def build(String metadataFile, String outputWAR, String outputBOM, String mvnSettingsFile) {
+def build(String metadataFile, String outputWAR, String outputBOM, String mvnSettingsFile = null) {
     def metadata = readYaml(file: metadataFile)
     if (metadata.packaging == null) {
         error "No 'packaging' section in the metadata file ${metadataFile}"

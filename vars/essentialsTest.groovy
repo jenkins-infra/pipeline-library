@@ -17,7 +17,7 @@ def call(Map params = [:]) {
             def customWarURI = "file://" + customWAR
 
             stage("Build Custom WAR") {
-                customWARPackager.build(metadataPath, customWAR, customBOM, mvnSettingsFile)
+                customWARPackager.build(metadataPath, customWAR, customBOM)
             }
 
             if (!metadata.ath.disabled) {
