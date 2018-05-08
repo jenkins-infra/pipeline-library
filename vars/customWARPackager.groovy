@@ -22,7 +22,7 @@ def build(String metadataFile, String outputWAR, String outputBOM, String mvnSet
     def jdk = metadata.packaging.jdk ?: "8"
     //TODO: replace by a stable release once ready, better name?
     def cwpVersion = metadata.packaging.cwpVersion ?: "0.1-alpha-5"
-    def archiveArtifacts = metadata.packaging.archiveArtifacts ?: false
+    def archiveProducedArtifacts = metadata.packaging.archiveArtifacts ?: false
     def installArtifacts = metadata.packaging.installArtifacts ?: true
 
     // Resolve the CWP configuration file
@@ -122,7 +122,7 @@ def build(String metadataFile, String outputWAR, String outputBOM, String mvnSet
     infra.runWithMaven(command)
 
     dir("tmp/output/target/") {
-        if (archiveArtifacts) {
+        if (archiveProducedArtifacts) {
             archiveArtifacts artifacts: "${artifactId}-${version}.war"
             archiveArtifacts artifacts: "${artifactId}-${version}.bom.yml"
         }
