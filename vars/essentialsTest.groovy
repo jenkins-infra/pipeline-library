@@ -20,7 +20,7 @@ def call(Map params = [:]) {
                 customWARPackager.build(metadataPath, customWAR, customBOM)
             }
 
-            if (!metadata.ath.disabled) {
+            if (metadata.ath != null && !metadata.ath.disabled) {
                 stage("Run ATH") {
                     dir("ath") {
                         runATH jenkins: customWarURI, metadataFile: metadataPath
@@ -28,7 +28,7 @@ def call(Map params = [:]) {
                 }
             }
 
-            if (!metadata.ath.disabled) {
+            if (metadata.pct != null && !metadata.pct.disabled) {
                 stage("Run PCT") {
                     runPCT jenkins: customWarURI, metadataFile: metadataPath
                 }
