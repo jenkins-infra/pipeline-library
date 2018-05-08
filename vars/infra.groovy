@@ -154,6 +154,9 @@ void stashJenkinsWar(String jenkins, String stashName = "jenkinsWar") {
         }
     }
     if (!isVersionNumber && !isLocalJenkins) {
+        if (jenkinsURL == null) {
+            error "Not sure how to interpret $jenkins as a version, alias, or URL"
+        }
         echo 'Checking whether Jenkins WAR is available…'
         sh "curl -ILf ${jenkinsURL}"
     }
