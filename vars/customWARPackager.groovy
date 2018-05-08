@@ -37,8 +37,10 @@ def build(String metadataFile, String outputWAR, String outputBOM, String mvnSet
 
     // Resolve the Maven configuration file if not passed
     if (mvnSettingsFile == null) {
-        mvnSettingsFile = "${pwd tmp: true}/settings-azure.xml"
-        infra.retrieveMavenSettingsFile(mvnSettingsFile)
+        def location = "${pwd tmp: true}/settings-azure.xml"
+        if (infra.retrieveMavenSettingsFile(mvnSettingsFile)) {
+            mvnSettingsFile = location
+        }
     }
 
     // In order to run packager, we require artifactId and version for packaging
