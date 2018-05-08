@@ -75,7 +75,7 @@ def build(String metadataFile, String outputWAR, String outputBOM, String mvnSet
     }
 
     if (version == null) {
-        version = "1.0-SNAPSHOT"
+        version = "256.0-custom-war-packager-default-SNAPSHOT"
     }
     if (artifactId == null) {
         artifactId = "jenkins-war"
