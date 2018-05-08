@@ -40,7 +40,7 @@ def build(String metadataFile, String outputWAR, String outputBOM, String mvnSet
     // Resolve the Maven configuration file if not passed
     if (mvnSettingsFile == null) {
         def location = "${pwd tmp: true}/settings-azure.xml"
-        if (infra.retrieveMavenSettingsFile(mvnSettingsFile)) {
+        if (infra.retrieveMavenSettingsFile(location)) {
             mvnSettingsFile = location
         }
     }
