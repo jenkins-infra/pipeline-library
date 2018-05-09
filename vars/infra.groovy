@@ -66,7 +66,11 @@ boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
  * @see #retrieveMavenSettingsFile(String)
  */
 Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = null, String settingsFile = null) {
-    List<String> mvnOptions = [ ]
+    List<String> mvnOptions = [
+        '--batch-mode',
+        '--errors',
+        '-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn',
+    ]
     if (settingsFile != null) {
         mvnOptions += "-s $settingsFile"
     } else if (jdk.toInteger() > 7 && isRunningOnJenkinsInfra()) {
