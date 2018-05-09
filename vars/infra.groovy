@@ -171,6 +171,9 @@ void stashJenkinsWar(String jenkins, String stashName = "jenkinsWar") {
                 "-Dmdep.stripVersion=true"
         ]
         dir("deps") {
+            def pom = libraryResource 'pom.xml'
+            def pomPath = "${pwd tmp: true}/pom.xml"
+            writeFile file: pomPath, text: pom
             runMaven(downloadCommand)
             sh "cp jenkins-war.war jenkins.war"
             stash includes: 'jenkins.war', name: stashName
