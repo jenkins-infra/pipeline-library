@@ -51,12 +51,9 @@ def call(Map params = [:]) {
                             if (isMaven) {
                                 m2repo = "${pwd tmp: true}/m2repo"
                                 List<String> mavenOptions = [
-                                        '--batch-mode',
-                                        '--errors',
                                         '--update-snapshots',
                                         "-Dmaven.repo.local=$m2repo",
                                         '-Dmaven.test.failure.ignore',
-                                        '-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'
                                 ]
                                 if (incrementals) { // set changelist and activate produce-incrementals profile
                                     mavenOptions += '-Dset.changelist'

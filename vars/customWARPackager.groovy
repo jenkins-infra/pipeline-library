@@ -84,16 +84,13 @@ def build(String metadataFile, String outputWAR, String outputBOM, String mvnSet
     // Warm-up
     // TODO: Remove once JENKINS-51070 is fixed
     List<String> mavenWarmup = [
-        '--batch-mode', '--errors',
         "org.apache.maven.plugins:maven-dependency-plugin:3.0.2:get",
         "-Dartifact=io.jenkins.tools.custom-war-packager:custom-war-packager-cli:${cwpVersion}",
-        "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
     ]
     infra.runMaven(mavenWarmup, jdk, null, mvnSettingsFile)
 
     echo "Downloading Custom WAR Packager CLI ${cwpVersion}"
     List<String> mavenOptions = [
-        '--batch-mode', '--errors',
         "com.googlecode.maven-download-plugin:download-maven-plugin:1.4.0:artifact",
         "-DgroupId=io.jenkins.tools.custom-war-packager",
         "-DartifactId=custom-war-packager-cli",
@@ -101,7 +98,6 @@ def build(String metadataFile, String outputWAR, String outputBOM, String mvnSet
         "-Dversion=${cwpVersion}",
         "-DoutputDirectory=${pwd()}",
         "-DoutputFileName=cwp-cli.jar",
-        "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
     ]
     infra.runMaven(mavenOptions, jdk, null, mvnSettingsFile)
 
