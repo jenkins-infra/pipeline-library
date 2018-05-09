@@ -5,5 +5,10 @@
             <url>https://repo.azure.jenkins.io/public/</url> <!-- INFRA-1176 -->
             <mirrorOf>repo.jenkins-ci.org</mirrorOf>
         </mirror>
+        <mirror>
+            <id>azure-incrementals</id>
+            <url>https://repo.azure.jenkins.io/incrementals/</url> <!-- IEP-9, JEP-305 -->
+            <mirrorOf>incrementals</mirrorOf>
+        </mirror>
     </mirrors>
 </settings>
