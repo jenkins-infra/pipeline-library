@@ -132,7 +132,7 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null)
  * @param stashName The name used to stash the jenkins war file, defaults to "jenkinsWar"
  */
 void stashJenkinsWar(String jenkins, String stashName = "jenkinsWar") {
-    def isVersionNumber = (jenkins =~ /^\d+([.]\d+)*$/).matches()
+    def isVersionNumber = (jenkins =~ /^\d+([.]\d+)*(-rc[0-9]+[.][0-9a-f]{12})?$/).matches()
     def isLocalJenkins = jenkins.startsWith("file://")
     def mirror = "http://mirrors.jenkins.io/"
 
@@ -154,6 +154,9 @@ void stashJenkinsWar(String jenkins, String stashName = "jenkinsWar") {
         }
     }
     if (!isVersionNumber && !isLocalJenkins) {
+        if (jenkinsURL == null) {
+            error "Not sure how to interpret $jenkins as a version, alias, or URL"
+        }
         echo 'Checking whether Jenkins WAR is available…'
         sh "curl -ILf ${jenkinsURL}"
     }
