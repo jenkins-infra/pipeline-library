@@ -17,6 +17,7 @@ The list of step's params and the related default values are:
     <li>athImage: The docker image used for the environment where to run the ATH. Defaults to "jenkins/ath". Use "local" to build the image directly from the ATH sources <b>Can be overridden from the metadata file</b></li>
     <li>metadataFile: A String indicating the file path (relative to the where this step is executed) to use as metadata file for the build, more details about the metadata file are provided belows. <b>Defaults to <i>essentials.yml</i> at the location where this step is invoked</b></li>
     <li>jenkins: URI to the jenkins.war, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol in the URI. <b>Can be overriden from the metadata file</b></li>
+    <li>configFile: (Optional) Relative (to the workspace) path of a groovy script to customize the ATH behaviour</li>
 </ul>
 
 <pre>
