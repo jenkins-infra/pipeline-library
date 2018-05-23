@@ -2,6 +2,7 @@ def call(Map params = [:]) {
     def baseDir = params.containsKey('baseDir') ? params.baseDir : "."
     def metadataFile = params.containsKey('metadataFile') ? params.metadataFile : "essentials.yml"
     def labels = params.containsKey('labels') ? params.labels : "docker && highmem"
+    def pluginEvaluationOutcome = params.get("pluginEvaluationOutcome") ?: "failOnInvalid"
 
     node(labels) {
         stage("Checkout") {
@@ -23,7 +24,9 @@ def call(Map params = [:]) {
             if (metadata.ath != null && !metadata.ath.disabled) {
                 stage("Run ATH") {
                     dir("ath") {
-                        runATH jenkins: customWarURI, metadataFile: metadataPath
+                        def configFile = "ath-config.groovy"
+                        writeFile file: configFile, text: "pluginEvaluationOutcome=${pluginEvaluationOutcome}"
+                        runATH jenkins: customWarURI, metadataFile: metadataPath, configFile: configFile
                     }
                 }
             }
