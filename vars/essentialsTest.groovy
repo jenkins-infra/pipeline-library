@@ -25,7 +25,7 @@ def call(Map params = [:]) {
                 stage("Run ATH") {
                     dir("ath") {
                         def configFile = "ath-config.groovy"
-                        writeFile file: configFile, text: "pluginEvaluationOutcome=${pluginEvaluationOutcome}"
+                        writeFile file: configFile, text: "pluginEvaluationOutcome='${pluginEvaluationOutcome}'"
                         runATH jenkins: customWarURI, metadataFile: metadataPath, configFile: configFile
                     }
                 }
