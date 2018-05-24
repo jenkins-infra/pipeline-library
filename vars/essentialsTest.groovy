@@ -2,7 +2,7 @@ def call(Map params = [:]) {
     def baseDir = params.containsKey('baseDir') ? params.baseDir : "."
     def metadataFile = params.containsKey('metadataFile') ? params.metadataFile : "essentials.yml"
     def labels = params.containsKey('labels') ? params.labels : "docker && highmem"
-    def pluginEvaluationOutcome = params.get("pluginEvaluationOutcome") ?: "failOnInvalid"
+    def testPluginResolution
 
     node(labels) {
         stage("Checkout") {
@@ -11,7 +11,9 @@ def call(Map params = [:]) {
 
         dir(baseDir) {
             def metadataPath = "${pwd()}/${metadataFile}"
-            metadata = readYaml(file: metadataPath)
+            def configData = readYaml(file: metadataPath)
+            testPluginResolution = configData.metadata?.testPluginResolution?.skipOnUnmetDependencies ?  "skipOnInvalid" : "failOnInvalid"
+
 
             def customBOM = "${pwd tmp: true}/custom.bom.yml"
             def customWAR = "${pwd tmp: true}/custom.war"
@@ -21,17 +23,17 @@ def call(Map params = [:]) {
                 customWARPackager.build(metadataPath, customWAR, customBOM)
             }
 
-            if (metadata.ath != null && !metadata.ath.disabled) {
+            if (configData.ath != null && !configData.ath.disabled) {
                 stage("Run ATH") {
                     dir("ath") {
                         def configFile = "ath-config.groovy"
-                        writeFile file: configFile, text: "pluginEvaluationOutcome='${pluginEvaluationOutcome}'"
+                        writeFile file: configFile, text: "pluginEvaluationOutcome='${testPluginResolution}'"
                         runATH jenkins: customWarURI, metadataFile: metadataPath, configFile: configFile
                     }
                 }
             }
 
-            if (metadata.pct != null && !metadata.pct.disabled) {
+            if (configData.pct != null && !configData.pct.disabled) {
                 stage("Run PCT") {
                     runPCT jenkins: customWarURI, metadataFile: metadataPath
                 }
