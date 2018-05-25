@@ -26,9 +26,7 @@ def call(Map params = [:]) {
             if (configData.ath != null && !configData.ath.disabled) {
                 stage("Run ATH") {
                     dir("ath") {
-                        def configFile = "ath-config.groovy"
-                        writeFile file: configFile, text: "pluginEvaluationOutcome='${testPluginResolution}'"
-                        runATH jenkins: customWarURI, metadataFile: metadataPath, configFile: configFile
+                        runATH jenkins: customWarURI, metadataFile: metadataPath, javaOptions: ["-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn", testPluginResolution]
                     }
                 }
             }
