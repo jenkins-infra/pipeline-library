@@ -11,6 +11,7 @@ def call(Map params = [:]) {
     def jenkins = params.get('jenkins', 'latest')
     def athContainerImageTag = params.get("athImage", "jenkins/ath");
     def configFile = params.get("configFile", null)
+    def javaOptions = params.get('javaOptions', ["-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"])
 
     def mirror = "http://mirrors.jenkins.io/"
     def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
@@ -123,17 +124,17 @@ def call(Map params = [:]) {
                 if (supportedBrowsers.contains(browser)) {
 
                     def currentBrowser = browser
-                    def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e SHARED_DOCKER_SERVICE=true -e EXERCISEDPLUGINREPORTER=textfile -u ath-user"
+                    def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -u ath-user"
                     if(configFile) {
                         containerArgs += " -e CONFIG=../${configFile}" // ATH runs are executed in a subfolder, hence path needs to take that into account
                     }
-                    def commandBase = "./run.sh ${currentBrowser} ./jenkins.war -B -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount} -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+                    def commandBase = "./run.sh ${currentBrowser} ./jenkins.war -B -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
 
                     if (testsToRun) {
                         testingbranches["ATH individual tests-${currentBrowser}"] = {
                             dir("test${currentBrowser}") {
                                 def discriminator = "-Dtest=${testsToRun}"
-                                test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage)
+                                test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage, javaOptions)
                             }
                         }
                     }
@@ -141,7 +142,7 @@ def call(Map params = [:]) {
                         testingbranches["ATH categories-${currentBrowser}"] = {
                             dir("categories${currentBrowser}") {
                                 def discriminator = "-Dgroups=${categoriesToRun}"
-                                test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage)
+                                test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage, javaOptions)
                             }
                         }
                     }
@@ -149,7 +150,7 @@ def call(Map params = [:]) {
                         testingbranches["ATH ${currentBrowser}"] = {
                             dir("ath${currentBrowser}") {
                                 def discriminator = ""
-                                test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage)
+                                test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage, javaOptions)
                             }
                         }
                     }
@@ -164,11 +165,15 @@ def call(Map params = [:]) {
     })
 }
 
-private void test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage) {
+private void test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage, javaOptions) {
     unstashResources(localSnapshots, localPluginsStashName)
     athContainerImage.inside(containerArgs) {
         realtimeJUnit(testResults: 'target/surefire-reports/TEST-*.xml', testDataPublishers: [[$class: 'AttachmentPublisher']]) {
-            sh 'eval "$(./vnc.sh)" && export DISPLAY=$BROWSER_DISPLAY && ' + prepareCommand(commandBase, discriminator, localSnapshots, localPluginsStashName)
+            def command = 'eval "$(./vnc.sh)" && export DISPLAY=$BROWSER_DISPLAY && export SHARED_DOCKER_SERVICE=true && export EXERCISEDPLUGINREPORTER=textfile && ' + prepareCommand(commandBase, discriminator, localSnapshots, localPluginsStashName)
+            if (!javaOptions.isEmpty()) {
+                command = """export JAVA_OPTS="${javaOptions.join(' ')}" && ${command}"""
+            }
+            sh command
         }
     }
 }
