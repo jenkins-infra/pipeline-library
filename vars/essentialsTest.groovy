@@ -12,7 +12,7 @@ def call(Map params = [:]) {
         dir(baseDir) {
             def metadataPath = "${pwd()}/${metadataFile}"
             def configData = readYaml(file: metadataPath)
-            testPluginResolution = configData.metadata?.testPluginResolution?.skipOnUnmetDependencies ?  "skipOnInvalid" : "failOnInvalid"
+            testPluginResolution = configData.flow?.ath?.testPluginResolution?.skipOnUnmetDependencies ?  "skipOnInvalid" : "failOnInvalid"
 
 
             def customBOM = "${pwd tmp: true}/custom.bom.yml"
