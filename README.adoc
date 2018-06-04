@@ -111,7 +111,8 @@ The docker image used for the environment where to run the ATH. Defaults to "jen
  A String indicating the file path (relative to where this step is executed) to use as metadata file for the build, more details about the metadata file are provided belows. *Defaults to `essentials.yml` at the location where this step is invoked*
 `jenkins`::
  URI to the jenkins.war, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol in the URI. *Can be overriden from the metadata file*
-
+`configFile`::
+ (Optional) Relative (to the workspace) path of a groovy script to customize the ATH behaviour
 .Step call example
 [source,groovy]
 ----
