@@ -234,7 +234,7 @@ void maybePublishIncrementals() {
             node('linux') {
                 withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
                     sh '''
-curl --fail -d '{"build_url":"'$BUILD_URL'"}' "https://jenkins-infra-functions.azurewebsites.net/api/incrementals-publisher?code=$FUNCTION_TOKEN"
+curl -d '{"build_url":"'$BUILD_URL'"}' "https://jenkins-infra-functions.azurewebsites.net/api/incrementals-publisher?code=$FUNCTION_TOKEN" || echo 'Problem calling Incrementals deployment function'
                     '''
                 }
             }
