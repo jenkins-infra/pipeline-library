@@ -30,6 +30,9 @@ buildPlugin()
   execute the steps against in parallel
 * `jenkinsVersions`: (default: `[null]`) - a matrix of Jenkins baseline versions to build/test against in parallel (null means default,
   only available for Maven projects)
+* `tests`: (default: `null`) - a map of parameters to run tests during the build
+** `skip` - If `true`, skipp all the tests by setting the `-skipTests` profile.
+  It will also skip FindBugs in modern Plugin POMs.
 * `findbugs`: (default: `null`) - a map of parameters to run findbugs and/or archive findbugs reports. (only available for Maven projects)
 ** `run`: set to `true` to add the `findbugs:findbugs` goal to the maven command.
 ** `archive`: set to `true` to collect the findbugs report.

@@ -1,5 +1,7 @@
 #!/usr/bin/env groovy
 
+//TODO(oleg_nenashev): This thing is not simple anymore. I suggest reworking it to a config YAML
+// which would be compatible with essentials.yml (INFRA-1673)
 /**
  * Simple wrapper step for building a plugin
  */
@@ -29,6 +31,7 @@ def call(Map params = [:]) {
                 boolean runCheckstyle = first && params?.checkstyle?.run
                 boolean archiveFindbugs = first && params?.findbugs?.archive
                 boolean archiveCheckstyle = first && params?.checkstyle?.archive
+                boolean skipTests = params?.tests?.skip
 
                 tasks[stageIdentifier] = {
                     node(label) {
@@ -69,6 +72,9 @@ def call(Map params = [:]) {
                                 if (params?.findbugs?.run || params?.findbugs?.archive) {
                                     mavenOptions += "-Dfindbugs.failOnError=false"
                                 }
+                                if (skipTests) {
+                                    mavenOptions += "-DskipTests"
+                                }
                                 if (params?.checkstyle?.run || params?.checkstyle?.archive) {
                                     mavenOptions += "-Dcheckstyle.failOnViolation=false -Dcheckstyle.failsOnError=false"
                                 }
@@ -95,13 +101,16 @@ def call(Map params = [:]) {
                         }
 
                         stage("Archive (${stageIdentifier})") {
-                            String testReports
-                            if (isMaven) {
-                                testReports = '**/target/surefire-reports/**/*.xml'
-                            } else {
-                                testReports = '**/build/test-results/**/*.xml'
+                            if (!skipTests) {
+                                String testReports
+                                if (isMaven) {
+                                    testReports = '**/target/surefire-reports/**/*.xml'
+                                } else {
+                                    testReports = '**/build/test-results/**/*.xml'
+                                }
+                                junit testReports
+                                // TODO do this in a finally-block so we capture all test results even if one branch aborts early
                             }
-                            junit testReports // TODO do this in a finally-block so we capture all test results even if one branch aborts early
                             if (isMaven && archiveFindbugs) {
                                 def fp = [pattern: params?.findbugs?.pattern ?: '**/target/findbugsXml.xml']
                                 if (params?.findbugs?.unstableNewAll) {
