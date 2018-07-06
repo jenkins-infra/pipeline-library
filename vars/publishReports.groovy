@@ -40,7 +40,10 @@ def call(List<String> files, Map params = [:]) {
                             uploadFlags = '--content-type="image/png"'
                             break
                     }
+                    // Blob container can be removed once files are uploaded on the azure file storage
                     sh "az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${timeout} --file=${filename} --name=${filename} ${uploadFlags}"
+                    // Deploy reports on a azure file storage in order to mount it inside a container running on Kubernetes
+                    sh "az storage file upload --account-name prodjenkinsreports --share-name reports --timeout ${timeout} --source ${filename} -p ${filename}"
                 }
             }
         }
