@@ -51,7 +51,7 @@ def call(List<String> files, Map params = [:]) {
 
                     sh "az storage file upload-batch \
                       --account-name prodjenkinsreports \
-                      --share-name reports \
+                      --destination reports \
                       --source ${dirname ?: '.'} \
                       --destination-path ${dirname ?: '/'} \
                       --pattern ${ basename ?: '*' } \
