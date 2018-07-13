@@ -42,8 +42,20 @@ def call(List<String> files, Map params = [:]) {
                     }
                     // Blob container can be removed once files are uploaded on the azure file storage
                     sh "az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${timeout} --file=${filename} --name=${filename} ${uploadFlags}"
-                    // Deploy reports on a azure file storage in order to mount it inside a container running on Kubernetes
-                    sh "az storage file upload --account-name prodjenkinsreports --share-name reports --timeout ${timeout} --source ${filename} -p ${filename}"
+
+                    // `az storage file upload` doesn't support file uploaded in a remote directory that doesn't exist but upload-batch yes. Unfortunatly the cli syntax is a bit different and require filename and directory name to be set differently.
+
+                    def directory = filename.split("/")
+                    def basename = directory[directory.size() - 1]
+                    def dirname = Arrays.copyOfRange(directory, 0, directory.size()-1 ).join("/")
+
+                    sh "az storage file upload-batch \
+                      --account-name prodjenkinsreports \
+                      --share-name reports \
+                      --source ${dirname ?: '.'} \
+                      --destination-path ${dirname ?: '/'} \
+                      --pattern ${ basename ?: '*' } \
+                      ${uploadFlags}"
                 }
             }
         }
