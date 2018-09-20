@@ -17,6 +17,11 @@ def call(Map params = [:]) {
     def jenkinsVersions = params.containsKey('jenkinsVersions') ? params.jenkinsVersions : [null]
     def repo = params.containsKey('repo') ? params.repo : null
     def failFast = params.containsKey('failFast') ? params.failFast : true
+    def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
+    if(timeoutValue > 180) {
+      echo "Timeout value requested was $timeoutValue, lowering to 180 to avoid Jenkins project's resource abusive consumption"
+      timeoutValue = 180
+    }
     Map tasks = [failFast: failFast]
     boolean publishingIncrementals = false
     for (int i = 0; i < platforms.size(); ++i) {
@@ -35,7 +40,7 @@ def call(Map params = [:]) {
 
                 tasks[stageIdentifier] = {
                     node(label) {
-                        timeout(60) {
+                        timeout(timeoutValue) {
                         boolean isMaven
                         boolean doArchiveArtifacts = /* default platform */ label == platforms[0] && /* default baseline */ !jenkinsVersion
                         boolean incrementals // cf. JEP-305
