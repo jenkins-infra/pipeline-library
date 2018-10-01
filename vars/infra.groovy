@@ -81,6 +81,7 @@ Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = nu
         }
     }
     mvnOptions.addAll(options)
+    mvnOptions.unique()
     String command = "mvn ${mvnOptions.join(' ')}"
     runWithMaven(command, jdk, extraEnv)
 }
