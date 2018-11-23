@@ -30,9 +30,9 @@ buildPlugin()
     number jdk tool installed
 * `jenkinsVersions`: (default: `[null]`) - a matrix of Jenkins baseline versions to build/test against in parallel (null means default,
   only available for Maven projects)
-* `configurations`: An alternative to `platforms`, `'jdkVersions'` and `'jenkinsVersions'` arguments. Those 3 form a cartesian
-  product of maven invocations. While that is desirable in many cases, `configurations` permit to provide a specific combinations
-  of label and versions to use:
+* `configurations`: An alternative way to specify `platforms`, `jdkVersions` and `jenkinsVersions` (that can not be combined
+  with any of them). Those options will run the build for all combinations of their values. While that is desirable in
+  many cases, `configurations` permit to provide a specific combinations of label and java/jenkins versions to use:
 
 [source,groovy]
 ----
