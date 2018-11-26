@@ -252,6 +252,14 @@ The PCT revision to use in case that pctUrl points to a github destination, can 
  A String indicating the file path (relative to where this step is executed) to use as metadata file for the build, more details about the metadata file are provided belows. *Defaults to `essentials.yml` at the location where this step is invoked*
 `jenkins`::
  URI to the jenkins.war, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol in the URI. *Can be overriden from the metadata file*
+`pctExtraOptions`:: 
+ List of extra PCT options to be passed to the PCT executable. Defaults to empty list.
+`javaOptions`:: 
+ List of extra Java options to be passed to the PCT executable. Defaults to empty list.
+`dockerOptions`::
+ List of extra options to be passed to PCT containers ( e.g. `maven-repo:/root/.m2`)
+`useJDK11`::
+ Boolean to specified if the test should be run with JDK11.
 
 .Step call example
 [source,groovy]
