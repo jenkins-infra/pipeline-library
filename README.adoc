@@ -258,7 +258,7 @@ The PCT revision to use in case that pctUrl points to a github destination, can 
  List of extra Java options to be passed to the PCT executable. Defaults to empty list.
 `dockerOptions`::
  List of extra options to be passed to PCT containers ( e.g. `maven-repo:/root/.m2`)
-`useJDK11`::
+`jdkVersion`::
  The version of the JDK to use to run the tests. Should be `8` or `11`. Defaults to `8`.
 
 .Step call example
