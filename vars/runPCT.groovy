@@ -12,6 +12,7 @@ def call(Map params = [:]) {
     def pctExtraOptions = params.get('pctExtraOptions', [])
     def javaOptions = params.get('javaOptions', ["-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"])
     def dockerOptions = params.get('dockerOptions', [])
+    def jdkVersion = params.get('jdkVersion', '8')
 
     def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
     def metadata
@@ -142,6 +143,7 @@ def call(Map params = [:]) {
                             sh "cp tmp_settings.xml /pct/m2-settings.xml/settings.xml"
                             command = "M2_SETTINGS_FILE=/pct/m2-settings.xml/settings.xml ${command}"
                         }
+                        command = "JDK_VERSION=${jdkVersion} ${command}"
 
                         sh command
                         sh "mkdir reports${plugin} && cp /pct/tmp/work/*/target/surefire-reports/*.xml reports${plugin}"
@@ -149,7 +151,7 @@ def call(Map params = [:]) {
                     }
                 }
             }
-            // TODO provide a mechanism for HTML repor archiving and aggregation
+            // TODO provide a mechanism for HTML report archiving and aggregation
             parallel testingBranches
         }
 
