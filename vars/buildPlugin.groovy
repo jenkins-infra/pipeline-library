@@ -27,8 +27,13 @@ def call(Map params = [:]) {
         String label = config.platform
         String jdk = config.jdk
         String jenkinsVersion = config.jenkins
-
         String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
+
+        if ("windows".equals(label) && "true".equals(env.PIPELINE_LIBRARY_SKIP_WINDOWS)) {
+            echo "Skipping ${stageIdentifier}, because `PIPELINE_LIBRARY_SKIP_WINDOWS` environment variable is set"
+            return;
+        }
+
         boolean first = tasks.size() == 1
         boolean runFindbugs = first && params?.findbugs?.run
         boolean runCheckstyle = first && params?.checkstyle?.run

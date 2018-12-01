@@ -24,8 +24,10 @@ Object checkout(String repo = null) {
         checkout scm
     } else if ((env.BRANCH_NAME == null) && (repo)) {
         git repo
+    } else if (env.JFR_LOCAL_WORKSPACE != null) {
+        sh "cp -R ${env.JFR_LOCAL_WORKSPACE}/* ."
     } else {
-        error 'buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided'
+        error 'buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided. For Jenkinsfile Runner the JFR_LOCAL_WORKSPACE can be set to pass the path to the source code'
     }
 }
 
