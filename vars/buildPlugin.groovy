@@ -68,9 +68,14 @@ def call(Map params = [:]) {
                             m2repo = "${pwd tmp: true}/m2repo"
                             List<String> mavenOptions = [
                                     '--update-snapshots',
-                                    "-Dmaven.repo.local=$m2repo",
                                     '-Dmaven.test.failure.ignore',
                             ]
+                            if ("true".equals(env.PIPELINE_LIBRARY_USE_DEFAULT_MAVEN_REPO)) {
+                                echo "Using the default Maven local repo, because 'PIPELINE_LIBRARY_USE_DEFAULT_MAVEN_REPO' is set"
+                            } else {
+                                mavenOptions += "-Dmaven.repo.local=$m2repo"
+                            }
+
                             if (incrementals) { // set changelist and activate produce-incrementals profile
                                 mavenOptions += '-Dset.changelist'
                                 if (doArchiveArtifacts) { // ask Maven for the value of -rc999.abc123def456
