@@ -39,7 +39,7 @@ buildPlugin()
 buildPlugin(/*...*/, configurations: [
   [ platform: "linux", jdk: "8", jenkins: null ],
   [ platform: "windows", jdk: "8", jenkins: null ],
-  [ platform: "linux", jdk: "11", jenkins: "2.150" ]
+  [ platform: "linux", jdk: "11", jenkins: "2.150", javaLevel: 8 ]
 ])
 ----
 * `tests`: (default: `null`) - a map of parameters to run tests during the build

@@ -27,6 +27,8 @@ def call(Map params = [:]) {
         String label = config.platform
         String jdk = config.jdk
         String jenkinsVersion = config.jenkins
+        String javaLevel = config.javaLevel
+
         String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
 
         if ("windows".equals(label) && "true".equals(env.PIPELINE_LIBRARY_SKIP_WINDOWS)) {
@@ -85,6 +87,9 @@ def call(Map params = [:]) {
                             }
                             if (jenkinsVersion) {
                                 mavenOptions += "-Djenkins.version=${jenkinsVersion} -Daccess-modifier-checker.failOnError=false"
+                            }
+                            if (javaLevel) {
+                                mavenOptions += "-Djava.level=${javaLevel}"
                             }
                             if (params?.findbugs?.run || params?.findbugs?.archive) {
                                 mavenOptions += "-Dfindbugs.failOnError=false"
@@ -217,7 +222,8 @@ static List<Map<String, String>> getConfigurations(Map params) {
                 ret << [
                         "platform": p,
                         "jdk": jdk,
-                        "jenkins": jenkins
+                        "jenkins": jenkins,
+                        "javaLevel": null   // not supported in the old format
                 ]
             }
         }
