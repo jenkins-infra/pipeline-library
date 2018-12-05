@@ -68,6 +68,7 @@ boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
 Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = null, String settingsFile = null) {
     List<String> mvnOptions = [
         '--batch-mode',
+        '--show-version',
         '--errors',
         '-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn',
     ]
