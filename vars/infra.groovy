@@ -9,13 +9,13 @@ Boolean isTrusted() {
 }
 
 Object withDockerCredentials(Closure body) {
-    if (isTrusted()) {
+    if (isRunningOnJenkinsInfra()) {
         withCredentials([[$class: 'ZipFileBinding', credentialsId: 'jenkins-dockerhub', variable: 'DOCKER_CONFIG']]) {
             return body.call()
         }
     }
     else {
-        echo 'Cannot use Docker credentials outside of the trusted environment'
+        echo 'Cannot use Docker credentials outside of jenkins infra environment'
     }
 }
 
