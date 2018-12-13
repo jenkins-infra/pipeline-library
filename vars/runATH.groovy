@@ -63,7 +63,7 @@ def call(Map params = [:]) {
 
             // Allow override of JDK version from metadata file
             jdks = metadata.jdks ?: jdks
-            
+
             if (!isLocalATH) {
                 echo 'Checking connectivity to ATH sources…'
                 sh "git ls-remote --exit-code -h ${athUrl}"
@@ -131,14 +131,14 @@ def call(Map params = [:]) {
                     def javaOptions = defaultJavaOptions.clone()
                     def commandBaseWithFutureJava = ""
                     def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -u ath-user"
-                    
+
                     if(configFile) {
                         containerArgs += " -e CONFIG=../${configFile}" // ATH runs are executed in a subfolder, hence path needs to take that into account
                     }
-                    
+
                     // Add options for jdks
                     if ( currentJdk  > 8) {
-                        // Add environment variable to 
+                        // Add environment variable
                         commandBaseWithFutureJava = "JENKINS_OPTS=\"--enable-future-java\" "
                         containerArgs += " -e java_version=${currentJdk}"
 
@@ -190,7 +190,7 @@ def call(Map params = [:]) {
                 }
             }
 
-        parallel testingbranches
+            parallel testingbranches
         }
     })
 }
