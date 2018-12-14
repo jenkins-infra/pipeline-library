@@ -24,7 +24,7 @@ def call(Map params = [:]) {
     def athSourcesFolder = "athSources"
 
     def supportedBrowsers = ["firefox"]
-    def supportedJdks = [8, 10, 11]
+    def supportedJdks = [8, 11]
 
     def skipExecution = false
 

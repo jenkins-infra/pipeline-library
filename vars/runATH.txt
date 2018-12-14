@@ -18,7 +18,7 @@ The list of step's params and the related default values are:
     <li>metadataFile: A String indicating the file path (relative to the where this step is executed) to use as metadata file for the build, more details about the metadata file are provided belows. <b>Defaults to <i>essentials.yml</i> at the location where this step is invoked</b></li>
     <li>jenkins: URI to the jenkins.war, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol in the URI. <b>Can be overriden from the metadata file</b></li>
     <li>configFile: (Optional) Relative (to the workspace) path of a groovy script to customize the ATH behaviour</li>
-    <li>jdks: Java versions to use when running ATH. Defaults to 8. Only 8, 10 and 11 are supported. <b>Can be overridden from the metadata file</b></li>
+    <li>jdks: Java versions to use when running ATH. Defaults to 8. Only 8 and 11 are supported. <b>Can be overridden from the metadata file</b></li>
 </ul>
 
 <pre>
@@ -106,7 +106,6 @@ ath:
     - Category2
   jdks:
     - 8
-    - 10
     - 11
 </pre>
 
@@ -125,7 +124,7 @@ ath:
     <li>browsers: The list of browsers to use when running ATH Defaults to firefox. <b>Note that currently only firefox browser is supported, any other will be ignored</b></li>
     <li>tests: The list of tests to run for the component that calls the step. If no particular set of tests or categories is defined the SmokeTest Category of the ATH will be run</li>
     <li>categories: The list of Categories to run. Defaults to nothing</li>
-    <li>jdks: The list of jdks to use when running ATH. Defaults to 8. <b>Note that currently only 8, 10 and 11 are supported, any other will be ignored<b></li>
+    <li>jdks: The list of jdks to use when running ATH. Defaults to 8. <b>Note that currently only 8 and 11 are supported, any other will be ignored<b></li>
 </ul>
 
 <p>
