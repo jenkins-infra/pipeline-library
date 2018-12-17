@@ -142,12 +142,10 @@ def call(Map params = [:]) {
                         commandBaseWithFutureJava = "JENKINS_OPTS=\"--enable-future-java\" "
                         containerArgs += " -e java_version=${currentJdk}"
 
-                        if (currentJdk >= 11) {
-                            // Add modules removed
-                            javaOptions << "-p /home/ath-user/jdk11-libs/jaxb-api.jar:/home/ath-user/jdk11-libs/javax.activation.jar"
-                            javaOptions << "--add-modules java.xml.bind,java.activation"
-                            javaOptions << "-cp /home/ath-user/jdk11-libs/jaxb-impl.jar:/home/ath-user/jdk11-libs/jaxb-core.jar"
-                        }
+                        // Add modules removed
+                        javaOptions << "-p /home/ath-user/jdk11-libs/jaxb-api.jar:/home/ath-user/jdk11-libs/javax.activation.jar"
+                        javaOptions << "--add-modules java.xml.bind,java.activation"
+                        javaOptions << "-cp /home/ath-user/jdk11-libs/jaxb-impl.jar:/home/ath-user/jdk11-libs/jaxb-core.jar"
                     }
 
                     for (browser in browsers) {
