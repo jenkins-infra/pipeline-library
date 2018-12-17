@@ -9,9 +9,10 @@ def call(Map params = [:]) {
     def athRevision = params.get('athRevision', 'master')
     def metadataFile = params.get('metadataFile', 'essentials.yml')
     def jenkins = params.get('jenkins', 'latest')
+    def jdks = params.get('jdks', [8])
     def athContainerImageTag = params.get("athImage", "jenkins/ath");
     def configFile = params.get("configFile", null)
-    def javaOptions = params.get('javaOptions', ["-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"])
+    def defaultJavaOptions = params.get('javaOptions', ["-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"])
 
     def mirror = "http://mirrors.jenkins.io/"
     def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
@@ -23,6 +24,7 @@ def call(Map params = [:]) {
     def athSourcesFolder = "athSources"
 
     def supportedBrowsers = ["firefox"]
+    def supportedJdks = [8, 11]
 
     def skipExecution = false
 
@@ -58,6 +60,9 @@ def call(Map params = [:]) {
             // Allow override of jenkins version from metadata file
             jenkins = metadata.jenkins ?: jenkins
             isVersionNumber = (jenkins =~ /^\d+([.]\d+)*$/).matches()
+
+            // Allow override of JDK version from metadata file
+            jdks = metadata.jdks ?: jdks
 
             if (!isLocalATH) {
                 echo 'Checking connectivity to ATH sources…'
@@ -120,48 +125,71 @@ def call(Map params = [:]) {
             }
 
             def testingbranches = ["failFast": failFast]
-            for (browser in browsers) {
-                if (supportedBrowsers.contains(browser)) {
-
-                    def currentBrowser = browser
+            for (jdk in jdks) {
+                if (supportedJdks.contains(jdk)) {
+                    def currentJdk = jdk
+                    def javaOptions = defaultJavaOptions.clone()
+                    def commandBaseWithFutureJava = ""
                     def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -u ath-user"
+
                     if(configFile) {
                         containerArgs += " -e CONFIG=../${configFile}" // ATH runs are executed in a subfolder, hence path needs to take that into account
                     }
-                    def commandBase = "./run.sh ${currentBrowser} ./jenkins.war -B -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
 
-                    if (testsToRun) {
-                        testingbranches["ATH individual tests-${currentBrowser}"] = {
-                            dir("test${currentBrowser}") {
-                                def discriminator = "-Dtest=${testsToRun}"
-                                test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage, javaOptions)
-                            }
-                        }
+                    // Add options for jdks
+                    if ( currentJdk  > 8) {
+                        // Add environment variable
+                        commandBaseWithFutureJava = "JENKINS_OPTS=\"--enable-future-java\" "
+                        containerArgs += " -e java_version=${currentJdk}"
+
+                        // Add modules removed
+                        javaOptions << "-p /home/ath-user/jdk11-libs/jaxb-api.jar:/home/ath-user/jdk11-libs/javax.activation.jar"
+                        javaOptions << "--add-modules java.xml.bind,java.activation"
+                        javaOptions << "-cp /home/ath-user/jdk11-libs/jaxb-impl.jar:/home/ath-user/jdk11-libs/jaxb-core.jar"
                     }
-                    if (categoriesToRun) {
-                        testingbranches["ATH categories-${currentBrowser}"] = {
-                            dir("categories${currentBrowser}") {
-                                def discriminator = "-Dgroups=${categoriesToRun}"
-                                test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage, javaOptions)
+
+                    for (browser in browsers) {
+                        if (supportedBrowsers.contains(browser)) {
+                            def currentBrowser = browser
+
+                            def commandBase = "${commandBaseWithFutureJava} ./run.sh ${currentBrowser} ./jenkins.war -B -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
+
+                            if (testsToRun) {
+                                testingbranches["ATH individual tests-${currentBrowser}-jdk${currentJdk}"] = {
+                                    dir("test${currentBrowser}jdk${currentJdk}") {
+                                        def discriminator = "-Dtest=${testsToRun}"
+                                        test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage, javaOptions)
+                                    }
+                                }
                             }
-                        }
-                    }
-                    if (testsToRun == null && categoriesToRun == null) {
-                        testingbranches["ATH ${currentBrowser}"] = {
-                            dir("ath${currentBrowser}") {
-                                def discriminator = ""
-                                test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage, javaOptions)
+                            if (categoriesToRun) {
+                                testingbranches["ATH categories-${currentBrowser}-jdk${currentJdk}"] = {
+                                    dir("categories${currentBrowser}jdk${currentJdk}") {
+                                        def discriminator = "-Dgroups=${categoriesToRun}"
+                                        test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage, javaOptions)
+                                    }
+                                }
                             }
+                            if (testsToRun == null && categoriesToRun == null) {
+                                testingbranches["ATH ${currentBrowser}-jdk${currentJdk}"] = {
+                                    dir("ath${currentBrowser}${currentJdk}") {
+                                        def discriminator = ""
+                                        test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage, javaOptions)
+                                    }
+                                }
+                            }
+
+                        } else {
+                            echo "${browser} is not yet supported"
                         }
                     }
                 } else {
-                    echo "${browser} is not yet supported"
+                    echo "${jdk} is not yet supported"
                 }
             }
 
             parallel testingbranches
         }
-
     })
 }
 
@@ -169,7 +197,7 @@ private void test(discriminator, commandBase, localSnapshots, localPluginsStashN
     unstashResources(localSnapshots, localPluginsStashName)
     athContainerImage.inside(containerArgs) {
         realtimeJUnit(testResults: 'target/surefire-reports/TEST-*.xml', testDataPublishers: [[$class: 'AttachmentPublisher']]) {
-            def command = 'eval "$(./vnc.sh)" && export DISPLAY=$BROWSER_DISPLAY && export SHARED_DOCKER_SERVICE=true && export EXERCISEDPLUGINREPORTER=textfile && ' + prepareCommand(commandBase, discriminator, localSnapshots, localPluginsStashName)
+            def command = './set-java.sh $java_version && eval "$(./vnc.sh)" && export DISPLAY=$BROWSER_DISPLAY && export SHARED_DOCKER_SERVICE=true && export EXERCISEDPLUGINREPORTER=textfile && ' + prepareCommand(commandBase, discriminator, localSnapshots, localPluginsStashName)
             if (!javaOptions.isEmpty()) {
                 command = """export JAVA_OPTS="${javaOptions.join(' ')}" && ${command}"""
             }

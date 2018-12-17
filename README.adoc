@@ -127,6 +127,8 @@ The docker image used for the environment where to run the ATH. Defaults to "jen
  A String indicating the file path (relative to where this step is executed) to use as metadata file for the build, more details about the metadata file are provided belows. *Defaults to `essentials.yml` at the location where this step is invoked*
 `jenkins`::
  URI to the jenkins.war, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol in the URI. *Can be overriden from the metadata file*
+ `jdks`::
+ Java versions to use when running ATH. Defaults to 8. Only 8 and 11 are supported. *Can be overridden from the metadata file*
 `configFile`::
  (Optional) Relative (to the workspace) path of a groovy script to customize the ATH behaviour
 .Step call example
@@ -208,6 +210,9 @@ ath:
   categories:
     - Category1
     - Category2
+  jdks:
+    - 8
+    - 11
 ----
 
 Where:
@@ -232,6 +237,8 @@ Where:
  The list of tests to run for the component that calls the step. If no particular set of tests or categories is defined the SmokeTest Category of the ATH will be run
 `categories`::
  The list of Categories to run. Defaults to nothing
+`jdks`::
+ The list of jdks to use when running ATH. Defaults to 8. *Note that currently only 8 and 11 are supported, any other will be ignored*
 
 In case you want to use the defaults for all properties you can use
 
