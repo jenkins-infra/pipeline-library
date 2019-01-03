@@ -132,7 +132,6 @@ def call(Map params = [:]) {
                     def commandBaseWithFutureJava = ""
                     //Add shm-size to avoid selenium.WebDriverException exceptions like 'Failed to decode response from marionette' and webdriver closed
                     def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -u ath-user --shm-size 2g"
-                    containerArgs += " -v /home/rleon/.m2/repository:/home/ath-user/.m2/repository"
 
                     if(configFile) {
                         containerArgs += " -e CONFIG=../${configFile}" // ATH runs are executed in a subfolder, hence path needs to take that into account
@@ -201,7 +200,6 @@ private void test(discriminator, commandBase, localSnapshots, localPluginsStashN
         realtimeJUnit(testResults: 'target/surefire-reports/TEST-*.xml', testDataPublishers: [[$class: 'AttachmentPublisher']]) {
             // Allow call old images without the set-java.sh script. A message is showed if it doesn't exist to alert
             // that you are using a new pipeline-library with an old ATH source/image (... type: ./set-java.sh: not found)
-            //def command = '(type ./set-java.sh >/dev/null && ./set-java.sh $java_version); eval "$(./vnc.sh)" && export DISPLAY=$BROWSER_DISPLAY && export SHARED_DOCKER_SERVICE=true && export EXERCISEDPLUGINREPORTER=textfile && ' + prepareCommand(commandBase, discriminator, localSnapshots, localPluginsStashName)
             def command = 'if type ./set-java.sh; then ./set-java.sh $java_version; fi; eval "$(./vnc.sh)" && export DISPLAY=$BROWSER_DISPLAY && export SHARED_DOCKER_SERVICE=true && export EXERCISEDPLUGINREPORTER=textfile && ' + prepareCommand(commandBase, discriminator, localSnapshots, localPluginsStashName)
             if (!javaOptions.isEmpty()) {
                 command = """export JAVA_OPTS="${javaOptions.join(' ')}" && ${command}"""
