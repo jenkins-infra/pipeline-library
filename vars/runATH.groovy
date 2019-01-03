@@ -133,7 +133,6 @@ def call(Map params = [:]) {
                     //Add shm-size to avoid selenium.WebDriverException exceptions like 'Failed to decode response from marionette' and webdriver closed
                     def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -u ath-user --shm-size 2g"
                     containerArgs += " -e java_version=${currentJdk}"
-                    containerArgs += " -v /home/rleon/.m2/repository:/home/ath-user/.m2/repository"
 
                     if(configFile) {
                         containerArgs += " -e CONFIG=../${configFile}" // ATH runs are executed in a subfolder, hence path needs to take that into account
