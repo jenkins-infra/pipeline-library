@@ -131,8 +131,7 @@ def call(Map params = [:]) {
                     def javaOptions = defaultJavaOptions.clone()
                     def commandBaseWithFutureJava = ""
                     //Add shm-size to avoid selenium.WebDriverException exceptions like 'Failed to decode response from marionette' and webdriver closed
-                    def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -u ath-user --shm-size 2g"
-                    containerArgs += " -e java_version=${currentJdk}"
+                    def containerargs = "-v /var/run/docker.sock:/var/run/docker.sock -u ath-user --shm-size 2g"
 
                     if(configFile) {
                         containerArgs += " -e CONFIG=../${configFile}" // ATH runs are executed in a subfolder, hence path needs to take that into account
@@ -141,6 +140,7 @@ def call(Map params = [:]) {
                     if ( currentJdk  > 8) {
                         // Add environment variable
                         commandBaseWithFutureJava = "JENKINS_OPTS=\"--enable-future-java\" "
+                        containerArgs += " -e java_version=${currentJdk}"
 
                         // Add modules removed
                         javaOptions << "-p /home/ath-user/jdk11-libs/jaxb-api.jar:/home/ath-user/jdk11-libs/javax.activation.jar"
@@ -197,7 +197,6 @@ private void test(discriminator, commandBase, localSnapshots, localPluginsStashN
     unstashResources(localSnapshots, localPluginsStashName)
     athContainerImage.inside(containerArgs) {
         realtimeJUnit(testResults: 'target/surefire-reports/TEST-*.xml', testDataPublishers: [[$class: 'AttachmentPublisher']]) {
-<<<<<<< HEAD
             /*
             If you want to compile with java > 8 and have all needed, do it
             If you want to compile with java > 8 and you lack the set-java script, FAILURE
@@ -212,20 +211,6 @@ private void test(discriminator, commandBase, localSnapshots, localPluginsStashN
             elif [ ! -x ./set-java.sh ]; then
                 echo "INFO: ./set-java.sh not found because you are using old ATH sources, please consider to update ATH sources and docker image";
             fi
-=======
-            // Allow call old images without the set-java.sh script. A message is showed if it doesn't exist to alert
-            // that you are using a new pipeline-library with an old ATH source/image (... type: ./set-java.sh: not found)
-            def command = '''
-            if [ -x ./set-java.sh ]; then
-                ./set-java.sh $java_version;
-            else
-                if [ $java_version -gt 8 ]; then
-                    echo "Info: ./set-java.sh not found because you are using old ATH sources, $java_version cannot be used, instead java 8 will be used"
-                else
-                    echo "Info: ./set-java.sh not found because you are using old ATH sources, please consider to update ATH sources and docker image"
-                fi;
-            fi;
->>>>>>> d2f20dc... [INFRA-1953] using -x as propose, improve message and java variable
 
             eval "$(./vnc.sh)" \
             && export DISPLAY=$BROWSER_DISPLAY \
@@ -235,10 +220,7 @@ private void test(discriminator, commandBase, localSnapshots, localPluginsStashN
             '''
 
             command += prepareCommand(commandBase, discriminator, localSnapshots, localPluginsStashName)
-<<<<<<< HEAD
-=======
             if (!javaOptions.isEmpty()) {
->>>>>>> d2f20dc... [INFRA-1953] using -x as propose, improve message and java variable
                 command = """export JAVA_OPTS="${javaOptions.join(' ')}" && ${command}"""
             }
 
