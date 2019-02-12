@@ -129,7 +129,6 @@ def call(Map params = [:]) {
                 if (supportedJdks.contains(jdk)) {
                     def currentJdk = jdk
                     def javaOptions = defaultJavaOptions.clone()
-                    def commandBaseWithFutureJava = ""
                     //Add shm-size to avoid selenium.WebDriverException exceptions like 'Failed to decode response from marionette' and webdriver closed
                     def containerArgs = "-v /var/run/docker.sock:/var/run/docker.sock -u ath-user --shm-size 2g"
 
@@ -140,20 +139,14 @@ def call(Map params = [:]) {
                     // Add options for jdks
                     if ( currentJdk  > 8) {
                         // Add environment variable
-                        commandBaseWithFutureJava = "JENKINS_OPTS=\"--enable-future-java\" "
                         containerArgs += " -e java_version=${currentJdk}"
-
-                        // Add modules removed
-                        javaOptions << "-p /home/ath-user/jdk11-libs/jaxb-api.jar:/home/ath-user/jdk11-libs/javax.activation.jar"
-                        javaOptions << "--add-modules java.xml.bind,java.activation"
-                        javaOptions << "-cp /home/ath-user/jdk11-libs/jaxb-impl.jar:/home/ath-user/jdk11-libs/jaxb-core.jar"
                     }
 
                     for (browser in browsers) {
                         if (supportedBrowsers.contains(browser)) {
                             def currentBrowser = browser
 
-                            def commandBase = "${commandBaseWithFutureJava} ./run.sh ${currentBrowser} ./jenkins.war -B -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
+                            def commandBase = "./run.sh ${currentBrowser} ./jenkins.war -B -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
 
                             if (testsToRun) {
                                 testingbranches["ATH individual tests-${currentBrowser}-jdk${currentJdk}"] = {
