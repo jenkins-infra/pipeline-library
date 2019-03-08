@@ -31,9 +31,10 @@ buildPlugin()
 * `jenkinsVersions`: (default: `[null]`) - a matrix of Jenkins baseline versions to build/test against in parallel (null means default,
   only available for Maven projects)
 * `configurations`: An alternative way to specify `platforms`, `jdkVersions` and `jenkinsVersions` (that can not be combined
-  with any of them). Those options will run the build for all combinations of their values. While that is desirable in
+  with any of them).   
+** Those options will run the build for all combinations of their values. While that is desirable in
   many cases, `configurations` permit to provide a specific combinations of label and java/jenkins versions to use:
-
+  
 [source,groovy]
 ----
 buildPlugin(/*...*/, configurations: [
@@ -42,6 +43,17 @@ buildPlugin(/*...*/, configurations: [
   [ platform: "linux", jdk: "11", jenkins: "2.150", javaLevel: 8 ]
 ])
 ----
+
+** It is also possible to use a  `buildPlugin.recommendedConfigurations()` method to get recommended configurations for testing. 
+Note that the recommended configuration may change over time, 
+and hence your CI may break if the new recommended configuration is not compatible
+
+[source,groovy]
+----
+buildPlugin(/*...*/, configurations: buildPlugin.recommendedConfigurations())
+----
+
+
 * `tests`: (default: `null`) - a map of parameters to run tests during the build
 ** `skip` - If `true`, skipp all the tests by setting the `-skipTests` profile.
   It will also skip FindBugs in modern Plugin POMs.
