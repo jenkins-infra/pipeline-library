@@ -171,11 +171,9 @@ def call(Map params = [:]) {
         }
     }
 
-    timestamps {
-        parallel(tasks)
-        if (publishingIncrementals) {
-            infra.maybePublishIncrementals()
-        }
+    parallel(tasks)
+    if (publishingIncrementals) {
+        infra.maybePublishIncrementals()
     }
 }
 
