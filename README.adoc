@@ -357,6 +357,22 @@ pct: "default"
 
 *Please note that a blank metadata file will result in an error*
 
+=== runBenchmarks
+
+Runs JMH benchmarks and archives benchmark reports on `highmem` nodes.
+
+Supported parameters:
+
+`artifacts`::
+(Optional) If `artifacts` is not null, invokes `archiveArtifacts` with the given string value.
+
+
+===== Example
+[source, groovy]
+----
+runBenchmarks('jmh-report.json')
+----
+
 === Design documents for runATH and runPCT
 
 The design and some more details about the runATH and runPCT steps can be found link:https://wiki.jenkins.io/display/JENKINS/runATH+and+runPCT+step+design[here]
