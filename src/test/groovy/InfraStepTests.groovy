@@ -15,7 +15,6 @@ class InfraStepTests extends BasePipelineTest {
   void setUp() throws Exception {
     super.setUp()
 
-    env.JENKINS_URL = 'https://ci.jenkins.io/'
     binding.setVariable('env', env)
     binding.setProperty('scm', new String())
     binding.setProperty('mvnSettingsFile', 'settings.xml')
@@ -42,15 +41,13 @@ class InfraStepTests extends BasePipelineTest {
 
   @Test
   void testIsRunningOnJenkinsInfra() throws Exception {
-    println 'testIsRunningOnJenkinsInfra'
     def script = loadScript(scriptName)
+    env.JENKINS_URL = 'https://ci.jenkins.io/'
     assertTrue(script.isRunningOnJenkinsInfra())
   }
 
   @Test
   void testIsTrusted() throws Exception {
-    println 'testIsTrusted'
-
     def script = loadScript(scriptName)
     env.JENKINS_URL = 'https://trusted.ci.jenkins.io:1443/'
     binding.setVariable('env', env)
@@ -59,11 +56,8 @@ class InfraStepTests extends BasePipelineTest {
 
   @Test
   void testWithDockerCredentials() throws Exception {
-    println 'testWithDockerCredentials'
     def script = loadScript(scriptName)
-    helper.registerAllowedMethod("isRunningOnJenkinsInfra", [ ], { true })
-    helper.registerAllowedMethod("isTrusted", [ ], { true })
-
+    env.JENKINS_URL = 'https://ci.jenkins.io/'
     def isOK = false
     script.withDockerCredentials() {
       isOK = true
@@ -75,26 +69,25 @@ class InfraStepTests extends BasePipelineTest {
 
   @Test
   void testWithDockerCredentialsOutsideInfra() throws Exception {
-    println 'testWithDockerCredentialsOutsideInfra'
     def script = loadScript(scriptName)
-    helper.registerAllowedMethod('isRunningOnJenkinsInfra', [ ], { false })
+    env.JENKINS_URL = 'https://foo/'
     def isOK = false
     script.withDockerCredentials() {
       isOK = true
     }
     printCallStack()
-    /*assertTrue(helper.callStack.findAll { call ->
+    assertFalse(isOK)
+    assertTrue(helper.callStack.findAll { call ->
       call.methodName == 'echo'
     }.any { call ->
       callArgsToString(call).contains('Cannot use Docker credentials outside of jenkins infra environment')
-    })*/
+    })
     assertJobStatusSuccess()
   }
 
   @Test
   @Ignore("Some stackoverflow issues")
   void testCheckoutWithEnvVariable() throws Exception {
-    println 'testCheckoutWithEnvVariable'
     def script = loadScript(scriptName)
     env.BRANCH_NAME = 'BRANCH'
     script.checkout()
@@ -104,7 +97,6 @@ class InfraStepTests extends BasePipelineTest {
 
   @Test
   void testCheckoutWithArgument() throws Exception {
-    println 'testCheckoutWithArgument'
     def script = loadScript(scriptName)
     script.checkout('foo.git')
     printCallStack()
@@ -113,7 +105,6 @@ class InfraStepTests extends BasePipelineTest {
 
   @Test
   void testCheckoutWithoutArgument() throws Exception {
-    println 'testCheckoutWithoutArgument'
     def script = loadScript(scriptName)
     try {
       script.checkout()
@@ -131,7 +122,6 @@ class InfraStepTests extends BasePipelineTest {
 
   @Test
   void testRetrieveMavenSettingsFileWithEnvVariable() throws Exception {
-    println 'retrieveMavenSettingsFile'
     def script = loadScript(scriptName)
     env.MAVEN_SETTINGS_FILE_ID = 'foo.id'
     def result = script.retrieveMavenSettingsFile('foo.xml')
