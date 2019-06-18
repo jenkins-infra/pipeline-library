@@ -62,8 +62,6 @@ pct:
   void setUp() throws Exception {
     super.setUp()
 
-    Yaml yaml1 = new Yaml()
-    println yaml1.load(essentials)
     binding.setVariable('env', env)
     binding.setProperty('customWARPackager', new CustomWARPackager())
     binding.setProperty('infra', new Infra())
