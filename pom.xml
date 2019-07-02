@@ -24,25 +24,30 @@
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <!-- Dependency versions -->
+        <groovy.version>2.4.17</groovy.version>
+        <junit.version>4.12</junit.version>
+        <jenkins-pipeline-unit.version>1.1</jenkins-pipeline-unit.version>
+        <groovy-eclipse-compiler.version>3.4.0-01</groovy-eclipse-compiler.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>2.4.3</version>
+            <version>${groovy.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.lesfurets</groupId>
             <artifactId>jenkins-pipeline-unit</artifactId>
-            <version>1.1</version>
+            <version>${jenkins-pipeline-unit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -53,22 +58,23 @@
         </dependency>
     </dependencies>
     <build>
-        <scriptSourceDirectory>vars</scriptSourceDirectory>
-        <testSourceDirectory>src</testSourceDirectory>
+        <testSourceDirectory>src/test/groovy</testSourceDirectory>
         <resources>
             <resource>
                 <directory>resources</directory>
             </resource>
         </resources>
+        <scriptSourceDirectory>vars</scriptSourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-eclipse-compiler</artifactId>
-                <version>2.9.2-01</version>
+                <version>${groovy-eclipse-compiler.version}</version>
                 <extensions>true</extensions>
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
                 <configuration>
                     <compilerId>groovy-eclipse-compiler</compilerId>
                 </configuration>
@@ -76,13 +82,13 @@
                     <dependency>
                         <groupId>org.codehaus.groovy</groupId>
                         <artifactId>groovy-eclipse-compiler</artifactId>
-                        <version>2.9.2-01</version>
+                        <version>${groovy-eclipse-compiler.version}</version>
                     </dependency>
                     <!-- for 2.8.0-01 and later you must have an explicit dependency on groovy-eclipse-batch -->
                     <dependency>
                         <groupId>org.codehaus.groovy</groupId>
                         <artifactId>groovy-eclipse-batch</artifactId>
-                        <version>2.4.3-01</version>
+                        <version>2.5.7-01</version>
                     </dependency>
                 </dependencies>
             </plugin>
