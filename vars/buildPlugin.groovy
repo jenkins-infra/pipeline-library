@@ -224,8 +224,13 @@ static List<Map<String, String>> getConfigurations(Map params) {
  * Get recommended configurations for testing.
  * Includes testing Java 8 and 11 on the newest LTS.
  */
-static List<Map<String, String>> recommendedConfigurations() {
-    def recentLTS = "2.164.1"
+static List<Map<String, String>> recommendedConfigurations(version=1) {
+    def recentLTS = null
+    if(version==1) {
+        recentLTS = "2.164.1"
+    } else if (version==2) {
+        recentLTS = "2.176.1"
+    }
     def configurations = [
         [ platform: "linux", jdk: "8", jenkins: null ],
         [ platform: "windows", jdk: "8", jenkins: null ],
