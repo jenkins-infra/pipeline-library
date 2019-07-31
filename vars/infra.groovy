@@ -124,7 +124,7 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null,
     List<String> env = [];
     if(addToolEnv) {
         String jdkTool = "jdk${jdk}"
-        List<String> env = [
+        env = [
             "JAVA_HOME=${tool jdkTool}",
             'PATH+JAVA=${JAVA_HOME}/bin',
         ]
