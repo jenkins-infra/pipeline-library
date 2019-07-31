@@ -15,6 +15,7 @@ def call(Map params = [:]) {
     def repo = params.containsKey('repo') ? params.repo : null
     def failFast = params.containsKey('failFast') ? params.failFast : true
     def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
+    def useAci = params.containsKey('useAci') ? params.useAci : false
     if(timeoutValue > 180) {
       echo "Timeout value requested was $timeoutValue, lowering to 180 to avoid Jenkins project's resource abusive consumption"
       timeoutValue = 180
@@ -38,7 +39,7 @@ def call(Map params = [:]) {
         boolean skipTests = params?.tests?.skip
 
         tasks[stageIdentifier] = {
-            node(label) {
+            node((useAci && label == 'linux') ? (jdk == 8 ? 'maven' : 'maven-11') : label) {
                 timeout(timeoutValue) {
                     boolean isMaven
                     // Archive artifacts once with pom declared baseline
@@ -96,7 +97,7 @@ def call(Map params = [:]) {
                             if (runCheckstyle) {
                                 mavenOptions += "checkstyle:checkstyle"
                             }
-                            infra.runMaven(mavenOptions, jdk)
+                            infra.runMaven(mavenOptions, jdk, null, null, !useAci)
                         } else {
                             List<String> gradleOptions = [
                                     '--no-daemon',
@@ -107,7 +108,7 @@ def call(Map params = [:]) {
                             if (isUnix()) {
                                 command = "./" + command
                             }
-                            infra.runWithJava(command, jdk)
+                            infra.runWithJava(command, jdk, null, !useAci)
                         }
                     }
 
