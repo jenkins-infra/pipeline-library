@@ -40,7 +40,7 @@ def call(Map params = [:]) {
         boolean addToolEnv = !(useAci && label == 'linux')
 
         tasks[stageIdentifier] = {
-            node((useAci && label == 'linux') ? (jdk == 8 ? 'maven' : 'maven-11') : label) {
+            node((useAci && label == 'linux') ? (jdk == "8" ? 'maven' : 'maven-11') : label) {
                 timeout(timeoutValue) {
                     boolean isMaven
                     // Archive artifacts once with pom declared baseline
