@@ -37,6 +37,7 @@ def call(Map params = [:]) {
         boolean archiveFindbugs = first && params?.findbugs?.archive
         boolean archiveCheckstyle = first && params?.checkstyle?.archive
         boolean skipTests = params?.tests?.skip
+        boolean addToolEnv = !(useAci && label == 'linux')
 
         tasks[stageIdentifier] = {
             node((useAci && label == 'linux') ? (jdk == 8 ? 'maven' : 'maven-11') : label) {
@@ -97,7 +98,7 @@ def call(Map params = [:]) {
                             if (runCheckstyle) {
                                 mavenOptions += "checkstyle:checkstyle"
                             }
-                            infra.runMaven(mavenOptions, jdk, null, null, !useAci)
+                            infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
                         } else {
                             List<String> gradleOptions = [
                                     '--no-daemon',
@@ -108,7 +109,7 @@ def call(Map params = [:]) {
                             if (isUnix()) {
                                 command = "./" + command
                             }
-                            infra.runWithJava(command, jdk, null, !useAci)
+                            infra.runWithJava(command, jdk, null, addToolEnv)
                         }
                     }
 
