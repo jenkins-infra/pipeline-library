@@ -1,11 +1,9 @@
 #!/usr/bin/env groovy
 pipeline {
     agent {
-        label "java"
+        label "maven"
     }
     tools {
-        maven 'mvn'
-        jdk 'jdk8'
     }
     options {
         timestamps()
