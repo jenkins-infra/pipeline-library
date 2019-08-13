@@ -173,8 +173,8 @@ def call(Map params = [:]) {
                 } finally {
                     deleteDir()
 
-                    if (env?.NODE_LABELS?.contains("docker")) {
-                        sh "docker system prune --force --all"
+                    if (isUnix()) {
+                        sh 'docker system prune --force --all || echo "Failed to cleanup docker images"'
                     }
                 }
             }
