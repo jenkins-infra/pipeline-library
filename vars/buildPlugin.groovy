@@ -118,7 +118,7 @@ def call(Map params = [:]) {
                             if (!skipTests) {
                                 String testReports
                                 if (isMaven) {
-                                    testReports = '**/target/surefire-reports/**/*.xml'
+                                    testReports = '**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml'
                                 } else {
                                     testReports = '**/build/test-results/**/*.xml'
                                 }
