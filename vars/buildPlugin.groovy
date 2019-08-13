@@ -187,8 +187,8 @@ def call(Map params = [:]) {
     }
 }
 
-static boolean hasDockerLabel() {
-    env?.NODE_LABELS?.contains("docker")
+boolean hasDockerLabel() {
+    env.NODE_LABELS?.contains("docker")
 }
 
 static List<Map<String, String>> getConfigurations(Map params) {
