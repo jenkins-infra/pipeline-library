@@ -9,13 +9,14 @@ Boolean isTrusted() {
 }
 
 Object withDockerCredentials(Closure body) {
-    if (isTrusted()) {
-        withCredentials([[$class: 'ZipFileBinding', credentialsId: 'jenkins-dockerhub', variable: 'DOCKER_CONFIG']]) {
-            return body.call()
-        }
+    if (isRunningOnJenkinsInfra()) {
+      env.DOCKERHUB_ORGANISATION =  ( isTrusted() ? 'jenkins' : 'jenkins4eval')
+      withCredentials([[$class: 'ZipFileBinding', credentialsId: 'jenkins-dockerhub', variable: 'DOCKER_CONFIG']]) {
+          return body.call()
+      }
     }
     else {
-        echo 'Cannot use Docker credentials outside of the trusted environment'
+        echo 'Cannot use Docker credentials outside of jenkins infra environment'
     }
 }
 
@@ -67,9 +68,10 @@ boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
  * @return nothing
  * @see #retrieveMavenSettingsFile(String)
  */
-Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = null, String settingsFile = null) {
+Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = true) {
     List<String> mvnOptions = [
         '--batch-mode',
+        '--show-version',
         '--errors',
         '-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn',
     ]
@@ -85,7 +87,7 @@ Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = nu
     mvnOptions.addAll(options)
     mvnOptions.unique()
     String command = "mvn ${mvnOptions.join(' ')}"
-    runWithMaven(command, jdk, extraEnv)
+    runWithMaven(command, jdk, extraEnv, addToolEnv)
 }
 
 /**
@@ -96,15 +98,19 @@ Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = nu
  * @param extraEnv Extra environment variables to be passed
  * @return nothing
  */
-Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null) {
-    List<String> env = [
+Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null, Boolean addToolEnv = true) {
+    List<String> env = [];
+    if(addToolEnv) {
+        env = [
         "PATH+MAVEN=${tool 'mvn'}/bin"
-    ]
+        ]
+    }
+
     if (extraEnv != null) {
         env.addAll(extraEnv)
     }
 
-    runWithJava(command, jdk, env)
+    runWithJava(command, jdk, env, addToolEnv)
 }
 
 /**
@@ -116,12 +122,16 @@ Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null
  * @param extraEnv Extra environment variables to be passed
  * @return nothing
  */
-Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null) {
-    String jdkTool = "jdk${jdk}"
-    List<String> env = [
-        "JAVA_HOME=${tool jdkTool}",
-        'PATH+JAVA=${JAVA_HOME}/bin',
-    ]
+Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null, Boolean addToolEnv = true) {
+    List<String> env = [];
+    if(addToolEnv) {
+        String jdkTool = "jdk${jdk}"
+        env = [
+            "JAVA_HOME=${tool jdkTool}",
+            'PATH+JAVA=${JAVA_HOME}/bin',
+        ]
+    }
+
     if (extraEnv != null) {
         env.addAll(extraEnv)
     }
