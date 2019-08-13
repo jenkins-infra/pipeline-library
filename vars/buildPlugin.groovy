@@ -173,7 +173,7 @@ def call(Map params = [:]) {
                 } finally {
                     deleteDir()
 
-                    if (isUnix()) {
+                    if (isUnix() || hasDockerLabel()) {
                         sh 'docker system prune --force --all || echo "Failed to cleanup docker images"'
                     }
                 }
@@ -187,6 +187,10 @@ def call(Map params = [:]) {
             infra.maybePublishIncrementals()
         }
     }
+}
+
+static boolean hasDockerLabel() {
+    env?.NODE_LABELS?.contains("docker")
 }
 
 static List<Map<String, String>> getConfigurations(Map params) {
