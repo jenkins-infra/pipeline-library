@@ -3,8 +3,6 @@ pipeline {
     agent {
         label "maven"
     }
-    tools {
-    }
     options {
         timestamps()
     }
