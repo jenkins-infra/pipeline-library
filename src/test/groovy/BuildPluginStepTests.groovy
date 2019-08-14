@@ -1,4 +1,6 @@
 import com.lesfurets.jenkins.unit.BasePipelineTest
+import mock.CurrentBuild
+import mock.Infra
 import org.junit.Before
 import org.junit.Test
 import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
@@ -19,8 +21,12 @@ class BuildPluginStepTests extends BasePipelineTest {
     binding.setVariable('env', env)
     binding.setProperty('scm', new String())
     binding.setProperty('mvnSettingsFile', 'settings.xml')
+    binding.setProperty('infra', new Infra())
 
-    helper.registerAllowedMethod('node', [String.class], { s -> s })
+    helper.registerAllowedMethod('node', [String.class, Closure.class], { list, closure ->
+      def res = closure.call()
+      return res
+    })
     helper.registerAllowedMethod('timeout', [String.class], { s -> s })
     helper.registerAllowedMethod('stage', [String.class], { s -> s })
     helper.registerAllowedMethod('fileExists', [String.class], { s -> s })
@@ -32,12 +38,17 @@ class BuildPluginStepTests extends BasePipelineTest {
     helper.registerAllowedMethod('isUnix', [], { true })
     helper.registerAllowedMethod('hasDockerLabel', [], { true })
     helper.registerAllowedMethod('sh', [String.class], { s -> s })
-    helper.registerAllowedMethod('parallel', [Map.class], { true })
-
-//infra.runMaven
-//infra.runWithJava
-//infra.maybePublishIncrementals()
-
+    helper.registerAllowedMethod('parallel', [Map.class, Closure.class], { list, closure ->
+      def res = closure.call()
+      return res
+    })
+    helper.registerAllowedMethod('timeout', [Integer.class, Closure.class], { list, closure ->
+      def res = closure.call()
+      return res
+    })
+    helper.registerAllowedMethod('findbugs', [Map.class], { true })
+    helper.registerAllowedMethod('durabilityHint', [String.class], { s -> s })
+    helper.registerAllowedMethod('pwd', [Map.class], { '/tmp' })
     helper.registerAllowedMethod('echo', [String.class], { s -> s })
     helper.registerAllowedMethod('error', [String.class], { s ->
       updateBuildStatus('FAILURE')
@@ -159,4 +170,137 @@ class BuildPluginStepTests extends BasePipelineTest {
     assertTrue(value)
   }
 
+  @Test
+  void test_buildPlugin_with_defaults() throws Exception {
+    def script = loadScript(scriptName)
+    // when running without any parameters
+    script.call([:])
+    printCallStack()
+    // then it runs in a linux node
+    assertTrue(helper.callStack.findAll { call ->
+      call.methodName == 'node'
+    }.any { call ->
+      callArgsToString(call).contains('linux')
+    })
+    // then it runs in a windows node
+    assertTrue(helper.callStack.findAll { call ->
+      call.methodName == 'node'
+    }.any { call ->
+      callArgsToString(call).contains('windows')
+    })
+    // then it runs the junit step by default
+    assertTrue(helper.callStack.any { call ->
+      call.methodName == 'junit'
+    })
+    // then it runs the junit step with the maven test format
+    assertTrue(helper.callStack.findAll { call ->
+      call.methodName == 'junit'
+    }.any { call ->
+      callArgsToString(call).contains('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml')
+    })
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_timeout() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(timeout: 300)
+    printCallStack()
+    assertTrue(helper.callStack.findAll { call ->
+      call.methodName == 'echo'
+    }.any { call ->
+      callArgsToString(call).contains('lowering to 180')
+    })
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_without_tests() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(tests: [skip: true])
+    printCallStack()
+    // then the junit step is disabled
+    assertFalse(helper.callStack.any { call ->
+      call.methodName == 'junit'
+    })
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_defaults_with_gradle() throws Exception {
+    def script = loadScript(scriptName)
+    // when running in a non maven project
+    helper.registerAllowedMethod('fileExists', [String.class], { s -> return !s.equals('pom.xml') })
+    script.call([:])
+    printCallStack()
+    // then it runs the junit step with the no maven test format
+    assertTrue(helper.callStack.findAll { call ->
+      call.methodName == 'junit'
+    }.any { call ->
+      callArgsToString(call).contains('**/build/test-results/**/*.xml')
+    })
+  }
+
+  @Test
+  void test_buildPlugin_with_failfast_and_unstable() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with fail fast and it's UNSTABLE
+    binding.setProperty('currentBuild', new CurrentBuild('UNSTABLE'))
+    try {
+      script.call(failFast: true)
+    } catch(e) {
+      //NOOP
+    }
+    printCallStack()
+    // then throw an error
+    assertTrue(helper.callStack.findAll { call ->
+      call.methodName == 'error'
+    }.any { call ->
+      callArgsToString(call).contains('There were test failures')
+    })
+    assertJobStatusFailure()
+  }
+
+  @Test
+  void test_buildPlugin_with_findbugs_archive() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(findbugs: [archive: true])
+    printCallStack()
+    // then it runs the findbugs
+    assertTrue(helper.callStack.findAll { call ->
+      call.methodName == 'findbugs'
+    }.any { call ->
+      callArgsToString(call).contains('pattern=**/target/findbugsXml.xml')
+    })
+  }
+
+  @Test
+  void test_buildPlugin_with_checkstyle_archive() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(checkstyle: [archive: true])
+    printCallStack()
+    // then it runs the findbugs
+    assertTrue(helper.callStack.findAll { call ->
+      call.methodName == 'checkstyle'
+    }.any { call ->
+      callArgsToString(call).contains('**/target/checkstyle-result.xml')
+    })
+  }
+
+  @Test
+  void test_buildPlugin_with_configurations_and_incrementals() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with incrementals
+    helper.registerAllowedMethod('fileExists', [String.class], { s -> return s.equals('.mvn/extensions.xml') })
+    helper.registerAllowedMethod('readFile', [String.class], { return 'git-changelist-maven-extension' })
+    // and no jenkins version
+    script.call(configurations: [['platform': 'linux', 'jdk': 8, 'jenkins': null, 'javaLevel': null]])
+    printCallStack()
+    // then it runs the fingerprint
+    assertTrue(helper.callStack.findAll { call ->
+      call.methodName == 'fingerprint'
+    }.any { call ->
+      callArgsToString(call).contains('**/*-rc*.*/*-rc*.*')
+    })
+  }
 }
