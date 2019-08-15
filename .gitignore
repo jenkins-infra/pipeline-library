@@ -1,6 +1,9 @@
 *.sw*
 build/
-target
+target/
+
+# IDEA
+.idea
 
 # Visual Studio Code
 .project

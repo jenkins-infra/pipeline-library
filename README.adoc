@@ -23,6 +23,7 @@ buildPlugin()
 ==== Optional arguments
 
 * `repo` (default: `null`  inherit from Multibranch) - custom Git repository to check out
+* `useAci` (default: `false`) - uses link:https://azure.microsoft.com/en-us/services/container-instances/[Azure Container Instances] for build instead of link:https://azure.microsoft.com/en-us/services/virtual-machines/[Azure Virtual Machines].
 * `failFast` (default: `true`) - instruct Maven tests to fail fast
 * `platforms` (default: `['linux', 'windows']`) - Labels matching platforms to
   execute the steps against in parallel
@@ -31,9 +32,10 @@ buildPlugin()
 * `jenkinsVersions`: (default: `[null]`) - a matrix of Jenkins baseline versions to build/test against in parallel (null means default,
   only available for Maven projects)
 * `configurations`: An alternative way to specify `platforms`, `jdkVersions` and `jenkinsVersions` (that can not be combined
-  with any of them). Those options will run the build for all combinations of their values. While that is desirable in
+  with any of them).   
+** Those options will run the build for all combinations of their values. While that is desirable in
   many cases, `configurations` permit to provide a specific combinations of label and java/jenkins versions to use:
-
+  
 [source,groovy]
 ----
 buildPlugin(/*...*/, configurations: [
@@ -42,6 +44,17 @@ buildPlugin(/*...*/, configurations: [
   [ platform: "linux", jdk: "11", jenkins: "2.150", javaLevel: 8 ]
 ])
 ----
+
+** It is also possible to use a  `buildPlugin.recommendedConfigurations()` method to get recommended configurations for testing. 
+Note that the recommended configuration may change over time, 
+and hence your CI may break if the new recommended configuration is not compatible
+
+[source,groovy]
+----
+buildPlugin(/*...*/, configurations: buildPlugin.recommendedConfigurations())
+----
+
+
 * `tests`: (default: `null`) - a map of parameters to run tests during the build
 ** `skip` - If `true`, skipp all the tests by setting the `-skipTests` profile.
   It will also skip FindBugs in modern Plugin POMs.
@@ -344,6 +357,22 @@ pct: "default"
 ----
 
 *Please note that a blank metadata file will result in an error*
+
+=== runBenchmarks
+
+Runs JMH benchmarks and archives benchmark reports on `highmem` nodes.
+
+Supported parameters:
+
+`artifacts`::
+(Optional) If `artifacts` is not null, invokes `archiveArtifacts` with the given string value.
+
+
+===== Example
+[source, groovy]
+----
+runBenchmarks('jmh-report.json')
+----
 
 === Design documents for runATH and runPCT
 

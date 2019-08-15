@@ -1,0 +1,22 @@
+<p>
+    Runs JMH benchmarks and archives benchmark reports on <code>highmem</code> nodes.
+</p>
+<p>
+    Supported Parameters:
+</p>
+
+<dl>
+    <dt><code>artifacts</code></dt>
+    <dd>
+        (Optional) If <code>artifacts</code> is not null, invokes <code>archiveArtifacts</code>
+        with the given string value.
+    </dd>
+</dl>
+
+<p>
+    <b>Example:</b>
+</p>
+
+<pre>
+    runBenchmarks('jmh-report.json')
+</pre>

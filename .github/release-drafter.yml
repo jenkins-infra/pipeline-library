@@ -1,0 +1,4 @@
+# See https://github.com/jenkinsci/.github/blob/master/.github/release-drafter.adoc
+_extends: jenkinsci/.github
+# Semantic versioning: https://semver.org/
+version-template: $MAJOR.$MINOR.$PATCH
