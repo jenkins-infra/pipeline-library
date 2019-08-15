@@ -80,7 +80,5 @@ def call(Map params = [:]) {
         }
     }
 
-    timestamps {
-        parallel(tasks)
-    }
+   parallel(tasks)
 }
