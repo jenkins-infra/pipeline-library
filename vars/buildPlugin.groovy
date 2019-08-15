@@ -15,7 +15,7 @@ def call(Map params = [:]) {
     def repo = params.containsKey('repo') ? params.repo : null
     def failFast = params.containsKey('failFast') ? params.failFast : true
     def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
-    //TODO: revert once INFRA-2210 is fixed
+    //TODO: revert once https://groups.google.com/forum/#!topic/jenkinsci-dev/v9d-XosOp2s is fixed
     def useAci = params.containsKey('useAci') ? params.useAci : false
     if (!useAci) {
       echo "WARNING: Forcing Azure Container Instance, because standard agents are not stable at the moment. See INFRA-2210"
@@ -38,7 +38,7 @@ def call(Map params = [:]) {
 
         String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
         
-        //TODO: revert once INFRA-2210 is fixed
+        //TODO: revert once https://groups.google.com/forum/#!topic/jenkinsci-dev/v9d-XosOp2s is fixed
         if ("windows".equals(label)) {
             echo "WARNING: Skipping ${stageIdentifier}, because Windows agents are not stable at the moment. See INFRA-2210"
             return;
