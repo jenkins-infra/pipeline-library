@@ -13,7 +13,7 @@ def call(Map params = [:]) {
     def repo = params.containsKey('repo') ? params.repo : null
     def failFast = params.containsKey('failFast') ? params.failFast : true
     def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
-    if(timeoutValue > 180) {
+    if (timeoutValue > 180) {
       echo "Timeout value requested was $timeoutValue, lowering to 180 to avoid Jenkins project's resource abusive consumption"
       timeoutValue = 180
     }
@@ -44,11 +44,11 @@ def call(Map params = [:]) {
 
                     stage("Build (${stageIdentifier})") {
                         if (javaLevel != null) {
-                            echo "WARNING: java.level is not supported in the  buildGradlePlugin(). This parmeter will be ignored"
+                            echo "WARNING: 'javaLevel' parameter is not supported in buildPluginWithGradle(). It will be ignored"
                         }
                         //TODO(oleg-nenashev): Once supported by Gradle JPI Plugin, pass jenkinsVersion
                         if (jenkinsVersion != null) {
-                            echo "WARNING: Jenkins version is not supported in buildGradlePlugin(). This parmeter will be ignored"
+                            echo "WARNING: 'jenkinsVersion' parameter is not supported in buildPluginWithGradle(). It will be ignored"
                         }
                         List<String> gradleOptions = [
                                 '--no-daemon',
