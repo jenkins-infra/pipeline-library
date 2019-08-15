@@ -1,3 +1,7 @@
 *.sw*
 build/
+target
 
+# Visual Studio Code
+.project
+.settings
