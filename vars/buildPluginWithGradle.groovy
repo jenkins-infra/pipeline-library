@@ -21,7 +21,7 @@ def call(Map params = [:]) {
     boolean publishingIncrementals = false
     boolean archivedArtifacts = false
     Map tasks = [failFast: failFast]
-    buildPlugin.getConfigurations(params, true).each { config ->
+    buildPlugin.getConfigurations(params).each { config ->
         String label = config.platform
         String jdk = config.jdk
         String jenkinsVersion = config.jenkins
