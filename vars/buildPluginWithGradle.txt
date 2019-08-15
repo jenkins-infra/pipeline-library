@@ -1,0 +1,19 @@
+<p>
+    Builds a Jenkins plugin using Gradle.
+</p>
+<p>
+    The implementation follows the standard build/test/archive pattern. 
+    Note that the Gradle flow for Jenkins plugins offers less functionality than the Maven flow,
+    some key features are not supported: Incrementals - JEP-305, standard static analysis flows, etc.
+    The current version also does not allow configuring the <code>jenkinsVersion</code>.
+</p>
+
+<p>
+    <b>Usage.</b> The method can be used in the same way as <code>buildPlugin()</code> for Maven projects.
+    See the documentation in the README of the Pipeline Library repository.
+    Some parameters may not be supported at the moment, see the Pipeline code.
+</p>
+
+<!--
+vim: ft=html
+-->

@@ -9,7 +9,10 @@ Check link:https://github.com/jenkins-infra/documentation/blob/master/ci.adoc[th
 
 === buildPlugin
 
-Applies the appropriate defaults for building a Maven- or Gradle-based plugin project on
+| WARNING: Gradle support in `buildPlugin()` is deprecated and will be eventually removed. Please use `buildPluginWithGradle()` |
+| --- |
+
+Applies the appropriate defaults for building a Maven-based plugin project on
 Linux and Windows.
 
 You are advised to be using a link:https://github.com/jenkinsci/plugin-pom/blob/master/README.md[2.x parent POM].
