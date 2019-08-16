@@ -1,4 +1,10 @@
 *.sw*
 build/
+target/
+
+# IDEA
 .idea
-target
+
+# Visual Studio Code
+.project
+.settings
