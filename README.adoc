@@ -132,7 +132,7 @@ The interface is similar to `buildPlugin()`, but some features are not supported
 Examples of not supported features:
 
 * [JEP-305](https://github.com/jenkinsci/jep/tree/master/jep/305)
-* Publushing of static analysis and coverage reports (Checkstyle, SpotBugs, JaCoCo)
+* Publishing of static analysis and coverage reports (Checkstyle, SpotBugs, JaCoCo)
 * Configuring `jenkinsVersion` and `javaLevel` for the build flow
 
 === runATH
