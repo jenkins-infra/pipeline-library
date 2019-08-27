@@ -16,6 +16,7 @@ def call(Map params = [:]) {
     def failFast = params.containsKey('failFast') ? params.failFast : true
     def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
     def useAci = params.containsKey('useAci') ? params.useAci : false
+    def forceAci = params.containsKey('forceAci') ? params.forceAci : false
     if(timeoutValue > 180) {
       echo "Timeout value requested was $timeoutValue, lowering to 180 to avoid Jenkins project's resource abusive consumption"
       timeoutValue = 180
@@ -37,10 +38,17 @@ def call(Map params = [:]) {
         boolean archiveFindbugs = first && params?.findbugs?.archive
         boolean archiveCheckstyle = first && params?.checkstyle?.archive
         boolean skipTests = params?.tests?.skip
-        boolean addToolEnv = !(useAci && label == 'linux')
+        boolean addToolEnv = !((useAci && label == 'linux') || forceAci)
+        if((useAci && label == 'linux') || forceAci) {
+            if(label == 'windows') {
+                label = jdk == '8' ? 'maven' : 'maven-11'
+            } else {
+                label = jdk == '8' ? 'maven-windows' : 'maven-11-windows'
+            }            
+        }
 
         tasks[stageIdentifier] = {
-            node((useAci && label == 'linux') ? (jdk == '8' ? 'maven' : 'maven-11') : label) {
+            node(label) {
                 try {
                     timeout(timeoutValue) {
                         boolean isMaven
