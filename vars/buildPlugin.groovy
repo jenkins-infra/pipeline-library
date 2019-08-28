@@ -39,7 +39,7 @@ def call(Map params = [:]) {
         boolean archiveCheckstyle = first && params?.checkstyle?.archive
         boolean skipTests = params?.tests?.skip
         boolean reallyUseAci = (useAci && label == 'linux') || forceAci
-        boolean addToolEnv = !reallyuseAci
+        boolean addToolEnv = !reallyUseAci
         
         if(reallyUseAci) {
             String aciLabel = jdk == '8' ? 'maven' : 'maven-11'
