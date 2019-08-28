@@ -184,7 +184,11 @@ def call(Map params = [:]) {
                     deleteDir()
 
                     if (hasDockerLabel()) {
-                        sh 'docker system prune --force --all || echo "Failed to cleanup docker images"'
+                        if(isUnix()) {
+                            sh 'docker system prune --force --all || echo "Failed to cleanup docker images"'
+                        } else {
+                            bat 'docker system prune --force --all || echo "Failed to cleanup docker images"'
+                        }
                     }
                 }
             }
