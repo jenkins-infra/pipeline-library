@@ -236,7 +236,24 @@ void ensureInNode(env, nodeLabels, body) {
 }
 
 /**
+ * Record artifacts created by this build which could be published via Incrementals (JEP-305).
+ * Call at most once per build, on a Linux node, after running mvn -Dset.changelist install.
+ * Follow up with #maybePublishIncrementals.
+ */
+void prepareToPublishIncrementals() {
+    // MINSTALL-126 would make this easier by letting us publish to a different directory to begin with:
+    String m2repo = sh script: 'mvn -Dset.changelist -Dexpression=settings.localRepository -q -DforceStdout help:evaluate', returnStdout: true
+    // No easy way to load both of these in one command: https://stackoverflow.com/q/23521889/12916
+    String version = sh script: 'mvn -Dset.changelist -Dexpression=project.version -q -DforceStdout help:evaluate', returnStdout: true
+    echo "Collecting $version from $m2repo for possible Incrementals publishing"
+    dir(m2repo) {
+        archiveArtifacts "**/$version/*$version*"
+    }
+}
+
+/**
  * When appropriate, publish artifacts from the current build to the Incrementals repository.
+ * Call at the end of the build, outside any node, when #prepareToPublishIncrementals may have been called previously.
  * See INFRA-1571 and JEP-305.
  */
 void maybePublishIncrementals() {
