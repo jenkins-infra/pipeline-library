@@ -11,7 +11,6 @@
 <p>
     <b>Usage.</b> The method can be used in the same way as <code>buildPlugin()</code> for Maven projects.
     See the documentation in the README of the Pipeline Library repository.
-    Some parameters may not be supported at the moment, see the Pipeline code.
 </p>
 
 <!--

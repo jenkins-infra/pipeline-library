@@ -106,11 +106,11 @@ and it may not work for other use-cases.
 ** It is also possible to use a  `buildPlugin.recommendedConfigurations()` method to get recommended configurations for testing. 
 Note that the recommended configuration may change over time, 
 and hence your CI may break if the new recommended configuration is not compatible
-
+* `timeout`: (default: `60`) - the number of minutes for build timeout, cannot be bigger than 180, i.e. 3 hours.
 [source,groovy]
 ----
-buildPlugin(/*...*/, configurations: [
-  [ platform: "linux", jdk: "8"],
+buildPluginWithGradle(/*...*/, configurations: [
+  [ platform: "linux", jdk: "8" ],
   [ platform: "windows", jdk: "8"],
 ])
 ----
