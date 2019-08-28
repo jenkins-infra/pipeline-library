@@ -38,13 +38,15 @@ def call(Map params = [:]) {
         boolean archiveFindbugs = first && params?.findbugs?.archive
         boolean archiveCheckstyle = first && params?.checkstyle?.archive
         boolean skipTests = params?.tests?.skip
-        boolean addToolEnv = !((useAci && label == 'linux') || forceAci)
-        if((useAci && label == 'linux') || forceAci) {
+        boolean reallyUseAci = (useAci && label == 'linux') || forceAci
+        boolean addToolEnv = !reallyuseAci
+        
+        if(reallyUseAci) {
+            String aciLabel = jdk == '8' ? 'maven' : 'maven-11'
             if(label == 'windows') {
-                label = jdk == '8' ? 'maven' : 'maven-11'
-            } else {
-                label = jdk == '8' ? 'maven-windows' : 'maven-11-windows'
-            }            
+                aciLabel += "-windows"
+            }
+            label = aciLabel
         }
 
         tasks[stageIdentifier] = {
