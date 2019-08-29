@@ -225,7 +225,7 @@ static List<Map<String, String>> getConfigurations(Map params) {
  * Includes testing Java 8 and 11 on the newest LTS.
  */
 static List<Map<String, String>> recommendedConfigurations() {
-    def recentLTS = "2.176.1"
+    def recentLTS = "2.176.3"
     def configurations = [
         [ platform: "linux", jdk: "8", jenkins: null ],
         [ platform: "windows", jdk: "8", jenkins: null ],
