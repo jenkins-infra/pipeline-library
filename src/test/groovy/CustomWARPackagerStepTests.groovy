@@ -1,4 +1,5 @@
 import com.lesfurets.jenkins.unit.BasePipelineTest
+import mock.Infra
 import org.junit.Before
 import org.junit.Test
 import org.yaml.snakeyaml.Yaml
@@ -48,15 +49,6 @@ class CustomWARPackagerStepTests extends BasePipelineTest {
       version: "foo"
       artifactId: "barId"
   '''
-
-  /**
-   * Mock Infra step
-   */
-  class Infra implements Serializable {
-    public String retrieveMavenSettingsFile(String location) { return location }
-    public String runWithMaven(String cmd) { return cmd }
-    public String runMaven(mvn, jdk, foo, settings) { return 'OK' }
-  }
 
   @Override
   @Before

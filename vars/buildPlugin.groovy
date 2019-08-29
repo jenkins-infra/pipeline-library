@@ -205,7 +205,7 @@ boolean hasDockerLabel() {
     env.NODE_LABELS?.contains("docker")
 }
 
-static List<Map<String, String>> getConfigurations(Map params) {
+List<Map<String, String>> getConfigurations(Map params) {
     boolean explicit = params.containsKey("configurations")
     boolean implicit = params.containsKey('platforms') || params.containsKey('jdkVersions') || params.containsKey('jenkinsVersions')
 

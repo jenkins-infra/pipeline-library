@@ -1,4 +1,6 @@
 import com.lesfurets.jenkins.unit.BasePipelineTest
+import mock.CustomWARPackager
+import mock.Infra
 import org.yaml.snakeyaml.Yaml
 import org.junit.Before
 import org.junit.Test
@@ -9,20 +11,6 @@ import static org.junit.Assert.assertFalse
 class EssentialsTestStepTests extends BasePipelineTest {
   static final String scriptName = 'vars/essentialsTest.groovy'
   Map env = [:]
-
-  /**
-   * Mock Infra step
-   */
-  class Infra implements Serializable {
-    public void checkout() { }
-  }
-
-  /**
-   * Mock customWARPackager step
-   */
-  class CustomWARPackager implements Serializable {
-    public void build(String path, String war, String bom) { }
-  }
 
   static final String  essentials = '''
 flow:

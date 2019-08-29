@@ -1,4 +1,6 @@
 import com.lesfurets.jenkins.unit.BasePipelineTest
+import mock.Docker
+import mock.Infra
 import org.junit.Before
 import org.junit.Test
 import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
@@ -8,26 +10,6 @@ import static org.junit.Assert.assertTrue
 class PublishReportsStepTests extends BasePipelineTest {
   static final String scriptName = 'vars/publishReports.groovy'
   Map env = [:]
-
-  /**
-   * Mock Infra step
-   */
-  class Infra implements Serializable {
-    private final boolean result
-    public Infra(boolean result) { this.result = result }
-    public boolean isTrusted() { return result }
-  }
-
-  /**
-   * Mock Docker class from docker-workflow plugin.
-   */
-  class Docker implements Serializable {
-    public Image image(String id) { new Image(this, id) }
-    public class Image implements Serializable {
-      private Image(Docker docker, String id) {}
-      public <V> V inside(String args = '', Closure<V> body) { body() }
-    }
-  }
 
   @Override
   @Before
