@@ -63,7 +63,7 @@ def call(Map params = [:]) {
                     }
 
                     stage("Archive (${stageIdentifier})") {
-                        junit testReports '**/build/test-results/**/*.xml'
+                        junit '**/build/test-results/**/*.xml'
                         
                         //TODO(oleg-nenashev): Add static analysis results publishing like in buildPlugin() for Maven 
                         
