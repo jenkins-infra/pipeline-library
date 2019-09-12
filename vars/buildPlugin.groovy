@@ -40,7 +40,7 @@ def call(Map params = [:]) {
         boolean skipTests = params?.tests?.skip
         boolean reallyUseAci = (useAci && label == 'linux') || forceAci
         boolean addToolEnv = !reallyUseAci
-        
+
         if(reallyUseAci) {
             String aciLabel = jdk == '8' ? 'maven' : 'maven-11'
             if(label == 'windows') {
@@ -51,15 +51,17 @@ def call(Map params = [:]) {
 
         tasks[stageIdentifier] = {
             node(label) {
+                boolean isMaven
+                // Archive artifacts once with pom declared baseline
+                boolean doArchiveArtifacts = !jenkinsVersion && !archivedArtifacts
+                boolean incrementals // cf. JEP-305
+                String changelistF
+                String m2repo
                 try {
                     timeout(timeoutValue) {
-                        boolean isMaven
-                        // Archive artifacts once with pom declared baseline
-                        boolean doArchiveArtifacts = !jenkinsVersion && !archivedArtifacts
                         if (doArchiveArtifacts) {
                             archivedArtifacts = true
                         }
-                        boolean incrementals // cf. JEP-305
 
                         stage("Checkout (${stageIdentifier})") {
                             infra.checkout(repo)
@@ -67,9 +69,6 @@ def call(Map params = [:]) {
                             incrementals = fileExists('.mvn/extensions.xml') &&
                                     readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')
                         }
-
-                        String changelistF
-                        String m2repo
 
                         stage("Build (${stageIdentifier})") {
                             String command
@@ -124,64 +123,62 @@ def call(Map params = [:]) {
                                 infra.runWithJava(command, jdk, null, addToolEnv)
                             }
                         }
-
-                        stage("Archive (${stageIdentifier})") {
-                            if (!skipTests) {
-                                String testReports
+                    }
+                } finally {
+                    stage("Archive (${stageIdentifier})") {
+                        if (!skipTests) {
+                            String testReports
+                            if (isMaven) {
+                                testReports = '**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml'
+                            } else {
+                                testReports = '**/build/test-results/**/*.xml'
+                            }
+                            junit testReports
+                        }
+                        if (isMaven && archiveFindbugs) {
+                            def fp = [pattern: params?.findbugs?.pattern ?: '**/target/findbugsXml.xml']
+                            if (params?.findbugs?.unstableNewAll) {
+                                fp['unstableNewAll'] = "${params.findbugs.unstableNewAll}"
+                            }
+                            if (params?.findbugs?.unstableTotalAll) {
+                                fp['unstableTotalAll'] = "${params.findbugs.unstableTotalAll}"
+                            }
+                            findbugs(fp)
+                        }
+                        if (isMaven && archiveCheckstyle) {
+                            def cp = [pattern: params?.checkstyle?.pattern ?: '**/target/checkstyle-result.xml']
+                            if (params?.checkstyle?.unstableNewAll) {
+                                cp['unstableNewAll'] = "${params.checkstyle.unstableNewAll}"
+                            }
+                            if (params?.checkstyle?.unstableTotalAll) {
+                                cp['unstableTotalAll'] = "${params.checkstyle.unstableTotalAll}"
+                            }
+                            checkstyle(cp)
+                        }
+                        if (failFast && currentBuild.result == 'UNSTABLE') {
+                            error 'There were test failures; halting early'
+                        }
+                        if (doArchiveArtifacts) {
+                            if (incrementals) {
+                                String changelist = readFile(changelistF)
+                                dir(m2repo) {
+                                    fingerprint '**/*-rc*.*/*-rc*.*' // includes any incrementals consumed
+                                    archiveArtifacts artifacts: "**/*$changelist/*$changelist*",
+                                            excludes: '**/*.lastUpdated',
+                                            allowEmptyArchive: true // in case we forgot to reincrementalify
+                                }
+                                publishingIncrementals = true
+                            } else {
+                                String artifacts
                                 if (isMaven) {
-                                    testReports = '**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml'
+                                    artifacts = '**/target/*.hpi,**/target/*.jpi'
                                 } else {
-                                    testReports = '**/build/test-results/**/*.xml'
+                                    artifacts = '**/build/libs/*.hpi,**/build/libs/*.jpi'
                                 }
-                                junit testReports
-                                // TODO do this in a finally-block so we capture all test results even if one branch aborts early
-                            }
-                            if (isMaven && archiveFindbugs) {
-                                def fp = [pattern: params?.findbugs?.pattern ?: '**/target/findbugsXml.xml']
-                                if (params?.findbugs?.unstableNewAll) {
-                                    fp['unstableNewAll'] = "${params.findbugs.unstableNewAll}"
-                                }
-                                if (params?.findbugs?.unstableTotalAll) {
-                                    fp['unstableTotalAll'] = "${params.findbugs.unstableTotalAll}"
-                                }
-                                findbugs(fp)
-                            }
-                            if (isMaven && archiveCheckstyle) {
-                                def cp = [pattern: params?.checkstyle?.pattern ?: '**/target/checkstyle-result.xml']
-                                if (params?.checkstyle?.unstableNewAll) {
-                                    cp['unstableNewAll'] = "${params.checkstyle.unstableNewAll}"
-                                }
-                                if (params?.checkstyle?.unstableTotalAll) {
-                                    cp['unstableTotalAll'] = "${params.checkstyle.unstableTotalAll}"
-                                }
-                                checkstyle(cp)
-                            }
-                            if (failFast && currentBuild.result == 'UNSTABLE') {
-                                error 'There were test failures; halting early'
-                            }
-                            if (doArchiveArtifacts) {
-                                if (incrementals) {
-                                    String changelist = readFile(changelistF)
-                                    dir(m2repo) {
-                                        fingerprint '**/*-rc*.*/*-rc*.*' // includes any incrementals consumed
-                                        archiveArtifacts artifacts: "**/*$changelist/*$changelist*",
-                                                excludes: '**/*.lastUpdated',
-                                                allowEmptyArchive: true // in case we forgot to reincrementalify
-                                    }
-                                    publishingIncrementals = true
-                                } else {
-                                    String artifacts
-                                    if (isMaven) {
-                                        artifacts = '**/target/*.hpi,**/target/*.jpi'
-                                    } else {
-                                        artifacts = '**/build/libs/*.hpi,**/build/libs/*.jpi'
-                                    }
-                                    archiveArtifacts artifacts: artifacts, fingerprint: true
-                                }
+                                archiveArtifacts artifacts: artifacts, fingerprint: true
                             }
                         }
-                    }            
-                } finally {
+                    }
                     deleteDir()
 
                     if (hasDockerLabel()) {

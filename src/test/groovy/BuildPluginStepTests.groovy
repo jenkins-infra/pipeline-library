@@ -188,6 +188,12 @@ class BuildPluginStepTests extends BasePipelineTest {
     }.any { call ->
       callArgsToString(call).contains('windows')
     })
+    // then the archive stage happens
+    assertTrue(helper.callStack.findAll { call ->
+      call.methodName == 'stage'
+    }.any { call ->
+      callArgsToString(call).contains('Archive')
+    })
     // then it runs the junit step by default
     assertTrue(helper.callStack.any { call ->
       call.methodName == 'junit'
@@ -302,5 +308,26 @@ class BuildPluginStepTests extends BasePipelineTest {
     }.any { call ->
       callArgsToString(call).contains('**/*-rc*.*/*-rc*.*')
     })
+  }
+
+  @Test
+  void test_buildPlugin_with_build_error_should_run_the_archive_stage() throws Exception {
+    def script = loadScript(scriptName)
+    binding.setProperty('infra', new Infra(false, true))
+    try {
+      script.call(tests: [skip: false])
+    } catch(e) {
+      //NOOP
+    }
+    printCallStack()
+    // then the archive stage happens
+    assertTrue(helper.callStack.findAll { call ->
+      call.methodName == 'stage'
+    }.any { call ->
+      callArgsToString(call).contains('Archive')
+    })
+    // and the junit step is enabled
+    assertTrue(helper.callStack.any { call -> call.methodName == 'stage' })
+    assertJobStatusFailure()
   }
 }
