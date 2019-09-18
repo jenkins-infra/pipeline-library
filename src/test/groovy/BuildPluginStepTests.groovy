@@ -181,7 +181,7 @@ class BuildPluginStepTests extends BasePipelineTest {
       call.methodName == 'node'
     }.any { call ->
       def args = callArgsToString(call)
-      args.contains('linux') || args.contains('jdk')
+      args.contains('linux') || args.contains('maven')
     })
     // then it runs in a windows node
     assertTrue(helper.callStack.findAll { call ->
