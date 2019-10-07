@@ -182,7 +182,20 @@ def call(Map params = [:]) {
                         }
                     }            
                 } finally {
-                    deleteDir()
+                    try {
+                        deleteDir()
+                    } catch(e) {
+                        if(!isUnix()) {
+                            powershell '''
+Invoke-WebRequest -UseBasicParsing -Uri "https://download.sysinternals.com/files/Handle.zip" -OutFile (Join-Path $PSScriptRoot "Handle.zip")
+Add-Type -Assembly System.IO.Compression.FileSystem
+$zip = [System.IO.Compression.ZipFile]::OpenRead([System.IO.Path]::Combine($PSScriptRoot, "Handle.zip"))
+$zip.Entries | ForEach-Object { [System.IO.Compression.ZipFileExtensions]::ExtractToFile($_, [System.IO.Path]::Combine($PSScriptRoot, $_.FullName), $true)}
+$zip.Dispose()
+& (Join-Path $PSScriptRoot "handle.exe") -accepteula -u "$env:WORKSPACE/.git"
+'''                             
+                        }
+                    }
 
                     if (hasDockerLabel()) {
                         if(isUnix()) {
