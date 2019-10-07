@@ -192,7 +192,7 @@ Add-Type -Assembly System.IO.Compression.FileSystem
 $zip = [System.IO.Compression.ZipFile]::OpenRead([System.IO.Path]::Combine($PSScriptRoot, "Handle.zip"))
 $zip.Entries | ForEach-Object { [System.IO.Compression.ZipFileExtensions]::ExtractToFile($_, [System.IO.Path]::Combine($PSScriptRoot, $_.FullName), $true)}
 $zip.Dispose()
-& (Join-Path $PSScriptRoot "handle.exe") -accepteula -u "$env:WORKSPACE/.git"
+& (Join-Path $PSScriptRoot "handle64.exe") -accepteula -u "$env:WORKSPACE/.git"
 '''                             
                         }
                     }
