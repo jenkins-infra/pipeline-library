@@ -40,7 +40,7 @@ def call(Map params = [:]) {
         boolean skipTests = params?.tests?.skip
         boolean reallyUseAci = (useAci && label == 'linux') || forceAci
         boolean addToolEnv = !reallyUseAci
-        
+
         if(reallyUseAci) {
             String aciLabel = jdk == '8' ? 'maven' : 'maven-11'
             if(label == 'windows') {
@@ -180,7 +180,10 @@ def call(Map params = [:]) {
                                 }
                             }
                         }
-                    }            
+                        if (publishingIncrementals) {
+                            infra.maybePublishIncrementals()
+                        }
+                    }
                 } finally {
                     deleteDir()
 
@@ -197,9 +200,6 @@ def call(Map params = [:]) {
     }
 
     parallel(tasks)
-    if (publishingIncrementals) {
-        infra.maybePublishIncrementals()
-    }
 }
 
 boolean hasDockerLabel() {
