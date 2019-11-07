@@ -227,6 +227,58 @@ class BuildPluginStepTests extends BasePipelineTest {
   }
 
   @Test
+  void test_buildPlugin_without_tests_build_number_1() throws Exception {
+    def script = loadScript(scriptName)
+    binding.setProperty('currentBuild', new CurrentBuild())
+    script.call(tests: [skip: true])
+    printCallStack()
+    // then the junit step is disabled
+    assertFalse(helper.callStack.any { call ->
+      call.methodName == 'junit'
+    })
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_tests_build_number_1() throws Exception {
+    def script = loadScript(scriptName)
+    binding.setProperty('currentBuild', new CurrentBuild())
+    script.call()
+    printCallStack()
+    // then the junit step is enabled because it is build number 1
+    assertTrue(helper.callStack.any { call ->
+      call.methodName == 'junit'
+    })
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_tests_build_number_2_null_changeSets() throws Exception {
+    def script = loadScript(scriptName)
+    binding.setProperty('currentBuild', new CurrentBuild(2))
+    script.call()
+    printCallStack()
+    // then the junit step is enabled because it is build number 2 with null changeSets
+    assertTrue(helper.callStack.any { call ->
+      call.methodName == 'junit'
+    })
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_without_tests_build_number_2_changeSets_with_no_relevant_changes() throws Exception {
+    def script = loadScript(scriptName)
+    binding.setProperty('currentBuild', new CurrentBuild(2, true))
+    script.call()
+    printCallStack()
+    // then the junit step is disabled because it is build number 2 with empty but not null changeSets
+    assertFalse(helper.callStack.any { call ->
+      call.methodName == 'junit'
+    })
+    assertJobStatusSuccess()
+  }
+
+  @Test
   void test_buildPlugin_with_defaults_with_gradle() throws Exception {
     def script = loadScript(scriptName)
     // when running in a non maven project

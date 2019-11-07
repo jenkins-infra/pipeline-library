@@ -66,6 +66,7 @@ def call(Map params = [:]) {
                             isMaven = fileExists('pom.xml')
                             incrementals = fileExists('.mvn/extensions.xml') &&
                                     readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')
+                            skipTests = skipTestsIfNoRelevantChanges(skipTests)
                         }
 
                         String changelistF
@@ -260,4 +261,33 @@ static List<Map<String, String>> recommendedConfigurations() {
         [ platform: "windows", jdk: "11", jenkins: recentLTS, javaLevel: "8" ]
     ]
     return configurations
+}
+
+/**
+ * Return true if tests should be skipped because the changeset
+ * contains no changes that will reasonably affect a test.
+ */
+boolean skipTestsIfNoRelevantChanges(skipTestsInitialValue) {
+    if (skipTestsInitialValue) { // Explicit skip wins
+        return true
+    }
+    if (currentBuild.number == 1) { // Don't skip tests on first build
+        return false
+    }
+    if (currentBuild.changeSets == null) { // Don't skip tests if no changeSet detected
+        return false
+    }
+    def changeLogSets = currentBuild.changeSets
+    for (int i = 0; i < changeLogSets.size(); i++) { // for each changelog
+        def entries = changeLogSets[i].items
+        for (int j = 0; j < entries.length; j++) {   // for each commit in the changelog
+            def files = new ArrayList(entries[j].affectedFiles)
+            for (int k = 0; k < files.size(); k++) { // for each file in the commit
+                if (files[k].path.endsWith(".java") || files[k].path.endsWith("pom.xml")) {
+                    return false
+                }
+            }
+        }
+    }
+    return true
 }
