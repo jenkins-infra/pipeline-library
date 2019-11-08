@@ -225,7 +225,7 @@ List<Map<String, String>> getConfigurations(Map params) {
             error("Configuration field \"platform\" must be specified: $c")
         }
         if (!c.jdk) {
-            error("Configuration filed \"jdk\" must be specified: $c")
+            error("Configuration field \"jdk\" must be specified: $c")
         }
     }
 

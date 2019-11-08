@@ -111,7 +111,7 @@ class BuildPluginStepTests extends BasePipelineTest {
     assertTrue(helper.callStack.findAll { call ->
       call.methodName == 'error'
     }.any { call ->
-      callArgsToString(call).contains('Configuration filed "jdk" must be specified: [platform:linux]')
+      callArgsToString(call).contains('Configuration field "jdk" must be specified: [platform:linux]')
     })
     assertJobStatusFailure()
   }
