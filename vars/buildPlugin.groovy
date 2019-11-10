@@ -274,7 +274,9 @@ boolean skipTestsIfNoRelevantChanges(skipTestsInitialValue) {
     if (currentBuild.number == 1) { // Don't skip tests on first build
         return false
     }
-    if (currentBuild.changeSets == null) { // Don't skip tests if no changeSet detected
+    if (currentBuild.changeSets == null || currentBuild.changeSets.size() == 0) { // Don't skip tests if no changeSet detected
+        // No changeset indicates user launched build without SCM change
+        // Run tests on user launched build
         return false
     }
     def changeLogSets = currentBuild.changeSets
