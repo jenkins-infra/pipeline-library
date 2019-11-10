@@ -267,6 +267,7 @@ static List<Map<String, String>> recommendedConfigurations() {
  * Return true if tests should be skipped because the changeset
  * contains no changes that will reasonably affect a test.
  */
+@NonCPS
 boolean skipTestsIfNoRelevantChanges(skipTestsInitialValue) {
     if (skipTestsInitialValue) { // Explicit skip wins
         return true
