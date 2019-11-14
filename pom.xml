@@ -56,6 +56,12 @@
             <version>1.21</version>
             <scope>test</scope>
         </dependency>
+        <dependency><!-- Copied from jenkins/core/pom.xml -->
+            <groupId>org.kohsuke.stapler</groupId>
+            <artifactId>json-lib</artifactId>
+            <version>2.4-jenkins-2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <testSourceDirectory>src/test/groovy</testSourceDirectory>

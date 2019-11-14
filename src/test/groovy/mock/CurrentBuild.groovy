@@ -1,5 +1,7 @@
 package mock
 
+import net.sf.json.JSONObject
+
 /**
  * Mock currentBuild
  */
@@ -18,5 +20,9 @@ class CurrentBuild implements Serializable {
       def changeSetOne = [ commitId: 'SHA-1.1', author: 'writer.1', affectedFiles: fileOne ]
       this.changeSets = [ [items:changeSetOne], ]
     }
+  }
+
+  public JSONObject getBuildCauses() {
+    return new JSONObject()
   }
 }

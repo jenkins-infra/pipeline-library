@@ -275,17 +275,17 @@ boolean skipTestsIfNoRelevantChanges(skipTestsInitialValue) {
     if (currentBuild.number == 1) { // Don't skip tests on first build
         return false
     }
-    buildCauses = currentBuild.getBuildCauses()
-    for (int i = 0; i < buildCauses.size(); i++) {
-        buildCauseClass = buildCauses[i]._class // String name of class
-        if (buildCauseClass == 'hudson.model.Cause$UserIdCause') {
-            return false
-        }
-    }
     if (currentBuild.changeSets == null || currentBuild.changeSets.size() == 0) { // Don't skip tests if no changeSet detected
         // No changeset indicates user launched build without SCM change
         // Run tests on user launched build
         return false
+    }
+    buildCauses = currentBuild.getBuildCauses()
+    for (int i = 0; i < buildCauses.size(); i++) {  // Don't skip tests if user started the build
+        buildCauseClass = buildCauses[i]._class // String name of class
+        if (buildCauseClass == 'hudson.model.Cause$UserIdCause') {
+            return false
+        }
     }
     def changeLogSets = currentBuild.changeSets
     for (int i = 0; i < changeLogSets.size(); i++) { // for each changelog
