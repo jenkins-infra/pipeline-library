@@ -33,10 +33,6 @@ def call(Map params = [:]) {
 
         String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
         boolean first = tasks.size() == 1
-        boolean runFindbugs = first && params?.findbugs?.run
-        boolean runCheckstyle = first && params?.checkstyle?.run
-        boolean archiveFindbugs = first && params?.findbugs?.archive
-        boolean archiveCheckstyle = first && params?.checkstyle?.archive
         boolean skipTests = params?.tests?.skip
         boolean reallyUseAci = (useAci && label == 'linux') || forceAci
         boolean addToolEnv = !reallyUseAci
@@ -93,22 +89,10 @@ def call(Map params = [:]) {
                                 if (javaLevel) {
                                     mavenOptions += "-Djava.level=${javaLevel}"
                                 }
-                                if (params?.findbugs?.run || params?.findbugs?.archive) {
-                                    mavenOptions += "-Dfindbugs.failOnError=false"
-                                }
                                 if (skipTests) {
                                     mavenOptions += "-DskipTests"
                                 }
-                                if (params?.checkstyle?.run || params?.checkstyle?.archive) {
-                                    mavenOptions += "-Dcheckstyle.failOnViolation=false -Dcheckstyle.failsOnError=false"
-                                }
                                 mavenOptions += "clean install"
-                                if (runFindbugs) {
-                                    mavenOptions += "findbugs:findbugs"
-                                }
-                                if (runCheckstyle) {
-                                    mavenOptions += "checkstyle:checkstyle"
-                                }
                                 infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
                             } else {
                                 echo "WARNING: Gradle mode for buildPlugin() is deprecated, please use buildPluginWithGradle()"
@@ -136,28 +120,22 @@ def call(Map params = [:]) {
                                 junit testReports
                                 // TODO do this in a finally-block so we capture all test results even if one branch aborts early
                             }
-                            if (isMaven && archiveFindbugs) {
-                                def fp = [pattern: params?.findbugs?.pattern ?: '**/target/findbugsXml.xml']
-                                if (params?.findbugs?.unstableNewAll) {
-                                    fp['unstableNewAll'] = "${params.findbugs.unstableNewAll}"
-                                }
-                                if (params?.findbugs?.unstableTotalAll) {
-                                    fp['unstableTotalAll'] = "${params.findbugs.unstableTotalAll}"
-                                }
-                                findbugs(fp)
-                            }
-                            if (isMaven && archiveCheckstyle) {
-                                def cp = [pattern: params?.checkstyle?.pattern ?: '**/target/checkstyle-result.xml']
-                                if (params?.checkstyle?.unstableNewAll) {
-                                    cp['unstableNewAll'] = "${params.checkstyle.unstableNewAll}"
-                                }
-                                if (params?.checkstyle?.unstableTotalAll) {
-                                    cp['unstableTotalAll'] = "${params.checkstyle.unstableTotalAll}"
-                                }
-                                checkstyle(cp)
-                            }
                             if (failFast && currentBuild.result == 'UNSTABLE') {
                                 error 'There were test failures; halting early'
+                            }
+
+                            if (first) {
+                                recordIssues enabledForFailure: true, tool: mavenConsole()
+                                recordIssues enabledForFailure: true, tools: [java(), javaDoc()], sourceCodeEncoding: 'UTF-8'
+                                recordIssues tools: [spotBugs(), checkStyle(), pmdParser()], sourceCodeEncoding: 'UTF-8'
+                                recordIssues enabledForFailure: true, tool: taskScanner(
+                                        includePattern:'**/*.java',
+                                        excludePattern:'target/**',
+                                        highTags:'FIXME',
+                                        normalTags:'TODO'), sourceCodeEncoding: 'UTF-8'
+                                if (failFast && currentBuild.result == 'UNSTABLE') {
+                                    error 'There were static analysis warnings; halting early'
+                                }
                             }
                             if (doArchiveArtifacts) {
                                 if (incrementals) {
@@ -172,7 +150,7 @@ def call(Map params = [:]) {
                                 } else {
                                     String artifacts
                                     if (isMaven) {
-                                        artifacts = '**/target/*.hpi,**/target/*.jpi'
+                                        artifacts = '**/target/*.hpi,**/target/*.jpi,**/target/*.jar'
                                     } else {
                                         artifacts = '**/build/libs/*.hpi,**/build/libs/*.jpi'
                                     }
@@ -180,7 +158,7 @@ def call(Map params = [:]) {
                                 }
                             }
                         }
-                    }            
+                    }
                 } finally {
                     if (hasDockerLabel()) {
                         if(isUnix()) {
