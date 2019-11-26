@@ -146,7 +146,7 @@ def call(Map params = [:]) {
                         if (supportedBrowsers.contains(browser)) {
                             def currentBrowser = browser
 
-                            def commandBase = "./run.sh ${currentBrowser} ./jenkins.war -B -Dmaven.test.failure.ignore=true -DforkCount=1 -B -Dsurefire.rerunFailingTestsCount=${rerunCount}"
+                            def commandBase = "./run.sh ${currentBrowser} ./jenkins.war -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Dmaven.test.failure.ignore=true -DforkCount=1 -Dsurefire.rerunFailingTestsCount=${rerunCount}"
 
                             if (testsToRun) {
                                 testingbranches["ATH individual tests-${currentBrowser}-jdk${currentJdk}"] = {
