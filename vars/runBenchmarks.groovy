@@ -14,7 +14,7 @@ def call(String artifacts = null) {
             }
 
             stage('Run Benchmarks') {
-                List<String> mvnOptions = ['test', '-Dbenchmark']
+                List<String> mvnOptions = ['test', '-P', 'jmh-benchmark']
                 infra.runMaven(mvnOptions)
             }
 
