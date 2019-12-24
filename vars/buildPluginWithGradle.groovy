@@ -28,7 +28,8 @@ def call(Map params = [:]) {
         String javaLevel = config.javaLevel
 
         String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
-        
+        boolean skipTests = params?.tests?.skip
+
         tasks[stageIdentifier] = {
             node(label) {
                 timeout(timeoutValue) {
@@ -55,6 +56,9 @@ def call(Map params = [:]) {
                                 'cleanTest',
                                 'build',
                         ]
+                        if (skipTests) {
+                            gradleOptions += '--exclude-task test'
+                        }
                         String command = "gradlew ${gradleOptions.join(' ')}"
                         if (isUnix()) {
                             command = "./" + command

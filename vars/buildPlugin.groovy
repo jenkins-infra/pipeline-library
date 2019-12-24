@@ -117,6 +117,9 @@ def call(Map params = [:]) {
                                         'cleanTest',
                                         'build',
                                 ]
+                                if (skipTests) {
+                                    gradleOptions += '--exclude-task test'
+                                }
                                 command = "gradlew ${gradleOptions.join(' ')}"
                                 if (isUnix()) {
                                     command = "./" + command
