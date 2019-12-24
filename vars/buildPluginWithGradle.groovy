@@ -63,17 +63,18 @@ def call(Map params = [:]) {
                         if (isUnix()) {
                             command = "./" + command
                         }
-                        infra.runWithJava(command, jdk)
+                        try {
+                            infra.runWithJava(command, jdk)
+                        } finally {
+                            if (!skipTests) {
+                                junit('**/build/test-results/**/*.xml')
+                            }
+                        }
                     }
 
                     stage("Archive (${stageIdentifier})") {
-                        if (!skipTests) {
-                            junit '**/build/test-results/**/*.xml'
-                        }
-                        
                         //TODO(oleg-nenashev): Add static analysis results publishing like in buildPlugin() for Maven 
-                        
-                        // TODO do this in a finally-block so we capture all test results even if one branch aborts early
+
                         if (failFast && currentBuild.result == 'UNSTABLE') {
                             error 'There were test failures; halting early'
                         }

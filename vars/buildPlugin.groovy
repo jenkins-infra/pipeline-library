@@ -109,7 +109,13 @@ def call(Map params = [:]) {
                                 if (runCheckstyle) {
                                     mavenOptions += "checkstyle:checkstyle"
                                 }
-                                infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
+                                try {
+                                    infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
+                                } finally {
+                                    if (!skipTests) {
+                                        junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml')
+                                    }
+                                }
                             } else {
                                 echo "WARNING: Gradle mode for buildPlugin() is deprecated, please use buildPluginWithGradle()"
                                 List<String> gradleOptions = [
@@ -124,21 +130,18 @@ def call(Map params = [:]) {
                                 if (isUnix()) {
                                     command = "./" + command
                                 }
-                                infra.runWithJava(command, jdk, null, addToolEnv)
+
+                                try {
+                                    infra.runWithJava(command, jdk, null, addToolEnv)
+                                } finally {
+                                    if (!skipTests) {
+                                        junit('**/build/test-results/**/*.xml')
+                                    }
+                                }
                             }
                         }
 
                         stage("Archive (${stageIdentifier})") {
-                            if (!skipTests) {
-                                String testReports
-                                if (isMaven) {
-                                    testReports = '**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml'
-                                } else {
-                                    testReports = '**/build/test-results/**/*.xml'
-                                }
-                                junit testReports
-                                // TODO do this in a finally-block so we capture all test results even if one branch aborts early
-                            }
                             if (isMaven && archiveFindbugs) {
                                 def fp = [pattern: params?.findbugs?.pattern ?: '**/target/findbugsXml.xml']
                                 if (params?.findbugs?.unstableNewAll) {
