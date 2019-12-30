@@ -15,6 +15,7 @@ class Infra implements Serializable {
   public String runMaven(mvn) { return mvn }
   public String runMaven(mvn, jdk, foo, settings) { return 'OK' }
   public String runMaven(mvn, jdk, foo, settings, toolEnv) { return mvn }
+  public String runWithJava(command, jdk) { return command }
   public String runWithJava(command, jdk, foo, toolEnv) { return command }
   public boolean isTrusted() { return result }
   public void maybePublishIncrementals() { }
