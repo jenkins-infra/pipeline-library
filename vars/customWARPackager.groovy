@@ -22,8 +22,8 @@ def build(String metadataFile, String outputWAR, String outputBOM, String mvnSet
     def jdk = metadata.packaging.jdk ?: "8"
     //TODO: replace by a stable release once ready, better name?
     def cwpVersion = metadata.packaging.cwpVersion ?: "0.1-alpha-5"
-    def archiveProducedArtifacts = metadata.packaging.archiveArtifacts ?: false
-    def installArtifacts = metadata.packaging.installArtifacts ?: true
+    def archiveProducedArtifacts = metadata.packaging.getOrDefault('archiveArtifacts', false)
+    def installArtifacts = metadata.packaging.getOrDefault('installArtifacts', true)
 
     // Resolve the CWP configuration file
     def configFilePath = null
