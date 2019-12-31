@@ -1,4 +1,7 @@
-= Pipeline Global Library
+= Pipeline Global Library for ci.jenkins.io
+
+image:https://ci.jenkins.io/job/Infra/job/pipeline-library/job/master/badge/icon[link="https://ci.jenkins.io/job/Infra/job/pipeline-library/job/master/"]
+image:https://img.shields.io/github/v/release/jenkins-infra/pipeline-library[link="https://github.com/jenkins-infra/pipeline-library/releases"]
 
 This repository contains a series of steps and variables for use inside of the
 Jenkins project's own link:https://ci.jenkins.io[Jenkins] instance(s).
