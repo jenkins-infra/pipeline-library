@@ -91,11 +91,28 @@ class BuildPluginWithGradleStepTests extends BasePipelineTest {
     def script = loadScript(scriptName)
     script.call(tests: [skip: true])
     printCallStack()
-    // then the junit step is disabled
+    // the junit step is disabled
     assertFalse(helper.callStack.any { call ->
       call.methodName == 'junit'
     })
     assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPluginWithGradle_with_build_error() throws Exception {
+    def script = loadScript(scriptName)
+    binding.setProperty('infra', new Infra(buildError: true))
+    try {
+      script.call([:])
+    } catch (ignored) {
+      // intentionally left empty
+    }
+    printCallStack()
+    // it runs the junit step
+    assertTrue(helper.callStack.any { call ->
+      call.methodName == 'junit'
+    })
+    assertJobStatusFailure()
   }
 
   @Test
