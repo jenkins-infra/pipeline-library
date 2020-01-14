@@ -18,7 +18,7 @@ class PublishReportsStepTests extends BasePipelineTest {
 
     binding.setVariable('env', env)
     binding.setProperty('docker', new Docker())
-    binding.setProperty('infra', new Infra(true))
+    binding.setProperty('infra', new Infra(trusted: true))
 
     helper.registerAllowedMethod('error', [String.class], {s ->
       updateBuildStatus('FAILURE')
@@ -32,7 +32,7 @@ class PublishReportsStepTests extends BasePipelineTest {
   @Test
   void test_without_trusted_infra() throws Exception {
     def script = loadScript(scriptName)
-    binding.setProperty('infra', new Infra(false))
+    binding.setProperty('infra', new Infra(trusted: false))
     // when running with !infra.isTrusted()
     try {
       script.call(null)

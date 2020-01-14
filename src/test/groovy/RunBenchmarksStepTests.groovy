@@ -15,7 +15,7 @@ class RunBenchmarksStepTests extends BasePipelineTest {
     super.setUp()
 
     binding.setVariable('env', env)
-    binding.setProperty('infra', new Infra(true))
+    binding.setProperty('infra', new Infra(trusted: true))
 
     helper.registerAllowedMethod('archiveArtifacts', [Map.class], { m -> m })
     helper.registerAllowedMethod('echo', [String.class], { s -> s })
