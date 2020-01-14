@@ -262,7 +262,7 @@ void maybePublishIncrementals() {
             node('maven || linux') {
                 withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
                     sh '''
-curl -i -H 'Content-Type: application/json' -d '{"build_url":"'$BUILD_URL'"}' "https://jenkins-incrementals.azurewebsites.net/api/incrementals-publisher?clientId=default&code=$FUNCTION_TOKEN" || echo 'Problem calling Incrementals deployment function'
+curl -i -H 'Content-Type: application/json' -d '{"build_url":"'$BUILD_URL'"}' "https://jenkins-community-functions.azurewebsites.net/api/incrementals-publisher?clientId=default&code=$FUNCTION_TOKEN" || echo 'Problem calling Incrementals deployment function'
                     '''
                 }
             }
