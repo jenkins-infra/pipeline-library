@@ -6,6 +6,7 @@ package mock
 class Infra implements Serializable {
 
   private boolean trusted
+  private boolean buildError
 
   public void checkout(String repo = null) { }
 
@@ -23,7 +24,11 @@ class Infra implements Serializable {
   }
 
   public Object runWithJava(String command, String jdk = null, List<String> extraEnv = null, Boolean addToolEnv = null) {
-    return command
+    if (buildError) {
+      throw new RuntimeException('build error')
+    } else {
+      return command
+    }
   }
 
   public boolean isTrusted() {
