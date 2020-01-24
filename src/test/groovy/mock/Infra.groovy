@@ -5,17 +5,35 @@ package mock
  */
 class Infra implements Serializable {
 
-  private final boolean result
-  public Infra(boolean result) { this.result = result }
-  public Infra() { this.result = false }
-  public void checkout() { }
-  public void checkout(repo) { }
-  public String retrieveMavenSettingsFile(String location) { return location }
-  public String runWithMaven(String cmd) { return cmd }
-  public String runMaven(mvn) { return mvn }
-  public String runMaven(mvn, jdk, foo, settings) { return 'OK' }
-  public String runMaven(mvn, jdk, foo, settings, toolEnv) { return mvn }
-  public String runWithJava(command, jdk, foo, toolEnv) { return command }
-  public boolean isTrusted() { return result }
+  private boolean trusted
+  private boolean buildError
+
+  public void checkout(String repo = null) { }
+
+  public String retrieveMavenSettingsFile(String location) {
+    return location
+  }
+
+  public Object runMaven(List<String> options, String jdk = null, List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = null) {
+    def command = "mvn ${options.join(' ')}"
+    return runWithMaven(command, jdk, extraEnv, addToolEnv)
+  }
+
+  public Object runWithMaven(String command, String jdk = null, List<String> extraEnv = null, Boolean addToolEnv = null) {
+    return runWithJava(command, jdk, extraEnv, addToolEnv)
+  }
+
+  public Object runWithJava(String command, String jdk = null, List<String> extraEnv = null, Boolean addToolEnv = null) {
+    if (buildError) {
+      throw new RuntimeException('build error')
+    } else {
+      return command
+    }
+  }
+
+  public boolean isTrusted() {
+    return trusted
+  }
+
   public void maybePublishIncrementals() { }
 }

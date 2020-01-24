@@ -219,11 +219,28 @@ class BuildPluginStepTests extends BasePipelineTest {
     def script = loadScript(scriptName)
     script.call(tests: [skip: true])
     printCallStack()
-    // then the junit step is disabled
+    // the junit step is disabled
     assertFalse(helper.callStack.any { call ->
       call.methodName == 'junit'
     })
     assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_build_error() throws Exception {
+    def script = loadScript(scriptName)
+    binding.setProperty('infra', new Infra(buildError: true))
+    try {
+      script.call([:])
+    } catch (ignored) {
+      // intentionally left empty
+    }
+    printCallStack()
+    // it runs the junit step
+    assertTrue(helper.callStack.any { call ->
+      call.methodName == 'junit'
+    })
+    assertJobStatusFailure()
   }
 
   @Test
@@ -239,6 +256,25 @@ class BuildPluginStepTests extends BasePipelineTest {
     }.any { call ->
       callArgsToString(call).contains('**/build/test-results/**/*.xml')
     })
+  }
+
+  @Test
+  void test_buildPlugin_with_build_error_with_gradle() throws Exception {
+    def script = loadScript(scriptName)
+    binding.setProperty('infra', new Infra(buildError: true))
+    // when running in a non maven project
+    helper.registerAllowedMethod('fileExists', [String.class], { s -> return !s.equals('pom.xml') })
+    try {
+      script.call([:])
+    } catch (ignored) {
+      // intentionally left empty
+    }
+    printCallStack()
+    // it runs the junit step
+    assertTrue(helper.callStack.any { call ->
+      call.methodName == 'junit'
+    })
+    assertJobStatusFailure()
   }
 
   @Test

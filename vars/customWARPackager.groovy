@@ -17,13 +17,13 @@ def build(String metadataFile, String outputWAR, String outputBOM, String mvnSet
         error "No 'packaging' section in the metadata file ${metadataFile}"
     }
 
-    def bomFilePath = metadata.packaging.bom ?: null
-    def environment = metadata.packaging.environment
-    def jdk = metadata.packaging.jdk ?: "8"
+    String bomFilePath = metadata.packaging.bom ?: null
+    String environment = metadata.packaging.environment ?: null
+    String jdk = metadata.packaging.jdk ?: "8"
     //TODO: replace by a stable release once ready, better name?
-    def cwpVersion = metadata.packaging.cwpVersion ?: "0.1-alpha-5"
-    def archiveProducedArtifacts = metadata.packaging.archiveArtifacts ?: false
-    def installArtifacts = metadata.packaging.installArtifacts ?: true
+    String cwpVersion = metadata.packaging.cwpVersion ?: "0.1-alpha-5"
+    boolean archiveProducedArtifacts = metadata.packaging.getOrDefault('archiveArtifacts', false)
+    boolean installArtifacts = metadata.packaging.getOrDefault('installArtifacts', true)
 
     // Resolve the CWP configuration file
     def configFilePath = null

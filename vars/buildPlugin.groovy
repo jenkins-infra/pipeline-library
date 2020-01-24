@@ -93,7 +93,13 @@ def call(Map params = [:]) {
                                     mavenOptions += "-DskipTests"
                                 }
                                 mavenOptions += "clean install"
-                                infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
+                                try {
+                                    infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
+                                } finally {
+                                    if (!skipTests) {
+                                        junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml')
+                                    }
+                                }
                             } else {
                                 echo "WARNING: Gradle mode for buildPlugin() is deprecated, please use buildPluginWithGradle()"
                                 List<String> gradleOptions = [
@@ -101,25 +107,25 @@ def call(Map params = [:]) {
                                         'cleanTest',
                                         'build',
                                 ]
+                                if (skipTests) {
+                                    gradleOptions += '--exclude-task test'
+                                }
                                 command = "gradlew ${gradleOptions.join(' ')}"
                                 if (isUnix()) {
                                     command = "./" + command
                                 }
-                                infra.runWithJava(command, jdk, null, addToolEnv)
+
+                                try {
+                                    infra.runWithJava(command, jdk, null, addToolEnv)
+                                } finally {
+                                    if (!skipTests) {
+                                        junit('**/build/test-results/**/*.xml')
+                                    }
+                                }
                             }
                         }
 
                         stage("Archive (${stageIdentifier})") {
-                            if (!skipTests) {
-                                String testReports
-                                if (isMaven) {
-                                    testReports = '**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml'
-                                } else {
-                                    testReports = '**/build/test-results/**/*.xml'
-                                }
-                                junit testReports
-                                // TODO do this in a finally-block so we capture all test results even if one branch aborts early
-                            }
                             if (failFast && currentBuild.result == 'UNSTABLE') {
                                 error 'There were test failures; halting early'
                             }
@@ -230,12 +236,16 @@ List<Map<String, String>> getConfigurations(Map params) {
 static List<Map<String, String>> recommendedConfigurations() {
     def recentLTS = "2.164.1"
     def configurations = [
+        // Intentionally test configurations which have detected the most problems
+        // Linux - Java 8 with plugin specified minimum Jenkins version
+        // Windows - Java 8 with recent LTS
+        // Linux - Java 11 with recent LTS
         [ platform: "linux", jdk: "8", jenkins: null ],
-        [ platform: "windows", jdk: "8", jenkins: null ],
-        [ platform: "linux", jdk: "8", jenkins: recentLTS, javaLevel: "8" ],
+        // [ platform: "windows", jdk: "8", jenkins: null ],
+        // [ platform: "linux", jdk: "8", jenkins: recentLTS, javaLevel: "8" ],
         [ platform: "windows", jdk: "8", jenkins: recentLTS, javaLevel: "8" ],
         [ platform: "linux", jdk: "11", jenkins: recentLTS, javaLevel: "8" ],
-        [ platform: "windows", jdk: "11", jenkins: recentLTS, javaLevel: "8" ]
+        // [ platform: "windows", jdk: "11", jenkins: recentLTS, javaLevel: "8" ]
     ]
     return configurations
 }

@@ -28,7 +28,8 @@ def call(Map params = [:]) {
         String javaLevel = config.javaLevel
 
         String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
-        
+        boolean skipTests = params?.tests?.skip
+
         tasks[stageIdentifier] = {
             node(label) {
                 timeout(timeoutValue) {
@@ -55,19 +56,25 @@ def call(Map params = [:]) {
                                 'cleanTest',
                                 'build',
                         ]
+                        if (skipTests) {
+                            gradleOptions += '--exclude-task test'
+                        }
                         String command = "gradlew ${gradleOptions.join(' ')}"
                         if (isUnix()) {
                             command = "./" + command
                         }
-                        infra.runWithJava(command, jdk)
+                        try {
+                            infra.runWithJava(command, jdk)
+                        } finally {
+                            if (!skipTests) {
+                                junit('**/build/test-results/**/*.xml')
+                            }
+                        }
                     }
 
                     stage("Archive (${stageIdentifier})") {
-                        junit '**/build/test-results/**/*.xml'
-                        
                         //TODO(oleg-nenashev): Add static analysis results publishing like in buildPlugin() for Maven 
-                        
-                        // TODO do this in a finally-block so we capture all test results even if one branch aborts early
+
                         if (failFast && currentBuild.result == 'UNSTABLE') {
                             error 'There were test failures; halting early'
                         }

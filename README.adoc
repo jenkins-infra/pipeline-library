@@ -1,4 +1,7 @@
-= Pipeline Global Library
+= Pipeline Global Library for ci.jenkins.io
+
+image:https://ci.jenkins.io/job/Infra/job/pipeline-library/job/master/badge/icon[link="https://ci.jenkins.io/job/Infra/job/pipeline-library/job/master/"]
+image:https://img.shields.io/github/v/release/jenkins-infra/pipeline-library[link="https://github.com/jenkins-infra/pipeline-library/releases"]
 
 This repository contains a series of steps and variables for use inside of the
 Jenkins project's own link:https://ci.jenkins.io[Jenkins] instance(s).
@@ -31,14 +34,14 @@ buildPlugin()
 * `platforms` (default: `['linux', 'windows']`) - Labels matching platforms to
   execute the steps against in parallel
 * `jdkVersions` (default: `[8]`) - JDK version numbers, must match a version
-    number jdk tool installed
+  number jdk tool installed
 * `jenkinsVersions`: (default: `[null]`) - a matrix of Jenkins baseline versions to build/test against in parallel (null means default,
   only available for Maven projects)
 * `configurations`: An alternative way to specify `platforms`, `jdkVersions` and `jenkinsVersions` (that can not be combined
-  with any of them).   
+  with any of them).
 ** Those options will run the build for all combinations of their values. While that is desirable in
-  many cases, `configurations` permit to provide a specific combinations of label and java/jenkins versions to use:
-  
+  many cases, `configurations` permit to provide a specific combinations of label and java/jenkins versions to use
++
 [source,groovy]
 ----
 buildPlugin(/*...*/, configurations: [
@@ -48,18 +51,17 @@ buildPlugin(/*...*/, configurations: [
 ])
 ----
 
-** It is also possible to use a  `buildPlugin.recommendedConfigurations()` method to get recommended configurations for testing. 
-Note that the recommended configuration may change over time, 
+** It is also possible to use a `buildPlugin.recommendedConfigurations()` method to get recommended configurations for testing.
+Note that the recommended configuration may change over time,
 and hence your CI may break if the new recommended configuration is not compatible
-
++
 [source,groovy]
 ----
 buildPlugin(/*...*/, configurations: buildPlugin.recommendedConfigurations())
 ----
 
-
 * `tests`: (default: `null`) - a map of parameters to run tests during the build
-** `skip` - If `true`, skipp all the tests by setting the `-skipTests` profile.
+** `skip` - If `true`, skip all the tests by setting the `-skipTests` profile.
   It will also skip FindBugs in modern Plugin POMs.
 * `findbugs`: (default: `null`) - a map of parameters to run findbugs and/or archive findbugs reports. (only available for Maven projects)
 ** `run`: set to `true` to add the `findbugs:findbugs` goal to the maven command.
@@ -88,7 +90,7 @@ buildPlugin(platforms: ['linux'], jdkVersions: [7, 8], findbugs: [archive: true,
 === buildPluginWithGradle()
 
 Builds a Jenkins plugin using Gradle.
-The implementation follows the standard build/test/archive pattern. 
+The implementation follows the standard build/test/archive pattern.
 The method targets compatibility with link:https://github.com/jenkinsci/gradle-jpi-plugin[Gradle JPI Plugin],
 and it may not work for other use-cases.
 
@@ -99,15 +101,12 @@ and it may not work for other use-cases.
 * `platforms` (default: `['linux', 'windows']`) - Labels matching platforms to
   execute the steps against in parallel
 * `jdkVersions` (default: `[8]`) - JDK version numbers, must match a version
-    number jdk tool installed
+  number jdk tool installed
 * `configurations`: An alternative way to specify `platforms`, `jdkVersions` (that can not be combined
   with any of them)
 ** Those options will run the build for all combinations of their values. While that is desirable in
   many cases, `configurations` permit to provide a specific combinations of label and java/jenkins versions to use
-** It is also possible to use a  `buildPlugin.recommendedConfigurations()` method to get recommended configurations for testing. 
-Note that the recommended configuration may change over time, 
-and hence your CI may break if the new recommended configuration is not compatible
-* `timeout`: (default: `60`) - the number of minutes for build timeout, cannot be bigger than 180, i.e. 3 hours.
++
 [source,groovy]
 ----
 buildPluginWithGradle(/*...*/, configurations: [
@@ -115,6 +114,19 @@ buildPluginWithGradle(/*...*/, configurations: [
   [ platform: "windows", jdk: "8"],
 ])
 ----
+
+** It is also possible to use a `buildPlugin.recommendedConfigurations()` method to get recommended configurations for testing.
+Note that the recommended configuration may change over time,
+and hence your CI may break if the new recommended configuration is not compatible
++
+[source,groovy]
+----
+buildPluginWithGradle(/*...*/, configurations: buildPlugin.recommendedConfigurations())
+----
+
+* `tests`: (default: `null`) - a map of parameters to run tests during the build
+** `skip` - If `true`, skip all the tests.
+* `timeout`: (default: `60`) - the number of minutes for build timeout, cannot be bigger than 180, i.e. 3 hours.
 
 ==== Limitations
 
