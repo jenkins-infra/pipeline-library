@@ -311,13 +311,12 @@ class BuildPluginStepTests extends BasePipelineTest {
   }
 
   @Test
-  void test_buildPlugin_with_checkstyle_archive() throws Exception {
+  void test_buildPlugin_with_warnings_ng() throws Exception {
     def script = loadScript(scriptName)
-    script.call(checkstyle: [archive: true])
+    script.call()
     printCallStack()
-    // then it runs the findbugs
     assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'checkstyle'
+      call.methodName == 'warnings-ng'
     }.any { call ->
       callArgsToString(call).contains('**/target/checkstyle-result.xml')
     })

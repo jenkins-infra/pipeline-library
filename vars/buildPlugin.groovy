@@ -131,14 +131,14 @@ def call(Map params = [:]) {
                             }
 
                             if (first) {
-                                recordIssues enabledForFailure: true, tool: mavenConsole()
-                                recordIssues enabledForFailure: true, tools: [java(), javaDoc()], sourceCodeEncoding: 'UTF-8'
-                                recordIssues tools: [spotBugs(), checkStyle(), pmdParser()], sourceCodeEncoding: 'UTF-8'
-                                recordIssues enabledForFailure: true, tool: taskScanner(
+                                recordIssues(enabledForFailure: true, tools: [mavenConsole()])
+                                recordIssues(enabledForFailure: true, tools: [java(), javaDoc()], sourceCodeEncoding: 'UTF-8')
+                                recordIssues(tools: [spotBugs(), checkStyle(), pmdParser()], sourceCodeEncoding: 'UTF-8')
+                                recordIssues(enabledForFailure: true, tool: taskScanner(
                                         includePattern:'**/*.java',
                                         excludePattern:'target/**',
                                         highTags:'FIXME',
-                                        normalTags:'TODO'), sourceCodeEncoding: 'UTF-8'
+                                        normalTags:'TODO'), sourceCodeEncoding: 'UTF-8')
                                 if (failFast && currentBuild.result == 'UNSTABLE') {
                                     error 'There were static analysis warnings; halting early'
                                 }
