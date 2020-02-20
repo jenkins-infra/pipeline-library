@@ -65,4 +65,24 @@ class BaseTest extends BasePipelineTest {
     helper.registerAllowedMethod('withEnv', [List.class, Closure.class], { list, body -> body() })
     helper.registerAllowedMethod('writeYaml', [Map.class], { })
   }
+
+  def assertMethodCallContainsPattern(String methodName, String pattern) {
+    return helper.callStack.findAll { call ->
+      call.methodName == methodName
+    }.any { call ->
+      callArgsToString(call).contains(pattern)
+    }
+  }
+
+  def assertMethodCall(String methodName) {
+    return helper.callStack.find { call ->
+      call.methodName == methodName
+    }
+  }
+
+  def assertMethodCallOccurrences(String methodName, int compare) {
+    return helper.callStack.findAll { call ->
+      call.methodName == methodName
+    }.size() == compare
+  }
 }

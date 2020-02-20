@@ -2,11 +2,11 @@ import mock.CurrentBuild
 import mock.Infra
 import org.junit.Before
 import org.junit.Test
-import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
-import static org.junit.Assert.assertTrue
-import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertNull
+import static org.junit.Assert.assertTrue
 
 class BuildPluginStepTests extends BaseTest {
   static final String scriptName = 'vars/buildPlugin.groovy'
@@ -36,11 +36,7 @@ class BuildPluginStepTests extends BaseTest {
       //NOOP
     }
     printCallStack()
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'error'
-    }.any { call ->
-      callArgsToString(call).contains('can not be used')
-    })
+    assertTrue(assertMethodCallContainsPattern('error', 'can not be used'))
     assertJobStatusFailure()
   }
 
@@ -53,11 +49,7 @@ class BuildPluginStepTests extends BaseTest {
       //NOOP
     }
     printCallStack()
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'error'
-    }.any { call ->
-      callArgsToString(call).contains('Configuration field "platform" must be specified: [jdk:1.8]')
-    })
+    assertTrue(assertMethodCallContainsPattern('error', 'Configuration field "platform" must be specified: [jdk:1.8]'))
     assertJobStatusFailure()
   }
 
@@ -70,11 +62,7 @@ class BuildPluginStepTests extends BaseTest {
       //NOOP
     }
     printCallStack()
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'error'
-    }.any { call ->
-      callArgsToString(call).contains('Configuration filed "jdk" must be specified: [platform:linux]')
-    })
+    assertTrue(assertMethodCallContainsPattern('error','Configuration filed "jdk" must be specified: [platform:linux]'))
     assertJobStatusFailure()
   }
 
@@ -139,27 +127,13 @@ class BuildPluginStepTests extends BaseTest {
     script.call([:])
     printCallStack()
     // then it runs in a linux node
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'node'
-    }.any { call ->
-      callArgsToString(call).contains('linux')
-    })
+    assertTrue(assertMethodCallContainsPattern('node', 'linux'))
     // then it runs in a windows node
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'node'
-    }.any { call ->
-      callArgsToString(call).contains('windows')
-    })
+    assertTrue(assertMethodCallContainsPattern('node', 'windows'))
     // then it runs the junit step by default
-    assertTrue(helper.callStack.any { call ->
-      call.methodName == 'junit'
-    })
+    assertNotNull(assertMethodCall('junit'))
     // then it runs the junit step with the maven test format
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'junit'
-    }.any { call ->
-      callArgsToString(call).contains('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml')
-    })
+    assertTrue(assertMethodCallContainsPattern('junit', '**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml'))
     assertJobStatusSuccess()
   }
 
@@ -168,11 +142,7 @@ class BuildPluginStepTests extends BaseTest {
     def script = loadScript(scriptName)
     script.call(timeout: 300)
     printCallStack()
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'echo'
-    }.any { call ->
-      callArgsToString(call).contains('lowering to 180')
-    })
+    assertTrue(assertMethodCallContainsPattern('echo', 'lowering to 180'))
     assertJobStatusSuccess()
   }
 
@@ -182,9 +152,7 @@ class BuildPluginStepTests extends BaseTest {
     script.call(tests: [skip: true])
     printCallStack()
     // the junit step is disabled
-    assertFalse(helper.callStack.any { call ->
-      call.methodName == 'junit'
-    })
+    assertNull(assertMethodCall('junit'))
     assertJobStatusSuccess()
   }
 
@@ -199,9 +167,7 @@ class BuildPluginStepTests extends BaseTest {
     }
     printCallStack()
     // it runs the junit step
-    assertTrue(helper.callStack.any { call ->
-      call.methodName == 'junit'
-    })
+    assertNotNull(assertMethodCall('junit'))
     assertJobStatusFailure()
   }
 
@@ -213,11 +179,7 @@ class BuildPluginStepTests extends BaseTest {
     script.call([:])
     printCallStack()
     // then it runs the junit step with the no maven test format
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'junit'
-    }.any { call ->
-      callArgsToString(call).contains('**/build/test-results/**/*.xml')
-    })
+    assertTrue(assertMethodCallContainsPattern('junit', '**/build/test-results/**/*.xml'))
   }
 
   @Test
@@ -233,9 +195,7 @@ class BuildPluginStepTests extends BaseTest {
     }
     printCallStack()
     // it runs the junit step
-    assertTrue(helper.callStack.any { call ->
-      call.methodName == 'junit'
-    })
+    assertNotNull(assertMethodCall('junit'))
     assertJobStatusFailure()
   }
 
@@ -251,11 +211,7 @@ class BuildPluginStepTests extends BaseTest {
     }
     printCallStack()
     // then throw an error
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'error'
-    }.any { call ->
-      callArgsToString(call).contains('There were test failures')
-    })
+    assertTrue(assertMethodCallContainsPattern('error', 'There were test failure'))
     assertJobStatusFailure()
   }
 
@@ -265,11 +221,7 @@ class BuildPluginStepTests extends BaseTest {
     script.call(findbugs: [archive: true])
     printCallStack()
     // then it runs the findbugs
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'findbugs'
-    }.any { call ->
-      callArgsToString(call).contains('pattern=**/target/findbugsXml.xml')
-    })
+    assertTrue(assertMethodCallContainsPattern('findbugs', 'pattern=**/target/findbugsXml.xml'))
   }
 
   @Test
@@ -278,11 +230,7 @@ class BuildPluginStepTests extends BaseTest {
     script.call(checkstyle: [archive: true])
     printCallStack()
     // then it runs the findbugs
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'checkstyle'
-    }.any { call ->
-      callArgsToString(call).contains('**/target/checkstyle-result.xml')
-    })
+    assertTrue(assertMethodCallContainsPattern('checkstyle', '**/target/checkstyle-result.xml'))
   }
 
   @Test
@@ -295,10 +243,6 @@ class BuildPluginStepTests extends BaseTest {
     script.call(configurations: [['platform': 'linux', 'jdk': 8, 'jenkins': null, 'javaLevel': null]])
     printCallStack()
     // then it runs the fingerprint
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'fingerprint'
-    }.any { call ->
-      callArgsToString(call).contains('**/*-rc*.*/*-rc*.*')
-    })
+    assertTrue(assertMethodCallContainsPattern('fingerprint', '**/*-rc*.*/*-rc*.*'))
   }
 }
