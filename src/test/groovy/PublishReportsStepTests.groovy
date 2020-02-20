@@ -1,7 +1,6 @@
 import org.junit.Before
 import org.junit.Test
 import mock.Infra
-import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
 
@@ -12,6 +11,8 @@ class PublishReportsStepTests extends BaseTest {
   @Before
   void setUp() throws Exception {
     super.setUp()
+
+    binding.setProperty('infra', new Infra(trusted: true))
   }
 
   @Test
@@ -26,11 +27,7 @@ class PublishReportsStepTests extends BaseTest {
     }
     printCallStack()
     // then an error is thrown
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'error'
-    }.any { call ->
-      callArgsToString(call).contains('Can only call publishReports from within the trusted.ci environment')
-    })
+    assertTrue(assertMethodCallContainsPattern('error', 'Can only call publishReports from within the trusted.ci environment'))
     assertJobStatusFailure()
   }
 
@@ -41,11 +38,7 @@ class PublishReportsStepTests extends BaseTest {
     script.call([])
     printCallStack()
     // then hardcoded credentials is correct
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'string'
-    }.any { call ->
-      callArgsToString(call).contains('credentialsId=azure-reports-access-key')
-    })
+    assertTrue(assertMethodCallContainsPattern('string', 'credentialsId=azure-reports-access-key'))
     // No execution
     assertTrue(helper.callStack.findAll { call -> call.methodName == 'sh' }.isEmpty())
     assertJobStatusSuccess()
@@ -58,17 +51,9 @@ class PublishReportsStepTests extends BaseTest {
     script.call([ 'foo.html' ])
     printCallStack()
     // then timeout is default and filename manipulations is in place
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'sh'
-    }.any { call ->
-      callArgsToString(call).contains('--timeout=60 --file=foo.html --name=foo.html --content-type="text/html"')
-    })
+    assertTrue(assertMethodCallContainsPattern('sh', '--timeout=60 --file=foo.html --name=foo.html --content-type="text/html"'))
     // another filename manipulations is in place
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'sh'
-    }.any { call ->
-      callArgsToString(call).trim().replaceAll(" +", " ").contains('--source . --destination-path / --pattern foo.html --content-type="text/html"')
-    })
+    assertTrue(assertMethodCallContainsPattern('sh', '--pattern foo.html'))
     assertJobStatusSuccess()
   }
 
@@ -79,17 +64,9 @@ class PublishReportsStepTests extends BaseTest {
     script.call([ '/bar/foo.css' ])
     printCallStack()
     // then timeout is default and filename manipulations is in place
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'sh'
-    }.any { call ->
-      callArgsToString(call).contains('--timeout=60 --file=/bar/foo.css --name=/bar/foo.css --content-type="text/css"')
-    })
+    assertTrue(assertMethodCallContainsPattern('sh', '--timeout=60 --file=/bar/foo.css --name=/bar/foo.css --content-type="text/css'))
     // another filename manipulations is in place
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'sh'
-    }.any { call ->
-      callArgsToString(call).trim().replaceAll(" +", " ").contains('--source /bar --destination-path /bar --pattern foo.css --content-type="text/css"')
-    })
+    assertTrue(assertMethodCallContainsPattern('sh', '--pattern foo.css'))
     assertJobStatusSuccess()
   }
 }
