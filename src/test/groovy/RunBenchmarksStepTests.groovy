@@ -1,11 +1,9 @@
-import com.lesfurets.jenkins.unit.BasePipelineTest
 import mock.Infra
 import org.junit.Before
 import org.junit.Test
-import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
 import static org.junit.Assert.assertTrue
 
-class RunBenchmarksStepTests extends BasePipelineTest {
+class RunBenchmarksStepTests extends BaseTest {
   static final String scriptName = 'vars/runBenchmarks.groovy'
 
   @Override
@@ -23,17 +21,9 @@ class RunBenchmarksStepTests extends BasePipelineTest {
     script.call()
     printCallStack()
     // then echo
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'echo'
-    }.any { call ->
-      callArgsToString(call).contains('No artifacts to archive')
-    })
+    assertTrue(assertMethodCallContainsPattern('echo', 'No artifacts to archive'))
     // then run in the highmem node
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'node'
-    }.any { call ->
-      callArgsToString(call).contains('highmem')
-    })
+    assertTrue(assertMethodCallContainsPattern('node', 'highmem'))
     assertJobStatusSuccess()
   }
 
@@ -44,11 +34,7 @@ class RunBenchmarksStepTests extends BasePipelineTest {
     script.call('foo')
     printCallStack()
     // then archiveArtifacts
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'archiveArtifacts'
-    }.any { call ->
-      callArgsToString(call).contains('foo')
-    })
+    assertTrue(assertMethodCallContainsPattern('archiveArtifacts', 'foo'))
     assertJobStatusSuccess()
   }
 }
