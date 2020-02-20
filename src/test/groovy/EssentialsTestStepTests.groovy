@@ -1,5 +1,3 @@
-import com.lesfurets.jenkins.unit.BasePipelineTest
-import mock.CustomWARPackager
 import mock.Infra
 import org.yaml.snakeyaml.Yaml
 import org.junit.Before
@@ -8,9 +6,8 @@ import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
 import static org.junit.Assert.assertTrue
 import static org.junit.Assert.assertFalse
 
-class EssentialsTestStepTests extends BasePipelineTest {
+class EssentialsTestStepTests extends BaseTest {
   static final String scriptName = 'vars/essentialsTest.groovy'
-  Map env = [:]
 
   static final String  essentials = '''
 flow:
@@ -49,22 +46,6 @@ pct:
   @Before
   void setUp() throws Exception {
     super.setUp()
-
-    binding.setVariable('env', env)
-    binding.setProperty('customWARPackager', new CustomWARPackager())
-    binding.setProperty('infra', new Infra())
-
-    helper.registerAllowedMethod('dir', [String.class], { s -> s })
-    helper.registerAllowedMethod('node', [String.class], { s -> s })
-    helper.registerAllowedMethod('pwd', [], { '/foo' })
-    helper.registerAllowedMethod('pwd', [Map.class], { '/bar' })
-    helper.registerAllowedMethod('readYaml', [Map.class], {
-      Yaml yaml = new Yaml()
-      return yaml.load(essentials)
-    })
-
-    helper.registerAllowedMethod('runATH', [Map.class], { })
-    helper.registerAllowedMethod('runPCT', [Map.class], { })
   }
 
   @Test

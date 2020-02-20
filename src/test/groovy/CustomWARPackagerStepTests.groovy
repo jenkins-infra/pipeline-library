@@ -1,14 +1,11 @@
-import com.lesfurets.jenkins.unit.BasePipelineTest
-import mock.Infra
 import org.junit.Before
 import org.junit.Test
 import org.yaml.snakeyaml.Yaml
 import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
 import static org.junit.Assert.assertTrue
 
-class CustomWARPackagerStepTests extends BasePipelineTest {
+class CustomWARPackagerStepTests extends BaseTest {
   static final String scriptName = 'vars/customWARPackager.groovy'
-  Map env = [:]
 
   static final String without_packaging_metadata = '''
   bar: true
@@ -55,24 +52,9 @@ class CustomWARPackagerStepTests extends BasePipelineTest {
   void setUp() throws Exception {
     super.setUp()
 
-    binding.setProperty('infra', new Infra())
-    binding.setVariable('env', env)
-
-    helper.registerAllowedMethod('archiveArtifacts', [Map.class], { m -> m })
-    helper.registerAllowedMethod('echo', [String.class], { s -> s })
-    helper.registerAllowedMethod('error', [String.class], {s ->
-      updateBuildStatus('FAILURE')
-      throw new Exception(s)
-    })
     helper.registerAllowedMethod('findFiles', [Map.class], { String[] files = ["bom.yml", "d1/bom.yml"] })
     helper.registerAllowedMethod('pwd', [], { '/foo' })
     helper.registerAllowedMethod('pwd', [Map.class], { '/bar' })
-    helper.registerAllowedMethod('readYaml', [Map.class], {
-      Yaml yaml = new Yaml()
-      return yaml.load(default_config_metadata)
-    })
-    helper.registerAllowedMethod('sh', [String.class], { s -> s })
-    helper.registerAllowedMethod('writeYaml', [Map.class], { })
   }
 
   @Test

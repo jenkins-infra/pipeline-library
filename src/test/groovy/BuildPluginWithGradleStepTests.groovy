@@ -1,4 +1,3 @@
-import com.lesfurets.jenkins.unit.BasePipelineTest
 import mock.CurrentBuild
 import mock.Infra
 import org.junit.Before
@@ -7,39 +6,13 @@ import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
 import static org.junit.Assert.assertTrue
 import static org.junit.Assert.assertFalse
 
-class BuildPluginWithGradleStepTests extends BasePipelineTest {
+class BuildPluginWithGradleStepTests extends BaseTest {
   static final String scriptName = 'vars/buildPluginWithGradle.groovy'
 
   @Override
   @Before
   void setUp() throws Exception {
     super.setUp()
-    binding.setProperty('infra', new Infra())
-    binding.setProperty('buildPlugin', loadScript('vars/buildPlugin.groovy'))
-
-    helper.registerAllowedMethod('node', [String.class, Closure.class], { list, closure ->
-      def res = closure.call()
-      return res
-    })
-    helper.registerAllowedMethod('timeout', [String.class], { s -> s })
-    helper.registerAllowedMethod('stage', [String.class], { s -> s })
-    helper.registerAllowedMethod('archiveArtifacts', [Map.class], { true })
-    helper.registerAllowedMethod('isUnix', [], { true })
-    helper.registerAllowedMethod('parallel', [Map.class, Closure.class], { list, closure ->
-      def res = closure.call()
-      return res
-    })
-    helper.registerAllowedMethod('timeout', [Integer.class, Closure.class], { list, closure ->
-      def res = closure.call()
-      return res
-    })
-    helper.registerAllowedMethod('durabilityHint', [String.class], { s -> s })
-    helper.registerAllowedMethod('pwd', [Map.class], { '/tmp' })
-    helper.registerAllowedMethod('echo', [String.class], { s -> s })
-    helper.registerAllowedMethod('error', [String.class], { s ->
-      updateBuildStatus('FAILURE')
-      throw new Exception(s)
-    })
   }
 
   @Test

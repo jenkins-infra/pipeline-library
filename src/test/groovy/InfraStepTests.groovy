@@ -1,4 +1,3 @@
-import com.lesfurets.jenkins.unit.BasePipelineTest
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
@@ -6,37 +5,13 @@ import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
 import static org.junit.Assert.assertTrue
 import static org.junit.Assert.assertFalse
 
-class InfraStepTests extends BasePipelineTest {
+class InfraStepTests extends BaseTest {
   static final String scriptName = "vars/infra.groovy"
-  Map env = [:]
 
   @Override
   @Before
   void setUp() throws Exception {
     super.setUp()
-
-    binding.setVariable('env', env)
-    binding.setProperty('scm', new String())
-    binding.setProperty('mvnSettingsFile', 'settings.xml')
-
-    helper.registerAllowedMethod('checkout', [String.class], { 'OK' })
-    helper.registerAllowedMethod('configFile', [Map.class], { 'OK' })
-    helper.registerAllowedMethod('configFileProvider', [List.class, Closure.class], { list, closure ->
-      def res = closure.call()
-      return res
-    })
-    helper.registerAllowedMethod('echo', [String.class], { s -> s })
-    helper.registerAllowedMethod('error', [String.class], {s ->
-      updateBuildStatus('FAILURE')
-      throw new Exception(s)
-    })
-    helper.registerAllowedMethod('git', [String.class], { 'OK' })
-    helper.registerAllowedMethod("isUnix", [], { true })
-    helper.registerAllowedMethod('sh', [String.class], { s -> s })
-    helper.registerAllowedMethod('withCredentials', [List.class, Closure.class], { list, closure ->
-      def res = closure.call()
-      return res
-    })
   }
 
   @Test

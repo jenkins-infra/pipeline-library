@@ -1,32 +1,17 @@
-import com.lesfurets.jenkins.unit.BasePipelineTest
-import mock.Docker
-import mock.Infra
 import org.junit.Before
 import org.junit.Test
+import mock.Infra
 import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
 
-class PublishReportsStepTests extends BasePipelineTest {
+class PublishReportsStepTests extends BaseTest {
   static final String scriptName = 'vars/publishReports.groovy'
-  Map env = [:]
 
   @Override
   @Before
   void setUp() throws Exception {
     super.setUp()
-
-    binding.setVariable('env', env)
-    binding.setProperty('docker', new Docker())
-    binding.setProperty('infra', new Infra(trusted: true))
-
-    helper.registerAllowedMethod('error', [String.class], {s ->
-      updateBuildStatus('FAILURE')
-      throw new Exception(s)
-    })
-    helper.registerAllowedMethod('sh', [String.class], { s -> s })
-    helper.registerAllowedMethod('withCredentials', [List.class, Closure.class], { list, body -> body() })
-    helper.registerAllowedMethod('withEnv', [List.class, Closure.class], { list, body -> body() })
   }
 
   @Test

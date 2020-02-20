@@ -1,4 +1,3 @@
-import com.lesfurets.jenkins.unit.BasePipelineTest
 import mock.CurrentBuild
 import mock.Infra
 import org.junit.Before
@@ -9,51 +8,14 @@ import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 
-class BuildPluginStepTests extends BasePipelineTest {
+class BuildPluginStepTests extends BaseTest {
   static final String scriptName = 'vars/buildPlugin.groovy'
-  Map env = [:]
 
   @Override
   @Before
   void setUp() throws Exception {
     super.setUp()
     env.NODE_LABELS = 'docker'
-    binding.setVariable('env', env)
-    binding.setProperty('scm', new String())
-    binding.setProperty('mvnSettingsFile', 'settings.xml')
-    binding.setProperty('infra', new Infra())
-
-    helper.registerAllowedMethod('node', [String.class, Closure.class], { list, closure ->
-      def res = closure.call()
-      return res
-    })
-    helper.registerAllowedMethod('timeout', [String.class], { s -> s })
-    helper.registerAllowedMethod('stage', [String.class], { s -> s })
-    helper.registerAllowedMethod('fileExists', [String.class], { s -> s })
-    helper.registerAllowedMethod('readFile', [String.class], { s -> s })
-    helper.registerAllowedMethod('checkstyle', [Map.class], { true })
-    helper.registerAllowedMethod('fingerprint', [String.class], { s -> s })
-    helper.registerAllowedMethod('archiveArtifacts', [Map.class], { true })
-    helper.registerAllowedMethod('deleteDir', [], { true })
-    helper.registerAllowedMethod('isUnix', [], { true })
-    helper.registerAllowedMethod('hasDockerLabel', [], { true })
-    helper.registerAllowedMethod('sh', [String.class], { s -> s })
-    helper.registerAllowedMethod('parallel', [Map.class, Closure.class], { list, closure ->
-      def res = closure.call()
-      return res
-    })
-    helper.registerAllowedMethod('timeout', [Integer.class, Closure.class], { list, closure ->
-      def res = closure.call()
-      return res
-    })
-    helper.registerAllowedMethod('findbugs', [Map.class], { true })
-    helper.registerAllowedMethod('durabilityHint', [String.class], { s -> s })
-    helper.registerAllowedMethod('pwd', [Map.class], { '/tmp' })
-    helper.registerAllowedMethod('echo', [String.class], { s -> s })
-    helper.registerAllowedMethod('error', [String.class], { s ->
-      updateBuildStatus('FAILURE')
-      throw new Exception(s)
-    })
   }
 
   @Test

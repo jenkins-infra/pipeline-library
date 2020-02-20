@@ -7,22 +7,13 @@ import static org.junit.Assert.assertTrue
 
 class RunBenchmarksStepTests extends BasePipelineTest {
   static final String scriptName = 'vars/runBenchmarks.groovy'
-  Map env = [:]
 
   @Override
   @Before
   void setUp() throws Exception {
     super.setUp()
 
-    binding.setVariable('env', env)
     binding.setProperty('infra', new Infra(trusted: true))
-
-    helper.registerAllowedMethod('archiveArtifacts', [Map.class], { m -> m })
-    helper.registerAllowedMethod('echo', [String.class], { s -> s })
-    helper.registerAllowedMethod('lock', [String.class, Closure.class], { s, body -> body() })
-    helper.registerAllowedMethod('node', [String.class, Closure.class], { s, body -> body() })
-    helper.registerAllowedMethod('sh', [String.class], { s -> s })
-    helper.registerAllowedMethod('stage', [String.class, Closure.class], { s, body -> body() })
   }
 
   @Test
