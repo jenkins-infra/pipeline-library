@@ -1,7 +1,6 @@
 import org.junit.Before
 import org.junit.Test
 import org.yaml.snakeyaml.Yaml
-import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
 import static org.junit.Assert.assertTrue
 
 class CustomWARPackagerStepTests extends BaseTest {
@@ -55,6 +54,10 @@ class CustomWARPackagerStepTests extends BaseTest {
     helper.registerAllowedMethod('findFiles', [Map.class], { String[] files = ["bom.yml", "d1/bom.yml"] })
     helper.registerAllowedMethod('pwd', [], { '/foo' })
     helper.registerAllowedMethod('pwd', [Map.class], { '/bar' })
+    helper.registerAllowedMethod('readYaml', [Map.class], {
+      Yaml yaml = new Yaml()
+      return yaml.load(default_config_metadata)
+    })
   }
 
   @Test
@@ -72,11 +75,7 @@ class CustomWARPackagerStepTests extends BaseTest {
     }
     printCallStack()
     // then an error is thrown
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'error'
-    }.any { call ->
-      callArgsToString(call).contains("No 'packaging' section in the metadata file metadataFile")
-    })
+    assertTrue(assertMethodCallContainsPattern('error', "No 'packaging' section in the metadata file metadataFile"))
     assertJobStatusFailure()
   }
 
@@ -95,11 +94,7 @@ class CustomWARPackagerStepTests extends BaseTest {
     }
     printCallStack()
     // then an error is thrown
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'error'
-    }.any { call ->
-      callArgsToString(call).contains("packaging.config or packaging.configFile must be defined")
-    })
+    assertTrue(assertMethodCallContainsPattern('error', "packaging.config or packaging.configFile must be defined"))
     assertJobStatusFailure()
   }
 
@@ -112,11 +107,7 @@ class CustomWARPackagerStepTests extends BaseTest {
     })
     script.build('metadataFile', 'outputWAR', 'outputBOM', 'settings')
     printCallStack()
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'echo'
-    }.any { call ->
-      callArgsToString(call).contains("BOM file is not explicitly defined, but there is bom.yml in the root. Using it")
-    })
+    assertTrue(assertMethodCallContainsPattern('echo', "BOM file is not explicitly defined, but there is bom.yml in the root. Using it"))
     assertJobStatusSuccess()
   }
 
@@ -127,18 +118,10 @@ class CustomWARPackagerStepTests extends BaseTest {
     printCallStack()
 
     // then the war file with the artifact id and label from the metadata is copied
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'sh'
-    }.any { call ->
-      callArgsToString(call).contains('cp barId-foo.war')
-    })
+    assertTrue(assertMethodCallContainsPattern('sh', 'cp barId-foo.war'))
 
     // then the yaml file with the artifact id and label from the metadata is copied
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'sh'
-    }.any { call ->
-      callArgsToString(call).contains('cp barId-foo.bom.yml')
-    })
+    assertTrue(assertMethodCallContainsPattern('sh', 'barId-foo.bom.yml'))
     assertJobStatusSuccess()
   }
 
