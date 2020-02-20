@@ -12,6 +12,8 @@ import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
 class BaseTest extends BasePipelineTest {
   Map env = [:]
 
+  static final String default_config_metadata = ''
+
   @Override
   void setUp() throws Exception {
     super.setUp()

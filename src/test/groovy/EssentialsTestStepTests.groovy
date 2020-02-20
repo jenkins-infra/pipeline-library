@@ -2,9 +2,8 @@ import mock.Infra
 import org.yaml.snakeyaml.Yaml
 import org.junit.Before
 import org.junit.Test
-import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
+import static org.junit.Assert.assertNull
 import static org.junit.Assert.assertTrue
-import static org.junit.Assert.assertFalse
 
 class EssentialsTestStepTests extends BaseTest {
   static final String scriptName = 'vars/essentialsTest.groovy'
@@ -46,6 +45,11 @@ pct:
   @Before
   void setUp() throws Exception {
     super.setUp()
+
+    helper.registerAllowedMethod('readYaml', [Map.class], {
+      Yaml yaml = new Yaml()
+      return yaml.load(essentials)
+    })
   }
 
   @Test
@@ -54,35 +58,11 @@ pct:
     // when running with !infra.isTrusted()
     script.call()
     printCallStack()
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'node'
-    }.any { call ->
-      callArgsToString(call).contains('docker && highmem')
-    })
-
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'dir'
-    }.any { call ->
-      callArgsToString(call).contains('.,')
-    })
-
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'readYaml'
-    }.any { call ->
-      callArgsToString(call).contains('/foo/essentials.yml')
-    })
-
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'runATH'
-    }.any { call ->
-      callArgsToString(call).contains('jenkins=file:///bar/custom.war, metadataFile=/foo/essentials.yml')
-    })
-
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'runPCT'
-    }.any { call ->
-      callArgsToString(call).contains('jenkins=file:///bar/custom.war, metadataFile=/foo/essentials.yml')
-    })
+    assertTrue(assertMethodCallContainsPattern('node', 'docker && highmem'))
+    assertTrue(assertMethodCallContainsPattern('dir', '.,'))
+    assertTrue(assertMethodCallContainsPattern('readYaml', '/foo/essentials.yml'))
+    assertTrue(assertMethodCallContainsPattern('runATH', 'jenkins=file:///bar/custom.war, metadataFile=/foo/essentials.yml'))
+    assertTrue(assertMethodCallContainsPattern('runPCT', 'jenkins=file:///bar/custom.war, metadataFile=/foo/essentials.yml'))
   }
 
   @Test
@@ -90,12 +70,7 @@ pct:
     def script = loadScript(scriptName)
     script.call(baseDir: '/another')
     printCallStack()
-
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'dir'
-    }.any { call ->
-      callArgsToString(call).contains('/another')
-    })
+    assertTrue(assertMethodCallContainsPattern('dir', '/another'))
   }
 
   @Test
@@ -103,30 +78,10 @@ pct:
     def script = loadScript(scriptName)
     script.call(metadataFile: 'myfile.yml')
     printCallStack()
-
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'readYaml'
-    }.any { call ->
-      callArgsToString(call).contains('/foo/myfile.yml')
-    })
-
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'runATH'
-    }.any { call ->
-      callArgsToString(call).contains('metadataFile=/foo/myfile.yml')
-    })
-
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'runATH'
-    }.any { call ->
-      callArgsToString(call).contains('skipOnInvalid')
-    })
-
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'runPCT'
-    }.any { call ->
-      callArgsToString(call).contains('metadataFile=/foo/myfile.yml')
-    })
+    assertTrue(assertMethodCallContainsPattern('readYaml', '/foo/myfile.yml'))
+    assertTrue(assertMethodCallContainsPattern('runATH', 'metadataFile=/foo/myfile.yml'))
+    assertTrue(assertMethodCallContainsPattern('runATH', 'skipOnInvalid'))
+    assertTrue(assertMethodCallContainsPattern('runPCT', 'metadataFile=/foo/myfile.yml'))
   }
 
   @Test
@@ -134,11 +89,7 @@ pct:
     def script = loadScript(scriptName)
     script.call(labels: 'mylabel')
     printCallStack()
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'node'
-    }.any { call ->
-      callArgsToString(call).contains('mylabel')
-    })
+    assertTrue(assertMethodCallContainsPattern('node', 'mylabel'))
   }
 
   @Test
@@ -150,12 +101,7 @@ pct:
     })
     script.call()
     printCallStack()
-
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'runATH'
-    }.any { call ->
-      callArgsToString(call).contains('failOnInvalid')
-    })
+    assertTrue(assertMethodCallContainsPattern('runATH', 'failOnInvalid'))
   }
 
   @Test
@@ -167,8 +113,8 @@ pct:
     })
     script.call()
     printCallStack()
-    assertFalse(helper.callStack.any { call -> call.methodName == 'runATH' })
-    assertFalse(helper.callStack.any { call -> call.methodName == 'runPCT' })
+    assertNull(assertMethodCall('runATH'))
+    assertNull(assertMethodCall('runPCT'))
   }
 
 }
