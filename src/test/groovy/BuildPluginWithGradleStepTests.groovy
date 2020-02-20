@@ -2,8 +2,7 @@ import mock.CurrentBuild
 import mock.Infra
 import org.junit.Before
 import org.junit.Test
-import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertNull
+import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertTrue
 
 class BuildPluginWithGradleStepTests extends BaseTest {
@@ -26,7 +25,7 @@ class BuildPluginWithGradleStepTests extends BaseTest {
     // then it runs in a windows node
     assertTrue(assertMethodCallContainsPattern('node', 'windows'))
     // then it runs the junit step by default
-    assertNotNull(assertMethodCall('junit'))
+    assertTrue(assertMethodCall('junit'))
     // then it runs the junit step with the gradle test format
     assertTrue(assertMethodCallContainsPattern('junit', '**/build/test-results/**/*.xml'))
     assertJobStatusSuccess()
@@ -47,7 +46,7 @@ class BuildPluginWithGradleStepTests extends BaseTest {
     script.call(tests: [skip: true])
     printCallStack()
     // the junit step is disabled
-    assertNull(assertMethodCall('junit'))
+    assertFalse(assertMethodCall('junit'))
     assertJobStatusSuccess()
   }
 
@@ -62,7 +61,7 @@ class BuildPluginWithGradleStepTests extends BaseTest {
     }
     printCallStack()
     // it runs the junit step
-    assertNotNull(assertMethodCall('junit'))
+    assertTrue(assertMethodCall('junit'))
     assertJobStatusFailure()
   }
 

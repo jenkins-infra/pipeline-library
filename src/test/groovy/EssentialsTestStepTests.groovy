@@ -2,7 +2,7 @@ import mock.Infra
 import org.yaml.snakeyaml.Yaml
 import org.junit.Before
 import org.junit.Test
-import static org.junit.Assert.assertNull
+import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertTrue
 
 class EssentialsTestStepTests extends BaseTest {
@@ -113,8 +113,8 @@ pct:
     })
     script.call()
     printCallStack()
-    assertNull(assertMethodCall('runATH'))
-    assertNull(assertMethodCall('runPCT'))
+    assertFalse(assertMethodCall('runATH'))
+    assertFalse(assertMethodCall('runPCT'))
   }
 
 }

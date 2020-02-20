@@ -12,8 +12,6 @@ import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
 class BaseTest extends BasePipelineTest {
   Map env = [:]
 
-  static final String default_config_metadata = ''
-
   @Override
   void setUp() throws Exception {
     super.setUp()
@@ -25,7 +23,6 @@ class BaseTest extends BasePipelineTest {
     binding.setProperty('docker', new Docker())
     binding.setProperty('infra', new Infra())
     binding.setProperty('mvnSettingsFile', 'settings.xml')
-
 
     helper.registerAllowedMethod('archiveArtifacts', [Map.class], { true })
     helper.registerAllowedMethod('checkout', [String.class], { 'OK' })
@@ -55,7 +52,7 @@ class BaseTest extends BasePipelineTest {
     helper.registerAllowedMethod('readFile', [String.class], { s -> s })
     helper.registerAllowedMethod('readYaml', [Map.class], {
       Yaml yaml = new Yaml()
-      return yaml.load(default_config_metadata)
+      return yaml.load('')
     })
     helper.registerAllowedMethod('runATH', [Map.class], { })
     helper.registerAllowedMethod('runPCT', [Map.class], { })
@@ -67,7 +64,7 @@ class BaseTest extends BasePipelineTest {
     helper.registerAllowedMethod('withEnv', [List.class, Closure.class], { list, body -> body() })
     helper.registerAllowedMethod('writeYaml', [Map.class], { })
   }
-
+  
   def assertMethodCallContainsPattern(String methodName, String pattern) {
     return helper.callStack.findAll { call ->
       call.methodName == methodName
@@ -79,7 +76,7 @@ class BaseTest extends BasePipelineTest {
   def assertMethodCall(String methodName) {
     return helper.callStack.find { call ->
       call.methodName == methodName
-    }
+    } != null
   }
 
   def assertMethodCallOccurrences(String methodName, int compare) {

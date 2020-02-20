@@ -5,7 +5,6 @@ import org.junit.Test
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertNull
 import static org.junit.Assert.assertTrue
 
 class BuildPluginStepTests extends BaseTest {
@@ -131,7 +130,7 @@ class BuildPluginStepTests extends BaseTest {
     // then it runs in a windows node
     assertTrue(assertMethodCallContainsPattern('node', 'windows'))
     // then it runs the junit step by default
-    assertNotNull(assertMethodCall('junit'))
+    assertTrue(assertMethodCall('junit'))
     // then it runs the junit step with the maven test format
     assertTrue(assertMethodCallContainsPattern('junit', '**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml'))
     assertJobStatusSuccess()
@@ -152,7 +151,7 @@ class BuildPluginStepTests extends BaseTest {
     script.call(tests: [skip: true])
     printCallStack()
     // the junit step is disabled
-    assertNull(assertMethodCall('junit'))
+    assertFalse(assertMethodCall('junit'))
     assertJobStatusSuccess()
   }
 
@@ -167,7 +166,7 @@ class BuildPluginStepTests extends BaseTest {
     }
     printCallStack()
     // it runs the junit step
-    assertNotNull(assertMethodCall('junit'))
+    assertTrue(assertMethodCall('junit'))
     assertJobStatusFailure()
   }
 
@@ -195,7 +194,7 @@ class BuildPluginStepTests extends BaseTest {
     }
     printCallStack()
     // it runs the junit step
-    assertNotNull(assertMethodCall('junit'))
+    assertTrue(assertMethodCall('junit'))
     assertJobStatusFailure()
   }
 
