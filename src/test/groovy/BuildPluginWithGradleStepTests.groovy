@@ -2,9 +2,9 @@ import mock.CurrentBuild
 import mock.Infra
 import org.junit.Before
 import org.junit.Test
-import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
+import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertNull
 import static org.junit.Assert.assertTrue
-import static org.junit.Assert.assertFalse
 
 class BuildPluginWithGradleStepTests extends BaseTest {
   static final String scriptName = 'vars/buildPluginWithGradle.groovy'
@@ -22,27 +22,13 @@ class BuildPluginWithGradleStepTests extends BaseTest {
     script.call([:])
     printCallStack()
     // then it runs in a linux node
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'node'
-    }.any { call ->
-      callArgsToString(call).contains('linux')
-    })
+    assertTrue(assertMethodCallContainsPattern('node', 'linux'))
     // then it runs in a windows node
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'node'
-    }.any { call ->
-      callArgsToString(call).contains('windows')
-    })
+    assertTrue(assertMethodCallContainsPattern('node', 'windows'))
     // then it runs the junit step by default
-    assertTrue(helper.callStack.any { call ->
-      call.methodName == 'junit'
-    })
+    assertNotNull(assertMethodCall('junit'))
     // then it runs the junit step with the gradle test format
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'junit'
-    }.any { call ->
-      callArgsToString(call).contains('**/build/test-results/**/*.xml')
-    })
+    assertTrue(assertMethodCallContainsPattern('junit', '**/build/test-results/**/*.xml'))
     assertJobStatusSuccess()
   }
 
@@ -51,11 +37,7 @@ class BuildPluginWithGradleStepTests extends BaseTest {
     def script = loadScript(scriptName)
     script.call(timeout: 300)
     printCallStack()
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'echo'
-    }.any { call ->
-      callArgsToString(call).contains('lowering to 180')
-    })
+    assertTrue(assertMethodCallContainsPattern('echo', 'lowering to 180'))
     assertJobStatusSuccess()
   }
 
@@ -65,9 +47,7 @@ class BuildPluginWithGradleStepTests extends BaseTest {
     script.call(tests: [skip: true])
     printCallStack()
     // the junit step is disabled
-    assertFalse(helper.callStack.any { call ->
-      call.methodName == 'junit'
-    })
+    assertNull(assertMethodCall('junit'))
     assertJobStatusSuccess()
   }
 
@@ -82,9 +62,7 @@ class BuildPluginWithGradleStepTests extends BaseTest {
     }
     printCallStack()
     // it runs the junit step
-    assertTrue(helper.callStack.any { call ->
-      call.methodName == 'junit'
-    })
+    assertNotNull(assertMethodCall('junit'))
     assertJobStatusFailure()
   }
 
@@ -100,11 +78,7 @@ class BuildPluginWithGradleStepTests extends BaseTest {
     }
     printCallStack()
     // then throw an error
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'error'
-    }.any { call ->
-      callArgsToString(call).contains('There were test failures')
-    })
+    assertTrue(assertMethodCallContainsPattern('error', 'There were test failures'))
     assertJobStatusFailure()
   }
 }
