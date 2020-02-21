@@ -16,10 +16,10 @@ class InfraStepTests extends BasePipelineTest {
     super.setUp()
 
     binding.setVariable('env', env)
-    binding.setProperty('scm', new String())
+    binding.setProperty('scm', [:])
     binding.setProperty('mvnSettingsFile', 'settings.xml')
 
-    helper.registerAllowedMethod('checkout', [String.class], { 'OK' })
+    helper.registerAllowedMethod('checkout', [Map.class], { 'OK' })
     helper.registerAllowedMethod('configFile', [Map.class], { 'OK' })
     helper.registerAllowedMethod('configFileProvider', [List.class, Closure.class], { list, closure ->
       def res = closure.call()
@@ -106,6 +106,8 @@ class InfraStepTests extends BasePipelineTest {
   @Test
   void testCheckoutWithoutArgument() throws Exception {
     def script = loadScript(scriptName)
+    // No env variable
+    env.remove('BRANCH_NAME')
     try {
       script.checkout()
     } catch(e){
