@@ -84,12 +84,4 @@ class BaseTest extends BasePipelineTest {
       call.methodName == methodName
     }.size() == compare
   }
-
-  def assertMethodCallContainsPatternWithManipulation(String methodName, String pattern, String replace, String with) {
-    return helper.callStack.findAll { call ->
-      call.methodName == methodName
-    }.any { call ->
-      callArgsToString(call).trim().replaceAll(replace, with).contains(pattern)
-    }
-  }
 }
