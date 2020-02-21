@@ -31,6 +31,13 @@
         <groovy-eclipse-compiler.version>3.4.0-01</groovy-eclipse-compiler.version>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>repo.jenkins-ci.org</id>
+            <url>https://repo.jenkins-ci.org/public/</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
