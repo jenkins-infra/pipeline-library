@@ -53,7 +53,10 @@ class PublishReportsStepTests extends BaseTest {
     // then timeout is default and filename manipulations is in place
     assertTrue(assertMethodCallContainsPattern('sh', '--timeout=60 --file=foo.html --name=foo.html --content-type="text/html"'))
     // another filename manipulations is in place
-    assertTrue(assertMethodCallContainsPattern('sh', '--pattern foo.html'))
+    assertTrue(assertMethodCallContainsPattern('sh', '--source . '))
+    assertTrue(assertMethodCallContainsPattern('sh', '--destination-path / '))
+    assertTrue(assertMethodCallContainsPattern('sh', '--pattern foo.html '))
+    assertTrue(assertMethodCallContainsPattern('sh', '--content-type="text/html"'))
     assertJobStatusSuccess()
   }
 
@@ -66,7 +69,10 @@ class PublishReportsStepTests extends BaseTest {
     // then timeout is default and filename manipulations is in place
     assertTrue(assertMethodCallContainsPattern('sh', '--timeout=60 --file=/bar/foo.css --name=/bar/foo.css --content-type="text/css'))
     // another filename manipulations is in place
-    assertTrue(assertMethodCallContainsPattern('sh', '--pattern foo.css'))
+    assertTrue(assertMethodCallContainsPattern('sh', '--source /bar '))
+    assertTrue(assertMethodCallContainsPattern('sh', '--destination-path /bar '))
+    assertTrue(assertMethodCallContainsPattern('sh', '--pattern foo.css '))
+    assertTrue(assertMethodCallContainsPattern('sh', '--content-type="text/css"'))
     assertJobStatusSuccess()
   }
 }
