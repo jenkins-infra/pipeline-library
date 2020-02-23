@@ -31,7 +31,14 @@ class BuildPluginStepTests extends BasePipelineTest {
     helper.registerAllowedMethod('stage', [String.class], { s -> s })
     helper.registerAllowedMethod('fileExists', [String.class], { s -> s })
     helper.registerAllowedMethod('readFile', [String.class], { s -> s })
-    helper.registerAllowedMethod('checkstyle', [Map.class], { true })
+    helper.registerAllowedMethod('recordIssues', [Map.class], { s -> s })
+    helper.registerAllowedMethod('mavenConsole', [], { true })
+    helper.registerAllowedMethod('java', [], { true })
+    helper.registerAllowedMethod('javaDoc', [], { true })
+    helper.registerAllowedMethod('spotBugs', [], { true })
+    helper.registerAllowedMethod('checkStyle', [], { true })
+    helper.registerAllowedMethod('pmdParser', [], { true })
+    helper.registerAllowedMethod('taskScanner', [Map.class], { true })
     helper.registerAllowedMethod('fingerprint', [String.class], { s -> s })
     helper.registerAllowedMethod('archiveArtifacts', [Map.class], { true })
     helper.registerAllowedMethod('deleteDir', [], { true })
@@ -46,7 +53,6 @@ class BuildPluginStepTests extends BasePipelineTest {
       def res = closure.call()
       return res
     })
-    helper.registerAllowedMethod('findbugs', [Map.class], { true })
     helper.registerAllowedMethod('durabilityHint', [String.class], { s -> s })
     helper.registerAllowedMethod('pwd', [Map.class], { '/tmp' })
     helper.registerAllowedMethod('echo', [String.class], { s -> s })
@@ -298,27 +304,14 @@ class BuildPluginStepTests extends BasePipelineTest {
   }
 
   @Test
-  void test_buildPlugin_with_findbugs_archive() throws Exception {
-    def script = loadScript(scriptName)
-    script.call(findbugs: [archive: true])
-    printCallStack()
-    // then it runs the findbugs
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'findbugs'
-    }.any { call ->
-      callArgsToString(call).contains('pattern=**/target/findbugsXml.xml')
-    })
-  }
-
-  @Test
   void test_buildPlugin_with_warnings_ng() throws Exception {
     def script = loadScript(scriptName)
     script.call()
     printCallStack()
     assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'warnings-ng'
+      call.methodName == 'recordIssues'
     }.any { call ->
-      callArgsToString(call).contains('**/target/checkstyle-result.xml')
+      callArgsToString(call).contains('{enabledForFailure=true, tools=[true]}')
     })
   }
 
