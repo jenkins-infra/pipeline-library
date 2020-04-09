@@ -66,6 +66,17 @@ def call(Map params = [:]) {
                             isMaven = fileExists('pom.xml')
                             incrementals = fileExists('.mvn/extensions.xml') &&
                                     readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')
+                            if (incrementals) { // Incrementals needs 'git status -s' to be empty at start of job
+                                if (isUnix()) {
+                                    sh(script: 'git clean -xffd || true',
+                                       label:'Clean for incrementals',
+                                       returnStatus: true) // Ignore failure if CLI git is not available
+                                } else {
+                                    bat(script: 'git clean -xffd || echo "git clean failure intentionally ignored in incrementals setup"',
+                                        label:'Clean for incrementals',
+                                        returnStatus: true) // Ignore failure if CLI git is not available
+                                }
+                            }
                         }
 
                         String changelistF
