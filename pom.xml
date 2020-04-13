@@ -65,7 +65,7 @@
         </dependency>
     </dependencies>
     <build>
-        <testSourceDirectory>src/test/groovy</testSourceDirectory>
+        <testSourceDirectory>test/groovy</testSourceDirectory>
         <resources>
             <resource>
                 <directory>resources</directory>
