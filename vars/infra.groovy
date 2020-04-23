@@ -267,7 +267,7 @@ curl -i -H 'Content-Type: application/json' -d '{"build_url":"'$BUILD_URL'"}' "h
                         '''
                     } else {
                         bat '''
-curl.exe -i -H 'Content-Type: application/json' -d '{"build_url":"'%BUILD_URL%'"}' "https://jenkins-community-functions.azurewebsites.net/api/incrementals-publisher?clientId=default&code=%FUNCTION_TOKEN%" || echo 'Problem calling Incrementals deployment function'
+curl.exe -i -H "Content-Type: application/json" -d '{"build_url":"'%BUILD_URL%'"}' "https://jenkins-community-functions.azurewebsites.net/api/incrementals-publisher?clientId=default&code=%FUNCTION_TOKEN%" || echo 'Problem calling Incrementals deployment function'
                         '''
                     }
                 }
