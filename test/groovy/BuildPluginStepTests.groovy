@@ -57,14 +57,6 @@ class BuildPluginStepTests extends BasePipelineTest {
   }
 
   @Test
-  void test_recommendedConfigurations() throws Exception {
-    def script = loadScript(scriptName)
-    def configurations = script.recommendedConfigurations()
-    printCallStack()
-    assertFalse(configurations.isEmpty())
-  }
-
-  @Test
   void test_getConfigurations_with_implicit_and_explicit() throws Exception {
     def script = loadScript(scriptName)
     try {
