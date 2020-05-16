@@ -67,11 +67,11 @@ def call(Map params = [:]) {
                                     readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')
                             if (incrementals) { // Incrementals needs 'git status -s' to be empty at start of job
                                 if (isUnix()) {
-                                    sh(script: 'git clean -xffd || true',
+                                    sh(script: 'git clean -xffd > /dev/null 2>&1',
                                        label:'Clean for incrementals',
                                        returnStatus: true) // Ignore failure if CLI git is not available
                                 } else {
-                                    bat(script: 'git clean -xffd || echo "git clean failure intentionally ignored in incrementals setup"',
+                                    bat(script: 'git clean -xffd 1> null 2>&1',
                                         label:'Clean for incrementals',
                                         returnStatus: true) // Ignore failure if CLI git is not available
                                 }
