@@ -71,7 +71,7 @@ def call(Map params = [:]) {
                                        label:'Clean for incrementals',
                                        returnStatus: true) // Ignore failure if CLI git is not available
                                 } else {
-                                    bat(script: 'git clean -xffd 1> null 2>&1',
+                                    bat(script: 'git clean -xffd 1> nul 2>&1',
                                         label:'Clean for incrementals',
                                         returnStatus: true) // Ignore failure if CLI git is not available
                                 }
