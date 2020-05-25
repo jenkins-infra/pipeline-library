@@ -21,6 +21,10 @@ Object withDockerCredentials(Closure body) {
 }
 
 Object checkout(String repo = null) {
+    checkoutSCM(repo);
+}
+
+Object checkoutSCM(String repo = null) {
     if (env.BRANCH_NAME) {
         checkout scm
     } else if ((env.BRANCH_NAME == null) && (repo)) {

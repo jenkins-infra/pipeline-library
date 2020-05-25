@@ -61,7 +61,7 @@ def call(Map params = [:]) {
                         boolean incrementals // cf. JEP-305
 
                         stage("Checkout (${stageIdentifier})") {
-                            infra.checkout(repo)
+                            infra.checkoutSCM(repo)
                             isMaven = fileExists('pom.xml')
                             incrementals = fileExists('.mvn/extensions.xml') &&
                                     readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')

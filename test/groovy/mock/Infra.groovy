@@ -8,7 +8,7 @@ class Infra implements Serializable {
   private boolean trusted
   private boolean buildError
 
-  public void checkout(String repo = null) { }
+  public void checkoutSCM(String repo = null) { }
 
   public String retrieveMavenSettingsFile(String location) {
     return location

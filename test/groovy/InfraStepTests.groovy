@@ -5,6 +5,7 @@ import org.junit.Test
 import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
 import static org.junit.Assert.assertTrue
 import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertEquals
 
 class InfraStepTests extends BasePipelineTest {
   static final String scriptName = "vars/infra.groovy"
@@ -90,7 +91,7 @@ class InfraStepTests extends BasePipelineTest {
   void testCheckoutWithEnvVariable() throws Exception {
     def script = loadScript(scriptName)
     env.BRANCH_NAME = 'BRANCH'
-    script.checkout()
+    script.checkoutSCM()
     printCallStack()
     assertJobStatusSuccess()
   }
@@ -98,7 +99,7 @@ class InfraStepTests extends BasePipelineTest {
   @Test
   void testCheckoutWithArgument() throws Exception {
     def script = loadScript(scriptName)
-    script.checkout('foo.git')
+    script.checkoutSCM('foo.git')
     printCallStack()
     assertJobStatusSuccess()
   }
@@ -107,16 +108,19 @@ class InfraStepTests extends BasePipelineTest {
   void testCheckoutWithoutArgument() throws Exception {
     def script = loadScript(scriptName)
     try {
-      script.checkout()
+      script.checkoutSCM()
     } catch(e){
       //NOOP
     }
     printCallStack()
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'error'
-    }.any { call ->
-      callArgsToString(call).contains('buildPlugin must be used as part of a Multibranch Pipeline')
-    })
+    assertEquals(
+      ['buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided'], 
+      helper.callStack.findAll { call ->
+        call.methodName == 'error'
+      }.collect { call ->
+        callArgsToString(call).replaceAll(/\s+/, ' ').trim()
+      }
+    )
     assertJobStatusFailure()
   }
 
