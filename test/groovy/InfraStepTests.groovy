@@ -83,14 +83,7 @@ class InfraStepTests extends BaseTest {
       //NOOP
     }
     printCallStack()
-    assertEquals(
-      ['buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided'], 
-      helper.callStack.findAll { call ->
-        call.methodName == 'error'
-      }.collect { call ->
-        callArgsToString(call).replaceAll(/\s+/, ' ').trim()
-      }
-    )
+    assertTrue(assertMethodCallContainsPattern('error', 'buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided'))
     assertJobStatusFailure()
   }
 
