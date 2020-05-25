@@ -1,42 +1,16 @@
-import com.lesfurets.jenkins.unit.BasePipelineTest
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
-import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
 import static org.junit.Assert.assertTrue
 import static org.junit.Assert.assertFalse
 
-class InfraStepTests extends BasePipelineTest {
+class InfraStepTests extends BaseTest {
   static final String scriptName = "vars/infra.groovy"
-  Map env = [:]
 
   @Override
   @Before
   void setUp() throws Exception {
     super.setUp()
-
-    binding.setVariable('env', env)
-    binding.setProperty('scm', [:])
-    binding.setProperty('mvnSettingsFile', 'settings.xml')
-
-    helper.registerAllowedMethod('checkout', [Map.class], { 'OK' })
-    helper.registerAllowedMethod('configFile', [Map.class], { 'OK' })
-    helper.registerAllowedMethod('configFileProvider', [List.class, Closure.class], { list, closure ->
-      def res = closure.call()
-      return res
-    })
-    helper.registerAllowedMethod('echo', [String.class], { s -> s })
-    helper.registerAllowedMethod('error', [String.class], {s ->
-      updateBuildStatus('FAILURE')
-      throw new Exception(s)
-    })
-    helper.registerAllowedMethod('git', [String.class], { 'OK' })
-    helper.registerAllowedMethod("isUnix", [], { true })
-    helper.registerAllowedMethod('sh', [String.class], { s -> s })
-    helper.registerAllowedMethod('withCredentials', [List.class, Closure.class], { list, closure ->
-      def res = closure.call()
-      return res
-    })
   }
 
   @Test
@@ -77,11 +51,7 @@ class InfraStepTests extends BasePipelineTest {
     }
     printCallStack()
     assertFalse(isOK)
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'echo'
-    }.any { call ->
-      callArgsToString(call).contains('Cannot use Docker credentials outside of jenkins infra environment')
-    })
+    assertTrue(assertMethodCallContainsPattern('echo', 'Cannot use Docker credentials outside of jenkins infra environment'))
     assertJobStatusSuccess()
   }
 
@@ -114,11 +84,7 @@ class InfraStepTests extends BasePipelineTest {
       //NOOP
     }
     printCallStack()
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'error'
-    }.any { call ->
-      callArgsToString(call).contains('buildPlugin must be used as part of a Multibranch Pipeline')
-    })
+    assertTrue(assertMethodCallContainsPattern('error', 'buildPlugin must be used as part of a Multibranch Pipeline'))
     assertJobStatusFailure()
   }
 
@@ -130,16 +96,8 @@ class InfraStepTests extends BasePipelineTest {
     assertTrue(result)
     printCallStack()
     assertJobStatusSuccess()
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'sh'
-    }.any { call ->
-      callArgsToString(call).contains('settings.xml foo.xml')
-    })
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'configFile'
-    }.any { call ->
-      callArgsToString(call).contains('foo.id')
-    })
+    assertTrue(assertMethodCallContainsPattern('sh', 'settings.xml foo.xml'))
+    assertTrue(assertMethodCallContainsPattern('configFile', 'foo.id'))
   }
 
 }

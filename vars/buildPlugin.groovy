@@ -15,8 +15,8 @@ def call(Map params = [:]) {
     def repo = params.containsKey('repo') ? params.repo : null
     def failFast = params.containsKey('failFast') ? params.failFast : true
     def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
-    def useAci = params.containsKey('useAci') ? params.useAci : false
     def forceAci = params.containsKey('forceAci') ? params.forceAci : false
+    def useAci = params.containsKey('useAci') ? params.useAci : forceAci
     if(timeoutValue > 180) {
       echo "Timeout value requested was $timeoutValue, lowering to 180 to avoid Jenkins project's resource abusive consumption"
       timeoutValue = 180
@@ -38,10 +38,9 @@ def call(Map params = [:]) {
         boolean archiveFindbugs = first && params?.findbugs?.archive
         boolean archiveCheckstyle = first && params?.checkstyle?.archive
         boolean skipTests = params?.tests?.skip
-        boolean reallyUseAci = (useAci && label == 'linux') || forceAci
-        boolean addToolEnv = !reallyUseAci
-        
-        if(reallyUseAci) {
+        boolean addToolEnv = !useAci
+
+        if(useAci && (label == 'linux' || label == 'windows')) {
             String aciLabel = jdk == '8' ? 'maven' : 'maven-11'
             if(label == 'windows') {
                 aciLabel += "-windows"
@@ -113,7 +112,7 @@ def call(Map params = [:]) {
                                     infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
                                 } finally {
                                     if (!skipTests) {
-                                        junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml')
+                                        junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
                                     }
                                 }
                             } else {
