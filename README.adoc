@@ -430,6 +430,25 @@ Supported parameters:
 runBenchmarks('jmh-report.json')
 ----
 
+=== buildDockerImage
+
+Runs JMH benchmarks and archives benchmark reports on `highmem` nodes.
+
+Supported parameters:
+
+`imageName`::
+Name of the docker image to build
+
+`configs`::
+(Optional) extra flags such as override the default registry of jenkinsciinfra or jenkins4eval
+
+
+===== Example
+[source, groovy]
+----
+buildDockerImage('plugins-site-api')
+----
+
 === Design documents for runATH and runPCT
 
 The design and some more details about the runATH and runPCT steps can be found link:https://wiki.jenkins.io/display/JENKINS/runATH+and+runPCT+step+design[here]
