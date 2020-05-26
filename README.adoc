@@ -432,7 +432,7 @@ runBenchmarks('jmh-report.json')
 
 === buildDockerImage
 
-Runs JMH benchmarks and archives benchmark reports on `highmem` nodes.
+Builds a standard docker image and on master/tags pushes it to dockerhub
 
 Supported parameters:
 
