@@ -40,7 +40,7 @@ def call(Map params = [:]) {
                     }
 
                     stage("Checkout (${stageIdentifier})") {
-                        infra.checkout(repo)
+                        infra.checkoutSCM(repo)
                     }
 
                     stage("Build (${stageIdentifier})") {

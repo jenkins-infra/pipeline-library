@@ -3,6 +3,7 @@ import org.junit.Ignore
 import org.junit.Test
 import static org.junit.Assert.assertTrue
 import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertEquals
 
 class InfraStepTests extends BaseTest {
   static final String scriptName = "vars/infra.groovy"
@@ -60,7 +61,7 @@ class InfraStepTests extends BaseTest {
   void testCheckoutWithEnvVariable() throws Exception {
     def script = loadScript(scriptName)
     env.BRANCH_NAME = 'BRANCH'
-    script.checkout()
+    script.checkoutSCM()
     printCallStack()
     assertJobStatusSuccess()
   }
@@ -68,7 +69,7 @@ class InfraStepTests extends BaseTest {
   @Test
   void testCheckoutWithArgument() throws Exception {
     def script = loadScript(scriptName)
-    script.checkout('foo.git')
+    script.checkoutSCM('foo.git')
     printCallStack()
     assertJobStatusSuccess()
   }
@@ -77,12 +78,12 @@ class InfraStepTests extends BaseTest {
   void testCheckoutWithoutArgument() throws Exception {
     def script = loadScript(scriptName)
     try {
-      script.checkout()
+      script.checkoutSCM()
     } catch(e){
       //NOOP
     }
     printCallStack()
-    assertTrue(assertMethodCallContainsPattern('error', 'buildPlugin must be used as part of a Multibranch Pipeline'))
+    assertTrue(assertMethodCallContainsPattern('error', 'buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided'))
     assertJobStatusFailure()
   }
 
