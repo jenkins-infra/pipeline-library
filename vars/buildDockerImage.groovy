@@ -67,7 +67,7 @@ def call(String imageName, Map config=[:]) {
       stage("Deploy tag as tag") {
         // semver regex from https://gist.github.com/jhorsman/62eeea161a13b80e39f5249281e17c39
         // when { tag pattern: "v([0-9]+)\\.([0-9]+)\\.([0-9]+)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+[0-9A-Za-z-]+)?\$ ", comparator: "REGEXP"}
-        // for now since testing only handles simple string, start witht that
+        // for now since testing only handles simple string, start with that
         when { tag "v*" }
         steps {
           sh "docker tag ${config.registry}${imageName} ${config.registry}${imageName}:${TAG_NAME}"
