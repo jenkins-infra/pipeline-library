@@ -6,7 +6,7 @@ def call(Map params = [:]) {
 
     node(labels) {
         stage("Checkout") {
-            infra.checkout()
+            infra.checkoutSCM()
         }
 
         dir(baseDir) {
