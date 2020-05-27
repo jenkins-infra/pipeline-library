@@ -70,8 +70,8 @@ class BuildPluginStepTests extends BaseTest {
     def script = loadScript(scriptName)
     def configurations = script.getConfigurations([:])
 
-    def expected = [['platform': 'linux', 'jdk': 8, 'jenkins': null, 'javaLevel': null],
-                    ['platform': 'windows', 'jdk': 8, 'jenkins': null, 'javaLevel': null]]
+    def expected = [['platform': 'linux', 'jdk': '8', 'jenkins': null, 'javaLevel': null],
+                    ['platform': 'windows', 'jdk': '8', 'jenkins': null, 'javaLevel': null]]
     assertEquals(expected, configurations)
     printCallStack()
     assertJobStatusSuccess()
