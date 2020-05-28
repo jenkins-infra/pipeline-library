@@ -61,7 +61,7 @@ def call(Map params = [:]) {
                         boolean incrementals // cf. JEP-305
 
                         stage("Checkout (${stageIdentifier})") {
-                            infra.checkout(repo)
+                            infra.checkoutSCM(repo)
                             isMaven = fileExists('pom.xml')
                             incrementals = fileExists('.mvn/extensions.xml') &&
                                     readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')
@@ -123,7 +123,7 @@ def call(Map params = [:]) {
                                     infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
                                 } finally {
                                     if (!skipTests) {
-                                        junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml')
+                                        junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
                                     }
                                 }
                             } else {

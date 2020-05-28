@@ -16,6 +16,13 @@
         </license>
     </licenses>
 
+    <repositories>
+      <repository>
+        <id>jenkins-ci-releases</id>
+        <url>https://repo.jenkins-ci.org/releases/</url>
+      </repository>
+    </repositories>
+
     <scm>
         <connection>scm:git:git://github.com/jenkins-infra/pipeline-library.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/jenkins-infra/pipeline-library.git</developerConnection>
@@ -27,7 +34,7 @@
         <!-- Dependency versions -->
         <groovy.version>2.4.17</groovy.version>
         <junit.version>4.12</junit.version>
-        <jenkins-pipeline-unit.version>1.1</jenkins-pipeline-unit.version>
+        <jenkins-pipeline-unit.version>1.4</jenkins-pipeline-unit.version>
         <groovy-eclipse-compiler.version>3.4.0-01</groovy-eclipse-compiler.version>
     </properties>
 

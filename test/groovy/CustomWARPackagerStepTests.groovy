@@ -1,14 +1,10 @@
-import com.lesfurets.jenkins.unit.BasePipelineTest
-import mock.Infra
 import org.junit.Before
 import org.junit.Test
 import org.yaml.snakeyaml.Yaml
-import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
 import static org.junit.Assert.assertTrue
 
-class CustomWARPackagerStepTests extends BasePipelineTest {
+class CustomWARPackagerStepTests extends BaseTest {
   static final String scriptName = 'vars/customWARPackager.groovy'
-  Map env = [:]
 
   static final String without_packaging_metadata = '''
   bar: true
@@ -55,15 +51,6 @@ class CustomWARPackagerStepTests extends BasePipelineTest {
   void setUp() throws Exception {
     super.setUp()
 
-    binding.setProperty('infra', new Infra())
-    binding.setVariable('env', env)
-
-    helper.registerAllowedMethod('archiveArtifacts', [Map.class], { m -> m })
-    helper.registerAllowedMethod('echo', [String.class], { s -> s })
-    helper.registerAllowedMethod('error', [String.class], {s ->
-      updateBuildStatus('FAILURE')
-      throw new Exception(s)
-    })
     helper.registerAllowedMethod('findFiles', [Map.class], { String[] files = ["bom.yml", "d1/bom.yml"] })
     helper.registerAllowedMethod('pwd', [], { '/foo' })
     helper.registerAllowedMethod('pwd', [Map.class], { '/bar' })
@@ -71,8 +58,6 @@ class CustomWARPackagerStepTests extends BasePipelineTest {
       Yaml yaml = new Yaml()
       return yaml.load(default_config_metadata)
     })
-    helper.registerAllowedMethod('sh', [String.class], { s -> s })
-    helper.registerAllowedMethod('writeYaml', [Map.class], { })
   }
 
   @Test
@@ -90,11 +75,7 @@ class CustomWARPackagerStepTests extends BasePipelineTest {
     }
     printCallStack()
     // then an error is thrown
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'error'
-    }.any { call ->
-      callArgsToString(call).contains("No 'packaging' section in the metadata file metadataFile")
-    })
+    assertTrue(assertMethodCallContainsPattern('error', "No 'packaging' section in the metadata file metadataFile"))
     assertJobStatusFailure()
   }
 
@@ -113,11 +94,7 @@ class CustomWARPackagerStepTests extends BasePipelineTest {
     }
     printCallStack()
     // then an error is thrown
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'error'
-    }.any { call ->
-      callArgsToString(call).contains("packaging.config or packaging.configFile must be defined")
-    })
+    assertTrue(assertMethodCallContainsPattern('error', "packaging.config or packaging.configFile must be defined"))
     assertJobStatusFailure()
   }
 
@@ -130,11 +107,7 @@ class CustomWARPackagerStepTests extends BasePipelineTest {
     })
     script.build('metadataFile', 'outputWAR', 'outputBOM', 'settings')
     printCallStack()
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'echo'
-    }.any { call ->
-      callArgsToString(call).contains("BOM file is not explicitly defined, but there is bom.yml in the root. Using it")
-    })
+    assertTrue(assertMethodCallContainsPattern('echo', "BOM file is not explicitly defined, but there is bom.yml in the root. Using it"))
     assertJobStatusSuccess()
   }
 
@@ -145,18 +118,10 @@ class CustomWARPackagerStepTests extends BasePipelineTest {
     printCallStack()
 
     // then the war file with the artifact id and label from the metadata is copied
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'sh'
-    }.any { call ->
-      callArgsToString(call).contains('cp barId-foo.war')
-    })
+    assertTrue(assertMethodCallContainsPattern('sh', 'cp barId-foo.war'))
 
     // then the yaml file with the artifact id and label from the metadata is copied
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'sh'
-    }.any { call ->
-      callArgsToString(call).contains('cp barId-foo.bom.yml')
-    })
+    assertTrue(assertMethodCallContainsPattern('sh', 'barId-foo.bom.yml'))
     assertJobStatusSuccess()
   }
 

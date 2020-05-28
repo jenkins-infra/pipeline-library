@@ -1,32 +1,18 @@
-import com.lesfurets.jenkins.unit.BasePipelineTest
-import mock.Docker
-import mock.Infra
 import org.junit.Before
 import org.junit.Test
-import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
+import mock.Infra
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
 
-class PublishReportsStepTests extends BasePipelineTest {
+class PublishReportsStepTests extends BaseTest {
   static final String scriptName = 'vars/publishReports.groovy'
-  Map env = [:]
 
   @Override
   @Before
   void setUp() throws Exception {
     super.setUp()
 
-    binding.setVariable('env', env)
-    binding.setProperty('docker', new Docker())
     binding.setProperty('infra', new Infra(trusted: true))
-
-    helper.registerAllowedMethod('error', [String.class], {s ->
-      updateBuildStatus('FAILURE')
-      throw new Exception(s)
-    })
-    helper.registerAllowedMethod('sh', [String.class], { s -> s })
-    helper.registerAllowedMethod('withCredentials', [List.class, Closure.class], { list, body -> body() })
-    helper.registerAllowedMethod('withEnv', [List.class, Closure.class], { list, body -> body() })
   }
 
   @Test
@@ -41,11 +27,7 @@ class PublishReportsStepTests extends BasePipelineTest {
     }
     printCallStack()
     // then an error is thrown
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'error'
-    }.any { call ->
-      callArgsToString(call).contains('Can only call publishReports from within the trusted.ci environment')
-    })
+    assertTrue(assertMethodCallContainsPattern('error', 'Can only call publishReports from within the trusted.ci environment'))
     assertJobStatusFailure()
   }
 
@@ -56,11 +38,7 @@ class PublishReportsStepTests extends BasePipelineTest {
     script.call([])
     printCallStack()
     // then hardcoded credentials is correct
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'string'
-    }.any { call ->
-      callArgsToString(call).contains('credentialsId=azure-reports-access-key')
-    })
+    assertTrue(assertMethodCallContainsPattern('string', 'credentialsId=azure-reports-access-key'))
     // No execution
     assertTrue(helper.callStack.findAll { call -> call.methodName == 'sh' }.isEmpty())
     assertJobStatusSuccess()
@@ -73,17 +51,12 @@ class PublishReportsStepTests extends BasePipelineTest {
     script.call([ 'foo.html' ])
     printCallStack()
     // then timeout is default and filename manipulations is in place
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'sh'
-    }.any { call ->
-      callArgsToString(call).contains('--timeout=60 --file=foo.html --name=foo.html --content-type="text/html"')
-    })
+    assertTrue(assertMethodCallContainsPattern('sh', '--timeout=60 --file=foo.html --name=foo.html --content-type="text/html"'))
     // another filename manipulations is in place
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'sh'
-    }.any { call ->
-      callArgsToString(call).trim().replaceAll(" +", " ").contains('--source . --destination-path / --pattern foo.html --content-type="text/html"')
-    })
+    assertTrue(assertMethodCallContainsPattern('sh', '--source . '))
+    assertTrue(assertMethodCallContainsPattern('sh', '--destination-path / '))
+    assertTrue(assertMethodCallContainsPattern('sh', '--pattern foo.html '))
+    assertTrue(assertMethodCallContainsPattern('sh', '--content-type="text/html"'))
     assertJobStatusSuccess()
   }
 
@@ -94,17 +67,12 @@ class PublishReportsStepTests extends BasePipelineTest {
     script.call([ '/bar/foo.css' ])
     printCallStack()
     // then timeout is default and filename manipulations is in place
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'sh'
-    }.any { call ->
-      callArgsToString(call).contains('--timeout=60 --file=/bar/foo.css --name=/bar/foo.css --content-type="text/css"')
-    })
+    assertTrue(assertMethodCallContainsPattern('sh', '--timeout=60 --file=/bar/foo.css --name=/bar/foo.css --content-type="text/css'))
     // another filename manipulations is in place
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'sh'
-    }.any { call ->
-      callArgsToString(call).trim().replaceAll(" +", " ").contains('--source /bar --destination-path /bar --pattern foo.css --content-type="text/css"')
-    })
+    assertTrue(assertMethodCallContainsPattern('sh', '--source /bar '))
+    assertTrue(assertMethodCallContainsPattern('sh', '--destination-path /bar '))
+    assertTrue(assertMethodCallContainsPattern('sh', '--pattern foo.css '))
+    assertTrue(assertMethodCallContainsPattern('sh', '--content-type="text/css"'))
     assertJobStatusSuccess()
   }
 }
