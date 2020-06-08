@@ -61,7 +61,7 @@ class BuildPluginStepTests extends BaseTest {
       //NOOP
     }
     printCallStack()
-    assertTrue(assertMethodCallContainsPattern('error','Configuration filed "jdk" must be specified: [platform:linux]'))
+    assertTrue(assertMethodCallContainsPattern('error','Configuration field "jdk" must be specified: [platform:linux]'))
     assertJobStatusFailure()
   }
 

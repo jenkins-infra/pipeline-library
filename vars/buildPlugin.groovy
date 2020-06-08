@@ -65,6 +65,17 @@ def call(Map params = [:]) {
                             isMaven = fileExists('pom.xml')
                             incrementals = fileExists('.mvn/extensions.xml') &&
                                     readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')
+                            if (incrementals) { // Incrementals needs 'git status -s' to be empty at start of job
+                                if (isUnix()) {
+                                    sh(script: 'git clean -xffd > /dev/null 2>&1',
+                                       label:'Clean for incrementals',
+                                       returnStatus: true) // Ignore failure if CLI git is not available
+                                } else {
+                                    bat(script: 'git clean -xffd 1> nul 2>&1',
+                                        label:'Clean for incrementals',
+                                        returnStatus: true) // Ignore failure if CLI git is not available
+                                }
+                            }
                         }
 
                         String changelistF
@@ -224,7 +235,7 @@ List<Map<String, String>> getConfigurations(Map params) {
             error("Configuration field \"platform\" must be specified: $c")
         }
         if (!c.jdk) {
-            error("Configuration filed \"jdk\" must be specified: $c")
+            error("Configuration field \"jdk\" must be specified: $c")
         }
     }
 
