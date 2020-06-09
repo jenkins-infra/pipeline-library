@@ -17,6 +17,7 @@ def call(Map params = [:]) {
     def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
     def forceAci = params.containsKey('forceAci') ? params.forceAci : false
     def useAci = params.containsKey('useAci') ? params.useAci : forceAci
+    def codecovToken = params.containsKey('') ? params.codecovToken : null
     if(timeoutValue > 180) {
       echo "Timeout value requested was $timeoutValue, lowering to 180 to avoid Jenkins project's resource abusive consumption"
       timeoutValue = 180
@@ -174,6 +175,9 @@ def call(Map params = [:]) {
                             }
                             if (failFast && currentBuild.result == 'UNSTABLE') {
                                 error 'There were test failures; halting early'
+                            }
+                            if (codecovToken) {
+                                sh("curl -s https://codecov.io/bash | bash -s - -t " + codecovToken)
                             }
                             if (doArchiveArtifacts) {
                                 if (incrementals) {
