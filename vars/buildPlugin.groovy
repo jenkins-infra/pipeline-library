@@ -17,7 +17,7 @@ def call(Map params = [:]) {
     def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
     def forceAci = params.containsKey('forceAci') ? params.forceAci : false
     def useAci = params.containsKey('useAci') ? params.useAci : forceAci
-    def codecovToken = params.containsKey('') ? params.codecovToken : null
+    def codecovToken = params.containsKey('codecovToken') ? params.codecovToken : null
     if(timeoutValue > 180) {
       echo "Timeout value requested was $timeoutValue, lowering to 180 to avoid Jenkins project's resource abusive consumption"
       timeoutValue = 180
