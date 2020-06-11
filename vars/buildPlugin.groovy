@@ -124,6 +124,7 @@ def call(Map params = [:]) {
                                 } finally {
                                     if (!skipTests) {
                                         junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
+                                        jacoco(execPattern: '*/target/*.exec', classPattern: '*/target/classes', sourcePattern: '*/src/main/java', exclusionPattern: '*/src/test*')
                                     }
                                 }
                             } else {
