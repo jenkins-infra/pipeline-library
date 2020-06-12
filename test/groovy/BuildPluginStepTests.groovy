@@ -244,4 +244,12 @@ class BuildPluginStepTests extends BaseTest {
     // then it runs the fingerprint
     assertTrue(assertMethodCallContainsPattern('fingerprint', '**/*-rc*.*/*-rc*.*'))
   }
+
+  @Test
+  void test_buildPlugin_with_jacoco_archive() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(jacoco: [archive: true])
+    printCallStack()
+    assertTrue(assertMethodCallContainsPattern('jacoco', '**/target/site/jacoco/jacoco.xml'))
+  }
 }
