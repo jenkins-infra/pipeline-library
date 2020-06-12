@@ -37,6 +37,7 @@ def call(Map params = [:]) {
         boolean runCheckstyle = first && params?.checkstyle?.run
         boolean archiveFindbugs = first && params?.findbugs?.archive
         boolean archiveCheckstyle = first && params?.checkstyle?.archive
+        boolean archiveJacoco = first && params?.jacoco?.archive
         boolean skipTests = params?.tests?.skip
         boolean addToolEnv = !useAci
 
@@ -124,7 +125,6 @@ def call(Map params = [:]) {
                                 } finally {
                                     if (!skipTests) {
                                         junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
-                                        jacoco(execPattern: '**/target/*.exec', classPattern: '**/target/classes', sourcePattern: '**/src/main/java', exclusionPattern: '**/src/test*')
                                     }
                                 }
                             } else {
@@ -172,6 +172,9 @@ def call(Map params = [:]) {
                                     cp['unstableTotalAll'] = "${params.checkstyle.unstableTotalAll}"
                                 }
                                 checkstyle(cp)
+                            }
+                            if (isMaven && archiveJacoco) {
+                                jacoco([execPattern: '**/target/*.exec', classPattern: '**/target/classes', sourcePattern: '**/src/main/java', exclusionPattern: '**/src/test*'])
                             }
                             if (failFast && currentBuild.result == 'UNSTABLE') {
                                 error 'There were test failures; halting early'
