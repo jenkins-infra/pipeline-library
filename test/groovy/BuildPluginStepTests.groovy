@@ -15,42 +15,6 @@ class BuildPluginStepTests extends BaseTest {
   void setUp() throws Exception {
     super.setUp()
     env.NODE_LABELS = 'docker'
-    binding.setVariable('env', env)
-    binding.setProperty('scm', new String())
-    binding.setProperty('mvnSettingsFile', 'settings.xml')
-    binding.setProperty('infra', new Infra())
-
-    helper.registerAllowedMethod('node', [String.class, Closure.class], { list, closure ->
-      def res = closure.call()
-      return res
-    })
-    helper.registerAllowedMethod('timeout', [String.class], { s -> s })
-    helper.registerAllowedMethod('stage', [String.class], { s -> s })
-    helper.registerAllowedMethod('fileExists', [String.class], { s -> s })
-    helper.registerAllowedMethod('readFile', [String.class], { s -> s })
-    helper.registerAllowedMethod('checkstyle', [Map.class], { true })
-    helper.registerAllowedMethod('fingerprint', [String.class], { s -> s })
-    helper.registerAllowedMethod('archiveArtifacts', [Map.class], { true })
-    helper.registerAllowedMethod('deleteDir', [], { true })
-    helper.registerAllowedMethod('isUnix', [], { true })
-    helper.registerAllowedMethod('hasDockerLabel', [], { true })
-    helper.registerAllowedMethod('sh', [String.class], { s -> s })
-    helper.registerAllowedMethod('parallel', [Map.class, Closure.class], { list, closure ->
-      def res = closure.call()
-      return res
-    })
-    helper.registerAllowedMethod('timeout', [Integer.class, Closure.class], { list, closure ->
-      def res = closure.call()
-      return res
-    })
-    helper.registerAllowedMethod('findbugs', [Map.class], { true })
-    helper.registerAllowedMethod('durabilityHint', [String.class], { s -> s })
-    helper.registerAllowedMethod('pwd', [Map.class], { '/tmp' })
-    helper.registerAllowedMethod('echo', [String.class], { s -> s })
-    helper.registerAllowedMethod('error', [String.class], { s ->
-      updateBuildStatus('FAILURE')
-      throw new Exception(s)
-    })
   }
 
   @Test
@@ -255,11 +219,22 @@ class BuildPluginStepTests extends BaseTest {
     def script = loadScript(scriptName)
     script.call()
     printCallStack()
-    assertTrue(helper.callStack.findAll { call ->
-      call.methodName == 'recordIssues'
-    }.any { call ->
-      callArgsToString(call).contains('{enabledForFailure=true, tools=[true]}')
-    })
+
+    assertTrue(assertMethodCall('mavenConsole'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tools=[true]}'))
+
+    assertTrue(assertMethodCall('java'))
+    assertTrue(assertMethodCall('javaDoc'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tools=[true, true], sourceCodeEncoding=UTF-8}'))
+
+    assertTrue(assertMethodCall('spotBugs'))
+    assertTrue(assertMethodCall('checkStyle'))
+    assertTrue(assertMethodCall('pmdParser'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tools=[true, true, true], sourceCodeEncoding=UTF-8}'))
+
+    assertTrue(assertMethodCallContainsPattern('taskScanner', '{includePattern=**/*.java, excludePattern=target/**, highTags=FIXME, normalTags=TODO}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=true, sourceCodeEncoding=UTF-8}'))
+
   }
 
   @Test
