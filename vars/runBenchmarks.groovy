@@ -10,7 +10,7 @@ def call(String artifacts = null) {
         node('highmem') {
 
             stage('Checkout repo') {
-                infra.checkout()
+                infra.checkoutSCM()
             }
 
             stage('Run Benchmarks') {

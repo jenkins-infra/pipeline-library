@@ -15,8 +15,8 @@ def call(Map params = [:]) {
     def repo = params.containsKey('repo') ? params.repo : null
     def failFast = params.containsKey('failFast') ? params.failFast : true
     def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
-    def useAci = params.containsKey('useAci') ? params.useAci : false
     def forceAci = params.containsKey('forceAci') ? params.forceAci : false
+    def useAci = params.containsKey('useAci') ? params.useAci : forceAci
     if(timeoutValue > 180) {
       echo "Timeout value requested was $timeoutValue, lowering to 180 to avoid Jenkins project's resource abusive consumption"
       timeoutValue = 180
@@ -34,10 +34,9 @@ def call(Map params = [:]) {
         String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
         boolean first = tasks.size() == 1
         boolean skipTests = params?.tests?.skip
-        boolean reallyUseAci = (useAci && label == 'linux') || forceAci
-        boolean addToolEnv = !reallyUseAci
-        
-        if(reallyUseAci) {
+        boolean addToolEnv = !useAci
+
+        if(useAci && (label == 'linux' || label == 'windows')) {
             String aciLabel = jdk == '8' ? 'maven' : 'maven-11'
             if(label == 'windows') {
                 aciLabel += "-windows"
@@ -58,10 +57,21 @@ def call(Map params = [:]) {
                         boolean incrementals // cf. JEP-305
 
                         stage("Checkout (${stageIdentifier})") {
-                            infra.checkout(repo)
+                            infra.checkoutSCM(repo)
                             isMaven = fileExists('pom.xml')
                             incrementals = fileExists('.mvn/extensions.xml') &&
                                     readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')
+                            if (incrementals) { // Incrementals needs 'git status -s' to be empty at start of job
+                                if (isUnix()) {
+                                    sh(script: 'git clean -xffd > /dev/null 2>&1',
+                                       label:'Clean for incrementals',
+                                       returnStatus: true) // Ignore failure if CLI git is not available
+                                } else {
+                                    bat(script: 'git clean -xffd 1> nul 2>&1',
+                                        label:'Clean for incrementals',
+                                        returnStatus: true) // Ignore failure if CLI git is not available
+                                }
+                            }
                         }
 
                         String changelistF
@@ -97,7 +107,7 @@ def call(Map params = [:]) {
                                     infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
                                 } finally {
                                     if (!skipTests) {
-                                        junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml')
+                                        junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
                                     }
                                 }
                             } else {
@@ -203,14 +213,14 @@ List<Map<String, String>> getConfigurations(Map params) {
             error("Configuration field \"platform\" must be specified: $c")
         }
         if (!c.jdk) {
-            error("Configuration filed \"jdk\" must be specified: $c")
+            error("Configuration field \"jdk\" must be specified: $c")
         }
     }
 
     if (explicit) return params.configurations
 
     def platforms = params.containsKey('platforms') ? params.platforms : ['linux', 'windows']
-    def jdkVersions = params.containsKey('jdkVersions') ? params.jdkVersions : [8]
+    def jdkVersions = params.containsKey('jdkVersions') ? params.jdkVersions : ['8']
     def jenkinsVersions = params.containsKey('jenkinsVersions') ? params.jenkinsVersions : [null]
 
     def ret = []
