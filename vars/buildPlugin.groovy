@@ -100,7 +100,7 @@ def call(Map params = [:]) {
                                     mavenOptions += "-Djava.level=${javaLevel}"
                                 }
                                 if (skipTests) {
-                                    mavenOptions += "-DskipTests"
+                                    mavenOptions += "-DskipTests -DskipITs"
                                 }
                                 mavenOptions += "clean install"
                                 try {
@@ -141,17 +141,33 @@ def call(Map params = [:]) {
                             }
 
                             if (first) {
-                                recordIssues(enabledForFailure: true, tools: [mavenConsole()])
-                                recordIssues(enabledForFailure: true, tools: [java(), javaDoc()], sourceCodeEncoding: 'UTF-8')
-                                recordIssues(tools: [spotBugs(), checkStyle(), pmdParser()], sourceCodeEncoding: 'UTF-8')
-                                recordIssues(enabledForFailure: true, tool: taskScanner(
+                                referenceJobName = env.JOB_NAME.substring(0, env.JOB_NAME.lastIndexOf("/") + 1) + "master"
+                                echo "Recording static analysis results on '${stageIdentifier}' using reference job '${referenceJobName}'"
+
+                                recordIssues enabledForFailure: true,
+                                        tool: mavenConsole(),
+                                        referenceJobName: referenceJobName
+                                recordIssues enabledForFailure: true,
+                                        tools: [java(), javaDoc()],
+                                        sourceCodeEncoding: 'UTF-8',
+                                        filters:[excludeFile('.*Assert.java')],
+                                        referenceJobName: referenceJobName
+                                recordIssues tools: [spotBugs(pattern: '**/target/spotbugsXml.xml'),
+                                                     checkStyle(pattern: '**/target/checkstyle-result.xml'),
+                                                     pmdParser(pattern: '**/target/pmd.xml'),
+                                                     cpd(pattern: '**/target/cpd.xml')],
+                                        sourceCodeEncoding: 'UTF-8',
+                                        referenceJobName: referenceJobName
+                                recordIssues enabledForFailure: true, tool: taskScanner(
                                         includePattern:'**/*.java',
-                                        excludePattern:'target/**',
+                                        excludePattern:'**/target/**',
                                         highTags:'FIXME',
-                                        normalTags:'TODO'), sourceCodeEncoding: 'UTF-8')
-                                if (failFast && currentBuild.result == 'UNSTABLE') {
-                                    error 'There were static analysis warnings; halting early'
-                                }
+                                        normalTags:'TODO'),
+                                        sourceCodeEncoding: 'UTF-8',
+                                        referenceJobName: referenceJobName
+                            }
+                            else {
+                                echo "Skipping static analysis results for ${stageIdentifier}"
                             }
                             if (doArchiveArtifacts) {
                                 if (incrementals) {

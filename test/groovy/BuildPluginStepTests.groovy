@@ -15,6 +15,7 @@ class BuildPluginStepTests extends BaseTest {
   void setUp() throws Exception {
     super.setUp()
     env.NODE_LABELS = 'docker'
+    env.JOB_NAME = 'build/plugin/test'
   }
 
   @Test
@@ -221,19 +222,19 @@ class BuildPluginStepTests extends BaseTest {
     printCallStack()
 
     assertTrue(assertMethodCall('mavenConsole'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tools=[true]}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=maven, referenceJobName=build/plugin/master}'))
 
     assertTrue(assertMethodCall('java'))
     assertTrue(assertMethodCall('javaDoc'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tools=[true, true], sourceCodeEncoding=UTF-8}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tools=[java, javadoc], sourceCodeEncoding=UTF-8, filters=[true], referenceJobName=build/plugin/master}'))
 
     assertTrue(assertMethodCall('spotBugs'))
     assertTrue(assertMethodCall('checkStyle'))
     assertTrue(assertMethodCall('pmdParser'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tools=[true, true, true], sourceCodeEncoding=UTF-8}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tools=[spotbugs, checkstyle, pmd, cpd], sourceCodeEncoding=UTF-8, referenceJobName=build/plugin/master}'))
 
-    assertTrue(assertMethodCallContainsPattern('taskScanner', '{includePattern=**/*.java, excludePattern=target/**, highTags=FIXME, normalTags=TODO}'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=true, sourceCodeEncoding=UTF-8}'))
+    assertTrue(assertMethodCallContainsPattern('taskScanner', '{includePattern=**/*.java, excludePattern=**/target/**, highTags=FIXME, normalTags=TODO}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=tasks, sourceCodeEncoding=UTF-8, referenceJobName=build/plugin/master}'))
 
   }
 
