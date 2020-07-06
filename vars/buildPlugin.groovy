@@ -153,7 +153,7 @@ def call(Map params = [:]) {
                                         sourceCodeEncoding: 'UTF-8',
                                         filters:[excludeFile('.*Assert.java')],
                                         referenceJobName: referenceJobName
-                                recordIssues tools: [spotBugs(pattern: '**/target/spotbugsXml.xml'),
+                                recordIssues tools: [spotBugs(pattern: '**/target/spotbugsXml.xml,**/target/findbugsXml.xml'),
                                                      checkStyle(pattern: '**/target/checkstyle-result.xml'),
                                                      pmdParser(pattern: '**/target/pmd.xml'),
                                                      cpd(pattern: '**/target/cpd.xml')],
