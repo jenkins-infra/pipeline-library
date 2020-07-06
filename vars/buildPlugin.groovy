@@ -85,6 +85,7 @@ def call(Map params = [:]) {
                                         '--update-snapshots',
                                         "-Dmaven.repo.local=$m2repo",
                                         '-Dmaven.test.failure.ignore',
+                                        '-Dfindbugs.failOnError=false'
                                 ]
                                 if (incrementals) { // set changelist and activate produce-incrementals profile
                                     mavenOptions += '-Dset.changelist'
