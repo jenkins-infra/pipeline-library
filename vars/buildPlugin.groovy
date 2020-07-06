@@ -101,7 +101,7 @@ def call(Map params = [:]) {
                                     mavenOptions += "-Djava.level=${javaLevel}"
                                 }
                                 if (skipTests) {
-                                    mavenOptions += "-DskipTests -DskipITs"
+                                    mavenOptions += "-DskipTests"
                                 }
                                 mavenOptions += "clean install"
                                 try {
