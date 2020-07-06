@@ -228,14 +228,29 @@ class BuildPluginStepTests extends BaseTest {
     assertTrue(assertMethodCall('javaDoc'))
     assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tools=[java, javadoc], sourceCodeEncoding=UTF-8, filters=[true], referenceJobName=build/plugin/master}'))
 
-    assertTrue(assertMethodCall('spotBugs'))
     assertTrue(assertMethodCall('checkStyle'))
     assertTrue(assertMethodCall('pmdParser'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tools=[spotbugs, checkstyle, pmd, cpd], sourceCodeEncoding=UTF-8, referenceJobName=build/plugin/master}'))
+    assertTrue(assertMethodCall('cpd'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tools=[checkstyle, pmd, cpd], sourceCodeEncoding=UTF-8, referenceJobName=build/plugin/master}'))
+
+    assertTrue(assertMethodCall('spotBugs'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=spotbugs, sourceCodeEncoding=UTF-8, referenceJobName=build/plugin/master, qualityGates=[{threshold=1, type=NEW, unstable=true}]}'))
 
     assertTrue(assertMethodCallContainsPattern('taskScanner', '{includePattern=**/*.java, excludePattern=**/target/**, highTags=FIXME, normalTags=TODO}'))
     assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=tasks, sourceCodeEncoding=UTF-8, referenceJobName=build/plugin/master}'))
+  }
 
+  @Test
+  void test_buildPlugin_with_warnings_ng_and_thresholds() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(spotBugs: [
+            qualityGates: [
+                [threshold: 3, type: 'TOTAL', unstable: true],
+                [threshold: 4, type: 'NEW', unstable: true]],
+            sourceCodeEncoding: 'UTF-16'])
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=spotbugs, sourceCodeEncoding=UTF-16, referenceJobName=build/plugin/master, qualityGates=[{threshold=3, type=TOTAL, unstable=true}, {threshold=4, type=NEW, unstable=true}]}'))
   }
 
   @Test

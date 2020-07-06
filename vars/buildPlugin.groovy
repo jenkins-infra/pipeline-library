@@ -1,4 +1,5 @@
 #!/usr/bin/env groovy
+import org.codehaus.groovy.runtime.DefaultGroovyMethods
 
 //TODO(oleg_nenashev): This thing is not simple anymore. I suggest reworking it to a config YAML
 // which would be compatible with essentials.yml (INFRA-1673)
@@ -151,14 +152,25 @@ def call(Map params = [:]) {
                                 recordIssues enabledForFailure: true,
                                         tools: [java(), javaDoc()],
                                         sourceCodeEncoding: 'UTF-8',
-                                        filters:[excludeFile('.*Assert.java')],
+                                        filters: [excludeFile('.*Assert.java')],
                                         referenceJobName: referenceJobName
-                                recordIssues tools: [spotBugs(pattern: '**/target/spotbugsXml.xml,**/target/findbugsXml.xml'),
-                                                     checkStyle(pattern: '**/target/checkstyle-result.xml'),
+                                recordIssues tools: [checkStyle(pattern: '**/target/checkstyle-result.xml'),
                                                      pmdParser(pattern: '**/target/pmd.xml'),
                                                      cpd(pattern: '**/target/cpd.xml')],
                                         sourceCodeEncoding: 'UTF-8',
                                         referenceJobName: referenceJobName
+
+                                // Default configuration for SpotBugs. These values can be overwritten using a `spotbugs` parameter (map).
+                                // Configuration see: https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration
+                                Map spotbugsArguments = [tool: spotBugs(pattern: '**/target/spotbugsXml.xml,**/target/findbugsXml.xml'),
+                                                         sourceCodeEncoding: 'UTF-8',
+                                                         referenceJobName: referenceJobName,
+                                                         qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]]
+                                if (params?.spotBugs) {
+                                    spotbugsArguments.putAll(params.spotBugs as Map)
+                                }
+                                recordIssues spotbugsArguments
+
                                 recordIssues enabledForFailure: true, tool: taskScanner(
                                         includePattern:'**/*.java',
                                         excludePattern:'**/target/**',
