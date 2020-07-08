@@ -63,28 +63,24 @@ buildPlugin(/*...*/, configurations: buildPlugin.recommendedConfigurations())
 * `tests`: (default: `null`) - a map of parameters to run tests during the build
 ** `skip` - If `true`, skip all the tests by setting the `-skipTests` profile.
   It will also skip FindBugs in modern Plugin POMs.
-* `findbugs`: (default: `null`) - a map of parameters to run findbugs and/or archive findbugs reports. (only available for Maven projects)
-** `run`: set to `true` to add the `findbugs:findbugs` goal to the maven command.
-** `archive`: set to `true` to collect the findbugs report.
-** `pattern`: (default: `'**/target/findbugsXml.xml'`) the file pattern for the report.
-** `unstableTotalAll`: (default: `null`) the warnings threshold for when to mark the build as unstable, see the `findbugs` step for additional details.
-** `unstableNewAll`:  (default: `null`) the new warnings threshold for when to mark the build as unstable, see the `findbugs` step for additional details.
-* `checkstyle`: (default: `null`) - a map of parameters to run checkstyle and/or archive checkstyle reports. (only available for Maven projects)
-** `run`: set to `true` to add the `checkstyle:checkstyle` goal to the maven command.
-** `archive`: set to `true` to collect the checkstyle report.
-** `pattern`: (default: `'**/target/checkstyle-result.xml'`) the file pattern for the report.
-** `unstableTotalAll`: (default: `null`) the violations threshold for when to mark the build as unstable, see the `checkstyle` step for additional details.
-** `unstableNewAll`:  (default: `null`) the new violations threshold for when to mark the build as unstable, see the `checkstyle` step for additional details.
+* `spotbugs`, `checkstyle`, `pmd`, `cpd`: (default: `null`) - a map of parameters to archive SpotBugs, CheckStyle, PMD, or CPD warnings, respectively (only available for Maven projects).
+These values can replace or amend the default configuration for the `recordIssues` step of the https://github.com/jenkinsci/warnings-ng-plugin[Warnings NG Plugin].
+See https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration[Warnings NG Plugin documentation]
+for a list of available configuration parameters.
 * `timeout`: (default: `60`) - the number of minutes for build timeout, cannot be bigger than 180, i.e. 3 hours.
 
-NOTE: `findbugs`  and `checkstyle` are only run/archived on the first platform/jdkVersion,jenkinsVersion combination. So in the example below it will run for `linux`/`jdk7` but not on `jdk8`.
+NOTE: The `recordIssues` steps of the warnings plugin run on the first platform/jdkVersion,jenkinsVersion combination only.
+So in the example below it will run for `linux`/`jdk7` but not on `jdk8`.
 
 Usage:
 
 .Jenkinsfile
 [source,groovy]
 ----
-buildPlugin(platforms: ['linux'], jdkVersions: [7, 8], findbugs: [archive: true, unstableTotalAll: '0'], checkstyle: [run: true, archive: true])
+buildPlugin(platforms: ['linux'],
+        jdkVersions: [7, 8],
+        checkstyle: [qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]],
+        pmd: [trendChartType: 'TOOLS_ONLY', qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]])
 ----
 
 === buildPluginWithGradle()
