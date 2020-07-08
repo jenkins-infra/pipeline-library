@@ -148,28 +148,53 @@ def call(Map params = [:]) {
 
                                 recordIssues enabledForFailure: true,
                                         tool: mavenConsole(),
+                                        trendChartType: 'TOOLS_ONLY',
                                         referenceJobName: referenceJobName
                                 recordIssues enabledForFailure: true,
                                         tools: [java(), javaDoc()],
-                                        sourceCodeEncoding: 'UTF-8',
                                         filters: [excludeFile('.*Assert.java')],
-                                        referenceJobName: referenceJobName
-                                recordIssues tools: [checkStyle(pattern: '**/target/checkstyle-result.xml'),
-                                                     pmdParser(pattern: '**/target/pmd.xml'),
-                                                     cpd(pattern: '**/target/cpd.xml')],
                                         sourceCodeEncoding: 'UTF-8',
+                                        trendChartType: 'TOOLS_ONLY',
                                         referenceJobName: referenceJobName
 
-                                // Default configuration for SpotBugs. These values can be overwritten using a `spotbugs` parameter (map).
+                                // Default configuration for SpotBugs can be overwritten using a `spotbugs`, `checkstyle', etc. parameter (map).
                                 // Configuration see: https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration
                                 Map spotbugsArguments = [tool: spotBugs(pattern: '**/target/spotbugsXml.xml,**/target/findbugsXml.xml'),
                                                          sourceCodeEncoding: 'UTF-8',
+                                                         trendChartType: 'TOOLS_ONLY',
                                                          referenceJobName: referenceJobName,
                                                          qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]]
-                                if (params?.spotBugs) {
-                                    spotbugsArguments.putAll(params.spotBugs as Map)
+                                if (params?.spotbugs) {
+                                    spotbugsArguments.putAll(params.spotbugs as Map)
                                 }
                                 recordIssues spotbugsArguments
+
+                                Map checkstyleArguments = [tool: checkStyle(pattern: '**/target/checkstyle-result.xml'),
+                                                           sourceCodeEncoding: 'UTF-8',
+                                                           trendChartType: 'TOOLS_ONLY',
+                                                           referenceJobName: referenceJobName]
+                                if (params?.checkstyle) {
+                                    checkstyleArguments.putAll(params.checkstyle as Map)
+                                }
+                                recordIssues checkstyleArguments
+
+                                Map pmdArguments = [tool: pmdParser(pattern: '**/target/pmd.xml'),
+                                                    sourceCodeEncoding: 'UTF-8',
+                                                    trendChartType: 'NONE',
+                                                    referenceJobName: referenceJobName]
+                                if (params?.pmd) {
+                                    pmdArguments.putAll(params.pmd as Map)
+                                }
+                                recordIssues pmdArguments
+
+                                Map cpdArguments = [tool: cpd(pattern: '**/target/cpd.xml'),
+                                                    sourceCodeEncoding: 'UTF-8',
+                                                    trendChartType: 'NONE',
+                                                    referenceJobName: referenceJobName]
+                                if (params?.cpd) {
+                                    cpdArguments.putAll(params.cpd as Map)
+                                }
+                                recordIssues cpdArguments
 
                                 recordIssues enabledForFailure: true, tool: taskScanner(
                                         includePattern:'**/*.java',
@@ -177,6 +202,7 @@ def call(Map params = [:]) {
                                         highTags:'FIXME',
                                         normalTags:'TODO'),
                                         sourceCodeEncoding: 'UTF-8',
+                                        trendChartType: 'NONE',
                                         referenceJobName: referenceJobName
                             }
                             else {

@@ -222,35 +222,71 @@ class BuildPluginStepTests extends BaseTest {
     printCallStack()
 
     assertTrue(assertMethodCall('mavenConsole'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=maven, referenceJobName=build/plugin/master}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=maven, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master}'))
 
     assertTrue(assertMethodCall('java'))
     assertTrue(assertMethodCall('javaDoc'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tools=[java, javadoc], sourceCodeEncoding=UTF-8, filters=[true], referenceJobName=build/plugin/master}'))
-
-    assertTrue(assertMethodCall('checkStyle'))
-    assertTrue(assertMethodCall('pmdParser'))
-    assertTrue(assertMethodCall('cpd'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tools=[checkstyle, pmd, cpd], sourceCodeEncoding=UTF-8, referenceJobName=build/plugin/master}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tools=[java, javadoc], filters=[true], sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master}'))
 
     assertTrue(assertMethodCall('spotBugs'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=spotbugs, sourceCodeEncoding=UTF-8, referenceJobName=build/plugin/master, qualityGates=[{threshold=1, type=NEW, unstable=true}]}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=spotbugs, sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master, qualityGates=[{threshold=1, type=NEW, unstable=true}]}'))
+
+    assertTrue(assertMethodCall('checkStyle'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=checkstyle, sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master}'))
+
+    assertTrue(assertMethodCall('pmdParser'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=pmd, sourceCodeEncoding=UTF-8, trendChartType=NONE, referenceJobName=build/plugin/master}'))
+
+    assertTrue(assertMethodCall('cpd'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=cpd, sourceCodeEncoding=UTF-8, trendChartType=NONE, referenceJobName=build/plugin/master}'))
+
 
     assertTrue(assertMethodCallContainsPattern('taskScanner', '{includePattern=**/*.java, excludePattern=**/target/**, highTags=FIXME, normalTags=TODO}'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=tasks, sourceCodeEncoding=UTF-8, referenceJobName=build/plugin/master}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=tasks, sourceCodeEncoding=UTF-8, trendChartType=NONE, referenceJobName=build/plugin/master}'))
   }
 
   @Test
   void test_buildPlugin_with_warnings_ng_and_thresholds() throws Exception {
     def script = loadScript(scriptName)
-    script.call(spotBugs: [
+    script.call(spotbugs: [
             qualityGates: [
                 [threshold: 3, type: 'TOTAL', unstable: true],
                 [threshold: 4, type: 'NEW', unstable: true]],
             sourceCodeEncoding: 'UTF-16'])
     printCallStack()
 
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=spotbugs, sourceCodeEncoding=UTF-16, referenceJobName=build/plugin/master, qualityGates=[{threshold=3, type=TOTAL, unstable=true}, {threshold=4, type=NEW, unstable=true}]}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=spotbugs, sourceCodeEncoding=UTF-16, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master, qualityGates=[{threshold=3, type=TOTAL, unstable=true}, {threshold=4, type=NEW, unstable=true}]}'))
+  }
+
+  @Test
+  void test_buildPlugin_with_warnings_ng_and_checkstyle() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(checkstyle: [
+            qualityGates: [
+                    [threshold: 3, type: 'TOTAL', unstable: true],
+                    [threshold: 4, type: 'NEW', unstable: true]],
+            filters: '[includeFile(\'MyFile.*.java\'), excludeCategory(\'WHITESPACE\')]'])
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=checkstyle, sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master, qualityGates=[{threshold=3, type=TOTAL, unstable=true}, {threshold=4, type=NEW, unstable=true}], filters=[includeFile(\'MyFile.*.java\'), excludeCategory(\'WHITESPACE\')]}'))
+  }
+
+  @Test
+  void test_buildPlugin_with_warnings_ng_and_pmd_chart() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(pmd: [trendChartType: 'TOOLS_ONLY'])
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=pmd, sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master}'))
+  }
+
+  @Test
+  void test_buildPlugin_with_warnings_ng_and_cpd() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(cpd: [enabledForFailure: true])
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=cpd, sourceCodeEncoding=UTF-8, trendChartType=NONE, referenceJobName=build/plugin/master, enabledForFailure=true}'))
   }
 
   @Test
