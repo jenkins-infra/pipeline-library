@@ -204,6 +204,9 @@ def call(Map params = [:]) {
                                         sourceCodeEncoding: 'UTF-8',
                                         trendChartType: 'NONE',
                                         referenceJobName: referenceJobName
+                                if (failFast && currentBuild.result == 'UNSTABLE') {
+                                    error 'Static analysis quality gates not passed; halting early'
+                                }
                             }
                             else {
                                 echo "Skipping static analysis results for ${stageIdentifier}"
