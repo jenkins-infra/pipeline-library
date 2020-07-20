@@ -40,12 +40,10 @@ def call(Map params = [:]) {
         boolean skipTests = params?.tests?.skip
         boolean addToolEnv = !useAci
 
-        if(useAci && (label == 'linux' || label == 'windows')) {
-            String aciLabel = jdk == '8' ? 'maven' : 'maven-11'
-            if(label == 'windows') {
-                aciLabel += "-windows"
-            }
-            label = aciLabel
+        if (useAci && label == 'linux') {
+            label = jdk == '8' ? 'maven' : 'maven-11'
+        } else if (forceAci && label == 'windows') {
+            label = jdk == '8' ? 'maven-windows' : 'maven-11-windows'
         }
 
         tasks[stageIdentifier] = {
