@@ -174,6 +174,7 @@ def call(Map params = [:]) {
                                 Map checkstyleArguments = [tool: checkStyle(pattern: '**/target/checkstyle-result.xml'),
                                                            sourceCodeEncoding: 'UTF-8',
                                                            trendChartType: 'TOOLS_ONLY',
+                                                           qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]],
                                                            referenceJobName: referenceJobName]
                                 if (params?.checkstyle) {
                                     checkstyleArguments.putAll(params.checkstyle as Map)

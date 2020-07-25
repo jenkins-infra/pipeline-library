@@ -232,7 +232,7 @@ class BuildPluginStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=spotbugs, sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master, qualityGates=[{threshold=1, type=NEW, unstable=true}]}'))
 
     assertTrue(assertMethodCall('checkStyle'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=checkstyle, sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=checkstyle, sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, qualityGates=[{threshold=1, type=TOTAL, unstable=true}], referenceJobName=build/plugin/master}'))
 
     assertTrue(assertMethodCall('pmdParser'))
     assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=pmd, sourceCodeEncoding=UTF-8, trendChartType=NONE, referenceJobName=build/plugin/master}'))
@@ -268,7 +268,7 @@ class BuildPluginStepTests extends BaseTest {
             filters: '[includeFile(\'MyFile.*.java\'), excludeCategory(\'WHITESPACE\')]'])
     printCallStack()
 
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=checkstyle, sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master, qualityGates=[{threshold=3, type=TOTAL, unstable=true}, {threshold=4, type=NEW, unstable=true}], filters=[includeFile(\'MyFile.*.java\'), excludeCategory(\'WHITESPACE\')]}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=checkstyle, sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, qualityGates=[{threshold=3, type=TOTAL, unstable=true}, {threshold=4, type=NEW, unstable=true}], referenceJobName=build/plugin/master, filters=[includeFile(\'MyFile.*.java\'), excludeCategory(\'WHITESPACE\')]}'))
   }
 
   @Test
