@@ -1,4 +1,5 @@
 #!/usr/bin/env groovy
+import org.codehaus.groovy.runtime.DefaultGroovyMethods
 
 //TODO(oleg_nenashev): This thing is not simple anymore. I suggest reworking it to a config YAML
 // which would be compatible with essentials.yml (INFRA-1673)
@@ -33,10 +34,6 @@ def call(Map params = [:]) {
 
         String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
         boolean first = tasks.size() == 1
-        boolean runFindbugs = first && params?.findbugs?.run
-        boolean runCheckstyle = first && params?.checkstyle?.run
-        boolean archiveFindbugs = first && params?.findbugs?.archive
-        boolean archiveCheckstyle = first && params?.checkstyle?.archive
         boolean skipTests = params?.tests?.skip
         boolean addToolEnv = !useAci
 
@@ -89,6 +86,9 @@ def call(Map params = [:]) {
                                         '--update-snapshots',
                                         "-Dmaven.repo.local=$m2repo",
                                         '-Dmaven.test.failure.ignore',
+                                        '-Dspotbugs.failOnError=false',
+                                        '-Dcheckstyle.failOnViolation=false',
+                                        '-Dcheckstyle.failsOnError=false'
                                 ]
                                 if (incrementals) { // set changelist and activate produce-incrementals profile
                                     mavenOptions += '-Dset.changelist'
@@ -103,22 +103,10 @@ def call(Map params = [:]) {
                                 if (javaLevel) {
                                     mavenOptions += "-Djava.level=${javaLevel}"
                                 }
-                                if (params?.findbugs?.run || params?.findbugs?.archive) {
-                                    mavenOptions += "-Dfindbugs.failOnError=false"
-                                }
                                 if (skipTests) {
                                     mavenOptions += "-DskipTests"
                                 }
-                                if (params?.checkstyle?.run || params?.checkstyle?.archive) {
-                                    mavenOptions += "-Dcheckstyle.failOnViolation=false -Dcheckstyle.failsOnError=false"
-                                }
                                 mavenOptions += "clean install"
-                                if (runFindbugs) {
-                                    mavenOptions += "findbugs:findbugs"
-                                }
-                                if (runCheckstyle) {
-                                    mavenOptions += "checkstyle:checkstyle"
-                                }
                                 try {
                                     infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
                                 } finally {
@@ -152,28 +140,79 @@ def call(Map params = [:]) {
                         }
 
                         stage("Archive (${stageIdentifier})") {
-                            if (isMaven && archiveFindbugs) {
-                                def fp = [pattern: params?.findbugs?.pattern ?: '**/target/findbugsXml.xml']
-                                if (params?.findbugs?.unstableNewAll) {
-                                    fp['unstableNewAll'] = "${params.findbugs.unstableNewAll}"
-                                }
-                                if (params?.findbugs?.unstableTotalAll) {
-                                    fp['unstableTotalAll'] = "${params.findbugs.unstableTotalAll}"
-                                }
-                                findbugs(fp)
-                            }
-                            if (isMaven && archiveCheckstyle) {
-                                def cp = [pattern: params?.checkstyle?.pattern ?: '**/target/checkstyle-result.xml']
-                                if (params?.checkstyle?.unstableNewAll) {
-                                    cp['unstableNewAll'] = "${params.checkstyle.unstableNewAll}"
-                                }
-                                if (params?.checkstyle?.unstableTotalAll) {
-                                    cp['unstableTotalAll'] = "${params.checkstyle.unstableTotalAll}"
-                                }
-                                checkstyle(cp)
-                            }
                             if (failFast && currentBuild.result == 'UNSTABLE') {
                                 error 'There were test failures; halting early'
+                            }
+
+                            if (first) {
+                                referenceJobName = env.JOB_NAME.substring(0, env.JOB_NAME.lastIndexOf("/") + 1) + "master"
+                                echo "Recording static analysis results on '${stageIdentifier}' using reference job '${referenceJobName}'"
+
+                                recordIssues enabledForFailure: true,
+                                        tool: mavenConsole(),
+                                        trendChartType: 'TOOLS_ONLY',
+                                        referenceJobName: referenceJobName
+                                recordIssues enabledForFailure: true,
+                                        tools: [java(), javaDoc()],
+                                        filters: [excludeFile('.*Assert.java')],
+                                        sourceCodeEncoding: 'UTF-8',
+                                        trendChartType: 'TOOLS_ONLY',
+                                        referenceJobName: referenceJobName
+
+                                // Default configuration for SpotBugs can be overwritten using a `spotbugs`, `checkstyle', etc. parameter (map).
+                                // Configuration see: https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration
+                                Map spotbugsArguments = [tool: spotBugs(pattern: '**/target/spotbugsXml.xml,**/target/findbugsXml.xml'),
+                                                         sourceCodeEncoding: 'UTF-8',
+                                                         trendChartType: 'TOOLS_ONLY',
+                                                         referenceJobName: referenceJobName,
+                                                         qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]]
+                                if (params?.spotbugs) {
+                                    spotbugsArguments.putAll(params.spotbugs as Map)
+                                }
+                                recordIssues spotbugsArguments
+
+                                Map checkstyleArguments = [tool: checkStyle(pattern: '**/target/checkstyle-result.xml'),
+                                                           sourceCodeEncoding: 'UTF-8',
+                                                           trendChartType: 'TOOLS_ONLY',
+                                                           qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]],
+                                                           referenceJobName: referenceJobName]
+                                if (params?.checkstyle) {
+                                    checkstyleArguments.putAll(params.checkstyle as Map)
+                                }
+                                recordIssues checkstyleArguments
+
+                                Map pmdArguments = [tool: pmdParser(pattern: '**/target/pmd.xml'),
+                                                    sourceCodeEncoding: 'UTF-8',
+                                                    trendChartType: 'NONE',
+                                                    referenceJobName: referenceJobName]
+                                if (params?.pmd) {
+                                    pmdArguments.putAll(params.pmd as Map)
+                                }
+                                recordIssues pmdArguments
+
+                                Map cpdArguments = [tool: cpd(pattern: '**/target/cpd.xml'),
+                                                    sourceCodeEncoding: 'UTF-8',
+                                                    trendChartType: 'NONE',
+                                                    referenceJobName: referenceJobName]
+                                if (params?.cpd) {
+                                    cpdArguments.putAll(params.cpd as Map)
+                                }
+                                recordIssues cpdArguments
+
+                                recordIssues enabledForFailure: true, tool: taskScanner(
+                                        includePattern:'**/*.java',
+                                        excludePattern:'**/target/**',
+                                        highTags:'FIXME',
+                                        normalTags:'TODO'),
+                                        sourceCodeEncoding: 'UTF-8',
+                                        trendChartType: 'NONE',
+                                        referenceJobName: referenceJobName
+                                if (failFast && currentBuild.result == 'UNSTABLE') {
+                                    error 'Static analysis quality gates not passed; halting early'
+                                }
+                            }
+                            else {
+                                echo "Skipping static analysis results for ${stageIdentifier}"
                             }
                             if (doArchiveArtifacts) {
                                 if (incrementals) {
@@ -188,7 +227,7 @@ def call(Map params = [:]) {
                                 } else {
                                     String artifacts
                                     if (isMaven) {
-                                        artifacts = '**/target/*.hpi,**/target/*.jpi'
+                                        artifacts = '**/target/*.hpi,**/target/*.jpi,**/target/*.jar'
                                     } else {
                                         artifacts = '**/build/libs/*.hpi,**/build/libs/*.jpi'
                                     }
@@ -196,7 +235,7 @@ def call(Map params = [:]) {
                                 }
                             }
                         }
-                    }            
+                    }
                 } finally {
                     if (hasDockerLabel()) {
                         if(isUnix()) {
