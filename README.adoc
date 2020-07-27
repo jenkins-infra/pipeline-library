@@ -29,7 +29,6 @@ buildPlugin()
 
 * `repo` (default: `null`  inherit from Multibranch) - custom Git repository to check out
 * `useAci` (default: `false`) - uses link:https://azure.microsoft.com/en-us/services/container-instances/[Azure Container Instances] for build instead of link:https://azure.microsoft.com/en-us/services/virtual-machines/[Azure Virtual Machines].
-* `forceAci` (default: `false`) - forces usage of ACI (see `useAci` above) even on platforms that are not enabled when `useAci` is set to `true` (Windows).
 * `failFast` (default: `true`) - instruct Maven tests to fail fast
 * `platforms` (default: `['linux', 'windows']`) - Labels matching platforms to
   execute the steps against in parallel
