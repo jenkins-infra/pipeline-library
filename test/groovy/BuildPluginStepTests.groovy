@@ -290,6 +290,36 @@ class BuildPluginStepTests extends BaseTest {
   }
 
   @Test
+  void test_buildPlugin_with_coverage() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(tests: [withCoverage: true])
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('publishCoverage', '{adapters=[jacoco]}'))
+    assertTrue(assertMethodCallContainsPattern('echo', 'jacoco:prepare-agent test jacoco:report'))
+  }
+
+  @Test
+  void test_buildPlugin_with_skip_and_coverage() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(tests: [skip: true, withCoverage: true])
+    printCallStack()
+
+    assertFalse(assertMethodCallContainsPattern('publishCoverage', '{adapters=[jacoco]}'))
+    assertFalse(assertMethodCallContainsPattern('echo', 'jacoco:prepare-agent test jacoco:report'))
+  }
+
+  @Test
+  void test_buildPlugin_default_no_coverage() throws Exception {
+    def script = loadScript(scriptName)
+    script.call()
+    printCallStack()
+
+    assertFalse(assertMethodCallContainsPattern('publishCoverage', '{adapters=[jacoco]}'))
+    assertFalse(assertMethodCallContainsPattern('echo', 'jacoco:prepare-agent test jacoco:report'))
+  }
+
+  @Test
   void test_buildPlugin_with_configurations_and_incrementals() throws Exception {
     def script = loadScript(scriptName)
     // when running with incrementals
