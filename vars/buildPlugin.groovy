@@ -117,7 +117,7 @@ def call(Map params = [:]) {
                                     if (!skipTests) {
                                         junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
                                         if (first && enableCoverage) {
-                                            publishCoverage adapters: [jacocoAdapter('target/site/jacoco/jacoco.xml')]
+                                            publishCoverage adapters: [jacocoAdapter('**/target/site/jacoco/jacoco.xml')]
                                         }
                                     }
                                 }
