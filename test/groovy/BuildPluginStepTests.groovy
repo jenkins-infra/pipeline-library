@@ -226,7 +226,7 @@ class BuildPluginStepTests extends BaseTest {
 
     assertTrue(assertMethodCall('java'))
     assertTrue(assertMethodCall('javaDoc'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tools=[java, javadoc], filters=[true], sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tools=[java, javadoc], filters=[true], sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master, skipPublishingChecks=true}'))
 
     assertTrue(assertMethodCall('spotBugs'))
     assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=spotbugs, sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master, qualityGates=[{threshold=1, type=NEW, unstable=true}]}'))

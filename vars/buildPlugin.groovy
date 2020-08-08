@@ -156,7 +156,8 @@ def call(Map params = [:]) {
                                         filters: [excludeFile('.*Assert.java')],
                                         sourceCodeEncoding: 'UTF-8',
                                         trendChartType: 'TOOLS_ONLY',
-                                        referenceJobName: referenceJobName
+                                        referenceJobName: referenceJobName,
+                                        skipPublishingChecks: true
 
                                 // Default configuration for SpotBugs can be overwritten using a `spotbugs`, `checkstyle', etc. parameter (map).
                                 // Configuration see: https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration
