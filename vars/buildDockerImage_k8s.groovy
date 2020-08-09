@@ -111,6 +111,7 @@ spec:
 									-f ${config.dockerfile} \
 									.
 							"""
+            }
           }
         }
       }

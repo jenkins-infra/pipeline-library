@@ -54,11 +54,11 @@ class BuildDockerImageK8sTests extends DeclarativePipelineTest {
     def calls = helper.callStack.findAll { call ->
       call.methodName == 'sh'
     }.findAll { call ->
-      callArgsToString(call).contains('docker build')
+      callArgsToString(call).contains('img build')
     }.collect { call ->
       callArgsToString(call).replaceAll(/\s+/, ' ').trim()
     }
     //printCallStack()
-    assertEquals(calls, ['docker build -t jenkins4eval/jenkins-wiki-exporter --build-arg "GIT_COMMIT_REV=abc123" --build-arg "GIT_SCM_URL=git@github.com:jenkins-infra/pipeline-library.git" --build-arg "BUILD_DATE=2020-05-25T07:11:16+00:00" --label "org.opencontainers.image.source=git@github.com:jenkins-infra/pipeline-library.git" --label "org.label-schema.vcs-url=git@github.com:jenkins-infra/pipeline-library.git" --label "org.opencontainers.image.url==https://github.com/jenkins-infra/pipeline-library.git" --label "org.label-schema.url=https://github.com/jenkins-infra/pipeline-library.git" --label "org.opencontainers.image.revision=abc123" --label "org.label-schema.vcs-ref=abc123" --label "org.opencontainers.created=2020-05-25T07:11:16+00:00" --label "org.label-schema.build-date=2020-05-25T07:11:16+00:00" .'])
+    assertEquals(calls, ['img build -t jenkins4eval/jenkins-wiki-exporter --build-arg "GIT_COMMIT_REV=abc123" --build-arg "GIT_SCM_URL=git@github.com:jenkins-infra/pipeline-library.git" --build-arg "BUILD_DATE=2020-05-25T07:11:16+00:00" --label "org.opencontainers.image.source=git@github.com:jenkins-infra/pipeline-library.git" --label "org.label-schema.vcs-url=git@github.com:jenkins-infra/pipeline-library.git" --label "org.opencontainers.image.url==https://github.com/jenkins-infra/pipeline-library.git" --label "org.label-schema.url=https://github.com/jenkins-infra/pipeline-library.git" --label "org.opencontainers.image.revision=abc123" --label "org.label-schema.vcs-ref=abc123" --label "org.opencontainers.created=2020-05-25T07:11:16+00:00" --label "org.label-schema.build-date=2020-05-25T07:11:16+00:00" -f Dockerfile .'])
   }
 }
