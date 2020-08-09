@@ -1,0 +1,10 @@
+<p>
+    Builds a docker image with some caveats
+    if on trusted, use jenkinsciinfra dockerhub registry, otherwise use jenkins4eval
+
+</p>
+
+<!--
+vim: ft=html
+-->
+

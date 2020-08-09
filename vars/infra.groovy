@@ -1,11 +1,15 @@
 #!/usr/bin/env groovy
 
 Boolean isRunningOnJenkinsInfra() {
-    return env.JENKINS_URL == 'https://ci.jenkins.io/' || isTrusted()
+    return env.JENKINS_URL == 'https://ci.jenkins.io/' || isTrusted() || isInfra()
 }
 
 Boolean isTrusted() {
     return env.JENKINS_URL == 'https://trusted.ci.jenkins.io:1443/'
+}
+
+Boolean isInfra() {
+    return env.JENKINS_URL == 'https://infra.ci.jenkins.io/'
 }
 
 Object withDockerCredentials(Closure body) {

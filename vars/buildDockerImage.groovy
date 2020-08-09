@@ -7,6 +7,10 @@ def call(String imageName, Map config=[:]) {
     }
   }
 
+  if (!config.dockerfile) {
+    config.dockerfile = "Dockerfile"
+  }
+
   pipeline {
     agent {
       label 'docker&&linux'

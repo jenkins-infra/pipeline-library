@@ -444,6 +444,25 @@ Name of the docker image to build
 buildDockerImage('plugins-site-api')
 ----
 
+=== buildDockerImage_k8s
+
+Builds a standard docker image and on master/tags pushes it to dockerhub but runs on the k8s servers (infra, releases, etc)
+
+Supported parameters:
+
+`imageName`::
+Name of the docker image to build
+
+`configs`::
+(Optional) extra flags such as override the default registry of jenkinsciinfra or jenkins4eval
+
+
+===== Example
+[source, groovy]
+----
+buildDockerImage_k8s('plugins-site-api')
+----
+
 === Design documents for runATH and runPCT
 
 The design and some more details about the runATH and runPCT steps can be found link:https://wiki.jenkins.io/display/JENKINS/runATH+and+runPCT+step+design[here]
