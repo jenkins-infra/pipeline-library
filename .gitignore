@@ -4,6 +4,7 @@ target/
 
 # IDEA
 .idea
+*.iml
 
 # Visual Studio Code
 .project

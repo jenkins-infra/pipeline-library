@@ -296,7 +296,6 @@ class BuildPluginStepTests extends BaseTest {
     printCallStack()
 
     assertTrue(assertMethodCallContainsPattern('publishCoverage', '{adapters=[jacoco]}'))
-    assertTrue(assertMethodCallContainsPattern('echo', 'jacoco:prepare-agent test jacoco:report'))
   }
 
   @Test
@@ -306,7 +305,6 @@ class BuildPluginStepTests extends BaseTest {
     printCallStack()
 
     assertFalse(assertMethodCallContainsPattern('publishCoverage', '{adapters=[jacoco]}'))
-    assertFalse(assertMethodCallContainsPattern('echo', 'jacoco:prepare-agent test jacoco:report'))
   }
 
   @Test
@@ -316,7 +314,6 @@ class BuildPluginStepTests extends BaseTest {
     printCallStack()
 
     assertFalse(assertMethodCallContainsPattern('publishCoverage', '{adapters=[jacoco]}'))
-    assertFalse(assertMethodCallContainsPattern('echo', 'jacoco:prepare-agent test jacoco:report'))
   }
 
   @Test

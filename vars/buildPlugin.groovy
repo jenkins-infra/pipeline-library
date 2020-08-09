@@ -1,6 +1,4 @@
-#!/usr/bin/env groovy
-import org.codehaus.groovy.runtime.DefaultGroovyMethods
-
+#!/usr/bin/env groovy 
 //TODO(oleg_nenashev): This thing is not simple anymore. I suggest reworking it to a config YAML
 // which would be compatible with essentials.yml (INFRA-1673)
 /**
@@ -107,9 +105,6 @@ def call(Map params = [:]) {
                                     mavenOptions += "-DskipTests"
                                 }
                                 mavenOptions += "clean install"
-                                if (!skipTests && first && enableCoverage) {
-                                    mavenOptions += "jacoco:prepare-agent test jacoco:report"
-                                }
                                 try {
                                     echo "Running maven with options " + mavenOptions
                                     infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
