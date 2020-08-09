@@ -20,6 +20,17 @@ def call(String imageName, Map config=[:]) {
     }
 
     stages {
+      stage("Lint") {
+        agent {
+          docker { image "hadolint/hadolint" }
+        }
+        steps {
+          script {
+            writeFile(file: 'hadolint.json', text: sh(returnStdout: true, script: "/bin/hadolint --format json ${config.dockerfile} || true").trim())
+            recordIssues(tools: [hadoLint(pattern: 'hadolint.json')])
+          }
+        }
+      }
       stage("Build") {
         steps {
           script {
