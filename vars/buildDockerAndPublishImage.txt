@@ -1,0 +1,15 @@
+<p>
+    Lints, Builds, then publishes a docker image.
+
+    Adds a bunch of build args you can use in your docker image:
+    <ul>
+      <li>GIT_COMMIT_REV - The commit that triggered this build</li>
+      <li>GIT_SCM_URL - Url to repo </li>
+      <li>BUILD_DATE - Date that the image was built (now) </li>
+    </ul>
+</p>
+
+<!--
+vim: ft=html
+-->
+
