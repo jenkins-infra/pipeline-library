@@ -6,6 +6,7 @@ package mock
 class Infra implements Serializable {
 
   private boolean trusted
+  private boolean infra
   private boolean buildError
 
   public void checkoutSCM(String repo = null) { }
@@ -33,6 +34,10 @@ class Infra implements Serializable {
 
   public boolean isTrusted() {
     return trusted
+  }
+
+  public boolean isInfra() {
+    return infra
   }
 
   public void maybePublishIncrementals() { }

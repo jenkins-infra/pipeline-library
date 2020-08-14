@@ -425,9 +425,15 @@ Supported parameters:
 runBenchmarks('jmh-report.json')
 ----
 
-=== buildDockerImage
+=== buildDockerAndPublishImage(imageName, config)
 
-Builds a standard docker image and on master/tags pushes it to dockerhub
+Lints, Builds, then publishes a docker image.
+
+Adds a bunch of build args you can use in your docker image:
+
+* GIT_COMMIT_REV - The commit that triggered this build
+* GIT_SCM_URL - Url to repo
+* BUILD_DATE - Date that the image was built (now)
 
 Supported parameters:
 
@@ -435,13 +441,16 @@ Supported parameters:
 Name of the docker image to build
 
 `configs`::
-(Optional) extra flags such as override the default registry of jenkinsciinfra or jenkins4eval
+(Optional) extra flags
+
+registry: override the smart default of jenkinsciinfra/ or jenkins4eval/
+dockerfile: override the default dockerfile of Dockerfile
 
 
 ===== Example
 [source, groovy]
 ----
-buildDockerImage('plugins-site-api')
+buildDockerImage_k8s('plugins-site-api')
 ----
 
 === Design documents for runATH and runPCT

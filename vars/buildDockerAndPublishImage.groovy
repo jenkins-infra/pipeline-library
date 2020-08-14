@@ -1,0 +1,159 @@
+def call(String imageName, Map config=[:]) {
+  if (!config.registry) {
+    if (infra.isTrusted() || infra.isInfra()) {
+      config.registry = "jenkinsciinfra/"
+    } else {
+      config.registry = "jenkins4eval/"
+    }
+  }
+
+  if (!config.dockerfile) {
+    config.dockerfile = "Dockerfile"
+  }
+
+  pipeline {
+    agent {
+      kubernetes {
+        label 'helmfile'
+        inheritFrom 'jnlp-linux'
+        yaml """
+apiVersion: "v1"
+kind: "Pod"
+metadata:
+  labels:
+    jenkins: "agent"
+  annotations:
+    container.apparmor.security.beta.kubernetes.io/img: unconfined
+    container.seccomp.security.alpha.kubernetes.io/img: unconfined
+spec:
+  tolerations:
+  - key: "os"
+    operator: "Equal"
+    value: "linux"
+    effect: "NoSchedule"
+  - key: "profile"
+    operator: "Equal"
+    value: "highmem"
+    effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/os
+            operator: In
+            values:
+            - linux
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: agentpool
+            operator: In
+            values:
+            - highmemlinux
+  restartPolicy: "Never"
+  containers:
+		- name: img
+			image: r.j3ss.co/img
+			command:
+			- cat
+			tty: true
+		- name: hadolint
+			image: hadolint/hadolint
+			command:
+			- cat
+			tty: true
+        """
+      }
+    }
+
+    options {
+      disableConcurrentBuilds()
+      buildDiscarder(logRotator(numToKeepStr: '5', artifactNumToKeepStr: '5'))
+      timeout(time: 60, unit: "MINUTES")
+      ansiColor("xterm")
+    }
+
+    stages {
+      stage("Lint") {
+        steps {
+					container('hadolint') {
+						script {
+							writeFile(file: 'hadolint.json', text: sh(returnStdout: true, script: "/bin/hadolint --format json ${config.dockerfile} || true").trim())
+							recordIssues(tools: [hadoLint(pattern: 'hadolint.json')])
+						}
+					}
+        }
+      }
+      stage("Build") {
+        steps {
+					container('img') {
+						script {
+							GIT_COMMIT_REV = sh(returnStdout: true, script: "git log -n 1 --pretty=format:'%h'").trim()
+							GIT_SCM_URL = sh(returnStdout: true, script: "git remote show origin | grep 'Fetch URL' | awk '{print \$3}'").trim()
+							SCM_URI = GIT_SCM_URL.replace("git@github.com:", "https://github.com/")
+							BUILD_DATE = sh(returnStdout: true, script: "TZ=UTC date --rfc-3339=seconds | sed 's/ /T/'").trim()
+							sh """
+								img build \
+									-t ${config.registry}${imageName} \
+									--build-arg "GIT_COMMIT_REV=${GIT_COMMIT_REV}" \
+									--build-arg "GIT_SCM_URL=${GIT_SCM_URL}" \
+									--build-arg "BUILD_DATE=${BUILD_DATE}" \
+									--label "org.opencontainers.image.source=${GIT_SCM_URL}" \
+									--label "org.label-schema.vcs-url=${GIT_SCM_URL}" \
+									--label "org.opencontainers.image.url==${SCM_URI}" \
+									--label "org.label-schema.url=${SCM_URI}" \
+									--label "org.opencontainers.image.revision=${GIT_COMMIT_REV}" \
+									--label "org.label-schema.vcs-ref=${GIT_COMMIT_REV}" \
+									--label "org.opencontainers.created=${BUILD_DATE}" \
+									--label "org.label-schema.build-date=${BUILD_DATE}" \
+									-f ${config.dockerfile} \
+									.
+							"""
+            }
+          }
+        }
+      }
+      stage("Deploy master as latest") {
+        when { branch "master" }
+        steps {
+          container('img') {
+            script {
+              sh "img tag ${config.registry}${imageName} ${config.registry}${imageName}:master"
+              sh "img tag ${config.registry}${imageName} ${config.registry}${imageName}:${GIT_COMMIT}"
+              infra.withDockerCredentials {
+                sh "img push ${config.registry}${imageName}:master"
+                sh "img push ${config.registry}${imageName}:${GIT_COMMIT}"
+                sh "img push ${config.registry}${imageName}"
+              }
+              if (currentBuild.description) {
+                currentBuild.description = currentBuild.description + " / "
+              }
+              currentBuild.description = "master / ${GIT_COMMIT}"
+            }
+          }
+        }
+      }
+      stage("Deploy tag as tag") {
+        // semver regex from https://gist.github.com/jhorsman/62eeea161a13b80e39f5249281e17c39
+        when { tag pattern: "^([a-zA-Z0-9_-]+-(\\d+\\.\\d+\\.\\d+)|v(\\d+\\.\\d+\\.\\d+)|(\\d+\\.\\d+\\.\\d+))$", comparator: "REGEXP"}
+        // for now since testing only handles simple string, start with that
+        steps {
+          container('img') {
+            script {
+              sh "img tag ${config.registry}${imageName} ${config.registry}${imageName}:${TAG_NAME}"
+              infra.withDockerCredentials {
+                sh "img push ${config.registry}${imageName}:${TAG_NAME}"
+              }
+              if (currentBuild.description) {
+                currentBuild.description = currentBuild.description + " / "
+              }
+              currentBuild.description = "${TAG_NAME}"
+            }
+          }
+        }
+      }
+    }
+  }
+}
