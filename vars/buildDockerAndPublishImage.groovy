@@ -54,16 +54,16 @@ spec:
             - highmemlinux
   restartPolicy: "Never"
   containers:
-		- name: img
-			image: r.j3ss.co/img
-			command:
-			- cat
-			tty: true
-		- name: hadolint
-			image: hadolint/hadolint
-			command:
-			- cat
-			tty: true
+    - name: img
+      image: r.j3ss.co/img
+      command:
+      - cat
+      tty: true
+    - name: hadolint
+      image: hadolint/hadolint
+      command:
+      - cat
+      tty: true
         """
       }
     }
@@ -78,12 +78,12 @@ spec:
     stages {
       stage("Lint") {
         steps {
-					container('hadolint') {
-						script {
-							writeFile(file: 'hadolint.json', text: sh(returnStdout: true, script: "/bin/hadolint --format json ${config.dockerfile} || true").trim())
-							recordIssues(tools: [hadoLint(pattern: 'hadolint.json')])
-						}
-					}
+          container('hadolint') {
+            script {
+              writeFile(file: 'hadolint.json', text: sh(returnStdout: true, script: "/bin/hadolint --format json ${config.dockerfile} || true").trim())
+              recordIssues(tools: [hadoLint(pattern: 'hadolint.json')])
+            }
+          }
         }
       }
       stage("Build") {
