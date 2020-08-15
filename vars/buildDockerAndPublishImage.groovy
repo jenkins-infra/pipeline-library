@@ -88,29 +88,29 @@ spec:
       }
       stage("Build") {
         steps {
-					container('img') {
-						script {
-							GIT_COMMIT_REV = sh(returnStdout: true, script: "git log -n 1 --pretty=format:'%h'").trim()
-							GIT_SCM_URL = sh(returnStdout: true, script: "git remote show origin | grep 'Fetch URL' | awk '{print \$3}'").trim()
-							SCM_URI = GIT_SCM_URL.replace("git@github.com:", "https://github.com/")
-							BUILD_DATE = sh(returnStdout: true, script: "TZ=UTC date --rfc-3339=seconds | sed 's/ /T/'").trim()
-							sh """
-								img build \
-									-t ${config.registry}${imageName} \
-									--build-arg "GIT_COMMIT_REV=${GIT_COMMIT_REV}" \
-									--build-arg "GIT_SCM_URL=${GIT_SCM_URL}" \
-									--build-arg "BUILD_DATE=${BUILD_DATE}" \
-									--label "org.opencontainers.image.source=${GIT_SCM_URL}" \
-									--label "org.label-schema.vcs-url=${GIT_SCM_URL}" \
-									--label "org.opencontainers.image.url==${SCM_URI}" \
-									--label "org.label-schema.url=${SCM_URI}" \
-									--label "org.opencontainers.image.revision=${GIT_COMMIT_REV}" \
-									--label "org.label-schema.vcs-ref=${GIT_COMMIT_REV}" \
-									--label "org.opencontainers.created=${BUILD_DATE}" \
-									--label "org.label-schema.build-date=${BUILD_DATE}" \
-									-f ${config.dockerfile} \
-									.
-							"""
+          container('img') {
+            script {
+              GIT_COMMIT_REV = sh(returnStdout: true, script: "git log -n 1 --pretty=format:'%h'").trim()
+              GIT_SCM_URL = sh(returnStdout: true, script: "git remote show origin | grep 'Fetch URL' | awk '{print \$3}'").trim()
+              SCM_URI = GIT_SCM_URL.replace("git@github.com:", "https://github.com/")
+              BUILD_DATE = sh(returnStdout: true, script: "TZ=UTC date --rfc-3339=seconds | sed 's/ /T/'").trim()
+              sh """
+                  img build \
+                      -t ${config.registry}${imageName} \
+                      --build-arg "GIT_COMMIT_REV=${GIT_COMMIT_REV}" \
+                      --build-arg "GIT_SCM_URL=${GIT_SCM_URL}" \
+                      --build-arg "BUILD_DATE=${BUILD_DATE}" \
+                      --label "org.opencontainers.image.source=${GIT_SCM_URL}" \
+                      --label "org.label-schema.vcs-url=${GIT_SCM_URL}" \
+                      --label "org.opencontainers.image.url==${SCM_URI}" \
+                      --label "org.label-schema.url=${SCM_URI}" \
+                      --label "org.opencontainers.image.revision=${GIT_COMMIT_REV}" \
+                      --label "org.label-schema.vcs-ref=${GIT_COMMIT_REV}" \
+                      --label "org.opencontainers.created=${BUILD_DATE}" \
+                      --label "org.label-schema.build-date=${BUILD_DATE}" \
+                      -f ${config.dockerfile} \
+                      .
+              """
             }
           }
         }
@@ -137,7 +137,7 @@ spec:
       }
       stage("Deploy tag as tag") {
         // semver regex from https://gist.github.com/jhorsman/62eeea161a13b80e39f5249281e17c39
-        when { tag pattern: "^([a-zA-Z0-9_-]+-(\\d+\\.\\d+\\.\\d+)|v(\\d+\\.\\d+\\.\\d+)|(\\d+\\.\\d+\\.\\d+))$", comparator: "REGEXP"}
+        when { tag pattern: '^([a-zA-Z0-9_-]+-(\\d+\\.\\d+\\.\\d+)|v(\\d+\\.\\d+\\.\\d+)|(\\d+\\.\\d+\\.\\d+))$', comparator: "REGEXP" }
         // for now since testing only handles simple string, start with that
         steps {
           container('img') {
