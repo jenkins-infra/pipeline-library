@@ -11,6 +11,10 @@ def call(String imageName, Map config=[:]) {
     config.dockerfile = "Dockerfile"
   }
 
+  if (!config.credentials) {
+    config.credentails = "jenkins-dockerhub"
+  }
+
   pipeline {
     agent {
       kubernetes {
@@ -117,16 +121,19 @@ spec:
       }
       stage("Deploy master as latest") {
         when { branch "master" }
+        environment {
+          DOCKER = credentials("${config.credentials}")
+        }
         steps {
           container('img') {
             script {
               sh "img tag ${config.registry}${imageName} ${config.registry}${imageName}:master"
               sh "img tag ${config.registry}${imageName} ${config.registry}${imageName}:${GIT_COMMIT}"
-              infra.withDockerCredentials {
-                sh "img push ${config.registry}${imageName}:master"
-                sh "img push ${config.registry}${imageName}:${GIT_COMMIT}"
-                sh "img push ${config.registry}${imageName}"
-              }
+              sh "echo $DOCKER_PSW | img login -u $DOCKER_USR --password-stdin"
+              sh "img push ${config.registry}${imageName}:master"
+              sh "img push ${config.registry}${imageName}:${GIT_COMMIT}"
+              sh "img push ${config.registry}${imageName}"
+              sh "img logout"
               if (currentBuild.description) {
                 currentBuild.description = currentBuild.description + " / "
               }
@@ -139,13 +146,16 @@ spec:
         // semver regex from https://gist.github.com/jhorsman/62eeea161a13b80e39f5249281e17c39
         when { tag pattern: '^([a-zA-Z0-9_-]+-(\\d+\\.\\d+\\.\\d+)|v(\\d+\\.\\d+\\.\\d+)|(\\d+\\.\\d+\\.\\d+))$', comparator: "REGEXP" }
         // for now since testing only handles simple string, start with that
+        environment {
+          DOCKER = credentials("${config.credentials}")
+        }
         steps {
           container('img') {
             script {
               sh "img tag ${config.registry}${imageName} ${config.registry}${imageName}:${TAG_NAME}"
-              infra.withDockerCredentials {
-                sh "img push ${config.registry}${imageName}:${TAG_NAME}"
-              }
+              sh "echo $DOCKER_PSW | img login -u $DOCKER_USR --password-stdin"
+              sh "img push ${config.registry}${imageName}:${TAG_NAME}"
+              sh "img logout"
               if (currentBuild.description) {
                 currentBuild.description = currentBuild.description + " / "
               }
