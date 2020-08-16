@@ -14,10 +14,6 @@ def call(String imageName, Map config=[:]) {
     config.dockerfile = "Dockerfile"
   }
 
-  if (!config.credentials) {
-    config.credentails = "jenkins-dockerhub"
-  }
-
   pipeline {
     agent {
       kubernetes {
@@ -133,7 +129,7 @@ spec:
       stage("Deploy master as latest") {
         when { branch "master" }
         environment {
-          DOCKER = credentials("${config.credentials}")
+          DOCKER = credentials("jenkins-dockerhub")
         }
         steps {
           container('img') {
@@ -156,7 +152,7 @@ spec:
       stage("Deploy tag as tag") {
         when { buildingTag() }
         environment {
-          DOCKER = credentials("${config.credentials}")
+          DOCKER = credentials("jenkins-dockerhub")
         }
         steps {
           container('img') {
