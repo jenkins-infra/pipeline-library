@@ -143,9 +143,7 @@ spec:
         }
       }
       stage("Deploy tag as tag") {
-        // semver regex from https://gist.github.com/jhorsman/62eeea161a13b80e39f5249281e17c39
-        when { tag pattern: '^([a-zA-Z0-9_-]+-(\\d+\\.\\d+\\.\\d+)|v(\\d+\\.\\d+\\.\\d+)|(\\d+\\.\\d+\\.\\d+))$', comparator: "REGEXP" }
-        // for now since testing only handles simple string, start with that
+        when { buildingTag() }
         environment {
           DOCKER = credentials("${config.credentials}")
         }
