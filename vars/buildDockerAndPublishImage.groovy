@@ -102,9 +102,9 @@ spec:
           container('img') {
             script {
               sh """
-                  GIT_COMMIT_REV = \$(git log -n 1 --pretty=format:'%h')
-                  GIT_SCM_URL = \$(git remote show origin | grep 'Fetch URL' | awk '{print \$3}')
-                  SCM_URI = \$(echo \$GIT_SCM_URL | awk '{print gensub("git@github.com:","https://github.com/",\$3)}')
+                  export GIT_COMMIT_REV=\$(git log -n 1 --pretty=format:'%h')
+                  export GIT_SCM_URL=\$(git remote show origin | grep 'Fetch URL' | awk '{print \$3}')
+                  export SCM_URI=\$(echo \$GIT_SCM_URL | awk '{print gensub("git@github.com:","https://github.com/",\$3)}')
 
                   img build \
                       -t ${config.registry}${imageName} \
