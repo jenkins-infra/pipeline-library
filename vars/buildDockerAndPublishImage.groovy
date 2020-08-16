@@ -108,21 +108,21 @@ spec:
 
                   img build \
                       -t ${config.registry}${imageName} \
-                      --build-arg "GIT_COMMIT_REV=${GIT_COMMIT_REV}" \
-                      --build-arg "GIT_SCM_URL=${GIT_SCM_URL}" \
-                      --build-arg "BUILD_DATE=${BUILD_DATE}" \
-                      --label "org.opencontainers.image.source=${GIT_SCM_URL}" \
-                      --label "org.label-schema.vcs-url=${GIT_SCM_URL}" \
-                      --label "org.opencontainers.image.url=${SCM_URI}" \
-                      --label "org.label-schema.url=${SCM_URI}" \
-                      --label "org.opencontainers.image.revision=${GIT_COMMIT_REV}" \
-                      --label "org.label-schema.vcs-ref=${GIT_COMMIT_REV}" \
-                      --label "org.opencontainers.image.created=${BUILD_DATE}" \
-                      --label "org.label-schema.build-date=${BUILD_DATE}" \
+                      --build-arg "GIT_COMMIT_REV=\${GIT_COMMIT_REV}" \
+                      --build-arg "GIT_SCM_URL=\${GIT_SCM_URL}" \
+                      --build-arg "BUILD_DATE=\${BUILD_DATE}" \
+                      --label "org.opencontainers.image.source=\${GIT_SCM_URL}" \
+                      --label "org.label-schema.vcs-url=\${GIT_SCM_URL}" \
+                      --label "org.opencontainers.image.url=\${SCM_URI}" \
+                      --label "org.label-schema.url=\${SCM_URI}" \
+                      --label "org.opencontainers.image.revision=\${GIT_COMMIT_REV}" \
+                      --label "org.label-schema.vcs-ref=\${GIT_COMMIT_REV}" \
+                      --label "org.opencontainers.image.created=\${BUILD_DATE}" \
+                      --label "org.label-schema.build-date=\${BUILD_DATE}" \
                       -f ${config.dockerfile} \
                       .
 
-                  RETVAL=$?
+                  RETVAL=\$?
                   echo \$RETVAL
                   exit \$RETVAL
               """
