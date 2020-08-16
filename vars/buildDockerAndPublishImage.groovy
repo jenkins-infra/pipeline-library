@@ -1,3 +1,6 @@
+import java.text.SimpleDateFormat;  
+import java.util.Date;
+
 def call(String imageName, Map config=[:]) {
   if (!config.registry) {
     if (infra.isTrusted() || infra.isInfra()) {
@@ -97,7 +100,7 @@ spec:
               GIT_COMMIT_REV = sh(returnStdout: true, script: "git log -n 1 --pretty=format:'%h'").trim()
               GIT_SCM_URL = sh(returnStdout: true, script: "git remote show origin | grep 'Fetch URL' | awk '{print \$3}'").trim()
               SCM_URI = GIT_SCM_URL.replace("git@github.com:", "https://github.com/")
-              BUILD_DATE = sh(returnStdout: true, script: "TZ=UTC date --rfc-3339=seconds | sed 's/ /T/'").trim()
+              BUILD_DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(new Date())
               sh """
                   img build \
                       -t ${config.registry}${imageName} \
@@ -106,11 +109,11 @@ spec:
                       --build-arg "BUILD_DATE=${BUILD_DATE}" \
                       --label "org.opencontainers.image.source=${GIT_SCM_URL}" \
                       --label "org.label-schema.vcs-url=${GIT_SCM_URL}" \
-                      --label "org.opencontainers.image.url==${SCM_URI}" \
+                      --label "org.opencontainers.image.url=${SCM_URI}" \
                       --label "org.label-schema.url=${SCM_URI}" \
                       --label "org.opencontainers.image.revision=${GIT_COMMIT_REV}" \
                       --label "org.label-schema.vcs-ref=${GIT_COMMIT_REV}" \
-                      --label "org.opencontainers.created=${BUILD_DATE}" \
+                      --label "org.opencontainers.image.created=${BUILD_DATE}" \
                       --label "org.label-schema.build-date=${BUILD_DATE}" \
                       -f ${config.dockerfile} \
                       .
