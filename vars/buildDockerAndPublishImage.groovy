@@ -136,7 +136,7 @@ spec:
             script {
               sh "img tag ${config.registry}${imageName} ${config.registry}${imageName}:master"
               sh "img tag ${config.registry}${imageName} ${config.registry}${imageName}:${GIT_COMMIT}"
-              sh "echo $DOCKER_PSW | img login -u $DOCKER_USR --password-stdin"
+              sh 'echo $DOCKER_PSW | img login -u $DOCKER_USR --password-stdin'
               sh "img push ${config.registry}${imageName}:master"
               sh "img push ${config.registry}${imageName}:${GIT_COMMIT}"
               sh "img push ${config.registry}${imageName}"
@@ -158,7 +158,7 @@ spec:
           container('img') {
             script {
               sh "img tag ${config.registry}${imageName} ${config.registry}${imageName}:${TAG_NAME}"
-              sh "echo $DOCKER_PSW | img login -u $DOCKER_USR --password-stdin"
+              sh 'echo $DOCKER_PSW | img login -u $DOCKER_USR --password-stdin'
               sh "img push ${config.registry}${imageName}:${TAG_NAME}"
               sh "img logout"
               if (currentBuild.description) {
