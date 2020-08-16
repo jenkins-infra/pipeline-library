@@ -75,6 +75,10 @@ spec:
       }
     }
 
+    environment {
+      BUILD_DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(new Date())
+    }
+
     options {
       disableConcurrentBuilds()
       buildDiscarder(logRotator(numToKeepStr: '5', artifactNumToKeepStr: '5'))
@@ -97,11 +101,11 @@ spec:
         steps {
           container('img') {
             script {
-              GIT_COMMIT_REV = sh(returnStdout: true, script: "git log -n 1 --pretty=format:'%h'").trim()
-              GIT_SCM_URL = sh(returnStdout: true, script: "git remote show origin | grep 'Fetch URL' | awk '{print \$3}'").trim()
-              SCM_URI = GIT_SCM_URL.replace("git@github.com:", "https://github.com/")
-              BUILD_DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(new Date())
               sh """
+                  GIT_COMMIT_REV = $(git log -n 1 --pretty=format:'%h')
+                  GIT_SCM_URL = $(git remote show origin | grep 'Fetch URL' | awk '{print \$3}')
+                  SCM_URI = $(echo \$GIT_SCM_URL | awk '{print gensub("git@github.com:","https://github.com/",\$3)}')
+
                   img build \
                       -t ${config.registry}${imageName} \
                       --build-arg "GIT_COMMIT_REV=${GIT_COMMIT_REV}" \
@@ -117,6 +121,10 @@ spec:
                       --label "org.label-schema.build-date=${BUILD_DATE}" \
                       -f ${config.dockerfile} \
                       .
+
+                  RETVAL=$?
+                  echo \$RETVAL
+                  exit \$RETVAL
               """
             }
           }
