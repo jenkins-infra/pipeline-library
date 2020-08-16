@@ -18,7 +18,7 @@ def call(String imageName, Map config=[:]) {
   pipeline {
     agent {
       kubernetes {
-        label 'helmfile'
+        label 'build-publish-docker'
         inheritFrom 'jnlp-linux'
         yaml """
 apiVersion: "v1"
