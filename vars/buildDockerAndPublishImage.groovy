@@ -120,7 +120,7 @@ spec:
                     --label "org.label-schema.vcs-ref=$GIT_COMMIT_REV" \
                     --label "org.opencontainers.image.created=$BUILD_DATE" \
                     --label "org.label-schema.build-date=$BUILD_DATE" \
-                    -f DOCKERFILE \
+                    -f $DOCKERFILE \
                     .
             '''
           }
