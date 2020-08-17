@@ -23,7 +23,7 @@ def call(String imageName, Map config=[:]) {
       kubernetes {
         label 'build-publish-docker'
         inheritFrom 'jnlp-linux'
-        yaml """
+        yaml '''
 apiVersion: "v1"
 kind: "Pod"
 metadata:
@@ -71,12 +71,14 @@ spec:
       command:
       - cat
       tty: true
-        """
+        '''
       }
     }
 
     environment {
       BUILD_DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(new Date())
+      IMAGE_NAME = "${config.registry}${imageName}"
+      DOCKERFILE = "${config.dockerfile}"
     }
 
     options {
@@ -91,7 +93,7 @@ spec:
         steps {
           container('hadolint') {
             script {
-              writeFile(file: 'hadolint.json', text: sh(returnStdout: true, script: "/bin/hadolint --format json ${config.dockerfile} || true").trim())
+              writeFile(file: 'hadolint.json', text: sh(returnStdout: true, script: '/bin/hadolint --format json $DOCKERFILE || true').trim())
               recordIssues(tools: [hadoLint(pattern: 'hadolint.json')])
             }
           }
@@ -100,33 +102,27 @@ spec:
       stage("Build") {
         steps {
           container('img') {
-            script {
-              sh """
-                  export GIT_COMMIT_REV=\$(git log -n 1 --pretty=format:'%h')
-                  export GIT_SCM_URL=\$(git remote show origin | grep 'Fetch URL' | awk '{print \$3}')
-                  export SCM_URI=\$(echo \$GIT_SCM_URL | awk '{print gensub("git@github.com:","https://github.com/",\$3)}')
+            sh '''
+                export GIT_COMMIT_REV=$(git log -n 1 --pretty=format:'%h')
+                export GIT_SCM_URL=$(git remote show origin | grep 'Fetch URL' | awk '{print $3}')
+                export SCM_URI=$(echo $GIT_SCM_URL | awk '{print gensub("git@github.com:","https://github.com/",$3)}')
 
-                  img build \
-                      -t ${config.registry}${imageName} \
-                      --build-arg "GIT_COMMIT_REV=\$GIT_COMMIT_REV" \
-                      --build-arg "GIT_SCM_URL=\$GIT_SCM_URL" \
-                      --build-arg "BUILD_DATE=\$BUILD_DATE" \
-                      --label "org.opencontainers.image.source=\$GIT_SCM_URL" \
-                      --label "org.label-schema.vcs-url=\$GIT_SCM_URL" \
-                      --label "org.opencontainers.image.url=\$SCM_URI" \
-                      --label "org.label-schema.url=\$SCM_URI" \
-                      --label "org.opencontainers.image.revision=\$GIT_COMMIT_REV" \
-                      --label "org.label-schema.vcs-ref=\$GIT_COMMIT_REV" \
-                      --label "org.opencontainers.image.created=\$BUILD_DATE" \
-                      --label "org.label-schema.build-date=\$BUILD_DATE" \
-                      -f ${config.dockerfile} \
-                      .
-
-                  RETVAL=\$?
-                  echo \$RETVAL
-                  exit \$RETVAL
-              """
-            }
+                img build \
+                    -t $IMAGE_NAME \
+                    --build-arg "GIT_COMMIT_REV=$GIT_COMMIT_REV" \
+                    --build-arg "GIT_SCM_URL=$GIT_SCM_URL" \
+                    --build-arg "BUILD_DATE=$BUILD_DATE" \
+                    --label "org.opencontainers.image.source=$GIT_SCM_URL" \
+                    --label "org.label-schema.vcs-url=$GIT_SCM_URL" \
+                    --label "org.opencontainers.image.url=$SCM_URI" \
+                    --label "org.label-schema.url=$SCM_URI" \
+                    --label "org.opencontainers.image.revision=$GIT_COMMIT_REV" \
+                    --label "org.label-schema.vcs-ref=$GIT_COMMIT_REV" \
+                    --label "org.opencontainers.image.created=$BUILD_DATE" \
+                    --label "org.label-schema.build-date=$BUILD_DATE" \
+                    -f DOCKERFILE \
+                    .
+            '''
           }
         }
       }
