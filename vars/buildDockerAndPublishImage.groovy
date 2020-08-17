@@ -15,7 +15,7 @@ def call(String imageName, Map config=[:]) {
   }
 
   if (!config.credentials) {
-    config.credentails = "jenkins-dockerhub"
+    config.credentials = "jenkins-dockerhub"
   }
 
   pipeline {
@@ -23,7 +23,7 @@ def call(String imageName, Map config=[:]) {
       kubernetes {
         label 'build-publish-docker'
         inheritFrom 'jnlp-linux'
-        yaml """
+        yaml '''
 apiVersion: "v1"
 kind: "Pod"
 metadata:
@@ -71,8 +71,14 @@ spec:
       command:
       - cat
       tty: true
-        """
+        '''
       }
+    }
+
+    environment {
+      BUILD_DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(new Date())
+      IMAGE_NAME = "${config.registry}${imageName}"
+      DOCKERFILE = "${config.dockerfile}"
     }
 
     options {
@@ -87,7 +93,7 @@ spec:
         steps {
           container('hadolint') {
             script {
-              writeFile(file: 'hadolint.json', text: sh(returnStdout: true, script: "/bin/hadolint --format json ${config.dockerfile} || true").trim())
+              writeFile(file: 'hadolint.json', text: sh(returnStdout: true, script: '/bin/hadolint --format json $DOCKERFILE || true').trim())
               recordIssues(tools: [hadoLint(pattern: 'hadolint.json')])
             }
           }
@@ -96,43 +102,40 @@ spec:
       stage("Build") {
         steps {
           container('img') {
-            script {
-              GIT_COMMIT_REV = sh(returnStdout: true, script: "git log -n 1 --pretty=format:'%h'").trim()
-              GIT_SCM_URL = sh(returnStdout: true, script: "git remote show origin | grep 'Fetch URL' | awk '{print \$3}'").trim()
-              SCM_URI = GIT_SCM_URL.replace("git@github.com:", "https://github.com/")
-              BUILD_DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(new Date())
-              sh """
-                  img build \
-                      -t ${config.registry}${imageName} \
-                      --build-arg "GIT_COMMIT_REV=${GIT_COMMIT_REV}" \
-                      --build-arg "GIT_SCM_URL=${GIT_SCM_URL}" \
-                      --build-arg "BUILD_DATE=${BUILD_DATE}" \
-                      --label "org.opencontainers.image.source=${GIT_SCM_URL}" \
-                      --label "org.label-schema.vcs-url=${GIT_SCM_URL}" \
-                      --label "org.opencontainers.image.url=${SCM_URI}" \
-                      --label "org.label-schema.url=${SCM_URI}" \
-                      --label "org.opencontainers.image.revision=${GIT_COMMIT_REV}" \
-                      --label "org.label-schema.vcs-ref=${GIT_COMMIT_REV}" \
-                      --label "org.opencontainers.image.created=${BUILD_DATE}" \
-                      --label "org.label-schema.build-date=${BUILD_DATE}" \
-                      -f ${config.dockerfile} \
-                      .
-              """
-            }
+            sh '''
+                export GIT_COMMIT_REV=$(git log -n 1 --pretty=format:'%h')
+                export GIT_SCM_URL=$(git remote show origin | grep 'Fetch URL' | awk '{print $3}')
+                export SCM_URI=$(echo $GIT_SCM_URL | awk '{print gensub("git@github.com:","https://github.com/",$3)}')
+
+                img build \
+                    -t $IMAGE_NAME \
+                    --build-arg "GIT_COMMIT_REV=$GIT_COMMIT_REV" \
+                    --build-arg "GIT_SCM_URL=$GIT_SCM_URL" \
+                    --build-arg "BUILD_DATE=$BUILD_DATE" \
+                    --label "org.opencontainers.image.source=$GIT_SCM_URL" \
+                    --label "org.label-schema.vcs-url=$GIT_SCM_URL" \
+                    --label "org.opencontainers.image.url=$SCM_URI" \
+                    --label "org.label-schema.url=$SCM_URI" \
+                    --label "org.opencontainers.image.revision=$GIT_COMMIT_REV" \
+                    --label "org.label-schema.vcs-ref=$GIT_COMMIT_REV" \
+                    --label "org.opencontainers.image.created=$BUILD_DATE" \
+                    --label "org.label-schema.build-date=$BUILD_DATE" \
+                    -f $DOCKERFILE \
+                    .
+            '''
           }
         }
       }
       stage("Deploy master as latest") {
         when { branch "master" }
-        environment {
-          DOCKER = credentials("${config.credentials}")
-        }
         steps {
           container('img') {
             script {
               sh "img tag ${config.registry}${imageName} ${config.registry}${imageName}:master"
               sh "img tag ${config.registry}${imageName} ${config.registry}${imageName}:${GIT_COMMIT}"
-              sh "echo $DOCKER_PSW | img login -u $DOCKER_USR --password-stdin"
+              withCredentials([usernamePassword(credentialsId: config.credentials, usernameVariable: 'DOCKER_USR', passwordVariable: 'DOCKER_PSW')]) {
+                sh "echo $DOCKER_PSW | img login -u $DOCKER_USR --password-stdin"
+              }
               sh "img push ${config.registry}${imageName}:master"
               sh "img push ${config.registry}${imageName}:${GIT_COMMIT}"
               sh "img push ${config.registry}${imageName}"
@@ -147,14 +150,13 @@ spec:
       }
       stage("Deploy tag as tag") {
         when { buildingTag() }
-        environment {
-          DOCKER = credentials("${config.credentials}")
-        }
         steps {
           container('img') {
             script {
               sh "img tag ${config.registry}${imageName} ${config.registry}${imageName}:${TAG_NAME}"
-              sh "echo $DOCKER_PSW | img login -u $DOCKER_USR --password-stdin"
+              withCredentials([usernamePassword(credentialsId: config.credentials, usernameVariable: 'DOCKER_USR', passwordVariable: 'DOCKER_PSW')]) {
+                sh "echo $DOCKER_PSW | img login -u $DOCKER_USR --password-stdin"
+              }
               sh "img push ${config.registry}${imageName}:${TAG_NAME}"
               sh "img logout"
               if (currentBuild.description) {
