@@ -32,7 +32,6 @@ def call(Map params = [:]) {
         String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
         boolean first = tasks.size() == 1
         boolean skipTests = params?.tests?.skip
-        boolean enableCoverage = params?.tests?.withCoverage
         boolean addToolEnv = !useAci
 
         if(useAci && (label == 'linux' || label == 'windows')) {
@@ -106,12 +105,11 @@ def call(Map params = [:]) {
                                 }
                                 mavenOptions += "clean install"
                                 try {
-                                    echo "Running maven with options " + mavenOptions
                                     infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
                                 } finally {
                                     if (!skipTests) {
                                         junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
-                                        if (first && enableCoverage) {
+                                        if (first) {
                                             publishCoverage calculateDiffForChangeRequests: true, adapters: [jacocoAdapter('**/target/site/jacoco/jacoco.xml')]
                                         }
                                     }

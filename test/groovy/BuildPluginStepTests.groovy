@@ -9,7 +9,6 @@ import static org.junit.Assert.assertTrue
 
 class BuildPluginStepTests extends BaseTest {
   static final String scriptName = 'vars/buildPlugin.groovy'
-  private static final String COVERAGE_PARAMETERS = '{calculateDiffForChangeRequests=true, adapters=[jacoco]}'
 
   @Override
   @Before
@@ -293,28 +292,10 @@ class BuildPluginStepTests extends BaseTest {
   @Test
   void test_buildPlugin_with_coverage() throws Exception {
     def script = loadScript(scriptName)
-    script.call(tests: [withCoverage: true])
-    printCallStack()
-
-    assertTrue(assertMethodCallContainsPattern('publishCoverage', COVERAGE_PARAMETERS))
-  }
-
-  @Test
-  void test_buildPlugin_with_skip_and_coverage() throws Exception {
-    def script = loadScript(scriptName)
-    script.call(tests: [skip: true, withCoverage: true])
-    printCallStack()
-
-    assertFalse(assertMethodCallContainsPattern('publishCoverage', COVERAGE_PARAMETERS))
-  }
-
-  @Test
-  void test_buildPlugin_default_no_coverage() throws Exception {
-    def script = loadScript(scriptName)
     script.call()
     printCallStack()
 
-    assertFalse(assertMethodCallContainsPattern('publishCoverage', COVERAGE_PARAMETERS))
+    assertTrue(assertMethodCallContainsPattern('publishCoverage', '{calculateDiffForChangeRequests=true, adapters=[jacoco]}'))
   }
 
   @Test
