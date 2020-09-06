@@ -271,11 +271,11 @@ void maybePublishIncrementals() {
                 withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
                     if (isUnix()) {
                         sh '''
-curl --retry 10 --retry-delay 10 -i -H 'Content-Type: application/json' -d '{"build_url":"'$BUILD_URL'"}' "https://jenkins-community-functions.azurewebsites.net/api/incrementals-publisher?clientId=default&code=$FUNCTION_TOKEN" || echo 'Problem calling Incrementals deployment function'
+curl --retry 10 --retry-delay 10 -i -H "Authorization: Bearer $FUNCTION_TOKEN" -H 'Content-Type: application/json' -d '{"build_url":"'$BUILD_URL'"}' "https://incrementals.jenkins.io/" || echo 'Problem calling Incrementals deployment function'
                         '''
                     } else {
                         bat '''
-curl.exe --retry 10 --retry-delay 10 -i -H "Content-Type: application/json" -d "{""build_url"":""%BUILD_URL%""}" "https://jenkins-community-functions.azurewebsites.net/api/incrementals-publisher?clientId=default&code=%FUNCTION_TOKEN%" || echo Problem calling Incrementals deployment function
+curl.exe --retry 10 --retry-delay 10 -i -H "Authorization: Bearer %FUNCTION_TOKEN%" -H "Content-Type: application/json" -d "{""build_url"":""%BUILD_URL%""}" "https://incrementals.jenkins.io/" || echo Problem calling Incrementals deployment function
                         '''
                     }
                 }
