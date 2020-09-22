@@ -1,6 +1,4 @@
-#!/usr/bin/env groovy
-import org.codehaus.groovy.runtime.DefaultGroovyMethods
-
+#!/usr/bin/env groovy 
 //TODO(oleg_nenashev): This thing is not simple anymore. I suggest reworking it to a config YAML
 // which would be compatible with essentials.yml (INFRA-1673)
 /**
@@ -111,6 +109,9 @@ def call(Map params = [:]) {
                                 } finally {
                                     if (!skipTests) {
                                         junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
+                                        if (first) {
+                                            publishCoverage calculateDiffForChangeRequests: true, adapters: [jacocoAdapter('**/target/site/jacoco/jacoco.xml')]
+                                        }
                                     }
                                 }
                             } else {

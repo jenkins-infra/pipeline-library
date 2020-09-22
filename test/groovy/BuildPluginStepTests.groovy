@@ -290,6 +290,15 @@ class BuildPluginStepTests extends BaseTest {
   }
 
   @Test
+  void test_buildPlugin_with_coverage() throws Exception {
+    def script = loadScript(scriptName)
+    script.call()
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('publishCoverage', '{calculateDiffForChangeRequests=true, adapters=[jacoco]}'))
+  }
+
+  @Test
   void test_buildPlugin_with_configurations_and_incrementals() throws Exception {
     def script = loadScript(scriptName)
     // when running with incrementals

@@ -59,7 +59,8 @@ and hence your CI may break if the new recommended configuration is not compatib
 buildPlugin(/*...*/, configurations: buildPlugin.recommendedConfigurations())
 ----
 
-* `tests`: (default: `null`) - a map of parameters to run tests during the build
+* `tests`: (default: `null`) - a map of parameters to run tests during the build. The test results and the JaCoCo code
+coverage results are recorded after the build with the corresponding Jenkins plugins.
 ** `skip` - If `true`, skip all the tests by setting the `-skipTests` profile.
   It will also skip FindBugs in modern Plugin POMs.
 * `spotbugs`, `checkstyle`, `pmd`, `cpd`: (default: `null`) - a map of parameters to archive SpotBugs, CheckStyle, PMD, or CPD warnings, respectively (only available for Maven projects).
