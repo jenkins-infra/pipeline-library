@@ -26,7 +26,7 @@ def call(Map params = [:]) {
             if (configData.ath != null && !configData.ath.disabled) {
                 stage("Run ATH") {
                     dir("ath") {
-                        runATH jenkins: customWarURI, metadataFile: metadataPath, javaOptions: ["-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn", testPluginResolution]
+                        runATH jenkins: customWarURI, metadataFile: metadataPath, javaOptions: [testPluginResolution]
                     }
                 }
             }

@@ -32,14 +32,5 @@
                 </pluginRepository>
             </pluginRepositories>
         </profile>
-        <profile>
-            <id>silent-artifact-download</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <org.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener>warn</org.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener>
-            </properties>
-        </profile>
     </profiles>
 </settings>

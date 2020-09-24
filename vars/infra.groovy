@@ -79,7 +79,7 @@ Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = nu
         '--batch-mode',
         '--show-version',
         '--errors',
-        '-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn',
+        '--no-transfer-progress',
     ]
     if (settingsFile != null) {
         mvnOptions += "-s $settingsFile"

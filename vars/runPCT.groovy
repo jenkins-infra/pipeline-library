@@ -10,7 +10,7 @@ def call(Map params = [:]) {
     def metadataFile = params.get('metadataFile', 'essentials.yml')
     def jenkins = params.get('jenkins', 'latest')
     def pctExtraOptions = params.get('pctExtraOptions', [])
-    def javaOptions = params.get('javaOptions', ["-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"])
+    def javaOptions = params.get('javaOptions', [])
     def dockerOptions = params.get('dockerOptions', [])
     def jdkVersion = params.get('jdkVersion', '8')
 
