@@ -26,7 +26,7 @@ def call(Map params = [:]) {
             if (configData.ath != null && !configData.ath.disabled) {
                 stage("Run ATH") {
                     dir("ath") {
-                        runATH jenkins: customWarURI, metadataFile: metadataPath, javaOptions: [testPluginResolution]
+                        runATH jenkins: customWarURI, metadataFile: metadataPath, javaOptions: ['--no-transfer-progress', testPluginResolution]
                     }
                 }
             }

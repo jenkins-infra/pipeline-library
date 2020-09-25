@@ -10,7 +10,7 @@ def call(Map params = [:]) {
     def metadataFile = params.get('metadataFile', 'essentials.yml')
     def jenkins = params.get('jenkins', 'latest')
     def pctExtraOptions = params.get('pctExtraOptions', [])
-    def javaOptions = params.get('javaOptions', [])
+    def javaOptions = params.get('javaOptions', ['--no-transfer-progress'])
     def dockerOptions = params.get('dockerOptions', [])
     def jdkVersion = params.get('jdkVersion', '8')
 
@@ -157,4 +157,3 @@ def call(Map params = [:]) {
 
     })
 }
-
