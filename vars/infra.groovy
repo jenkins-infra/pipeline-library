@@ -1,11 +1,15 @@
 #!/usr/bin/env groovy
 
 Boolean isRunningOnJenkinsInfra() {
-    return env.JENKINS_URL == 'https://ci.jenkins.io/' || isTrusted()
+    return env.JENKINS_URL == 'https://ci.jenkins.io/' || isTrusted() || isInfra()
 }
 
 Boolean isTrusted() {
     return env.JENKINS_URL == 'https://trusted.ci.jenkins.io:1443/'
+}
+
+Boolean isInfra() {
+    return env.JENKINS_URL == 'https://infra.ci.jenkins.io/'
 }
 
 Object withDockerCredentials(Closure body) {
@@ -21,6 +25,10 @@ Object withDockerCredentials(Closure body) {
 }
 
 Object checkout(String repo = null) {
+    checkoutSCM(repo);
+}
+
+Object checkoutSCM(String repo = null) {
     if (env.BRANCH_NAME) {
         checkout scm
     } else if ((env.BRANCH_NAME == null) && (repo)) {
@@ -263,11 +271,11 @@ void maybePublishIncrementals() {
                 withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
                     if (isUnix()) {
                         sh '''
-curl -i -H 'Content-Type: application/json' -d '{"build_url":"'$BUILD_URL'"}' "https://jenkins-community-functions.azurewebsites.net/api/incrementals-publisher?clientId=default&code=$FUNCTION_TOKEN" || echo 'Problem calling Incrementals deployment function'
+curl --retry 10 --retry-delay 10 -i -H "Authorization: Bearer $FUNCTION_TOKEN" -H 'Content-Type: application/json' -d '{"build_url":"'$BUILD_URL'"}' "https://incrementals.jenkins.io/" || echo 'Problem calling Incrementals deployment function'
                         '''
                     } else {
                         bat '''
-curl.exe -i -H "Content-Type: application/json" -d "{""build_url"":""%BUILD_URL%""}" "https://jenkins-community-functions.azurewebsites.net/api/incrementals-publisher?clientId=default&code=%FUNCTION_TOKEN%" || echo Problem calling Incrementals deployment function
+curl.exe --retry 10 --retry-delay 10 -i -H "Authorization: Bearer %FUNCTION_TOKEN%" -H "Content-Type: application/json" -d "{""build_url"":""%BUILD_URL%""}" "https://incrementals.jenkins.io/" || echo Problem calling Incrementals deployment function
                         '''
                     }
                 }
