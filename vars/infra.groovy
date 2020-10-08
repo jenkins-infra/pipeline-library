@@ -267,6 +267,7 @@ void prepareToPublishIncrementals() {
 void maybePublishIncrementals() {
     if (isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
         stage('Deploy') {
+          timeout(15) {
             node('maven || linux || windows') {
                 withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
                     if (isUnix()) {
@@ -280,6 +281,7 @@ curl.exe --retry 10 --retry-delay 10 -i -H "Authorization: Bearer %FUNCTION_TOKE
                     }
                 }
             }
+          }
         }
     } else {
         echo 'Skipping deployment to Incrementals'
