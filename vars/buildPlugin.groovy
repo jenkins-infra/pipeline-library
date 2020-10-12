@@ -305,7 +305,7 @@ List<Map<String, String>> getConfigurations(Map params) {
  * Includes testing Java 8 and 11 on the newest LTS.
  */
 static List<Map<String, String>> recommendedConfigurations() {
-    def recentLTS = "2.164.1"
+    def recentLTS = "2.176.4"
     def configurations = [
         // Intentionally test configurations which have detected the most problems
         // Linux - Java 8 with plugin specified minimum Jenkins version
