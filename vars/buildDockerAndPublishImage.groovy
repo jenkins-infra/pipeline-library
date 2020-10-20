@@ -18,6 +18,10 @@ def call(String imageName, Map config=[:]) {
     config.credentials = "jenkins-dockerhub"
   }
 
+  if (!config.mainBranch) {
+    config.mainBranch = "master"
+  }
+
   pipeline {
     agent {
       kubernetes {
@@ -126,24 +130,24 @@ spec:
           }
         }
       }
-      stage("Deploy master as latest") {
-        when { branch "master" }
+      stage("Deploy ${config.mainBranch} as latest") {
+        when { branch "${config.mainBranch}" }
         steps {
           container('img') {
             script {
-              sh "img tag ${config.registry}${imageName} ${config.registry}${imageName}:master"
+              sh "img tag ${config.registry}${imageName} ${config.registry}${imageName}:${config.mainBranch}"
               sh "img tag ${config.registry}${imageName} ${config.registry}${imageName}:${GIT_COMMIT}"
               withCredentials([usernamePassword(credentialsId: config.credentials, usernameVariable: 'DOCKER_USR', passwordVariable: 'DOCKER_PSW')]) {
                 sh "echo $DOCKER_PSW | img login -u $DOCKER_USR --password-stdin"
               }
-              sh "img push ${config.registry}${imageName}:master"
+              sh "img push ${config.registry}${imageName}:${config.mainBranch}"
               sh "img push ${config.registry}${imageName}:${GIT_COMMIT}"
               sh "img push ${config.registry}${imageName}"
               sh "img logout"
               if (currentBuild.description) {
                 currentBuild.description = currentBuild.description + " / "
               }
-              currentBuild.description = "master / ${GIT_COMMIT}"
+              currentBuild.description = "${config.mainBranch} / ${GIT_COMMIT}"
             }
           }
         }
