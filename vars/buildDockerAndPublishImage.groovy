@@ -130,7 +130,7 @@ spec:
           }
         }
       }
-      stage("Deploy ${config.mainBranch} as latest") {
+      stage("Deploy latest") {
         when { branch "${config.mainBranch}" }
         steps {
           container('img') {
