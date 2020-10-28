@@ -16,6 +16,7 @@ class BuildPluginStepTests extends BaseTest {
     super.setUp()
     env.NODE_LABELS = 'docker'
     env.JOB_NAME = 'build/plugin/test'
+    binding.setVariable('BUILD_NUMBER', '1')
   }
 
   @Test
