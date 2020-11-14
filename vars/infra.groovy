@@ -5,11 +5,11 @@ Boolean isRunningOnJenkinsInfra() {
 }
 
 Boolean isTrusted() {
-    return env.JENKINS_URL == 'https://trusted.ci.jenkins.io:1443/'
+    return env.JENKINS_URL.startsWith('https://trusted.ci.jenkins.io')
 }
 
 Boolean isInfra() {
-    return env.JENKINS_URL == 'https://infra.ci.jenkins.io/'
+    return env.JENKINS_URL.startsWith('https://infra.ci.jenkins.io')
 }
 
 Object withDockerCredentials(Closure body) {
