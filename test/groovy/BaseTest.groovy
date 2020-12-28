@@ -15,7 +15,7 @@ class BaseTest extends BasePipelineTest {
   @Override
   void setUp() throws Exception {
     super.setUp()
-    
+
     binding.setVariable('env', env)
     binding.setProperty('scm', new String())
     binding.setProperty('buildPlugin', loadScript('vars/buildPlugin.groovy'))
@@ -36,7 +36,6 @@ class BaseTest extends BasePipelineTest {
       updateBuildStatus('FAILURE')
       throw new Exception(s)
     })
-    helper.registerAllowedMethod('fileExists', [String.class], { s -> s })
     helper.registerAllowedMethod('fingerprint', [String.class], { s -> s })
     helper.registerAllowedMethod('git', [String.class], { 'OK' })
     helper.registerAllowedMethod('hasDockerLabel', [], { true })
@@ -47,7 +46,6 @@ class BaseTest extends BasePipelineTest {
     helper.registerAllowedMethod('parallel', [Map.class, Closure.class], { l, body -> body() })
     helper.registerAllowedMethod('pwd', [], { '/foo' })
     helper.registerAllowedMethod('pwd', [Map.class], { '/bar' })
-    helper.registerAllowedMethod('readFile', [String.class], { s -> s })
     helper.registerAllowedMethod('readYaml', [Map.class], {
       Yaml yaml = new Yaml()
       return yaml.load('')
@@ -78,7 +76,7 @@ class BaseTest extends BasePipelineTest {
     helper.registerAllowedMethod('milestone', [String.class], { true })
     helper.registerAllowedMethod('milestone', [Integer.class], { true }) // actually String but apparently this mock does not handle stock Groovy coercion?
   }
-  
+
   def assertMethodCallContainsPattern(String methodName, String pattern) {
     return helper.callStack.findAll { call ->
       call.methodName == methodName

@@ -1,4 +1,4 @@
-#!/usr/bin/env groovy 
+#!/usr/bin/env groovy
 //TODO(oleg_nenashev): This thing is not simple anymore. I suggest reworking it to a config YAML
 // which would be compatible with essentials.yml (INFRA-1673)
 /**
