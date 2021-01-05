@@ -32,10 +32,10 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <!-- Dependency versions -->
-        <groovy.version>2.4.17</groovy.version>
+        <groovy.version>3.0.7</groovy.version>
         <junit.version>4.13.1</junit.version>
         <jenkins-pipeline-unit.version>1.8</jenkins-pipeline-unit.version>
-        <groovy-eclipse-compiler.version>3.4.0-01</groovy-eclipse-compiler.version>
+        <groovy-eclipse-compiler.version>3.6.0-03</groovy-eclipse-compiler.version>
     </properties>
 
     <dependencies>
@@ -43,6 +43,8 @@
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
             <version>${groovy.version}</version>
+            <!-- Type pom replaces the über "groovy-all.jar", for version 3+ -->
+            <type>pom</type>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -95,7 +97,7 @@
                     <dependency>
                         <groupId>org.codehaus.groovy</groupId>
                         <artifactId>groovy-eclipse-batch</artifactId>
-                        <version>2.5.7-01</version>
+                        <version>3.0.7-02</version>
                     </dependency>
                 </dependencies>
             </plugin>
