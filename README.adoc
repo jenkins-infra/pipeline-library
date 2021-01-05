@@ -126,7 +126,7 @@ buildPluginWithGradle(/*...*/, configurations: buildPlugin.recommendedConfigurat
 
 ==== Limitations
 
-Not all features of `buildPlugin()` for Maven are supported in the gradle flow. 
+Not all features of `buildPlugin()` for Maven are supported in the gradle flow.
 Examples of not supported features:
 
 * Deployment of incremental versions (link:https://github.com/jenkinsci/jep/tree/master/jep/305[JEP-305])
@@ -336,9 +336,9 @@ The PCT revision to use in case that pctUrl points to a github destination, can 
  A String indicating the file path (relative to where this step is executed) to use as metadata file for the build, more details about the metadata file are provided belows. *Defaults to `essentials.yml` at the location where this step is invoked*
 `jenkins`::
  URI to the jenkins.war, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol in the URI. *Can be overriden from the metadata file*
-`pctExtraOptions`:: 
+`pctExtraOptions`::
  List of extra PCT options to be passed to the PCT executable. Defaults to empty list.
-`javaOptions`:: 
+`javaOptions`::
  List of extra Java options to be passed to the PCT executable. Defaults to empty list.
 `dockerOptions`::
  List of extra options to be passed to PCT containers ( e.g. `maven-repo:/root/.m2`)
@@ -420,7 +420,8 @@ Supported parameters:
 (Optional) If `artifacts` is not null, invokes `archiveArtifacts` with the given string value.
 
 
-===== Example
+==== Example
+
 [source, groovy]
 ----
 runBenchmarks('jmh-report.json')
@@ -447,8 +448,7 @@ Name of the docker image to build
 registry: override the smart default of jenkinsciinfra/ or jenkins4eval/
 dockerfile: override the default dockerfile of Dockerfile
 
-
-===== Example
+==== Example
 [source, groovy]
 ----
 buildDockerImage_k8s('plugins-site-api')
@@ -457,3 +457,12 @@ buildDockerImage_k8s('plugins-site-api')
 === Design documents for runATH and runPCT
 
 The design and some more details about the runATH and runPCT steps can be found link:https://wiki.jenkins.io/display/JENKINS/runATH+and+runPCT+step+design[here]
+
+== Contribute
+
+=== Requirements
+
+* (Open)JDK v8
+* Maven 3.6.x
+
+=== 
