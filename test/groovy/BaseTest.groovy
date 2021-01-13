@@ -1,4 +1,4 @@
-import com.lesfurets.jenkins.unit.BasePipelineTest
+import com.lesfurets.jenkins.unit.declarative.*
 import mock.CurrentBuild
 import mock.CustomWARPackager
 import mock.Docker
@@ -9,7 +9,7 @@ import org.yaml.snakeyaml.Yaml
 
 import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
 
-class BaseTest extends BasePipelineTest {
+class BaseTest extends DeclarativePipelineTest {
   Map env = [:]
 
   @Override

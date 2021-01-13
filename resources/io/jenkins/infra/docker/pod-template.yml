@@ -1,0 +1,51 @@
+---
+apiVersion: "v1"
+kind: "Pod"
+metadata:
+  labels:
+    jenkins: "agent"
+  annotations:
+    container.apparmor.security.beta.kubernetes.io/builder: unconfined
+    container.seccomp.security.alpha.kubernetes.io/builder: unconfined
+spec:
+  tolerations:
+  - key: "os"
+    operator: "Equal"
+    value: "linux"
+    effect: "NoSchedule"
+  - key: "profile"
+    operator: "Equal"
+    value: "highmem"
+    effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/os
+            operator: In
+            values:
+            - linux
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: agentpool
+            operator: In
+            values:
+            - highmemlinux
+  restartPolicy: "Never"
+  containers:
+    - name: builder
+      image: jenkinsciinfra/builder:latest
+      command:
+      - cat
+      tty: true
+      resources:
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+...

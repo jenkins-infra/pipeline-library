@@ -1,0 +1,130 @@
+
+= Jenkins Infra's Docker Tooling
+
+This page describes the generic instructions to build and verify the Docker images
+used by the Jenkins Infrastructure project.
+
+By "generic", we mean to have the same process and tooling reused for each image to provide:
+
+- Easier contribution and onboarding
+- Build reproductibility between contributor machines and CI environment
+- Best practises applied, including conventions, security patterns, standarized metadatas and optimized images
+- Try to leverage build security as much as possible
+
+== Quick Start
+
+* Ensure that you have the correct <<Requirements>> installed
+** If you have Docker installed and ready, please look at the section <<Using Docker>> first
+
+* Clone the repository hosting the source code of the Docker Image to build and position your command line inside this repository
++
+[source,bash]
+----
+git clone <URL of the repository docker-something>
+cd ./docker-something/
+----
+
+* Retrieve the `Makefile` located in the same directory as this documentation somewhere on your machine.
+It can be stored in your repository but you should git-ignore it.
+** Example using the `curl` command line:
++
+[source,bash]
+----
+# Download the Makefile. You might need to adapt the URL.
+curl -L "https://raw.githubusercontent.com/jenkins-infra/pipeline-library/master/resources/io/jenkins/infra/docker/Makefile" -O
+# Ensure that Makefile is git-ignored
+grep 'Makefile' .gitignore || echo 'Makefile' | tee -a .gitignore
+----
+
+* Execute the "developer" workflow with the command `make all`
+** Or `CONTAINER_BIN=docker make all` if you have Docker
+** And/or `make -C <Path to the directory containing your Makefile> all`
+
+
+== Requirements
+
+* Command prompt with bash (or zsh/ksh)
+
+* GNU Make 3.81+ command line
+
+* A https://github.com/moby/buildkit[Buildkit] compliant container tool
+** The command line top use is defined by the value of the environment variable `CONTAINER_BIN` which defauls to `img`
+** Our pipelines are using (Jessie Frazelle's) https://github.com/genuinetools/img[`genuinetools/img`] command line in v0.5.11, for security purposes (container in containers)
+** You can use https://docs.docker.com/get-docker/[Docker v20.10+] and its command line instead, by setting `CONTAINER_BIN` to `docker`
+
+* https://github.com/GoogleContainerTools/container-structure-test[Google's Container Structure Test] command line in v1.9.1+
+
+=== Using Docker
+
+* Export the variable once in the current terminal, and then run make commands:
++
+[source,bash]
+---
+export CONTAINER_BIN=docker
+# ...
+make lint
+make build
+# ...
+----
+
+* OR prefix make commands with `CONTAINER_BIN=docker`:
+
+[source,bash]
+---
+CONTAINER_BIN=docker make lint
+CONTAINER_BIN=docker make build
+----
+
+== Workflow Steps
+
+The following steps are available:
+
+* Linting with `make lint` to run a static analyzis to ensure good practises are applied the written code.
+
+* Build the image with `make build` to generate a local TAR archive in `image.tar`
+and store it in the local container tool's index under the name defined by `$IMAGE_NAME` (see <<Customization>>).
+** You might want to authenticated your container tool to the Docker Hub to avoid rate limitation for this step.
+
+* Run a test harness with the command `make test`, on the image stored in `image.tar`.
+
+* Cleanup the image and its generated artefacts with `make clean`.
+
+* Execute the "developer workflow" with `make all`, which executes (in this order) `make clean lint build test`.
+
+* Deploy the image with `make deploy` to tag the current image referenced by `$IMAGE_NAME` as `$IMAGE_DEPLOY_NAME`
+(see <<Customization>>) and then push it to the remote repository implied by `$IMAGE_DEPLOY_NAME`.
+** This steps requires the container tool to be authenticated to the remote registry.
+** This step is NOT part of the standard workflow and should only be executed by the CI/CD system.
+
+== Customization
+
+You can customize the different steps through the following environment variables:
+
+* `IMAGE_NAME` (Defaults to `helloworld`): name of the image built on the local container tool.
+* `IMAGE_DEPLOY_NAME` (Defaults to the same value as `IMAGE_NAME`): final name of the image to be pushed to a remote Docker registry service (ideally after the test harness success to avoid dangling and untested artefacts).
+* `DOCKERFILE` (Defaults to `Dockerfile`): the relative path to the Dockerfile to be built under the current ($(PWD)) context directory.
+* `IMAGE_ARCHIVE` (Defaults to `image.tar`): the path to the TAR archive continaining the docker image.
+* `CONTAINER_BIN` (Defaults to `img`): The container's command line tool to use for building and deploying the image.
+* The "metadata" informations passed as both labels and arguments to the build:
+** `GIT_COMMIT_REV` (Defaults to current commit's SHA): Git reference of the Docker image's code.
+** `GIT_SCM_URL` (Defaults to the URL of the current git's remote named "origin"): URL of the git SCM repository's remote of the Docker image's code.
+** `SCM_URI` (Defaults from `GIT_SCM_URL` value): HTTPS (enforced) URL of `GIT_SCM_URL`.
+** `BUILD_DATE` (Default to "now" when called): UTC timestamp formatted in `%Y-%m-%dT%H:%M:%S` when the command occurs.
+
+You can check the file `Makefile` if you want to get a better deep-dive understanding.
+
+
+== Contributing
+
+* Contributing to this documentation or tooling must follow the contribution rules of this repository (please check link:../../../../../README.adoc#Contributing[])
+
+* Start by writing an issue in the Jenkins Infra's JIRA project located at https://issues.jenkins.io/browse/INFRA[], and take time to describe the problem you want to solve:
+** Why do you need it?
+** Is it an unexpected behavior? Or is it a new behavior you envision?
+** Any contextual information explaining your proposal
+
+* Then you can proceed to a Github's Pull Request "classic" workflow described in their documentation at link:https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/about-pull-requests[]:
+** Fork the repository
+** Add the code (it includes documentation) changes
+** Ensure that the test harnesses are working correctly
+** Open a Pull request referencing the JIRA issue you've created earlier to help reviewers
