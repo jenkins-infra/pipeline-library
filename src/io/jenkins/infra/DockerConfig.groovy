@@ -51,7 +51,7 @@ class DockerConfig implements Serializable {
   // Custom getter to avoid declaring NonCPS method called from constructor
   String getRegistry() {
     if (registry == null) {
-      if (infraConfig == null) {
+      if (infraConfig != null) {
         return infraConfig.getDockerRegistry()
       }
       return "noregistry"
