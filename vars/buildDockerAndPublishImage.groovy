@@ -45,8 +45,12 @@ def call(String imageName, Map config=[:]) {
       stage("Lint") {
         steps {
           sh 'make lint'
-          recordIssues enabledForFailure: true, tool: hadoLint(pattern: 'hadolint.json')
         } // steps
+        post {
+          always {
+            recordIssues enabledForFailure: true, tool: hadoLint(pattern: 'hadolint.json')
+          }
+        } // post
       } //stage
 
       stage("Build") {

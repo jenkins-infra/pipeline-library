@@ -51,6 +51,7 @@ clean: ## Delete any file generated during the build steps
 
 test: ## Execute the test harness on the Docker Image archive at $(IMAGE_ARCHIVE)
 	@echo "== Testing $(IMAGE_NAME) from $(IMAGE_ARCHIVE)..."
+	@echo "Writing test report to $(PWD)/cst-result.xml..."
 	@container-structure-test test --driver=tar --image=$(IMAGE_ARCHIVE) --config=$(PWD)/cst.yml
 	@echo "== Test ✅ Succeeded"
 
