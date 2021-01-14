@@ -9,14 +9,16 @@ def call(String imageName, Map config=[:]) {
 
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
-  final String podTemplate = libraryResource 'io/jenkins/infra/docker/pod-template.yml'
+  final String podYamlTemplate = libraryResource 'io/jenkins/infra/docker/pod-template.yml'
+  // Customize Pod label to improve build analysis
+  final String yamlPodDef = podYamlTemplate.replaceAll('\\$IMAGE_NAME', imageName).replaceAll('\\$?\\{IMAGE_NAME\\}', imageName)
 
   pipeline {
     agent {
       kubernetes {
         inheritFrom 'jnlp-linux'
         defaultContainer 'builder'
-        yaml podTemplate
+        yaml yamlPodDef
       } // kubernetes
     } // agent
 
