@@ -4,7 +4,7 @@ package io.jenkins.infra
 import java.text.SimpleDateFormat
 import java.util.Date
 
-class DockerConfig implements Serializable {
+class DockerConfig {
   String imageName
 
   String registry
@@ -50,12 +50,6 @@ class DockerConfig implements Serializable {
 
   // Custom getter to avoid declaring NonCPS method called from constructor
   String getRegistry() {
-    if (registry == null) {
-      if (infraConfig != null) {
-        return infraConfig.getDockerRegistry()
-      }
-      return "noregistry"
-    }
-    return registry
+    registry ?: infraConfig?.dockerRegistry ?: 'noregistry'
   }
 }
