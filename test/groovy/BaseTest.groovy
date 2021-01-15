@@ -1,4 +1,4 @@
-import com.lesfurets.jenkins.unit.declarative.*
+import com.lesfurets.jenkins.unit.declarative.DeclarativePipelineTest
 import mock.CurrentBuild
 import mock.CustomWARPackager
 import mock.Docker

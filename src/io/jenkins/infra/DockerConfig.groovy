@@ -26,20 +26,11 @@ class DockerConfig {
 
     this.registry = config.registry
 
-    this.dockerfile = config.dockerfile
-    if (!config.dockerfile) {
-      this.dockerfile = "Dockerfile"
-    }
+    this.dockerfile = config.get('dockerfile', 'Dockerfile')
 
-    this.credentials = config.credentials
-    if (!config.credentials) {
-      this.credentials = "jenkins-dockerhub"
-    }
+    this.credentials = config.get('credentials', 'jenkins-dockerhub')
 
-    this.mainBranch = config.mainBranch
-    if (!config.mainBranch) {
-      this.mainBranch = "master"
-    }
+    this.mainBranch = config.get('mainBranch', 'master')
 
     this.buildDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(new Date())
   }
