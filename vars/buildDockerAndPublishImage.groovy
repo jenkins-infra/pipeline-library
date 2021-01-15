@@ -13,6 +13,10 @@ def call(String imageName, Map config=[:]) {
   // Customize Pod label to improve build analysis
   final String yamlPodDef = podYamlTemplate.replaceAll('\\$IMAGE_NAME', imageName).replaceAll('\\$?\\{IMAGE_NAME\\}', imageName)
 
+  // This function uses Declarative Syntax as we haven't met (yet) use case where only a subpart of the pipeline is needed: either we run it "whole" or not.
+  // It means that the function is acting more as a "template" of an initial declarative standalone pipeline, than a real life well-constructed library.
+  // A second reason is to lower the contribution bar by avoiding the "know very well Groovy" requirement (but this argument can be disputed as the test unit is pure Groovy...)
+  // If you feel like to rewrite this function in scripted, you can spend this effort of course :)
   pipeline {
     agent {
       kubernetes {
