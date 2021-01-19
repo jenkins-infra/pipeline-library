@@ -121,6 +121,40 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   @Test
+  void itBuildsAndDeploysImageWithCustomConfigAndTrailingSlashOnRegistry() throws Exception {
+    def script = loadScript(scriptName)
+
+    // when building a Docker Image with a custom configuration but not on the principal branch
+    addEnvVar('BRANCH_NAME', 'main')
+    dockerConfig.demand.with {
+      getMainBranch{ 'main' }
+      getFullImageName { 'testregistry/deathstar' }
+    }
+    infraConfig.use {
+      dockerConfig.use {
+        script.call(testImageName, [
+                registry: 'testregistry/',
+                dockerfile: 'build.Dockerfile',
+                credentials: 'company-docker-registry-credz',
+                mainBranch: 'main'
+        ])
+      }
+    }
+    printCallStack()
+
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+
+    // With the deploy step called for latest
+    assertFalse(assertMethodCallContainsPattern('echo','Skipping stage Deploy'))
+    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=testregistry/deathstar:latest make deploy'))
+
+    // And all mocked/stubbed methods have to be called
+    infraConfig.expect.verify()
+    dockerConfig.expect.verify()
+  }
+
+  @Test
   void itDoesNotDeployWhenNotOnPrincipalBranch() throws Exception {
     def script = loadScript(scriptName)
 
