@@ -1,19 +1,24 @@
 #!/usr/bin/env groovy
 
+import io.jenkins.infra.InfraConfig
+
+// Method kept for backward compatibility (as the method is available on the InfraConfig stateful object)
 Boolean isRunningOnJenkinsInfra() {
-    return env.JENKINS_URL == 'https://ci.jenkins.io/' || isTrusted() || isInfra()
+  return new InfraConfig(env).isRunningOnJenkinsInfra()
 }
 
+// Method kept for backward compatibility (as the method is available on the InfraConfig stateful object)
 Boolean isTrusted() {
-    return env.JENKINS_URL.startsWith('https://trusted.ci.jenkins.io')
+  return new InfraConfig(env).isTrusted()
 }
 
+// Method kept for backward compatibility (as the method is available on the InfraConfig stateful object)
 Boolean isInfra() {
-    return env.JENKINS_URL.startsWith('https://infra.ci.jenkins.io')
+  return new InfraConfig(env).isInfra()
 }
 
 Object withDockerCredentials(Closure body) {
-    if (isRunningOnJenkinsInfra()) {
+    if (new InfraConfig(env).isRunningOnJenkinsInfra()) {
       env.DOCKERHUB_ORGANISATION =  ( isTrusted() ? 'jenkins' : 'jenkins4eval')
       withCredentials([[$class: 'ZipFileBinding', credentialsId: 'jenkins-dockerhub', variable: 'DOCKER_CONFIG']]) {
           return body.call()
@@ -57,7 +62,7 @@ boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
             }
         }
         return true
-    } else if (jdk.toInteger() > 7 && isRunningOnJenkinsInfra()) {
+    } else if (jdk.toInteger() > 7 && new InfraConfig(env).isRunningOnJenkinsInfra()) {
         /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
         writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
         return true
@@ -83,7 +88,7 @@ Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = nu
     ]
     if (settingsFile != null) {
         mvnOptions += "-s $settingsFile"
-    } else if (jdk.toInteger() > 7 && isRunningOnJenkinsInfra()) {
+    } else if (jdk.toInteger() > 7 && new InfraConfig(env).isRunningOnJenkinsInfra()) {
         /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
         def settingsXml = "${pwd tmp: true}/settings-azure.xml"
         if (retrieveMavenSettingsFile(settingsXml)) {
@@ -265,7 +270,7 @@ void prepareToPublishIncrementals() {
  * See INFRA-1571 and JEP-305.
  */
 void maybePublishIncrementals() {
-    if (isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
+    if (new InfraConfig(env).isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
         stage('Deploy') {
           timeout(15) {
             node('maven || linux || windows') {
