@@ -36,7 +36,7 @@ class DockerConfig {
   }
 
   String getFullImageName() {
-    return getRegistry() + "/" + imageName
+    return (getRegistry().endsWith('/') ? getRegistry() : getRegistry() + '/') + imageName
   }
 
   // Custom getter to avoid declaring NonCPS method called from constructor
