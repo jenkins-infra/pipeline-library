@@ -9,7 +9,7 @@ import static org.junit.Assert.assertTrue
 
 class DockerConfigTest {
 
-    static String testImageName = "bitcoinMinerImage"
+    static String testImageName = "imagename"
 
     @Test
     void canHandleDefaultConfiguration() throws Exception {
@@ -20,7 +20,7 @@ class DockerConfigTest {
 
         def dockerConfig = new DockerConfig(testImageName, [:], infraConfig)
 
-        assertEquals( "jenkins4eval/bitcoinMinerImage", dockerConfig.getFullImageName())
+        assertEquals( "jenkins4eval/imagename", dockerConfig.getFullImageName())
         assertEquals( "jenkins4eval", dockerConfig.getRegistry())
         assertEquals( "master", dockerConfig.mainBranch)
         assertEquals( "jenkins-dockerhub", dockerConfig.credentials)
@@ -42,7 +42,7 @@ class DockerConfigTest {
                 mainBranch: 'main'
         ], infraConfig)
 
-        assertEquals( "testregistry/bitcoinMinerImage", dockerConfig.getFullImageName())
+        assertEquals( "testregistry/imagename", dockerConfig.getFullImageName())
         assertEquals( "testregistry", dockerConfig.getRegistry())
         assertEquals( "main", dockerConfig.mainBranch)
         assertEquals( "company-docker-registry-credz", dockerConfig.credentials)
@@ -62,7 +62,7 @@ class DockerConfigTest {
                 mainBranch: 'main'
         ], infraConfig)
 
-        assertEquals( "jenkinsciinfra/bitcoinMinerImage", dockerConfig.getFullImageName())
+        assertEquals( "jenkinsciinfra/imagename", dockerConfig.getFullImageName())
         assertEquals( "jenkinsciinfra", dockerConfig.getRegistry())
         assertEquals( "main", dockerConfig.mainBranch)
         assertEquals( "company-docker-registry-credz", dockerConfig.credentials)
@@ -82,7 +82,7 @@ class DockerConfigTest {
                 mainBranch: 'main'
         ], infraConfig)
 
-        assertEquals( "jenkinsciinfra/bitcoinMinerImage", dockerConfig.getFullImageName())
+        assertEquals( "jenkinsciinfra/imagename", dockerConfig.getFullImageName())
         assertEquals( "jenkinsciinfra", dockerConfig.getRegistry())
         assertEquals( "main", dockerConfig.mainBranch)
         assertEquals( "company-docker-registry-credz", dockerConfig.credentials)
