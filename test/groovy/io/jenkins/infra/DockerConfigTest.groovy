@@ -2,6 +2,8 @@ package io.jenkins.infra
 
 import org.junit.Test
 
+import groovy.mock.interceptor.StubFor
+
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertTrue
@@ -12,80 +14,69 @@ class DockerConfigTest {
 
     @Test
     void canHandleDefaultConfiguration() throws Exception {
-        def infraConfig = new InfraConfig(['JENKINS_URL':'https://ci.jenkins.io/'])
-        assertTrue(infraConfig.isRunningOnJenkinsInfra())
-        assertFalse(infraConfig.isInfra())
-        assertFalse(infraConfig.isTrusted())
+        String sutRegistry = 'hogwarts'
+        def dockerConfig
+        def infraConfig = new StubFor(InfraConfig.class)
+        infraConfig.demand.with {
+          getDockerRegistry{ sutRegistry }
+          getDockerRegistry{ sutRegistry }
+        }
+        infraConfig.use {
+          dockerConfig = new DockerConfig(testImageName, [:], new InfraConfig())
+        }
 
-        def dockerConfig = new DockerConfig(testImageName, [:], infraConfig)
-
-        assertEquals( "jenkins4eval/imagename", dockerConfig.getFullImageName())
-        assertEquals( "jenkins4eval", dockerConfig.getRegistry())
-        assertEquals( "master", dockerConfig.mainBranch)
-        assertEquals( "jenkins-dockerhub", dockerConfig.credentials)
-        assertEquals( "Dockerfile", dockerConfig.dockerfile)
+        assertEquals( sutRegistry + '/imagename', dockerConfig.getFullImageName())
+        assertEquals( sutRegistry, dockerConfig.getRegistry())
+        assertEquals( 'master', dockerConfig.mainBranch)
+        assertEquals( 'jenkins-dockerhub', dockerConfig.credentials)
+        assertEquals( 'Dockerfile', dockerConfig.dockerfile)
     }
 
 
     @Test
     void canHandleCustomConfiguration_WithTrailingSlashOnRegistry() throws Exception {
-        def infraConfig = new InfraConfig(['JENKINS_URL':'https://ci.jenkins.io/'])
-        assertTrue(infraConfig.isRunningOnJenkinsInfra())
-        assertFalse(infraConfig.isInfra())
-        assertFalse(infraConfig.isTrusted())
+        def dockerConfig
+        def infraConfig = new StubFor(InfraConfig.class)
 
-        def dockerConfig = new DockerConfig(testImageName, [
-                registry: 'testregistry/',
-                dockerfile: 'build.Dockerfile',
-                credentials: 'company-docker-registry-credz',
-                mainBranch: 'main'
-        ], infraConfig)
+        infraConfig.use {
+          dockerConfig = new DockerConfig(testImageName, [
+            registry: 'testregistry/',
+            dockerfile: 'build.Dockerfile',
+            credentials: 'company-docker-registry-credz',
+            mainBranch: 'main'
+          ], new InfraConfig())
+        }
 
-        assertEquals( "testregistry/imagename", dockerConfig.getFullImageName())
-        assertEquals( "testregistry", dockerConfig.getRegistry())
-        assertEquals( "main", dockerConfig.mainBranch)
-        assertEquals( "company-docker-registry-credz", dockerConfig.credentials)
-        assertEquals( "build.Dockerfile", dockerConfig.dockerfile)
+        assertEquals( 'testregistry/imagename', dockerConfig.getFullImageName())
+        assertEquals( 'testregistry', dockerConfig.getRegistry())
+        assertEquals( 'main', dockerConfig.mainBranch)
+        assertEquals( 'company-docker-registry-credz', dockerConfig.credentials)
+        assertEquals( 'build.Dockerfile', dockerConfig.dockerfile)
     }
 
     @Test
     void canHandleCustomConfiguration_OnInfra() throws Exception {
-        def infraConfig = new InfraConfig(['JENKINS_URL':'https://infra.ci.jenkins.io/'])
-        assertTrue(infraConfig.isRunningOnJenkinsInfra())
-        assertTrue(infraConfig.isInfra())
-        assertFalse(infraConfig.isTrusted())
+        String sutRegistry = 'london'
+        def dockerConfig
+        def infraConfig = new StubFor(InfraConfig.class)
+        infraConfig.demand.with {
+          getDockerRegistry{ sutRegistry }
+          getDockerRegistry{ sutRegistry }
+        }
 
-        def dockerConfig = new DockerConfig(testImageName, [
-                dockerfile: 'build.Dockerfile',
-                credentials: 'company-docker-registry-credz',
-                mainBranch: 'main'
-        ], infraConfig)
+        infraConfig.use {
+          dockerConfig = new DockerConfig(testImageName, [
+            dockerfile: 'build.Dockerfile',
+            credentials: 'company-docker-registry-credz',
+            mainBranch: 'main'
+          ], new InfraConfig())
+        }
 
-        assertEquals( "jenkinsciinfra/imagename", dockerConfig.getFullImageName())
-        assertEquals( "jenkinsciinfra", dockerConfig.getRegistry())
-        assertEquals( "main", dockerConfig.mainBranch)
-        assertEquals( "company-docker-registry-credz", dockerConfig.credentials)
-        assertEquals( "build.Dockerfile", dockerConfig.dockerfile)
-    }
-
-    @Test
-    void canHandleCustomConfiguration_OnTrusted() throws Exception {
-        def infraConfig = new InfraConfig(['JENKINS_URL':'https://trusted.ci.jenkins.io/'])
-        assertTrue(infraConfig.isRunningOnJenkinsInfra())
-        assertFalse(infraConfig.isInfra())
-        assertTrue(infraConfig.isTrusted())
-
-        def dockerConfig = new DockerConfig(testImageName, [
-                dockerfile: 'build.Dockerfile',
-                credentials: 'company-docker-registry-credz',
-                mainBranch: 'main'
-        ], infraConfig)
-
-        assertEquals( "jenkinsciinfra/imagename", dockerConfig.getFullImageName())
-        assertEquals( "jenkinsciinfra", dockerConfig.getRegistry())
-        assertEquals( "main", dockerConfig.mainBranch)
-        assertEquals( "company-docker-registry-credz", dockerConfig.credentials)
-        assertEquals( "build.Dockerfile", dockerConfig.dockerfile)
+        assertEquals( sutRegistry + '/imagename', dockerConfig.getFullImageName())
+        assertEquals( sutRegistry, dockerConfig.getRegistry())
+        assertEquals( 'main', dockerConfig.mainBranch)
+        assertEquals( 'company-docker-registry-credz', dockerConfig.credentials)
+        assertEquals( 'build.Dockerfile', dockerConfig.dockerfile)
     }
 
 }
