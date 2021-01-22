@@ -1,7 +1,6 @@
+package io.jenkins.infra
 
 import org.junit.Test
-import io.jenkins.infra.DockerConfig
-import io.jenkins.infra.InfraConfig
 
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
