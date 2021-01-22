@@ -4,7 +4,7 @@ class InfraConfig implements Serializable {
   String jenkinsURL
 
   public InfraConfig(Object env) {
-    this.jenkinsURL = env?.JENKINS_URL ?: ""
+    this.jenkinsURL = env?.JENKINS_URL ?: ''
   }
 
   Boolean isRunningOnJenkinsInfra() {
