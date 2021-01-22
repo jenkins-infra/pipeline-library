@@ -20,7 +20,7 @@ class DockerConfigTest {
           getDockerRegistry{ sutRegistry }
         }
         infraConfig.use {
-          dockerConfig = new DockerConfig(testImageName, [:], new InfraConfig())
+          dockerConfig = new DockerConfig(testImageName, new InfraConfig())
         }
 
         assertEquals( sutRegistry + '/imagename', dockerConfig.getFullImageName())
@@ -37,12 +37,12 @@ class DockerConfigTest {
         def infraConfig = new StubFor(InfraConfig.class)
 
         infraConfig.use {
-          dockerConfig = new DockerConfig(testImageName, [
+          dockerConfig = new DockerConfig(testImageName, new InfraConfig(), [
             registry: 'testregistry/',
             dockerfile: 'build.Dockerfile',
             credentials: 'company-docker-registry-credz',
             mainBranch: 'main'
-          ], new InfraConfig())
+          ])
         }
 
         assertEquals( 'testregistry/imagename', dockerConfig.getFullImageName())
@@ -63,11 +63,11 @@ class DockerConfigTest {
         }
 
         infraConfig.use {
-          dockerConfig = new DockerConfig(testImageName, [
+          dockerConfig = new DockerConfig(testImageName, new InfraConfig(), [
             dockerfile: 'build.Dockerfile',
             credentials: 'company-docker-registry-credz',
             mainBranch: 'main'
-          ], new InfraConfig())
+          ])
         }
 
         assertEquals( sutRegistry + '/imagename', dockerConfig.getFullImageName())

@@ -5,7 +5,7 @@ import io.jenkins.infra.InfraConfig
 def call(String imageName, Map config=[:]) {
 
   // Initialize the groovy context
-  final DockerConfig dockerConfig = new DockerConfig(imageName, config, new InfraConfig(env))
+  final DockerConfig dockerConfig = new DockerConfig(imageName, new InfraConfig(env), config)
 
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
