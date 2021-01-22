@@ -4,7 +4,7 @@ class InfraConfig implements Serializable {
   String jenkinsURL
 
   public InfraConfig(Object env) {
-    this.jenkinsURL = env.JENKINS_URL
+    this.jenkinsURL = env?.JENKINS_URL ?: ""
   }
 
   Boolean isRunningOnJenkinsInfra() {
@@ -21,9 +21,9 @@ class InfraConfig implements Serializable {
 
   String getDockerRegistry() {
     if (isTrusted() || isInfra()) {
-      return "jenkinsciinfra"
+      return 'jenkinsciinfra'
     } else {
-      return "jenkins4eval"
+      return 'jenkins4eval'
     }
   }
 }
