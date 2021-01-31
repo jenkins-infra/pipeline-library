@@ -50,6 +50,7 @@ class BaseTest extends BasePipelineTest {
       Yaml yaml = new Yaml()
       return yaml.load('')
     })
+    helper.registerAllowedMethod('discoverGitReferenceBuild', [Map.class], { true })
     helper.registerAllowedMethod('recordIssues', [Map.class], { true })
     helper.registerAllowedMethod('mavenConsole', [], { 'maven' })
     helper.registerAllowedMethod('java', [], { 'java' })

@@ -147,26 +147,30 @@ def call(Map params = [:]) {
                             }
 
                             if (first) {
-                                referenceJobName = env.JOB_NAME.substring(0, env.JOB_NAME.lastIndexOf("/") + 1) + "master"
-                                echo "Recording static analysis results on '${stageIdentifier}' using reference job '${referenceJobName}'"
+                                folders = env.JOB_NAME.split("/")
+                                if (folders.length > 1) {
+                                    discoverGitReferenceBuild(scm: folders[1])
+                                }
+
+                                echo "Recording static analysis results on '${stageIdentifier}'"
 
                                 recordIssues enabledForFailure: true,
                                         tool: mavenConsole(),
-                                        trendChartType: 'TOOLS_ONLY',
-                                        referenceJobName: referenceJobName
+                                        skipBlames: true,
+                                        trendChartType: 'TOOLS_ONLY'
                                 recordIssues enabledForFailure: true,
                                         tools: [java(), javaDoc()],
                                         filters: [excludeFile('.*Assert.java')],
                                         sourceCodeEncoding: 'UTF-8',
-                                        trendChartType: 'TOOLS_ONLY',
-                                        referenceJobName: referenceJobName
+                                        skipBlames: true,
+                                        trendChartType: 'TOOLS_ONLY'
 
                                 // Default configuration for SpotBugs can be overwritten using a `spotbugs`, `checkstyle', etc. parameter (map).
                                 // Configuration see: https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration
                                 Map spotbugsArguments = [tool: spotBugs(pattern: '**/target/spotbugsXml.xml,**/target/findbugsXml.xml'),
                                                          sourceCodeEncoding: 'UTF-8',
+                                                         skipBlames: true,
                                                          trendChartType: 'TOOLS_ONLY',
-                                                         referenceJobName: referenceJobName,
                                                          qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]]
                                 if (params?.spotbugs) {
                                     spotbugsArguments.putAll(params.spotbugs as Map)
@@ -175,9 +179,9 @@ def call(Map params = [:]) {
 
                                 Map checkstyleArguments = [tool: checkStyle(pattern: '**/target/checkstyle-result.xml'),
                                                            sourceCodeEncoding: 'UTF-8',
+                                                           skipBlames: true,
                                                            trendChartType: 'TOOLS_ONLY',
-                                                           qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]],
-                                                           referenceJobName: referenceJobName]
+                                                           qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]]]
                                 if (params?.checkstyle) {
                                     checkstyleArguments.putAll(params.checkstyle as Map)
                                 }
@@ -185,8 +189,8 @@ def call(Map params = [:]) {
 
                                 Map pmdArguments = [tool: pmdParser(pattern: '**/target/pmd.xml'),
                                                     sourceCodeEncoding: 'UTF-8',
-                                                    trendChartType: 'NONE',
-                                                    referenceJobName: referenceJobName]
+                                                    skipBlames: true,
+                                                    trendChartType: 'NONE']
                                 if (params?.pmd) {
                                     pmdArguments.putAll(params.pmd as Map)
                                 }
@@ -194,8 +198,8 @@ def call(Map params = [:]) {
 
                                 Map cpdArguments = [tool: cpd(pattern: '**/target/cpd.xml'),
                                                     sourceCodeEncoding: 'UTF-8',
-                                                    trendChartType: 'NONE',
-                                                    referenceJobName: referenceJobName]
+                                                    skipBlames: true,
+                                                    trendChartType: 'NONE']
                                 if (params?.cpd) {
                                     cpdArguments.putAll(params.cpd as Map)
                                 }
@@ -207,8 +211,8 @@ def call(Map params = [:]) {
                                         highTags:'FIXME',
                                         normalTags:'TODO'),
                                         sourceCodeEncoding: 'UTF-8',
-                                        trendChartType: 'NONE',
-                                        referenceJobName: referenceJobName
+                                        skipBlames: true,
+                                        trendChartType: 'NONE'
                                 if (failFast && currentBuild.result == 'UNSTABLE') {
                                     error 'Static analysis quality gates not passed; halting early'
                                 }

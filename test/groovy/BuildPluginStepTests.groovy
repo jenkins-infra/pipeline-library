@@ -225,27 +225,27 @@ class BuildPluginStepTests extends BaseTest {
     printCallStack()
 
     assertTrue(assertMethodCall('mavenConsole'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=maven, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=maven, skipBlames=true, trendChartType=TOOLS_ONLY}'))
 
     assertTrue(assertMethodCall('java'))
     assertTrue(assertMethodCall('javaDoc'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tools=[java, javadoc], filters=[true], sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tools=[java, javadoc], filters=[true], sourceCodeEncoding=UTF-8, skipBlames=true, trendChartType=TOOLS_ONLY}'))
 
     assertTrue(assertMethodCall('spotBugs'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=spotbugs, sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master, qualityGates=[{threshold=1, type=NEW, unstable=true}]}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=spotbugs, sourceCodeEncoding=UTF-8, skipBlames=true, trendChartType=TOOLS_ONLY, qualityGates=[{threshold=1, type=NEW, unstable=true}]}'))
 
     assertTrue(assertMethodCall('checkStyle'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=checkstyle, sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, qualityGates=[{threshold=1, type=TOTAL, unstable=true}], referenceJobName=build/plugin/master}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=checkstyle, sourceCodeEncoding=UTF-8, skipBlames=true, trendChartType=TOOLS_ONLY, qualityGates=[{threshold=1, type=TOTAL, unstable=true}]}'))
 
     assertTrue(assertMethodCall('pmdParser'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=pmd, sourceCodeEncoding=UTF-8, trendChartType=NONE, referenceJobName=build/plugin/master}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=pmd, sourceCodeEncoding=UTF-8, skipBlames=true, trendChartType=NONE}'))
 
     assertTrue(assertMethodCall('cpd'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=cpd, sourceCodeEncoding=UTF-8, trendChartType=NONE, referenceJobName=build/plugin/master}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=cpd, sourceCodeEncoding=UTF-8, skipBlames=true, trendChartType=NONE}'))
 
 
     assertTrue(assertMethodCallContainsPattern('taskScanner', '{includePattern=**/*.java, excludePattern=**/target/**, highTags=FIXME, normalTags=TODO}'))
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=tasks, sourceCodeEncoding=UTF-8, trendChartType=NONE, referenceJobName=build/plugin/master}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=tasks, sourceCodeEncoding=UTF-8, skipBlames=true, trendChartType=NONE}'))
   }
 
   @Test
@@ -258,7 +258,7 @@ class BuildPluginStepTests extends BaseTest {
             sourceCodeEncoding: 'UTF-16'])
     printCallStack()
 
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=spotbugs, sourceCodeEncoding=UTF-16, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master, qualityGates=[{threshold=3, type=TOTAL, unstable=true}, {threshold=4, type=NEW, unstable=true}]}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=spotbugs, sourceCodeEncoding=UTF-16, skipBlames=true, trendChartType=TOOLS_ONLY, qualityGates=[{threshold=3, type=TOTAL, unstable=true}, {threshold=4, type=NEW, unstable=true}]}'))
   }
 
   @Test
@@ -271,7 +271,7 @@ class BuildPluginStepTests extends BaseTest {
             filters: '[includeFile(\'MyFile.*.java\'), excludeCategory(\'WHITESPACE\')]'])
     printCallStack()
 
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=checkstyle, sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, qualityGates=[{threshold=3, type=TOTAL, unstable=true}, {threshold=4, type=NEW, unstable=true}], referenceJobName=build/plugin/master, filters=[includeFile(\'MyFile.*.java\'), excludeCategory(\'WHITESPACE\')]}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=checkstyle, sourceCodeEncoding=UTF-8, skipBlames=true, trendChartType=TOOLS_ONLY, qualityGates=[{threshold=3, type=TOTAL, unstable=true}, {threshold=4, type=NEW, unstable=true}], filters=[includeFile(\'MyFile.*.java\'), excludeCategory(\'WHITESPACE\')]}'))
   }
 
   @Test
@@ -280,7 +280,7 @@ class BuildPluginStepTests extends BaseTest {
     script.call(pmd: [trendChartType: 'TOOLS_ONLY'])
     printCallStack()
 
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=pmd, sourceCodeEncoding=UTF-8, trendChartType=TOOLS_ONLY, referenceJobName=build/plugin/master}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=pmd, sourceCodeEncoding=UTF-8, skipBlames=true, trendChartType=TOOLS_ONLY}'))
   }
 
   @Test
@@ -289,7 +289,7 @@ class BuildPluginStepTests extends BaseTest {
     script.call(cpd: [enabledForFailure: true])
     printCallStack()
 
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=cpd, sourceCodeEncoding=UTF-8, trendChartType=NONE, referenceJobName=build/plugin/master, enabledForFailure=true}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=cpd, sourceCodeEncoding=UTF-8, skipBlames=true, trendChartType=NONE, enabledForFailure=true}'))
   }
 
   @Test
