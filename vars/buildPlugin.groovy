@@ -85,7 +85,8 @@ def call(Map params = [:]) {
                                         '-Dmaven.test.failure.ignore',
                                         '-Dspotbugs.failOnError=false',
                                         '-Dcheckstyle.failOnViolation=false',
-                                        '-Dcheckstyle.failsOnError=false'
+                                        '-Dcheckstyle.failsOnError=false',
+                                        '-Penable-jacoco'
                                 ]
                                 if (incrementals) { // set changelist and activate produce-incrementals profile
                                     mavenOptions += '-Dset.changelist'
