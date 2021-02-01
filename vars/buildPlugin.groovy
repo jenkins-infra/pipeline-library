@@ -86,8 +86,11 @@ def call(Map params = [:]) {
                                         '-Dspotbugs.failOnError=false',
                                         '-Dcheckstyle.failOnViolation=false',
                                         '-Dcheckstyle.failsOnError=false',
-                                        '-Penable-jacoco'
                                 ]
+                                // jacoco had file locking issues on Windows, so only running on linux
+                                if (isUnix()) {
+                                        mavenOptions += '-Penable-jacoco'
+                                }
                                 if (incrementals) { // set changelist and activate produce-incrementals profile
                                     mavenOptions += '-Dset.changelist'
                                     if (doArchiveArtifacts) { // ask Maven for the value of -rc999.abc123def456
