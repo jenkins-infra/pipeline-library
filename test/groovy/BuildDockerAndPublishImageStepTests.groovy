@@ -92,6 +92,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // when building a Docker Image with a custom configuration but not on the principal branch
     addEnvVar('BRANCH_NAME', 'main')
+
     dockerConfig.demand.with {
       getMainBranch{ 'main' }
       getFullImageName { 'registry.company.com/deathstar' }

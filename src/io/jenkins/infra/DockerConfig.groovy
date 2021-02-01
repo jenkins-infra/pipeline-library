@@ -19,7 +19,7 @@ class DockerConfig {
 
   def infraConfig
 
-  public DockerConfig(String imageName, Map config=[:], InfraConfig infraConfig) {
+  public DockerConfig(String imageName, InfraConfig infraConfig, Map config=[:]) {
     this.imageName = imageName
 
     this.infraConfig = infraConfig
@@ -36,11 +36,12 @@ class DockerConfig {
   }
 
   String getFullImageName() {
-    return (getRegistry().endsWith('/') ? getRegistry() : getRegistry() + '/') + imageName
+    return getRegistry() + '/' + imageName
   }
 
   // Custom getter to avoid declaring NonCPS method called from constructor
   String getRegistry() {
-    registry ?: infraConfig?.dockerRegistry ?: 'noregistry'
+    def reg = registry ?: infraConfig?.dockerRegistry ?: 'noregistry'
+    return reg.endsWith('/') ? reg[0..-2] : reg
   }
 }
