@@ -39,6 +39,7 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(DOCKERFILE) and export it 
 		--label "org.label-schema.vcs-ref=$(GIT_COMMIT_REV)" \
 		--label "org.opencontainers.image.created=$(BUILD_DATE)" \
 		--label "org.label-schema.build-date=$(BUILD_DATE)" \
+		--platform $(PLATFORM) \
 		-f $(PWD)/$(DOCKERFILE) \
 		./
 	@$(CONTAINER_BIN) save --output=$(IMAGE_ARCHIVE) $(IMAGE_NAME)

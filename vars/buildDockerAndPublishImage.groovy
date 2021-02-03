@@ -30,6 +30,7 @@ def call(String imageName, Map config=[:]) {
       BUILD_DATE = "${dockerConfig.buildDate}"
       IMAGE_NAME = "${dockerConfig.imageName}"
       DOCKERFILE = "${dockerConfig.dockerfile}"
+      PLATFORM   = "${dockerConfig.platform}"
     } // environment
 
     stages {
