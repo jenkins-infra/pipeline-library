@@ -38,6 +38,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getDockerfile{ 'Dockerfile' }
       getCredentials{ '' }
       getImageName{ 'deathstar' }
+      getPlatform{ 'linux/amd64' }
     }
   }
 

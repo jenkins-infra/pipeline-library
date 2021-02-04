@@ -13,7 +13,8 @@
           (Valid examples: "jenkinsci", "registry.quay.io/jenkins-beta", "10.0.2.15:8080/admin").</li>
           <li>String mainBranch: (Optional, defaults to "master") Name of the git's principal branch used to trigger deploy of the "latest" tag (Example: "main").</li>
           <li>String dockerfile: (Optional, defaults to "Dockerfile") Relative path to the Dockerfile to use within the repository's context (Example: "build.dockerfile", "docker/Dockerfile").</li>
-          <li>String credentials: (Optional, defaults to "jenkins-dockerhub") Name of the Jenkins'credentials used to authenticate on the Docker remote registry during the full build process. (Example: "internal-registry-credential").</li>
+          <li>String credentials: (Optional, defaults to "jenkins-dockerhub") Name of the Jenkins' credentials used to authenticate on the Docker remote registry during the full build process. (Example: "internal-registry-credential").</li>
+          <li>String platform: (Optional, defaults to "linux/amd64") Name of the docker platform to use when building this image, for multiple use a comma separated list (Example: "linux/amd64,linux/arm64").</li>
         </ul>
       </li>
     </ul>

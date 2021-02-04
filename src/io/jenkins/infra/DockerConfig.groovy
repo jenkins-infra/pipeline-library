@@ -19,6 +19,8 @@ class DockerConfig {
 
   def infraConfig
 
+  String platform
+
   public DockerConfig(String imageName, InfraConfig infraConfig, Map config=[:]) {
     this.imageName = imageName
 
@@ -33,6 +35,8 @@ class DockerConfig {
     this.mainBranch = config.get('mainBranch', 'master')
 
     this.buildDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(new Date())
+
+    this.platform = config.get('platform', 'linux/amd64')
   }
 
   String getFullImageName() {
