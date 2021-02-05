@@ -6,12 +6,13 @@ IMAGE_ARCHIVE ?= $(PWD)/image.tar
 
 ## Use this variable if you want to use Docker instead
 CONTAINER_BIN ?= img
+PLATFORM ?= linux/amd64
 
 ## Image metadatas
 GIT_COMMIT_REV ?= $(shell git log -n 1 --pretty=format:'%h')
 GIT_SCM_URL ?= $(shell git config --get remote.origin.url)
 SCM_URI ?= $(subst git@github.com:,https://github.com/,$(GIT_SCM_URL))
-BUILD_DATE ?= $(shell date --utc '+%Y-%m-%dT%H:%M:%S' 2>/dev/null | gdate --utc '+%Y-%m-%dT%H:%M:%S')
+BUILD_DATE ?= $(shell date --utc '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || gdate --utc '+%Y-%m-%dT%H:%M:%S')
 
 help: ## Show this Makefile's help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
