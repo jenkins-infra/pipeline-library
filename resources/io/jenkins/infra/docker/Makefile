@@ -42,7 +42,7 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(DOCKERFILE) and export it 
 		--label "org.label-schema.build-date=$(BUILD_DATE)" \
 		--platform $(PLATFORM) \
 		-f $(PWD)/$(DOCKERFILE) \
-		./
+		$(PWD)
 	@$(CONTAINER_BIN) save --output=$(IMAGE_ARCHIVE) $(IMAGE_NAME)
 	@echo "== Build ✅ Succeeded, image $(IMAGE_NAME) exported to $(IMAGE_ARCHIVE)."
 
