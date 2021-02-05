@@ -54,6 +54,8 @@ grep 'Makefile' .gitignore || echo 'Makefile' | tee -a .gitignore
 
 * https://github.com/GoogleContainerTools/container-structure-test[Google's Container Structure Test] command line in v1.9.1+
 
+* https://github.com/hadolint/hadolint/releases[hadolint] for Dockerfile static checks
+
 === Using Docker
 
 * Export the variable once in the current terminal, and then run make commands:
