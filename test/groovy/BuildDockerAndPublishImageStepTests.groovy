@@ -50,7 +50,10 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     addEnvVar('BRANCH_NAME', 'master')
     dockerConfig.demand.with {
       getMainBranch{ 'master' }
+      getMainBranch{ 'master' }
+      getMainBranch{ 'master' }
       getFullImageName { 'jenkinsciinfra/deathstar' }
+      getAutomaticSemanticVersioning{ false }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -88,6 +91,62 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   @Test
+  void itBuildsAndDeploysWithAutomaticSemanticRelease() throws Exception {
+    def script = loadScript(scriptName)
+
+    helper.addShMock("jx-release-version",'1.0.1', 0)
+
+    // when building a Docker Image with the default Configuration
+    addEnvVar('BRANCH_NAME', 'master')
+    dockerConfig.demand.with {
+      getMainBranch{ 'master' }
+      getMainBranch{ 'master' }
+      getMainBranch{ 'master' }
+      getAutomaticSemanticVersioning{ true }
+      getGitCredentials{ 'git-credentials' }
+    }
+    infraConfig.use {
+      dockerConfig.use {
+        script.call(testImageName)
+      }
+    }
+    printCallStack()
+
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+
+    // With the static files read as expected
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/pod-template.yml'))
+
+    // And the make target called as shell steps
+    assertTrue(assertMethodCallContainsPattern('sh','make lint'))
+    assertTrue(assertMethodCallContainsPattern('sh','make build'))
+    assertTrue(assertMethodCallContainsPattern('sh','make test'))
+
+    // With the tag step called for latest
+    assertTrue(assertMethodCallContainsPattern('echo','Skipping stage Deploy'))
+
+    assertTrue(assertMethodCallContainsPattern('echo','Skipping stage Deploy'))
+    assertTrue(assertMethodCallContainsPattern('echo','Configuring credential.helper'))
+    assertTrue(assertMethodCallContainsPattern('echo','Tagging New Version: 1.0.1'))
+    assertTrue(assertMethodCallContainsPattern('sh','git tag 1.0.1'))
+    assertTrue(assertMethodCallContainsPattern('echo','Pushing Tag'))
+    assertTrue(assertMethodCallContainsPattern('sh','git push origin --tags'))
+
+    // And the img login and logout methods
+    assertTrue(assertMethodCallContainsPattern('sh','img login'))
+    assertTrue(assertMethodCallContainsPattern('sh','img logout'))
+
+    // And generated reports are recorded
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=hadolint.json}'))
+
+    // And all mocked/stubbed methods have to be called
+    infraConfig.expect.verify()
+    dockerConfig.expect.verify()
+  }
+
+  @Test
   void itBuildsAndDeploysImageWithCustomConfig() throws Exception {
     def script = loadScript(scriptName)
 
@@ -96,7 +155,10 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     dockerConfig.demand.with {
       getMainBranch{ 'main' }
+      getMainBranch{ 'main' }
+      getMainBranch{ 'main' }
       getFullImageName { 'registry.company.com/deathstar' }
+      getAutomaticSemanticVersioning{ false }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -130,7 +192,10 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     addEnvVar('BRANCH_NAME', 'main')
     dockerConfig.demand.with {
       getMainBranch{ 'main' }
+      getMainBranch{ 'main' }
+      getMainBranch{ 'main' }
       getFullImageName { 'testregistry/deathstar' }
+      getAutomaticSemanticVersioning{ false }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -164,6 +229,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     addEnvVar('BRANCH_NAME', 'dev')
     dockerConfig.demand.with {
       getMainBranch{ 'master' }
+      getMainBranch{ 'master' }
+      getMainBranch{ 'master' }
+      getAutomaticSemanticVersioning{ false }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -193,7 +261,10 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     addEnvVar('TAG_NAME', '1.0.0')
     dockerConfig.demand.with {
       getMainBranch{ 'master' }
+      getMainBranch{ 'master' }
+      getMainBranch{ 'master' }
       getFullImageName { 'registry.company.com/deathstar' }
+      getAutomaticSemanticVersioning{ false }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -222,6 +293,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     helper.registerAllowedMethod('fileExists', [String.class], { s -> return !s.equals('cst.yml') })
     dockerConfig.demand.with {
       getMainBranch{ 'master' }
+      getMainBranch{ 'master' }
+      getMainBranch{ 'master' }
+      getAutomaticSemanticVersioning{ false }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -253,6 +327,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     })
     dockerConfig.demand.with {
       getMainBranch{ 'dev' }
+      getMainBranch{ 'dev' }
+      getMainBranch{ 'dev' }
+      getAutomaticSemanticVersioning{ false }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -289,6 +366,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     })
     dockerConfig.demand.with {
       getMainBranch{ 'master' }
+      getMainBranch{ 'master' }
+      getMainBranch{ 'master' }
+      getAutomaticSemanticVersioning{ false }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -310,5 +390,4 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     infraConfig.expect.verify()
     dockerConfig.expect.verify()
   }
-
 }

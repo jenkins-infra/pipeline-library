@@ -15,7 +15,7 @@ spec:
     - name: builder
       image: jenkinsciinfra/builder:latest
       command:
-      - cat
+        - cat
       tty: true
       resources:
       limits:
@@ -24,4 +24,16 @@ spec:
       requests:
         memory: "512Mi"
         cpu: "500m"
+    - name: next-version
+      image: gcr.io/jenkinsxio/jx-release-version:2.2.3
+      command:
+        - cat
+      tty: true
+      resources:
+        limits:
+          memory: "512Mi"
+          cpu: "500m"
+        requests:
+          memory: "512Mi"
+          cpu: "500m"
 ...

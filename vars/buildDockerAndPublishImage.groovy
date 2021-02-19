@@ -27,13 +27,31 @@ def call(String imageName, Map config=[:]) {
     } // agent
 
     environment {
-      BUILD_DATE = "${dockerConfig.buildDate}"
-      IMAGE_NAME = "${dockerConfig.imageName}"
-      DOCKERFILE = "${dockerConfig.dockerfile}"
-      PLATFORM   = "${dockerConfig.platform}"
+      BUILD_DATE       = "${dockerConfig.buildDate}"
+      IMAGE_NAME       = "${dockerConfig.imageName}"
+      DOCKERFILE       = "${dockerConfig.dockerfile}"
+      PLATFORM         = "${dockerConfig.platform}"
+      SEMANTIC_RELEASE = "${dockerConfig.automaticSemanticVersioning}"
     } // environment
 
     stages {
+      stage('Next Version') {
+        when {
+          allOf {
+            environment name: 'SEMANTIC_RELEASE', value: 'true'
+            branch dockerConfig.mainBranch  
+          }
+        }
+        steps {
+          container('next-version') {
+            script {
+              nextVersion = sh(script:'jx-release-version', returnStdout: true).trim()
+            }
+          }
+          echo "Next Release Version = $nextVersion"
+        } // steps
+      } // stage
+
       stage('Prepare') {
         environment {
           DOCKER_REGISTRY = credentials("${dockerConfig.credentials}")
@@ -73,11 +91,35 @@ def call(String imageName, Map config=[:]) {
         } // steps
       } //stage
 
+      stage("Semantic Release") {
+        when {
+          allOf {
+            expression { env.SEMANTIC_RELEASE == 'true' }
+            branch dockerConfig.mainBranch  
+          }
+        }
+        steps {
+          echo "Configuring credential.helper"
+          sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
+
+          withCredentials([usernamePassword(credentialsId: "${dockerConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+            echo "Tagging New Version: $nextVersion"
+            sh "git tag $nextVersion"
+
+            echo "Pushing Tag"
+            sh "git push origin --tags"
+          }
+        } // steps
+      } // stage
+
       stage("Deploy") {
         when {
-          anyOf {
-            branch dockerConfig.mainBranch
-            buildingTag()
+          allOf {
+            expression { env.SEMANTIC_RELEASE == 'false' }
+            anyOf {
+              branch dockerConfig.mainBranch
+              buildingTag()
+            }
           }
         } // when
         environment {
