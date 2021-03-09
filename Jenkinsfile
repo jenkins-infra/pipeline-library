@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Test') {
             steps {
-                sh 'mvn -B clean test'
+                sh 'mvn --no-transfer-progress -B clean test'
             }
             post {
                 always {
