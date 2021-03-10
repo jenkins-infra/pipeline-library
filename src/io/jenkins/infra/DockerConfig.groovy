@@ -21,6 +21,10 @@ class DockerConfig {
 
   String platform
 
+  Boolean automaticSemanticVersioning
+
+  String gitCredentials
+
   public DockerConfig(String imageName, InfraConfig infraConfig, Map config=[:]) {
     this.imageName = imageName
 
@@ -37,6 +41,10 @@ class DockerConfig {
     this.buildDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(new Date())
 
     this.platform = config.get('platform', 'linux/amd64')
+    
+    this.automaticSemanticVersioning = config.get('automaticSemanticVersioning', false)
+    
+    this.gitCredentials = config.get('gitCredentials', '')
   }
 
   String getFullImageName() {
