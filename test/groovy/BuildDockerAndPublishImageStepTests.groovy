@@ -52,6 +52,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getMainBranch{ 'master' }
       getMainBranch{ 'master' }
       getMainBranch{ 'master' }
+      getMetadataFromSh{ '' }
       getFullImageName { 'jenkinsciinfra/deathstar' }
       getAutomaticSemanticVersioning{ false }
     }
@@ -103,6 +104,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getMainBranch{ 'master' }
       getMainBranch{ 'master' }
       getAutomaticSemanticVersioning{ true }
+      getMetadataFromSh{ '' }
       getGitCredentials{ 'git-credentials' }
     }
     infraConfig.use {
@@ -147,6 +149,66 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   @Test
+  void itBuildsAndDeploysWithAutomaticSemanticReleaseAndMetadataFromFile() throws Exception {
+    def script = loadScript(scriptName)
+    def metadataSh = 'cat Dockerfile | grep "FROM jenkins" | sed "s|FROM jenkins/jenkins:|+|" | sed "s|-jdk11||"'
+
+    helper.addShMock("jx-release-version",'1.0.1', 0)
+    helper.addShMock(metadataSh,'+2.280', 0)
+
+    // when building a Docker Image with the default Configuration
+    addEnvVar('BRANCH_NAME', 'master')
+    dockerConfig.demand.with {
+      getMainBranch{ 'master' }
+      getMainBranch{ 'master' }
+      getMainBranch{ 'master' }
+      getAutomaticSemanticVersioning{ true }
+      getMetadataFromSh{ metadataSh }
+      getMetadataFromSh{ metadataSh }
+      getGitCredentials{ 'git-credentials' }
+    }
+    infraConfig.use {
+      dockerConfig.use {
+        script.call(testImageName)
+      }
+    }
+    printCallStack()
+
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+
+    // With the static files read as expected
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/pod-template.yml'))
+
+    // And the make target called as shell steps
+    assertTrue(assertMethodCallContainsPattern('sh','make lint'))
+    assertTrue(assertMethodCallContainsPattern('sh','make build'))
+    assertTrue(assertMethodCallContainsPattern('sh','make test'))
+
+    // With the tag step called for latest
+    assertTrue(assertMethodCallContainsPattern('echo','Skipping stage Deploy'))
+
+    assertTrue(assertMethodCallContainsPattern('echo','Skipping stage Deploy'))
+    assertTrue(assertMethodCallContainsPattern('echo','Configuring credential.helper'))
+    assertTrue(assertMethodCallContainsPattern('echo','Tagging New Version: 1.0.1+2.280'))
+    assertTrue(assertMethodCallContainsPattern('sh','git tag 1.0.1+2.280'))
+    assertTrue(assertMethodCallContainsPattern('echo','Pushing Tag'))
+    assertTrue(assertMethodCallContainsPattern('sh','git push origin --tags'))
+
+    // And the img login and logout methods
+    assertTrue(assertMethodCallContainsPattern('sh','img login'))
+    assertTrue(assertMethodCallContainsPattern('sh','img logout'))
+
+    // And generated reports are recorded
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=hadolint.json}'))
+
+    // And all mocked/stubbed methods have to be called
+    infraConfig.expect.verify()
+    dockerConfig.expect.verify()
+  }
+
+  @Test
   void itBuildsAndDeploysImageWithCustomConfig() throws Exception {
     def script = loadScript(scriptName)
 
@@ -157,6 +219,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getMainBranch{ 'main' }
       getMainBranch{ 'main' }
       getMainBranch{ 'main' }
+      getMetadataFromSh{ '' }
       getFullImageName { 'registry.company.com/deathstar' }
       getAutomaticSemanticVersioning{ false }
     }
@@ -194,6 +257,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getMainBranch{ 'main' }
       getMainBranch{ 'main' }
       getMainBranch{ 'main' }
+      getMetadataFromSh{ '' }
       getFullImageName { 'testregistry/deathstar' }
       getAutomaticSemanticVersioning{ false }
     }
@@ -265,6 +329,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getMainBranch{ 'master' }
       getFullImageName { 'registry.company.com/deathstar' }
       getAutomaticSemanticVersioning{ false }
+      getMetadataFromSh{ '' }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -369,6 +434,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getMainBranch{ 'master' }
       getMainBranch{ 'master' }
       getAutomaticSemanticVersioning{ false }
+      getMetadataFromSh{ '' }
     }
     infraConfig.use {
       dockerConfig.use {
