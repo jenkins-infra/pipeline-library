@@ -106,6 +106,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getAutomaticSemanticVersioning{ true }
       getMetadataFromSh{ '' }
       getGitCredentials{ 'git-credentials' }
+      getFullImageName { 'jenkinsciinfra/deathstar' }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -127,9 +128,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','make test'))
 
     // With the tag step called for latest
-    assertTrue(assertMethodCallContainsPattern('echo','Skipping stage Deploy'))
+    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=jenkinsciinfra/deathstar:latest make deploy'))
 
-    assertTrue(assertMethodCallContainsPattern('echo','Skipping stage Deploy'))
+    // Tag at the correct version
     assertTrue(assertMethodCallContainsPattern('echo','Configuring credential.helper'))
     assertTrue(assertMethodCallContainsPattern('echo','Tagging New Version: 1.0.1'))
     assertTrue(assertMethodCallContainsPattern('sh','git tag 1.0.1'))
@@ -166,6 +167,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getMetadataFromSh{ metadataSh }
       getMetadataFromSh{ metadataSh }
       getGitCredentials{ 'git-credentials' }
+      getFullImageName { 'jenkinsciinfra/deathstar' }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -187,9 +189,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','make test'))
 
     // With the tag step called for latest
-    assertTrue(assertMethodCallContainsPattern('echo','Skipping stage Deploy'))
+    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=jenkinsciinfra/deathstar:latest make deploy'))
 
-    assertTrue(assertMethodCallContainsPattern('echo','Skipping stage Deploy'))
+    // Tag with the correct version and metadata
     assertTrue(assertMethodCallContainsPattern('echo','Configuring credential.helper'))
     assertTrue(assertMethodCallContainsPattern('echo','Tagging New Version: 1.0.1+2.280'))
     assertTrue(assertMethodCallContainsPattern('sh','git tag 1.0.1+2.280'))

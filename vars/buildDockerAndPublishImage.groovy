@@ -118,12 +118,9 @@ def call(String imageName, Map config=[:]) {
 
       stage("Deploy") {
         when {
-          allOf {
-            expression { env.SEMANTIC_RELEASE == 'false' }
-            anyOf {
-              branch dockerConfig.mainBranch
-              buildingTag()
-            }
+          anyOf {
+            branch dockerConfig.mainBranch
+            buildingTag()
           }
         } // when
         environment {
