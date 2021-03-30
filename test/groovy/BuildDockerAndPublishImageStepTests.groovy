@@ -11,6 +11,8 @@ import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.rules.ExpectedException
 
 class BuildDockerAndPublishImageStepTests extends BaseTest {
   static final String scriptName = "vars/buildDockerAndPublishImage.groovy"
@@ -19,6 +21,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
   def infraConfig
   def dockerConfig
+
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
 
   @Override
   @Before
@@ -29,6 +34,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     helper.registerAllowedMethod('hadoLint', [Map.class], { m -> m.pattern })
     helper.registerAllowedMethod('libraryResource', [String.class], { '' })
     helper.registerAllowedMethod('fileExists', [String.class], { true })
+    helper.registerAllowedMethod('podTemplate', [Map.class, Closure.class], { m, body ->body() })
+    helper.registerAllowedMethod('container', [String.class, Closure.class], { s, body ->body() })
+    binding.setVariable('POD_LABEL', 'hello')
 
     // Define mocks/stubs for the data objects
     infraConfig = new StubFor(InfraConfig.class)
@@ -50,12 +58,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     addEnvVar('BRANCH_NAME', 'master')
     dockerConfig.demand.with {
       getMainBranch{ 'master' }
-      getMainBranch{ 'master' }
-      getMainBranch{ 'master' }
-      getMetadataFromSh{ '' }
       getFullImageName { 'jenkinsciinfra/deathstar' }
       getAutomaticSemanticVersioning{ false }
-      getNextVersionCommand{ 'jx-release-version' }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -77,12 +81,10 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','make test'))
 
     // With the deploy step called for latest
-    assertFalse(assertMethodCallContainsPattern('echo','Skipping stage Deploy'))
     assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=jenkinsciinfra/deathstar:latest make deploy'))
 
-    // And the img login and logout methods
+    // And the img login methods
     assertTrue(assertMethodCallContainsPattern('sh','img login'))
-    assertTrue(assertMethodCallContainsPattern('sh','img logout'))
 
     // And generated reports are recorded
     assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=hadolint.json}'))
@@ -101,7 +103,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // when building a Docker Image with the default Configuration
     addEnvVar('BRANCH_NAME', 'master')
     dockerConfig.demand.with {
-      getMainBranch{ 'master' }
       getMainBranch{ 'master' }
       getMainBranch{ 'master' }
       getAutomaticSemanticVersioning{ true }
@@ -139,9 +140,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('echo','Pushing Tag'))
     assertTrue(assertMethodCallContainsPattern('sh','git push origin --tags'))
 
-    // And the img login and logout methods
     assertTrue(assertMethodCallContainsPattern('sh','img login'))
-    assertTrue(assertMethodCallContainsPattern('sh','img logout'))
 
     // And generated reports are recorded
     assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=hadolint.json}'))
@@ -162,7 +161,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // when building a Docker Image with the default Configuration
     addEnvVar('BRANCH_NAME', 'master')
     dockerConfig.demand.with {
-      getMainBranch{ 'master' }
       getMainBranch{ 'master' }
       getMainBranch{ 'master' }
       getAutomaticSemanticVersioning{ true }
@@ -201,9 +199,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('echo','Pushing Tag'))
     assertTrue(assertMethodCallContainsPattern('sh','git push origin --tags'))
 
-    // And the img login and logout methods
+    // And the img login methods
     assertTrue(assertMethodCallContainsPattern('sh','img login'))
-    assertTrue(assertMethodCallContainsPattern('sh','img logout'))
 
     // And generated reports are recorded
     assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=hadolint.json}'))
@@ -217,17 +214,12 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   void itBuildsAndDeploysImageWithCustomConfig() throws Exception {
     def script = loadScript(scriptName)
 
-    // when building a Docker Image with a custom configuration but not on the principal branch
     addEnvVar('BRANCH_NAME', 'main')
 
     dockerConfig.demand.with {
       getMainBranch{ 'main' }
-      getMainBranch{ 'main' }
-      getMainBranch{ 'main' }
-      getMetadataFromSh{ '' }
       getFullImageName { 'registry.company.com/deathstar' }
       getAutomaticSemanticVersioning{ false }
-      getNextVersionCommand{ 'jx-release-version' }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -245,7 +237,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // With the deploy step called for latest
-    assertFalse(assertMethodCallContainsPattern('echo','Skipping stage Deploy'))
     assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=registry.company.com/deathstar:latest make deploy'))
 
     // And all mocked/stubbed methods have to be called
@@ -261,20 +252,16 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     addEnvVar('BRANCH_NAME', 'main')
     dockerConfig.demand.with {
       getMainBranch{ 'main' }
-      getMainBranch{ 'main' }
-      getMainBranch{ 'main' }
-      getMetadataFromSh{ '' }
       getFullImageName { 'testregistry/deathstar' }
       getAutomaticSemanticVersioning{ false }
-      getNextVersionCommand{ 'jx-release-version' }
     }
     infraConfig.use {
       dockerConfig.use {
         script.call(testImageName, [
-                registry: 'testregistry/',
-                dockerfile: 'build.Dockerfile',
-                credentials: 'company-docker-registry-credz',
-                mainBranch: 'main'
+          registry: 'testregistry/',
+          dockerfile: 'build.Dockerfile',
+          credentials: 'company-docker-registry-credz',
+          mainBranch: 'main'
         ])
       }
     }
@@ -284,7 +271,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // With the deploy step called for latest
-    assertFalse(assertMethodCallContainsPattern('echo','Skipping stage Deploy'))
     assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=testregistry/deathstar:latest make deploy'))
 
     // And all mocked/stubbed methods have to be called
@@ -300,8 +286,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     addEnvVar('BRANCH_NAME', 'dev')
     dockerConfig.demand.with {
       getMainBranch{ 'master' }
-      getMainBranch{ 'master' }
-      getMainBranch{ 'master' }
       getAutomaticSemanticVersioning{ false }
     }
     infraConfig.use {
@@ -315,7 +299,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // With no deploy step called for latest
-    assertTrue(assertMethodCallContainsPattern('echo','Skipping stage Deploy'))
     assertFalse(assertMethodCallContainsPattern('sh','make deploy'))
 
     // And all mocked/stubbed methods have to be called
@@ -331,13 +314,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     addEnvVar('BRANCH_NAME', 'master') // Required until https://github.com/jenkinsci/JenkinsPipelineUnit/issues/330 is fixed
     addEnvVar('TAG_NAME', '1.0.0')
     dockerConfig.demand.with {
-      getMainBranch{ 'master' }
-      getMainBranch{ 'master' }
-      getMainBranch{ 'master' }
       getFullImageName { 'registry.company.com/deathstar' }
       getAutomaticSemanticVersioning{ false }
-      getNextVersionCommand{ 'jx-release-version' }
-      getMetadataFromSh{ '' }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -350,7 +328,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // With no deploy step called for latest
-    assertFalse(assertMethodCallContainsPattern('echo','Skipping stage Deploy'))
     assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=registry.company.com/deathstar:1.0.0 make deploy'))
 
     // And all mocked/stubbed methods have to be called
@@ -365,8 +342,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // when building a Docker Image with a default configuration and no cst.yml file found
     helper.registerAllowedMethod('fileExists', [String.class], { s -> return !s.equals('cst.yml') })
     dockerConfig.demand.with {
-      getMainBranch{ 'master' }
-      getMainBranch{ 'master' }
       getMainBranch{ 'master' }
       getAutomaticSemanticVersioning{ false }
     }
@@ -388,22 +363,22 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     dockerConfig.expect.verify()
   }
 
+
   @Test
   void itFailFastButRecordReportWhenLintFails() throws Exception {
     def script = loadScript(scriptName)
 
-    // when building a Docker Image which fails to pass the lint stage
-    helper.registerAllowedMethod("sh", [String.class], {cmd->
-      if (cmd.contains('make lint')) {
-        binding.getVariable('currentBuild').result = 'FAILURE'
-      }
-    })
+    helper.addShMock('make lint', '', 1)
+
     dockerConfig.demand.with {
-      getMainBranch{ 'dev' }
-      getMainBranch{ 'dev' }
       getMainBranch{ 'dev' }
       getAutomaticSemanticVersioning{ false }
     }
+
+    // Job is expected to fail with an exception during the lint stage
+    thrown.expect(Exception)
+    thrown.expectMessage(containsString('Lint Failed'))
+
     infraConfig.use {
       dockerConfig.use {
         script.call(testImageName)
@@ -427,24 +402,23 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   @Test
-  void itFailFastWhenTestFails() throws Exception {
+  void itFailsFastWhenTestFails() throws Exception {
     def script = loadScript(scriptName)
 
     // when building a Docker Image which fails to pass the test stage on the master branch with default config
     addEnvVar('BRANCH_NAME', 'master')
-    helper.registerAllowedMethod("sh", [String.class], {cmd->
-      if (cmd.contains('make test')) {
-        binding.getVariable('currentBuild').result = 'FAILURE'
-      }
-    })
+    helper.addShMock('make test', '', 1)
     dockerConfig.demand.with {
-      getMainBranch{ 'master' }
-      getMainBranch{ 'master' }
       getMainBranch{ 'master' }
       getAutomaticSemanticVersioning{ false }
       getNextVersionCommand{ 'jx-release-version' }
       getMetadataFromSh{ '' }
     }
+
+    // Job is expected to fail with an exception during the lint stage
+    thrown.expect(Exception)
+    thrown.expectMessage(containsString('Test Failed'))
+
     infraConfig.use {
       dockerConfig.use {
         script.call(testImageName)
