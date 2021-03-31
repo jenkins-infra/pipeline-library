@@ -15,6 +15,9 @@ def call(String imageName, Map config=[:]) {
 
   final boolean semVerEnabled = dockerConfig.automaticSemanticVersioning && env.BRANCH_NAME == dockerConfig.mainBranch
 
+  final String dockerImageName = dockerConfig.imageName
+  final String dockerImageDir = dockerConfig.dockerImageDir
+
   podTemplate(
     inheritFrom: 'jnlp-linux',
     yaml: yamlPodDef,
@@ -23,11 +26,12 @@ def call(String imageName, Map config=[:]) {
       container('builder') {
         withEnv([
           "BUILD_DATE=${dockerConfig.buildDate}",
-          "IMAGE_NAME=${dockerConfig.imageName}",
-          "DOCKERFILE=${dockerConfig.dockerfile}",
-          "PLATFORM=${dockerConfig.platform}",
+          "IMAGE_NAME=${dockerImageName}",
+          "IMAGE_DIR=${dockerImageDir}",
+          "IMAGE_DOCKERFILE=${dockerConfig.dockerfile}",
+          "IMAGE_PLATFORM=${dockerConfig.platform}",
         ]) {
-          stage('Prepare') {
+          stage("Prepare ${dockerImageName}") {
             withCredentials([usernamePassword(credentialsId: dockerConfig.credentials, passwordVariable: 'DOCKER_REGISTRY_PSW', usernameVariable: 'DOCKER_REGISTRY_USR')]) {
               checkout scm
 
@@ -42,7 +46,7 @@ def call(String imageName, Map config=[:]) {
 
           // Automatic tagging on principal branch is not enabled by default
           if (semVerEnabled) {
-            stage('Next Version') {
+            stage("Get Next Version of ${dockerImageName}") {
               container('next-version') {
                 nextVersion = sh(script:"${dockerConfig.nextVersionCommand}", returnStdout: true).trim()
                 if (dockerConfig.metadataFromSh != '') {
@@ -54,28 +58,42 @@ def call(String imageName, Map config=[:]) {
             } // stage
           } // if
 
-          stage("Lint") {
-            try {
-              sh 'make lint'
-            } finally {
-              recordIssues enabledForFailure: true, tool: hadoLint(pattern: 'hadolint.json')
+          stage("Lint ${dockerImageName}") {
+            def hadolintReport = "${env.WORKSPACE}/${dockerImageName}-hadolint.json"
+            withEnv(["HADOLINT_REPORT=${hadolintReport}"]) {
+              try {
+                sh 'make lint'
+              } finally {
+                recordIssues(
+                  enabledForFailure: true,
+                  aggregatingResults: false,
+                  tool: hadoLint(id: "hadolint-${dockerImageName.replaceAll('/','-')}", pattern: hadolintReport)
+                )
+              }
             }
           } // stage
 
-          stage("Build") {
+          stage("Build ${dockerImageName}") {
             sh 'make build'
           } //stage
 
-          // Test step is not mandatory as not all repositories
-          if (fileExists('cst.yml')) {
-            stage("Test") {
-              sh 'make test'
-            } //stage
-          } // if
+          // There can be 2 kind of tests: per image and per repository
+          [
+            "Image Test Harness": "${dockerImageDir}/cst.yml",
+            "Common Test Harness": "${env.WORKSPACE}/common-cst.yml"
+          ].each { testName, testHarness ->
+            if (fileExists(testHarness)) {
+              stage("Test ${testName} for ${dockerImageName}") {
+                withEnv(["TEST_HARNESS=${testHarness}"]) {
+                  sh 'make test'
+                } // withEnv
+              } //stage
+            } // if
+          }
 
           // Automatic tagging on principal branch is not enabled by default
           if (semVerEnabled) {
-            stage("Semantic Release") {
+            stage("Semantic Release of ${dockerImageName}") {
               echo "Configuring credential.helper"
               sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
 
@@ -90,7 +108,7 @@ def call(String imageName, Map config=[:]) {
           } // if
 
           if (env.TAG_NAME || env.BRANCH_NAME == dockerConfig.mainBranch) {
-            stage("Deploy") {
+            stage("Deploy ${dockerImageName}") {
               def docker_image_tag = env.TAG_NAME ? env.TAG_NAME : 'latest'
               sh "IMAGE_DEPLOY_NAME=${dockerConfig.getFullImageName()}:${docker_image_tag} make deploy"
             } //stage

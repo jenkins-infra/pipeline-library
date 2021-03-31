@@ -28,6 +28,7 @@ class DockerConfigTest {
         assertEquals( 'master', dockerConfig.mainBranch)
         assertEquals( 'jenkins-dockerhub', dockerConfig.credentials)
         assertEquals( 'Dockerfile', dockerConfig.dockerfile)
+        assertEquals( '.', dockerConfig.getDockerImageDir())
     }
 
 
@@ -66,7 +67,8 @@ class DockerConfigTest {
           dockerConfig = new DockerConfig(testImageName, new InfraConfig(), [
             dockerfile: 'build.Dockerfile',
             credentials: 'company-docker-registry-credz',
-            mainBranch: 'main'
+            mainBranch: 'main',
+            imageDir: 'docker/'
           ])
         }
 
@@ -75,6 +77,7 @@ class DockerConfigTest {
         assertEquals( 'main', dockerConfig.mainBranch)
         assertEquals( 'company-docker-registry-credz', dockerConfig.credentials)
         assertEquals( 'build.Dockerfile', dockerConfig.dockerfile)
+        assertEquals( 'docker/', dockerConfig.getDockerImageDir())
     }
 
 }

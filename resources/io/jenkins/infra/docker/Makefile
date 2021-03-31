@@ -1,12 +1,16 @@
 
 IMAGE_NAME ?= helloworld
 IMAGE_DEPLOY_NAME ?= $(IMAGE_NAME)
-DOCKERFILE ?= Dockerfile
-IMAGE_ARCHIVE ?= $(PWD)/image.tar
+IMAGE_DIR ?= $(PWD)
+IMAGE_DOCKERFILE ?= $(IMAGE_DIR)/Dockerfile
+IMAGE_ARCHIVE ?= $(IMAGE_DIR)/image.tar
+IMAGE_PLATFORM ?= linux/amd64
+HADOLINT_REPORT ?= $(IMAGE_DIR)/hadolint.json
+TEST_HARNESS ?= $(IMAGE_DIR)/cst.yml
 
 ## Use this variable if you want to use Docker instead
 CONTAINER_BIN ?= img
-PLATFORM ?= linux/amd64
+
 
 ## Image metadatas
 GIT_COMMIT_REV ?= $(shell git log -n 1 --pretty=format:'%h')
@@ -19,14 +23,14 @@ help: ## Show this Makefile's help
 
 all: clean lint build test ## Execute the complete process except the "deploy" step
 
-lint: ## Lint the $(DOCKERFILE) content
-	@echo "== Linting $(PWD)/$(DOCKERFILE)..."
-	@echo "Writing Lint results to $(PWD)/hadolint.json"
-	@hadolint --format=json $(PWD)/$(DOCKERFILE) > $(PWD)/hadolint.json
+lint: ## Lint the $(IMAGE_DOCKERFILE) content
+	@echo "== Linting $(IMAGE_DOCKERFILE)..."
+	@echo "Writing Lint results to $(HADOLINT_REPORT)"
+	@hadolint --format=json $(IMAGE_DOCKERFILE) > $(HADOLINT_REPORT)
 	@echo "== Lint ✅ Succeeded"
 
-build: ## Build the Docker Image $(IMAGE_NAME) from $(DOCKERFILE) and export it to $(IMAGE_ARCHIVE)
-	@echo "== Building $(IMAGE_NAME) from $(PWD)/$(DOCKERFILE)..."
+build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE) and export it to $(IMAGE_ARCHIVE)
+	@echo "== Building $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)..."
 	@$(CONTAINER_BIN) build \
 		-t $(IMAGE_NAME) \
 		--build-arg "GIT_COMMIT_REV=$(GIT_COMMIT_REV)" \
@@ -40,21 +44,20 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(DOCKERFILE) and export it 
 		--label "org.label-schema.vcs-ref=$(GIT_COMMIT_REV)" \
 		--label "org.opencontainers.image.created=$(BUILD_DATE)" \
 		--label "org.label-schema.build-date=$(BUILD_DATE)" \
-		--platform $(PLATFORM) \
-		-f $(PWD)/$(DOCKERFILE) \
-		$(PWD)
+		--platform $(IMAGE_PLATFORM) \
+		-f $(IMAGE_DOCKERFILE) \
+		$(IMAGE_DIR)
 	@$(CONTAINER_BIN) save --output=$(IMAGE_ARCHIVE) $(IMAGE_NAME)
 	@echo "== Build ✅ Succeeded, image $(IMAGE_NAME) exported to $(IMAGE_ARCHIVE)."
 
 clean: ## Delete any file generated during the build steps
 	@echo "== Cleaning working directory from generated artefacts..."
-	@rm -f $(PWD)/*.tar $(PWD)/hadolint.json
+	@rm -f $(IMAGE_DIR)/*.tar $(HADOLINT_REPORT)
 	@echo "== Cleanup ✅ Succeeded"
 
 test: ## Execute the test harness on the Docker Image archive at $(IMAGE_ARCHIVE)
-	@echo "== Testing $(IMAGE_NAME) from $(IMAGE_ARCHIVE)..."
-	@echo "Writing test report to $(PWD)/cst-result.xml..."
-	@container-structure-test test --driver=tar --image=$(IMAGE_ARCHIVE) --config=$(PWD)/cst.yml
+	@echo "== Test $(IMAGE_NAME) with $(TEST_HARNESS) from $(IMAGE_ARCHIVE)..."
+	@container-structure-test test --driver=tar --image=$(IMAGE_ARCHIVE) --config=$(TEST_HARNESS)
 	@echo "== Test ✅ Succeeded"
 
 ## This steps expects that you are logged to the Docker registry to push image into

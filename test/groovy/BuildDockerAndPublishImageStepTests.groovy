@@ -31,12 +31,14 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     super.setUp()
 
     // Mock Pipeline method which are not already declared in the parent class
-    helper.registerAllowedMethod('hadoLint', [Map.class], { m -> m.pattern })
+    helper.registerAllowedMethod('hadoLint', [Map.class], { m -> m })
     helper.registerAllowedMethod('libraryResource', [String.class], { '' })
     helper.registerAllowedMethod('fileExists', [String.class], { true })
     helper.registerAllowedMethod('podTemplate', [Map.class, Closure.class], { m, body ->body() })
     helper.registerAllowedMethod('container', [String.class, Closure.class], { s, body ->body() })
-    binding.setVariable('POD_LABEL', 'hello')
+    binding.setVariable('POD_LABEL', 'builder')
+    addEnvVar('WORKSPACE', '/tmp')
+
 
     // Define mocks/stubs for the data objects
     infraConfig = new StubFor(InfraConfig.class)
@@ -47,6 +49,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getCredentials{ '' }
       getImageName{ 'deathstar' }
       getPlatform{ 'linux/amd64' }
+      getDockerImageDir{ '.' }
     }
   }
 
@@ -87,7 +90,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','img login'))
 
     // And generated reports are recorded
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=hadolint.json}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, aggregatingResults=false, tool={id=hadolint-deathstar, pattern=/tmp/deathstar-hadolint.json}}'))
 
     // And all mocked/stubbed methods have to be called
     infraConfig.expect.verify()
@@ -143,7 +146,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','img login'))
 
     // And generated reports are recorded
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=hadolint.json}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, aggregatingResults=false, tool={id=hadolint-deathstar, pattern=/tmp/deathstar-hadolint.json}}'))
 
     // And all mocked/stubbed methods have to be called
     infraConfig.expect.verify()
@@ -203,7 +206,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','img login'))
 
     // And generated reports are recorded
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=hadolint.json}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, aggregatingResults=false, tool={id=hadolint-deathstar, pattern=/tmp/deathstar-hadolint.json}}'))
 
     // And all mocked/stubbed methods have to be called
     infraConfig.expect.verify()
@@ -336,11 +339,11 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   @Test
-  void itSkipTestStageIfNoCSTFile() throws Exception {
+  void itSkipTestStageIfNoSpecificCSTFile() throws Exception {
     def script = loadScript(scriptName)
 
     // when building a Docker Image with a default configuration and no cst.yml file found
-    helper.registerAllowedMethod('fileExists', [String.class], { s -> return !s.equals('cst.yml') })
+    helper.registerAllowedMethod('fileExists', [String.class], { s -> return !s.contains('/cst.yml') })
     dockerConfig.demand.with {
       getMainBranch{ 'master' }
       getAutomaticSemanticVersioning{ false }
@@ -355,8 +358,67 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Then we expect a successful build
     assertJobStatusSuccess()
 
-    // With no test stage
-    assertFalse(assertMethodCallContainsPattern('sh','make test'))
+    // With only a common test stage
+    assertFalse(assertMethodCallContainsPattern('withEnv','TEST_HARNESS=./cst.yml'))
+    assertTrue(assertMethodCallContainsPattern('withEnv','TEST_HARNESS=/tmp/common-cst.yml'))
+
+    // And all mocked/stubbed methods have to be called
+    infraConfig.expect.verify()
+    dockerConfig.expect.verify()
+  }
+
+  @Test
+  void itSkipTestStageIfNoCommonCSTFile() throws Exception {
+    def script = loadScript(scriptName)
+
+    // when building a Docker Image with a default configuration and no cst.yml file found
+    helper.registerAllowedMethod('fileExists', [String.class], { s -> return !s.contains('/common-cst.yml') })
+    dockerConfig.demand.with {
+      getMainBranch{ 'master' }
+      getAutomaticSemanticVersioning{ false }
+    }
+    infraConfig.use {
+      dockerConfig.use {
+        script.call(testImageName)
+      }
+    }
+    printCallStack()
+
+    // Then we expect a successful build
+    assertJobStatusSuccess()
+
+    // With only a specific tests stage
+    assertTrue(assertMethodCallContainsPattern('withEnv','TEST_HARNESS=./cst.yml'))
+    assertFalse(assertMethodCallContainsPattern('withEnv','TEST_HARNESS=/tmp/common-cst.yml'))
+
+    // And all mocked/stubbed methods have to be called
+    infraConfig.expect.verify()
+    dockerConfig.expect.verify()
+  }
+
+  @Test
+  void itSkipAllTestStagesIfNoCSTFileAtAll() throws Exception {
+    def script = loadScript(scriptName)
+
+    // when building a Docker Image with a default configuration and no cst.yml file found
+    helper.registerAllowedMethod('fileExists', [String.class], { s -> return !(s.contains('/common-cst.yml') || s.contains('/cst.yml')) })
+    dockerConfig.demand.with {
+      getMainBranch{ 'master' }
+      getAutomaticSemanticVersioning{ false }
+    }
+    infraConfig.use {
+      dockerConfig.use {
+        script.call(testImageName)
+      }
+    }
+    printCallStack()
+
+    // Then we expect a successful build
+    assertJobStatusSuccess()
+
+    // With no test stage at all
+    assertFalse(assertMethodCallContainsPattern('withEnv','TEST_HARNESS=./cst.yml'))
+    assertFalse(assertMethodCallContainsPattern('withEnv','TEST_HARNESS=/tmp/common-cst.yml'))
 
     // And all mocked/stubbed methods have to be called
     infraConfig.expect.verify()
@@ -394,7 +456,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('sh','make build'))
 
     // And a lint report recorded
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=hadolint.json}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, aggregatingResults=false, tool={id=hadolint-deathstar, pattern=/tmp/deathstar-hadolint.json}}'))
 
     // And all mocked/stubbed methods have to be called
     infraConfig.expect.verify()
