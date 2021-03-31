@@ -108,7 +108,7 @@ def call(Map params = [:]) {
                                 if (skipTests) {
                                     mavenOptions += "-DskipTests"
                                 }
-                                mavenOptions += "clean install"
+                                mavenOptions += "clean verify"
                                 try {
                                     infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
                                 } finally {
