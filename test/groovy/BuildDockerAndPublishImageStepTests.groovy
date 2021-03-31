@@ -55,6 +55,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getMetadataFromSh{ '' }
       getFullImageName { 'jenkinsciinfra/deathstar' }
       getAutomaticSemanticVersioning{ false }
+      getNextVersionCommand{ 'jx-release-version' }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -104,6 +105,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getMainBranch{ 'master' }
       getMainBranch{ 'master' }
       getAutomaticSemanticVersioning{ true }
+      getNextVersionCommand{ 'jx-release-version' }
       getMetadataFromSh{ '' }
       getGitCredentials{ 'git-credentials' }
       getFullImageName { 'jenkinsciinfra/deathstar' }
@@ -168,6 +170,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getMetadataFromSh{ metadataSh }
       getGitCredentials{ 'git-credentials' }
       getFullImageName { 'jenkinsciinfra/deathstar' }
+      getNextVersionCommand{ 'jx-release-version' }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -224,6 +227,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getMetadataFromSh{ '' }
       getFullImageName { 'registry.company.com/deathstar' }
       getAutomaticSemanticVersioning{ false }
+      getNextVersionCommand{ 'jx-release-version' }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -262,6 +266,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getMetadataFromSh{ '' }
       getFullImageName { 'testregistry/deathstar' }
       getAutomaticSemanticVersioning{ false }
+      getNextVersionCommand{ 'jx-release-version' }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -331,6 +336,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getMainBranch{ 'master' }
       getFullImageName { 'registry.company.com/deathstar' }
       getAutomaticSemanticVersioning{ false }
+      getNextVersionCommand{ 'jx-release-version' }
       getMetadataFromSh{ '' }
     }
     infraConfig.use {
@@ -436,6 +442,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       getMainBranch{ 'master' }
       getMainBranch{ 'master' }
       getAutomaticSemanticVersioning{ false }
+      getNextVersionCommand{ 'jx-release-version' }
       getMetadataFromSh{ '' }
     }
     infraConfig.use {

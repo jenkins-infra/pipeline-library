@@ -27,6 +27,8 @@ class DockerConfig {
 
   String metadataFromSh
 
+  String nextVersionCommand
+
   public DockerConfig(String imageName, InfraConfig infraConfig, Map config=[:]) {
     this.imageName = imageName
 
@@ -49,6 +51,8 @@ class DockerConfig {
     this.gitCredentials = config.get('gitCredentials', '')
 
     this.metadataFromSh = config.get('metadataFromSh', '')
+
+    this.nextVersionCommand = config.get('nextVersionCommand', 'jx-release-version')
   }
 
   String getFullImageName() {

@@ -45,7 +45,7 @@ def call(String imageName, Map config=[:]) {
         steps {
           container('next-version') {
             script {
-              nextVersion = sh(script:'jx-release-version', returnStdout: true).trim()
+              nextVersion = sh(script:"${dockerConfig.nextVersionCommand}", returnStdout: true).trim()
               if (dockerConfig.metadataFromSh != '') {
                 metadata = sh(script: "${dockerConfig.metadataFromSh}", returnStdout: true).trim()
                 nextVersion = nextVersion + metadata
