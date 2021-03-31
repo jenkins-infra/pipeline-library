@@ -109,8 +109,17 @@ def call(String imageName, Map config=[:]) {
 
           if (env.TAG_NAME || env.BRANCH_NAME == dockerConfig.mainBranch) {
             stage("Deploy ${dockerImageName}") {
-              def docker_image_tag = env.TAG_NAME ? env.TAG_NAME : 'latest'
-              sh "IMAGE_DEPLOY_NAME=${dockerConfig.getFullImageName()}:${docker_image_tag} make deploy"
+              def imageDeployName = dockerConfig.getFullImageName()
+
+              if(env.TAG_NAME) {
+                // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
+                if(imageDeployName.contains(':')) {
+                  imageDeployName += "-${env.TAG_NAME}"
+                } else {
+                  imageDeployName += ":${env.TAG_NAME}"
+                }
+              }
+              sh "IMAGE_DEPLOY_NAME=${imageDeployName} make deploy"
             } //stage
           } // if
         } // withEnv

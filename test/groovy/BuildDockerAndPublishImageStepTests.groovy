@@ -84,13 +84,44 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','make test'))
 
     // With the deploy step called for latest
-    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=jenkinsciinfra/deathstar:latest make deploy'))
+    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=jenkinsciinfra/deathstar make deploy'))
 
     // And the img login methods
     assertTrue(assertMethodCallContainsPattern('sh','img login'))
 
     // And generated reports are recorded
     assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, aggregatingResults=false, tool={id=hadolint-deathstar, pattern=/tmp/deathstar-hadolint.json}}'))
+
+    // And all mocked/stubbed methods have to be called
+    infraConfig.expect.verify()
+    dockerConfig.expect.verify()
+  }
+
+  @Test
+  void itDeploysWithDefaultConfigAndTagInImageName() throws Exception {
+    def script = loadScript(scriptName)
+    def customImageNameWithTag = testImageName + ':3.141'
+    def fullCustomImageName = 'jenkinsciinfra/' + customImageNameWithTag
+
+    // when building a Docker Image with the default Configuration
+    addEnvVar('BRANCH_NAME', 'master')
+    dockerConfig.demand.with {
+      getMainBranch{ 'master' }
+      getFullImageName { fullCustomImageName }
+      getAutomaticSemanticVersioning{ false }
+    }
+    infraConfig.use {
+      dockerConfig.use {
+        script.call(customImageNameWithTag)
+      }
+    }
+    printCallStack()
+
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+
+    // With the deploy step called with the correct image name
+    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=' + fullCustomImageName + ' make deploy'))
 
     // And all mocked/stubbed methods have to be called
     infraConfig.expect.verify()
@@ -134,7 +165,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','make test'))
 
     // With the tag step called for latest
-    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=jenkinsciinfra/deathstar:latest make deploy'))
+    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=jenkinsciinfra/deathstar make deploy'))
 
     // Tag at the correct version
     assertTrue(assertMethodCallContainsPattern('echo','Configuring credential.helper'))
@@ -193,7 +224,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','make test'))
 
     // With the tag step called for latest
-    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=jenkinsciinfra/deathstar:latest make deploy'))
+    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=jenkinsciinfra/deathstar make deploy'))
 
     // Tag with the correct version and metadata
     assertTrue(assertMethodCallContainsPattern('echo','Configuring credential.helper'))
@@ -240,7 +271,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // With the deploy step called for latest
-    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=registry.company.com/deathstar:latest make deploy'))
+    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=registry.company.com/deathstar make deploy'))
 
     // And all mocked/stubbed methods have to be called
     infraConfig.expect.verify()
@@ -274,7 +305,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // With the deploy step called for latest
-    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=testregistry/deathstar:latest make deploy'))
+    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=testregistry/deathstar make deploy'))
 
     // And all mocked/stubbed methods have to be called
     infraConfig.expect.verify()
@@ -314,7 +345,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     def script = loadScript(scriptName)
 
     // when building a Docker Image with a default configuration, on the principal branch, triggered by a tag
-    addEnvVar('BRANCH_NAME', 'master') // Required until https://github.com/jenkinsci/JenkinsPipelineUnit/issues/330 is fixed
+    addEnvVar('BRANCH_NAME', 'master')
     addEnvVar('TAG_NAME', '1.0.0')
     dockerConfig.demand.with {
       getFullImageName { 'registry.company.com/deathstar' }
@@ -332,6 +363,38 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // With no deploy step called for latest
     assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=registry.company.com/deathstar:1.0.0 make deploy'))
+
+    // And all mocked/stubbed methods have to be called
+    infraConfig.expect.verify()
+    dockerConfig.expect.verify()
+  }
+
+  @Test
+  void itDeploysWithCorrectNameWhenTriggeredByTagAndImagenameHasTag() throws Exception {
+    def script = loadScript(scriptName)
+    def customImageNameWithTag = testImageName + ':3.141'
+    def fullCustomImageName = 'jenkinsciinfra/' + customImageNameWithTag
+    def gitTag = 'rc1-1.0.0'
+
+    // when building a Docker Image with a default configuration, on the principal branch, triggered by a tag
+    addEnvVar('BRANCH_NAME', 'master')
+    addEnvVar('TAG_NAME', gitTag)
+    dockerConfig.demand.with {
+      getFullImageName { fullCustomImageName }
+      getAutomaticSemanticVersioning{ false }
+    }
+    infraConfig.use {
+      dockerConfig.use {
+        script.call(customImageNameWithTag)
+      }
+    }
+    printCallStack()
+
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+
+    // With the deploy step called with the correct image name
+    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=' + fullCustomImageName + '-' + gitTag + ' make deploy'))
 
     // And all mocked/stubbed methods have to be called
     infraConfig.expect.verify()
