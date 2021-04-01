@@ -5,7 +5,6 @@ metadata:
   labels:
     jenkins: "agent"
     job/kind: "docker-image-build"
-    docker-image/name: "${IMAGE_NAME}"
   annotations:
     container.apparmor.security.beta.kubernetes.io/builder: unconfined
     container.seccomp.security.alpha.kubernetes.io/builder: unconfined
