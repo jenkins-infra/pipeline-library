@@ -76,6 +76,11 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('writeYaml', [Map.class], { })
     helper.registerAllowedMethod('milestone', [String.class], { true })
     helper.registerAllowedMethod('milestone', [Integer.class], { true }) // actually String but apparently this mock does not handle stock Groovy coercion?
+
+    // Kubernetes Agents in scripted syntax
+    helper.registerAllowedMethod('podTemplate', [Map.class, Closure.class], { m, body ->body() })
+    helper.registerAllowedMethod('container', [String.class, Closure.class], { s, body ->body() })
+    binding.setVariable('POD_LABEL', 'builder')
   }
 
   def assertMethodCallContainsPattern(String methodName, String pattern) {

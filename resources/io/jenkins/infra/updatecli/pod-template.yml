@@ -1,0 +1,25 @@
+---
+apiVersion: "v1"
+kind: "Pod"
+metadata:
+  labels:
+    jenkins: "agent"
+    job/kind: "updatecli"
+spec:
+  restartPolicy: "Never"
+  containers:
+    - name: "updatecli"
+      image: "ghcr.io/updatecli/updatecli:v0.2.0" #"UPDATECLI_DOCKER_IMAGE"
+      imagePullPolicy: "IfNotPresent"
+      command:
+        - sleep
+      args:
+        - 1d
+      resources:
+        limits:
+          memory: "128Mi"
+          cpu: "200m"
+        requests:
+          memory: "128Mi"
+          cpu: "200m"
+...
