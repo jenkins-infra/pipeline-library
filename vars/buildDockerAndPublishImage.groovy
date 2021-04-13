@@ -9,133 +9,119 @@ def call(String imageName, Map config=[:]) {
 
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
-  final String podYamlTemplate = libraryResource 'io/jenkins/infra/docker/pod-template.yml'
-  // Customize Pod label to improve build analysis
-  final String yamlPodDef = podYamlTemplate.replaceAll('\\$IMAGE_NAME', imageName).replaceAll('\\$?\\{IMAGE_NAME\\}', imageName)
+  final String yamlPodDef      = libraryResource 'io/jenkins/infra/docker/pod-template.yml'
 
-  // This function uses Declarative Syntax as we haven't met (yet) use case where only a subpart of the pipeline is needed: either we run it "whole" or not.
-  // It means that the function is acting more as a "template" of an initial declarative standalone pipeline, than a real life well-constructed library.
-  // A second reason is to lower the contribution bar by avoiding the "know very well Groovy" requirement (but this argument can be disputed as the test unit is pure Groovy...)
-  // If you feel like to rewrite this function in scripted, you can spend this effort of course :)
-  pipeline {
-    agent {
-      kubernetes {
-        inheritFrom 'jnlp-linux'
-        defaultContainer 'builder'
-        yaml yamlPodDef
-      } // kubernetes
-    } // agent
+  final boolean semVerEnabled = dockerConfig.automaticSemanticVersioning && env.BRANCH_NAME == dockerConfig.mainBranch
 
-    environment {
-      BUILD_DATE       = "${dockerConfig.buildDate}"
-      IMAGE_NAME       = "${dockerConfig.imageName}"
-      DOCKERFILE       = "${dockerConfig.dockerfile}"
-      PLATFORM         = "${dockerConfig.platform}"
-      SEMANTIC_RELEASE = "${dockerConfig.automaticSemanticVersioning}"
-    } // environment
+  final String dockerImageName = dockerConfig.imageName
+  final String dockerImageDir = dockerConfig.dockerImageDir
 
-    stages {
-      stage('Next Version') {
-        when {
-          allOf {
-            environment name: 'SEMANTIC_RELEASE', value: 'true'
-            branch dockerConfig.mainBranch  
-          }
-        }
-        steps {
-          container('next-version') {
-            script {
-              nextVersion = sh(script:"${dockerConfig.nextVersionCommand}", returnStdout: true).trim()
-              if (dockerConfig.metadataFromSh != '') {
-                metadata = sh(script: "${dockerConfig.metadataFromSh}", returnStdout: true).trim()
-                nextVersion = nextVersion + metadata
+  podTemplate(
+    inheritFrom: 'jnlp-linux',
+    yaml: yamlPodDef,
+  ) {
+    node(POD_LABEL) {
+      container('builder') {
+        withEnv([
+          "BUILD_DATE=${dockerConfig.buildDate}",
+          "IMAGE_NAME=${dockerImageName}",
+          "IMAGE_DIR=${dockerImageDir}",
+          "IMAGE_DOCKERFILE=${dockerConfig.dockerfile}",
+          "IMAGE_PLATFORM=${dockerConfig.platform}",
+        ]) {
+          stage("Prepare ${dockerImageName}") {
+            withCredentials([usernamePassword(credentialsId: dockerConfig.credentials, passwordVariable: 'DOCKER_REGISTRY_PSW', usernameVariable: 'DOCKER_REGISTRY_USR')]) {
+              checkout scm
+
+              // Logging in on the Dockerhub helps to avoid request limit from DockerHub
+              sh 'echo "${DOCKER_REGISTRY_PSW}" | img login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
+
+              // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
+              // Even though we have mitigation trhough the multibranch job config only allowed to build PRs from repo. contributors
+              writeFile file: 'Makefile', text: makefileContent
+            } // withCredentials
+          } // stage
+
+          // Automatic tagging on principal branch is not enabled by default
+          if (semVerEnabled) {
+            stage("Get Next Version of ${dockerImageName}") {
+              container('next-version') {
+                nextVersion = sh(script:"${dockerConfig.nextVersionCommand}", returnStdout: true).trim()
+                if (dockerConfig.metadataFromSh != '') {
+                  metadata = sh(script: "${dockerConfig.metadataFromSh}", returnStdout: true).trim()
+                  nextVersion = nextVersion + metadata
+                } // if
+              } // container
+              echo "Next Release Version = $nextVersion"
+            } // stage
+          } // if
+
+          stage("Lint ${dockerImageName}") {
+            def hadolintReport = "${env.WORKSPACE}/${dockerImageName}-hadolint.json"
+            withEnv(["HADOLINT_REPORT=${hadolintReport}"]) {
+              try {
+                sh 'make lint'
+              } finally {
+                recordIssues(
+                  enabledForFailure: true,
+                  aggregatingResults: false,
+                  tool: hadoLint(id: "hadolint-${dockerImageName.replaceAll('/','-')}", pattern: hadolintReport)
+                )
               }
             }
+          } // stage
+
+          stage("Build ${dockerImageName}") {
+            sh 'make build'
+          } //stage
+
+          // There can be 2 kind of tests: per image and per repository
+          [
+            "Image Test Harness": "${dockerImageDir}/cst.yml",
+            "Common Test Harness": "${env.WORKSPACE}/common-cst.yml"
+          ].each { testName, testHarness ->
+            if (fileExists(testHarness)) {
+              stage("Test ${testName} for ${dockerImageName}") {
+                withEnv(["TEST_HARNESS=${testHarness}"]) {
+                  sh 'make test'
+                } // withEnv
+              } //stage
+            } // if
           }
-          echo "Next Release Version = $nextVersion"
-        } // steps
-      } // stage
 
-      stage('Prepare') {
-        environment {
-          DOCKER_REGISTRY = credentials("${dockerConfig.credentials}")
-        }
-        steps {
-          sh 'echo "${DOCKER_REGISTRY_PSW}" | img login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
-          script {
-            // Retrieve Makefile
-            writeFile file: 'Makefile', text: makefileContent
-          }
-        } // steps
-      } // stage
+          // Automatic tagging on principal branch is not enabled by default
+          if (semVerEnabled) {
+            stage("Semantic Release of ${dockerImageName}") {
+              echo "Configuring credential.helper"
+              sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
 
-      stage("Lint") {
-        steps {
-          sh 'make lint'
-        } // steps
-        post {
-          always {
-            recordIssues enabledForFailure: true, tool: hadoLint(pattern: 'hadolint.json')
-          }
-        } // post
-      } //stage
+              withCredentials([usernamePassword(credentialsId: "${dockerConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                echo "Tagging New Version: $nextVersion"
+                sh "git tag $nextVersion"
 
-      stage("Build") {
-        steps {
-          sh 'make build'
-        } // steps
-      } //stage
+                echo "Pushing Tag"
+                sh "git push origin --tags"
+              }
+            } // stage
+          } // if
 
-      stage("Test") {
-        when {
-          expression { fileExists 'cst.yml' }
-        }
-        steps {
-          sh 'make test'
-        } // steps
-      } //stage
+          if (env.TAG_NAME || env.BRANCH_NAME == dockerConfig.mainBranch) {
+            stage("Deploy ${dockerImageName}") {
+              def imageDeployName = dockerConfig.getFullImageName()
 
-      stage("Semantic Release") {
-        when {
-          allOf {
-            expression { env.SEMANTIC_RELEASE == 'true' }
-            branch dockerConfig.mainBranch  
-          }
-        }
-        steps {
-          echo "Configuring credential.helper"
-          sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
-
-          withCredentials([usernamePassword(credentialsId: "${dockerConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-            echo "Tagging New Version: $nextVersion"
-            sh "git tag $nextVersion"
-
-            echo "Pushing Tag"
-            sh "git push origin --tags"
-          }
-        } // steps
-      } // stage
-
-      stage("Deploy") {
-        when {
-          anyOf {
-            branch dockerConfig.mainBranch
-            buildingTag()
-          }
-        } // when
-        environment {
-          DOCKER_IMAGE_TAG = "${env.TAG_NAME ? env.TAG_NAME : 'latest'}"
-        }
-        steps {
-          sh "IMAGE_DEPLOY_NAME=${dockerConfig.getFullImageName()}:${DOCKER_IMAGE_TAG} make deploy"
-        } // steps
-      } //stage
-    } // stages
-
-    post {
-      cleanup {
-        sh 'img logout'
-      } // cleanup
-    } // post
-  } // pipeline
+              if(env.TAG_NAME) {
+                // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
+                if(imageDeployName.contains(':')) {
+                  imageDeployName += "-${env.TAG_NAME}"
+                } else {
+                  imageDeployName += ":${env.TAG_NAME}"
+                }
+              }
+              sh "IMAGE_DEPLOY_NAME=${imageDeployName} make deploy"
+            } //stage
+          } // if
+        } // withEnv
+      } // container
+    } // node
+  } // podTemplate
 } // call

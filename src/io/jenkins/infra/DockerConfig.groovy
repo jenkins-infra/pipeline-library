@@ -29,6 +29,8 @@ class DockerConfig {
 
   String nextVersionCommand
 
+  String dockerImageDir
+
   public DockerConfig(String imageName, InfraConfig infraConfig, Map config=[:]) {
     this.imageName = imageName
 
@@ -45,14 +47,16 @@ class DockerConfig {
     this.buildDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(new Date())
 
     this.platform = config.get('platform', 'linux/amd64')
-    
+
     this.automaticSemanticVersioning = config.get('automaticSemanticVersioning', false)
-    
+
     this.gitCredentials = config.get('gitCredentials', '')
 
     this.metadataFromSh = config.get('metadataFromSh', '')
 
     this.nextVersionCommand = config.get('nextVersionCommand', 'jx-release-version')
+
+    this.dockerImageDir = config.imageDir
   }
 
   String getFullImageName() {
@@ -63,5 +67,11 @@ class DockerConfig {
   String getRegistry() {
     def reg = registry ?: infraConfig?.dockerRegistry ?: 'noregistry'
     return reg.endsWith('/') ? reg[0..-2] : reg
+  }
+
+  String getDockerImageDir() {
+    def childFile = new File(this.dockerfile)
+    def parentDir = childFile.getParentFile() ?: new File('.')
+    return  dockerImageDir ?: parentDir.getPath()
   }
 }
