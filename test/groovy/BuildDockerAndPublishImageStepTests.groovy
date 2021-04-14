@@ -1,5 +1,3 @@
-
-
 import org.junit.Before
 import org.junit.Test
 import groovy.mock.interceptor.StubFor
@@ -9,7 +7,6 @@ import com.lesfurets.jenkins.unit.declarative.*
 
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
-import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.rules.ExpectedException
@@ -350,6 +347,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     dockerConfig.demand.with {
       getFullImageName { 'registry.company.com/deathstar' }
       getAutomaticSemanticVersioning{ false }
+      getAutomaticSemanticVersioning{ false }
     }
     infraConfig.use {
       dockerConfig.use {
@@ -370,6 +368,46 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   @Test
+  void itDeployWithTagWhenTriggeredByTagAndSemanticRelease() throws Exception {
+    def script = loadScript(scriptName)
+
+    helper.addShMock('git remote -v | grep origin | grep push | sed \'s/^origin\\s//\' | sed \'s/\\s(push)//\'', 'https://github.com/org/repository.git', 0)
+    helper.addShMock('gh api /repos/org/repository/releases | jq -e -r \'.[] | select(.draft == true and .name == "next") | .id\'', '12345', 0)
+
+    // when building a Docker Image with a default configuration, on the principal branch, triggered by a tag
+    addEnvVar('BRANCH_NAME', 'master')
+    addEnvVar('TAG_NAME', '1.0.0')
+    dockerConfig.demand.with {
+      getFullImageName { 'registry.company.com/deathstar' }
+      getAutomaticSemanticVersioning{ true }
+      getAutomaticSemanticVersioning{ true }
+      getMainBranch{ 'master' }
+      getNextVersionCommand{ 'jx-release-version' }
+      getMetadataFromSh{ '' }
+      getGitCredentials{ 'git-creds' }
+      getGitCredentials{ 'git-creds' }
+    }
+    infraConfig.use {
+      dockerConfig.use {
+        script.call(testImageName)
+      }
+    }
+    printCallStack()
+
+    // Then we expect a successful build
+    assertJobStatusSuccess()
+
+    // With no deploy step called for latest
+    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=registry.company.com/deathstar:1.0.0 make deploy'))
+    assertTrue(assertMethodCallContainsPattern('sh','gh api /repos/org/repository/releases | jq -e -r \'.[] | select(.draft == true and .name == "next") | .id\''))
+    assertTrue(assertMethodCallContainsPattern('sh','gh api -X PATCH -F draft=false -F name=1.0.0 -F tag_name=1.0.0 /repos/org/repository/releases/12345'))
+
+    // And all mocked/stubbed methods have to be called
+    infraConfig.expect.verify()
+    dockerConfig.expect.verify()
+  }
+
+  @Test
   void itDeploysWithCorrectNameWhenTriggeredByTagAndImagenameHasTag() throws Exception {
     def script = loadScript(scriptName)
     def customImageNameWithTag = testImageName + ':3.141'
@@ -381,6 +419,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     addEnvVar('TAG_NAME', gitTag)
     dockerConfig.demand.with {
       getFullImageName { fullCustomImageName }
+      getAutomaticSemanticVersioning{ false }
       getAutomaticSemanticVersioning{ false }
     }
     infraConfig.use {
