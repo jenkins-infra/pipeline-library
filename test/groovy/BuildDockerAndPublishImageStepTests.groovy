@@ -408,6 +408,46 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   @Test
+  void itDeployWithTagWhenTriggeredByTagAndSemanticReleaseWithoutReleaseDrafter() throws Exception {
+    def script = loadScript(scriptName)
+
+    helper.addShMock('git remote -v | grep origin | grep push | sed \'s/^origin\\s//\' | sed \'s/\\s(push)//\'', 'https://github.com/org/repository.git', 0)
+    helper.addShMock('gh api /repos/org/repository/releases | jq -e -r \'.[] | select(.draft == true and .name == "next") | .id\'', '', 1)
+
+    // when building a Docker Image with a default configuration, on the principal branch, triggered by a tag
+    addEnvVar('BRANCH_NAME', 'master')
+    addEnvVar('TAG_NAME', '1.0.0')
+    dockerConfig.demand.with {
+      getFullImageName { 'registry.company.com/deathstar' }
+      getAutomaticSemanticVersioning{ true }
+      getAutomaticSemanticVersioning{ true }
+      getMainBranch{ 'master' }
+      getNextVersionCommand{ 'jx-release-version' }
+      getMetadataFromSh{ '' }
+      getGitCredentials{ 'git-creds' }
+      getGitCredentials{ 'git-creds' }
+    }
+    infraConfig.use {
+      dockerConfig.use {
+        script.call(testImageName)
+      }
+    }
+    printCallStack()
+
+    // Then we expect a successful build
+    assertJobStatusSuccess()
+
+    // With no deploy step called for latest
+    assertTrue(assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=registry.company.com/deathstar:1.0.0 make deploy'))
+    assertTrue(assertMethodCallContainsPattern('sh','gh api /repos/org/repository/releases | jq -e -r \'.[] | select(.draft == true and .name == "next") | .id\''))
+    assertTrue(assertMethodCallContainsPattern('echo', 'Release named \'next\' does not exist'))
+
+    // And all mocked/stubbed methods have to be called
+    infraConfig.expect.verify()
+    dockerConfig.expect.verify()
+  }
+
+  @Test
   void itDeploysWithCorrectNameWhenTriggeredByTagAndImagenameHasTag() throws Exception {
     def script = loadScript(scriptName)
     def customImageNameWithTag = testImageName + ':3.141'

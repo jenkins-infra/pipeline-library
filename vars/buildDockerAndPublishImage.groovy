@@ -132,7 +132,7 @@ def call(String imageName, Map config=[:]) {
                     String release = sh(returnStdout: true, script: "gh api /repos/${org}/${repository}/releases | jq -e -r '.[] | select(.draft == true and .name == \"next\") | .id'").trim()
                     sh "gh api -X PATCH -F draft=false -F name=${env.TAG_NAME} -F tag_name=${env.TAG_NAME} /repos/${org}/${repository}/releases/$release"
                 } catch (err) {
-                    echo "Release named 'draft' does not exist"
+                    echo "Release named 'next' does not exist"
                 }
               } // withCredentials    
             } // stage
