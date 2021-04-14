@@ -128,8 +128,12 @@ def call(String imageName, Map config=[:]) {
                 String org = origin.split('/')[3]
                 String repository = origin.split('/')[4]
 
-                String release = sh(returnStdout: true, script: "gh api /repos/${org}/${repository}/releases | jq -e -r '.[] | select(.draft == true and .name == \"next\") | .id'").trim()
-                sh "gh api -X PATCH -F draft=false -F name=${env.TAG_NAME} -F tag_name=${env.TAG_NAME} /repos/${org}/${repository}/releases/$release"
+                try {
+                    String release = sh(returnStdout: true, script: "gh api /repos/${org}/${repository}/releases | jq -e -r '.[] | select(.draft == true and .name == \"next\") | .id'").trim()
+                    sh "gh api -X PATCH -F draft=false -F name=${env.TAG_NAME} -F tag_name=${env.TAG_NAME} /repos/${org}/${repository}/releases/$release"
+                } catch (err) {
+                    echo "Release named 'draft' does not exist"
+                }
               } // withCredentials    
             } // stage
           } // if
