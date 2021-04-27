@@ -31,11 +31,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     helper.registerAllowedMethod('hadoLint', [Map.class], { m -> m })
     helper.registerAllowedMethod('libraryResource', [String.class], { '' })
     helper.registerAllowedMethod('fileExists', [String.class], { true })
-    helper.registerAllowedMethod('podTemplate', [Map.class, Closure.class], { m, body ->body() })
-    helper.registerAllowedMethod('container', [String.class, Closure.class], { s, body ->body() })
-    binding.setVariable('POD_LABEL', 'builder')
     addEnvVar('WORKSPACE', '/tmp')
-
 
     // Define mocks/stubs for the data objects
     infraConfig = new StubFor(InfraConfig.class)
@@ -73,7 +69,10 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // With the static files read as expected
     assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
-    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/pod-template.yml'))
+
+    // And the correct pod template defined
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/builder:latest'))
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'gcr.io/jenkinsxio/jx-release-version:2.3.4'))
 
     // And the make target called as shell steps
     assertTrue(assertMethodCallContainsPattern('sh','make lint'))
@@ -154,7 +153,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // With the static files read as expected
     assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
-    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/pod-template.yml'))
 
     // And the make target called as shell steps
     assertTrue(assertMethodCallContainsPattern('sh','make lint'))
@@ -213,7 +211,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // With the static files read as expected
     assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
-    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/pod-template.yml'))
 
     // And the make target called as shell steps
     assertTrue(assertMethodCallContainsPattern('sh','make lint'))
@@ -638,6 +635,39 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // And no deploy stage as we expect test failure to fail the pipeline
     assertFalse(assertMethodCallContainsPattern('sh','make deploy'))
+
+    // And all mocked/stubbed methods have to be called
+    infraConfig.expect.verify()
+    dockerConfig.expect.verify()
+  }
+
+  @Test
+  void itUsesCustomImageFromCustomConfig() throws Exception {
+
+    def script = loadScript(scriptName)
+
+    addEnvVar('BRANCH_NAME', 'main')
+
+    dockerConfig.demand.with {
+      getMainBranch{ 'master' }
+      getAutomaticSemanticVersioning{ false }
+    }
+    infraConfig.use {
+      dockerConfig.use {
+        script.call(testImageName, [
+          builderImage: 'alpine:3.13',
+          nextVersionImage: 'debian:slim',
+        ])
+      }
+    }
+    printCallStack()
+
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+
+    // And the correct pod template defined
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'alpine:3.13'))
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'debian:slim'))
 
     // And all mocked/stubbed methods have to be called
     infraConfig.expect.verify()

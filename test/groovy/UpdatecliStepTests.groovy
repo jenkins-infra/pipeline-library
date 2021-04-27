@@ -20,9 +20,6 @@ class UpdatecliStepTests extends BaseTest {
   @Before
   void setUp() throws Exception {
     super.setUp()
-
-    // Mock Pipeline method which are not already declared in the parent class
-    helper.registerAllowedMethod('libraryResource', [String.class], { '' })
   }
 
   @Test
@@ -36,8 +33,8 @@ class UpdatecliStepTests extends BaseTest {
     // Then we expect a successful build
     assertJobStatusSuccess()
 
-    // With the static files read as expected
-    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/updatecli/pod-template.yml'))
+    // And the correct pod template defined
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'ghcr.io/updatecli/updatecli:latest'))
 
     // And the repository checkouted
     assertTrue(assertMethodCallContainsPattern('checkout', ''))
@@ -58,9 +55,6 @@ class UpdatecliStepTests extends BaseTest {
     // Then we expect a successful build
     assertJobStatusSuccess()
 
-    // With the static files read as expected
-    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/updatecli/pod-template.yml'))
-
     // And the repository checkouted
     assertTrue(assertMethodCallContainsPattern('checkout',''))
 
@@ -80,8 +74,6 @@ class UpdatecliStepTests extends BaseTest {
     // Then we expect a successful build
     assertJobStatusSuccess()
 
-    // With the static files read as expected
-    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/updatecli/pod-template.yml'))
 
     // And the repository checkouted
     assertTrue(assertMethodCallContainsPattern('checkout',''))
@@ -102,8 +94,6 @@ class UpdatecliStepTests extends BaseTest {
     // Then we expect a successful build
     assertJobStatusSuccess()
 
-    // With the static files read as expected
-    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/updatecli/pod-template.yml'))
 
     // And the repository checkouted
     assertTrue(assertMethodCallContainsPattern('checkout',''))
@@ -111,5 +101,27 @@ class UpdatecliStepTests extends BaseTest {
     // And only the default command called with custom config and NO values
     assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --values ./values.yaml'))
     assertFalse(assertMethodCallContainsPattern('sh','--config'))
+  }
+
+  @Test
+  void itUsesCustomImageFromCustomConfig() throws Exception {
+    def script = loadScript(scriptName)
+
+    // when calling with the "updatecli" function with a custom action "eat"
+    script.call(updatecliDockerImage: 'golang:1.16-alpine')
+    printCallStack()
+
+    // Then we expect a successful build
+    assertJobStatusSuccess()
+
+    // And the repository checkouted
+    assertTrue(assertMethodCallContainsPattern('checkout',''))
+
+    // And the correct pod template defined
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'golang:1.16-alpine'))
+
+    // And only the diff command called with default values
+    assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
+    assertFalse(assertMethodCallContainsPattern('sh','updatecli apply'))
   }
 }
