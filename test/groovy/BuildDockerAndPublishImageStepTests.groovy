@@ -86,7 +86,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','img login'))
 
     // And generated reports are recorded
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, aggregatingResults=false, tool={id=hadolint-deathstar, pattern=/tmp/deathstar-hadolint.json}}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, aggregatingResults=false, tool={id=deathstar-hadolint, pattern=deathstar-hadolint.json}}'))
 
     // And all mocked/stubbed methods have to be called
     infraConfig.expect.verify()
@@ -172,7 +172,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','img login'))
 
     // And generated reports are recorded
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, aggregatingResults=false, tool={id=hadolint-deathstar, pattern=/tmp/deathstar-hadolint.json}}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, aggregatingResults=false, tool={id=deathstar-hadolint, pattern=deathstar-hadolint.json}}'))
 
     // And all mocked/stubbed methods have to be called
     infraConfig.expect.verify()
@@ -231,7 +231,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','img login'))
 
     // And generated reports are recorded
-    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, aggregatingResults=false, tool={id=hadolint-deathstar, pattern=/tmp/deathstar-hadolint.json}}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, aggregatingResults=false, tool={id=deathstar-hadolint, pattern=deathstar-hadolint.json}}'))
 
     // And all mocked/stubbed methods have to be called
     infraConfig.expect.verify()

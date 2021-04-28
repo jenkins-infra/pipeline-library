@@ -79,15 +79,17 @@ def call(String imageName, Map config=[:]) {
           } // if
 
           stage("Lint ${dockerImageName}") {
-            def hadolintReport = "${env.WORKSPACE}/${dockerImageName}-hadolint.json"
-            withEnv(["HADOLINT_REPORT=${hadolintReport}"]) {
+            // Define the image name as prefix to support multi images per pipeline
+            def hadolintReportId = "${dockerImageName}-hadolint"
+            def hadoLintReportFile = "${hadolintReportId}.json"
+            withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
               try {
                 sh 'make lint'
               } finally {
                 recordIssues(
                   enabledForFailure: true,
                   aggregatingResults: false,
-                  tool: hadoLint(id: "hadolint-${dockerImageName.replaceAll('/','-')}", pattern: hadolintReport)
+                  tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
                 )
               }
             }
