@@ -9,16 +9,38 @@ def call(String imageName, Map config=[:]) {
 
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
-  final String yamlPodDef      = libraryResource 'io/jenkins/infra/docker/pod-template.yml'
-
   final boolean semVerEnabled = dockerConfig.automaticSemanticVersioning && env.BRANCH_NAME == dockerConfig.mainBranch
 
   final String dockerImageName = dockerConfig.imageName
   final String dockerImageDir = dockerConfig.dockerImageDir
 
   podTemplate(
-    inheritFrom: 'jnlp-linux',
-    yaml: yamlPodDef,
+    annotations: [
+      podAnnotation(key: 'container.apparmor.security.beta.kubernetes.io/builder', value: 'unconfined'),
+      podAnnotation(key: 'container.seccomp.security.alpha.kubernetes.io/builder', value: 'unconfined'),
+    ],
+    containers: [
+      containerTemplate(
+        name: 'builder',
+        image: config.builderImage ?: 'jenkinsciinfra/builder:latest',
+        command: 'cat',
+        ttyEnabled: true,
+        resourceRequestCpu: '500m',
+        resourceLimitCpu: '500m',
+        resourceRequestMemory: '512Mi',
+        resourceLimitMemory: '512Mi',
+      ),
+      containerTemplate(
+        name: 'next-version',
+        image: config.nextVersionImage ?: 'gcr.io/jenkinsxio/jx-release-version:2.3.4',
+        command: 'cat',
+        ttyEnabled: true,
+        resourceRequestCpu: '500m',
+        resourceLimitCpu: '500m',
+        resourceRequestMemory: '512Mi',
+        resourceLimitMemory: '512Mi',
+      ),
+    ]
   ) {
     node(POD_LABEL) {
       container('builder') {
@@ -57,15 +79,17 @@ def call(String imageName, Map config=[:]) {
           } // if
 
           stage("Lint ${dockerImageName}") {
-            def hadolintReport = "${env.WORKSPACE}/${dockerImageName}-hadolint.json"
-            withEnv(["HADOLINT_REPORT=${hadolintReport}"]) {
+            // Define the image name as prefix to support multi images per pipeline
+            def hadolintReportId = "${dockerImageName}-hadolint"
+            def hadoLintReportFile = "${hadolintReportId}.json"
+            withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
               try {
                 sh 'make lint'
               } finally {
                 recordIssues(
                   enabledForFailure: true,
                   aggregatingResults: false,
-                  tool: hadoLint(id: "hadolint-${dockerImageName.replaceAll('/','-')}", pattern: hadolintReport)
+                  tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
                 )
               }
             }
@@ -134,7 +158,7 @@ def call(String imageName, Map config=[:]) {
                 } catch (err) {
                     echo "Release named 'next' does not exist"
                 }
-              } // withCredentials    
+              } // withCredentials
             } // stage
           } // if
         } // withEnv
