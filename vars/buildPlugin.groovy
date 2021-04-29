@@ -28,7 +28,7 @@ def call(Map params = [:]) {
         String jdk = config.jdk
         String jenkinsVersion = config.jenkins
         if (config.containsKey('javaLevel')) {
-            echo 'WARNING: javaLevel is deprecated and should not be used'
+            echo 'WARNING: Ignoring deprecated "javaLevel" parameter. This parameter should be removed from your "Jenkinsfile".'
         }
 
         String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
