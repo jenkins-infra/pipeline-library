@@ -27,7 +27,7 @@ def call(Map params = [:]) {
         String label = config.platform
         String jdk = config.jdk
         String jenkinsVersion = config.jenkins
-        if (config.javaLevel != null) {
+        if (config.containsKey('javaLevel')) {
             echo 'WARNING: javaLevel is deprecated and should not be used'
         }
 
