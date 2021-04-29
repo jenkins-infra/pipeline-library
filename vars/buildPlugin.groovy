@@ -27,7 +27,9 @@ def call(Map params = [:]) {
         String label = config.platform
         String jdk = config.jdk
         String jenkinsVersion = config.jenkins
-        String javaLevel = config.javaLevel
+        if (config.javaLevel != null) {
+            echo 'WARNING: javaLevel is deprecated and should not be used'
+        }
 
         String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
         boolean first = tasks.size() == 1
@@ -100,9 +102,6 @@ def call(Map params = [:]) {
                                 }
                                 if (jenkinsVersion) {
                                     mavenOptions += "-Djenkins.version=${jenkinsVersion} -Daccess-modifier-checker.failOnError=false"
-                                }
-                                if (javaLevel) {
-                                    mavenOptions += "-Djava.level=${javaLevel}"
                                 }
                                 if (skipTests) {
                                     mavenOptions += "-DskipTests"
@@ -299,8 +298,7 @@ List<Map<String, String>> getConfigurations(Map params) {
                 ret << [
                         "platform": p,
                         "jdk": jdk,
-                        "jenkins": jenkins,
-                        "javaLevel": null   // not supported in the old format
+                        "jenkins": jenkins
                 ]
             }
         }
@@ -321,10 +319,10 @@ static List<Map<String, String>> recommendedConfigurations() {
         // Linux - Java 11 with recent LTS
         [ platform: "linux", jdk: "8", jenkins: null ],
         // [ platform: "windows", jdk: "8", jenkins: null ],
-        // [ platform: "linux", jdk: "8", jenkins: recentLTS, javaLevel: "8" ],
-        [ platform: "windows", jdk: "8", jenkins: recentLTS, javaLevel: "8" ],
-        [ platform: "linux", jdk: "11", jenkins: recentLTS, javaLevel: "8" ],
-        // [ platform: "windows", jdk: "11", jenkins: recentLTS, javaLevel: "8" ]
+        // [ platform: "linux", jdk: "8", jenkins: recentLTS ],
+        [ platform: "windows", jdk: "8", jenkins: recentLTS ],
+        [ platform: "linux", jdk: "11", jenkins: recentLTS ],
+        // [ platform: "windows", jdk: "11", jenkins: recentLTS ]
     ]
     return configurations
 }

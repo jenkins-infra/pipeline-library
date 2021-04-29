@@ -46,7 +46,7 @@ buildPlugin()
 buildPlugin(/*...*/, configurations: [
   [ platform: "linux", jdk: "8", jenkins: null ],
   [ platform: "windows", jdk: "8", jenkins: null ],
-  [ platform: "linux", jdk: "11", jenkins: "2.150", javaLevel: 8 ]
+  [ platform: "linux", jdk: "11", jenkins: "2.150" ]
 ])
 ----
 
@@ -131,7 +131,7 @@ Examples of not supported features:
 
 * Deployment of incremental versions (link:https://github.com/jenkinsci/jep/tree/master/jep/305[JEP-305])
 * Publishing of static analysis and coverage reports (Checkstyle, SpotBugs, JaCoCo)
-* Configuring `jenkinsVersion` and `javaLevel` for the build flow (as standalone arguments or as `configurations`)
+* Configuring `jenkinsVersion` for the build flow (as standalone arguments or as `configurations`)
 * Usage of link:https://azure.microsoft.com/en-us/services/container-instances/[Azure Container Instances] as agents (only Maven agents are configured)
 
 === infra.isTrusted()
