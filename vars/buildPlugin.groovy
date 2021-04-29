@@ -268,7 +268,7 @@ boolean hasDockerLabel() {
 }
 
 List<Map<String, String>> getConfigurations(Map params) {
-    boolean explicit = params.containsKey("configurations")
+    boolean explicit = params.containsKey("configurations") && params.configurations != null
     boolean implicit = params.containsKey('platforms') || params.containsKey('jdkVersions') || params.containsKey('jenkinsVersions')
 
     if (explicit && implicit) {
@@ -309,22 +309,8 @@ List<Map<String, String>> getConfigurations(Map params) {
 }
 
 /**
- * Get recommended configurations for testing.
- * Includes testing Java 8 and 11 on the newest LTS.
+ * @deprecated no longer recommended
  */
 static List<Map<String, String>> recommendedConfigurations() {
-    def recentLTS = "2.164.1"
-    def configurations = [
-        // Intentionally test configurations which have detected the most problems
-        // Linux - Java 8 with plugin specified minimum Jenkins version
-        // Windows - Java 8 with recent LTS
-        // Linux - Java 11 with recent LTS
-        [ platform: "linux", jdk: "8", jenkins: null ],
-        // [ platform: "windows", jdk: "8", jenkins: null ],
-        // [ platform: "linux", jdk: "8", jenkins: recentLTS, javaLevel: "8" ],
-        [ platform: "windows", jdk: "8", jenkins: recentLTS, javaLevel: "8" ],
-        [ platform: "linux", jdk: "11", jenkins: recentLTS, javaLevel: "8" ],
-        // [ platform: "windows", jdk: "11", jenkins: recentLTS, javaLevel: "8" ]
-    ]
-    return configurations
+    null
 }
