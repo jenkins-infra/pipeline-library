@@ -50,15 +50,6 @@ buildPlugin(/*...*/, configurations: [
 ])
 ----
 
-** It is also possible to use a `buildPlugin.recommendedConfigurations()` method to get recommended configurations for testing.
-Note that the recommended configuration may change over time,
-and hence your CI may break if the new recommended configuration is not compatible
-+
-[source,groovy]
-----
-buildPlugin(/*...*/, configurations: buildPlugin.recommendedConfigurations())
-----
-
 * `tests`: (default: `null`) - a map of parameters to run tests during the build. The test results and the JaCoCo code
 coverage results are recorded after the build with the corresponding Jenkins plugins.
 ** `skip` - If `true`, skip all the tests by setting the `-skipTests` profile.
@@ -109,15 +100,6 @@ buildPluginWithGradle(/*...*/, configurations: [
   [ platform: "linux", jdk: "8" ],
   [ platform: "windows", jdk: "8"],
 ])
-----
-
-** It is also possible to use a `buildPlugin.recommendedConfigurations()` method to get recommended configurations for testing.
-Note that the recommended configuration may change over time,
-and hence your CI may break if the new recommended configuration is not compatible
-+
-[source,groovy]
-----
-buildPluginWithGradle(/*...*/, configurations: buildPlugin.recommendedConfigurations())
 ----
 
 * `tests`: (default: `null`) - a map of parameters to run tests during the build
