@@ -66,8 +66,8 @@ class BuildPluginStepTests extends BaseTest {
     def script = loadScript(scriptName)
     def configurations = script.getConfigurations([:])
 
-    def expected = [['platform': 'linux', 'jdk': '8', 'jenkins': null, 'javaLevel': null],
-                    ['platform': 'windows', 'jdk': '8', 'jenkins': null, 'javaLevel': null]]
+    def expected = [['platform': 'linux', 'jdk': '8', 'jenkins': null],
+                    ['platform': 'windows', 'jdk': '8', 'jenkins': null]]
     assertEquals(expected, configurations)
     printCallStack()
     assertJobStatusSuccess()
@@ -302,7 +302,7 @@ class BuildPluginStepTests extends BaseTest {
     })
     helper.addReadFileMock('.mvn/extensions.xml', 'git-changelist-maven-extension')
     // and no jenkins version
-    script.call(configurations: [['platform': 'linux', 'jdk': 8, 'jenkins': null, 'javaLevel': null]])
+    script.call(configurations: [['platform': 'linux', 'jdk': 8, 'jenkins': null]])
     printCallStack()
     // then it runs the fingerprint
     assertTrue(assertMethodCallContainsPattern('fingerprint', '**/*-rc*.*/*-rc*.*'))

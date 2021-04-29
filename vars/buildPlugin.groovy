@@ -27,7 +27,9 @@ def call(Map params = [:]) {
         String label = config.platform
         String jdk = config.jdk
         String jenkinsVersion = config.jenkins
-        String javaLevel = config.javaLevel
+        if (config.containsKey('javaLevel')) {
+            echo 'WARNING: Ignoring deprecated "javaLevel" parameter. This parameter should be removed from your "Jenkinsfile".'
+        }
 
         String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
         boolean first = tasks.size() == 1
@@ -100,9 +102,6 @@ def call(Map params = [:]) {
                                 }
                                 if (jenkinsVersion) {
                                     mavenOptions += "-Djenkins.version=${jenkinsVersion} -Daccess-modifier-checker.failOnError=false"
-                                }
-                                if (javaLevel) {
-                                    mavenOptions += "-Djava.level=${javaLevel}"
                                 }
                                 if (skipTests) {
                                     mavenOptions += "-DskipTests"
@@ -299,8 +298,7 @@ List<Map<String, String>> getConfigurations(Map params) {
                 ret << [
                         "platform": p,
                         "jdk": jdk,
-                        "jenkins": jenkins,
-                        "javaLevel": null   // not supported in the old format
+                        "jenkins": jenkins
                 ]
             }
         }
