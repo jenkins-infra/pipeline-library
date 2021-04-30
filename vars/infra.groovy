@@ -260,6 +260,7 @@ void prepareToPublishIncrementals() {
     String version = sh script: 'mvn -Dset.changelist -Dexpression=project.version -q -DforceStdout help:evaluate', returnStdout: true
     echo "Collecting $version from $m2repo for possible Incrementals publishing"
     dir(m2repo) {
+        fingerprint '**/*-rc*.*/*-rc*.*' // includes any incrementals consumed
         archiveArtifacts "**/$version/*$version*"
     }
 }
