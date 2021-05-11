@@ -272,17 +272,19 @@ void prepareToPublishIncrementals() {
 void maybePublishIncrementals() {
     if (new InfraConfig(env).isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
         stage('Deploy') {
-          timeout(15) {
+          timeout(300) {
             node('maven || linux || windows') {
-                withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
-                    if (isUnix()) {
-                        sh '''
-curl --retry 10 --retry-delay 10 -i -H "Authorization: Bearer $FUNCTION_TOKEN" -H 'Content-Type: application/json' -d '{"build_url":"'$BUILD_URL'"}' "https://incrementals.jenkins.io/" || echo 'Problem calling Incrementals deployment function'
-                        '''
-                    } else {
-                        bat '''
-curl.exe --retry 10 --retry-delay 10 -i -H "Authorization: Bearer %FUNCTION_TOKEN%" -H "Content-Type: application/json" -d "{""build_url"":""%BUILD_URL%""}" "https://incrementals.jenkins.io/" || echo Problem calling Incrementals deployment function
-                        '''
+                timeout(15) {
+                    withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
+                        if (isUnix()) {
+                            sh '''
+    curl --retry 10 --retry-delay 10 -i -H "Authorization: Bearer $FUNCTION_TOKEN" -H 'Content-Type: application/json' -d '{"build_url":"'$BUILD_URL'"}' "https://incrementals.jenkins.io/" || echo 'Problem calling Incrementals deployment function'
+                            '''
+                        } else {
+                            bat '''
+    curl.exe --retry 10 --retry-delay 10 -i -H "Authorization: Bearer %FUNCTION_TOKEN%" -H "Content-Type: application/json" -d "{""build_url"":""%BUILD_URL%""}" "https://incrementals.jenkins.io/" || echo Problem calling Incrementals deployment function
+                            '''
+                        }
                     }
                 }
             }
