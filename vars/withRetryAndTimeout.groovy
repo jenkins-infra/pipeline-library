@@ -20,7 +20,7 @@ def call(Map userConfig = [:], Closure body) {
         }
       }
     } catch(org.jenkinsci.plugins.workflow.steps.FlowInterruptedException ex){
-      def causes = ex.getCauses()
+      def causes = ex.causes
       if(causes.find { ! (it instanceof org.jenkinsci.plugins.workflow.steps.TimeoutStepExecution$ExceededTimeout) }) {
         throw ex
       }
