@@ -22,10 +22,12 @@ def call(Map userConfig = [:], Closure body) {
     } catch(org.jenkinsci.plugins.workflow.steps.FlowInterruptedException ex){
       def causes = ex.causes
       if(causes.find { ! (it instanceof org.jenkinsci.plugins.workflow.steps.TimeoutStepExecution$ExceededTimeout) }) {
+        // Only increment when timeout is reached, it's the only path to a retry
+        counter += 1
         throw ex
       }
       throw new RuntimeException(ex)
-      counter += 1
+
     }
   }
 }
