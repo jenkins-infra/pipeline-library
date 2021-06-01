@@ -9,11 +9,10 @@ def call(Map userConfig = [:], Closure body) {
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
   final Map finalConfig = defaultConfig << userConfig
 
-  def counter = 0
+  def counter = 1
 
   // From https://issues.jenkins.io/browse/JENKINS-51454?focusedCommentId=389893&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-389893
   retry(finalConfig.retries) {
-    counter += 1
     try {
       timeout(time: finalConfig.bodyTimeout, unit: finalConfig.bodyTimeoutUnit) {
         withEnv(["PIPELINE_RETRY_COUNTER=${counter}"]) {
@@ -26,6 +25,7 @@ def call(Map userConfig = [:], Closure body) {
         throw ex
       }
       throw new RuntimeException(ex)
+      counter += 1
     }
   }
 }
