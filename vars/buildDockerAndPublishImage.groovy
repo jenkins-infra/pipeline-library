@@ -1,6 +1,7 @@
 
 import io.jenkins.infra.DockerConfig
 import io.jenkins.infra.InfraConfig
+import java.util.Date
 
 def call(String imageName, Map config=[:]) {
 
@@ -80,7 +81,8 @@ def call(String imageName, Map config=[:]) {
 
           stage("Lint ${dockerImageName}") {
             // Define the image name as prefix to support multi images per pipeline
-            def hadolintReportId = "${dockerImageName}-hadolint"
+            def now = new Date()
+            def hadolintReportId = "${dockerImageName}-hadolint-${now.getTime()}"
             def hadoLintReportFile = "${hadolintReportId}.json"
             withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
               try {
