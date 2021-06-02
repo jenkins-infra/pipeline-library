@@ -17,10 +17,9 @@ def call(userConfig = [:]) {
   // Do not add the flag "--values" if the provided value is "empty string"
   updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ''
 
+  // Define a cron trigger only if it's requested by the user through attribute
   properties([
-    pipelineTriggers([
-      cron(finalConfig.cronTriggerExpression) // Disabled if 'cronTriggerExpression' is an empty string
-    ]),
+    pipelineTriggers(finalConfig.cronTriggerExpression ? [cron(finalConfig.cronTriggerExpression)] : [])
   ])
 
   podTemplate(
