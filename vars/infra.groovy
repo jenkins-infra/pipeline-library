@@ -272,13 +272,16 @@ void prepareToPublishIncrementals() {
 void maybePublishIncrementals() {
     if (new InfraConfig(env).isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
         stage('Deploy') {
-            httpRequest url: 'https://incrementals.jenkins.io/',
-                        httpMode: 'POST',
-                        contentType: 'APPLICATION_JSON',
-                        validResponseCodes: '100:599',
-                        timeout: 300,
-                        requestBody: /{"build_url":"$BUILD_URL"}/,
-                        authentication: 'incrementals-publisher-token'
+            withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
+                httpRequest 
+                    url: 'https://incrementals.jenkins.io/',
+                    httpMode: 'POST',
+                    contentType: 'APPLICATION_JSON',
+                    validResponseCodes: '100:599',
+                    timeout: 300,
+                    requestBody: /{"build_url":"$BUILD_URL"}/,
+                    customHeaders: [[maskValue: true, name: 'Authorization', value: 'Bearer ${FUNCTION_TOKEN}']]
+            }
         }
     } else {
         echo 'Skipping deployment to Incrementals'
