@@ -277,7 +277,7 @@ void maybePublishIncrementals() {
                         contentType: 'APPLICATION_JSON',
                         validResponseCodes: '100:599',
                         timeout: 300,
-                        requestBody: '{"build_url":"'$BUILD_URL'"}',
+                        requestBody: /{"build_url":"$BUILD_URL"}/,
                         authentication: 'incrementals-publisher-token'
         }
     } else {
