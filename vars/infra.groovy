@@ -273,7 +273,7 @@ void maybePublishIncrementals() {
     if (new InfraConfig(env).isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
         stage('Deploy') {
             httpRequest url: 'https://incrementals.jenkins.io/',
-                        httpMode: 'POST'
+                        httpMode: 'POST',
                         contentType: 'APPLICATION_JSON',
                         validResponseCodes: '100:599',
                         timeout: 300,
