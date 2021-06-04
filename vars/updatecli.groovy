@@ -5,6 +5,7 @@ def call(userConfig = [:]) {
     config: './updatecli/updatecli.d',
     values: './updatecli/values.yaml',
     updatecliDockerImage: 'ghcr.io/updatecli/updatecli:latest',
+    cronTriggerExpression: '',
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -16,6 +17,11 @@ def call(userConfig = [:]) {
   // Do not add the flag "--values" if the provided value is "empty string"
   updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ''
 
+  properties([
+    pipelineTriggers([
+      cron(finalConfig.cronTriggerExpression) // Disabled if 'cronTriggerExpression' is an empty string
+    ]),
+  ])
 
   podTemplate(
     containers: [
