@@ -279,7 +279,8 @@ void maybePublishIncrementals() {
                     validResponseCodes: '100:599',
                     timeout: 300,
                     requestBody: /{"build_url":"$BUILD_URL"}/,
-                    customHeaders: [[maskValue: true, name: 'Authorization', value: 'Bearer ${FUNCTION_TOKEN}']]
+                    customHeaders: [[maskValue: true, name: 'Authorization', value: 'Bearer ${FUNCTION_TOKEN}']],
+                    consoleLogResponseBody: true
             }
         }
     } else {
