@@ -273,8 +273,7 @@ void maybePublishIncrementals() {
     if (new InfraConfig(env).isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
         stage('Deploy') {
             withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
-                httpRequest 
-                    url: 'https://incrementals.jenkins.io/',
+                httpRequest url: 'https://incrementals.jenkins.io/',
                     httpMode: 'POST',
                     contentType: 'APPLICATION_JSON',
                     validResponseCodes: '100:599',
