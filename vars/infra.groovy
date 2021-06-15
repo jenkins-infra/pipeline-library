@@ -47,7 +47,7 @@ Object checkoutSCM(String repo = null) {
  * Retrieves Settings file to be used with Maven.
  * If {@code MAVEN_SETTINGS_FILE_ID} variable is defined, the file will be retrieved from the specified
  * configuration ID provided by Config File Provider Plugin.
- * Otherwise it will fallback to a standard Jenkins infra resolution logic.
+ * Otherwise it will fallback to some unspecified file for Jenkins infrastructure (currently empty).
  * @param settingsXml Absolute path to the destination settings file
  * @param jdk Version of JDK to be used (no longer used)
  * @return {@code true} if the file has been defined
@@ -63,6 +63,7 @@ boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
         }
         return true
     } else if (new InfraConfig(env).isRunningOnJenkinsInfra()) {
+        echo 'NOTE: infra.retrieveMavenSettingsFile currently writes an empty settings file.'
         writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
         return true
     }
