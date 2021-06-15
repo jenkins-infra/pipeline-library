@@ -49,7 +49,7 @@ Object checkoutSCM(String repo = null) {
  * configuration ID provided by Config File Provider Plugin.
  * Otherwise it will fallback to a standard Jenkins infra resolution logic.
  * @param settingsXml Absolute path to the destination settings file
- * @param jdk Version of JDK to be used
+ * @param jdk Version of JDK to be used (no longer used)
  * @return {@code true} if the file has been defined
  */
 boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
@@ -62,8 +62,7 @@ boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
             }
         }
         return true
-    } else if (jdk.toInteger() > 7 && new InfraConfig(env).isRunningOnJenkinsInfra()) {
-        /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
+    } else if (new InfraConfig(env).isRunningOnJenkinsInfra()) {
         writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
         return true
     }
