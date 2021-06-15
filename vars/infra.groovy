@@ -64,7 +64,7 @@ boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
         return true
     } else if (new InfraConfig(env).isRunningOnJenkinsInfra()) {
         echo 'NOTE: infra.retrieveMavenSettingsFile currently writes an empty settings file.'
-        writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
+        writeFile file: settingsXml, text: libraryResource('settings.xml')
         return true
     }
     return false
