@@ -30,6 +30,7 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('configFileProvider', [List.class, Closure.class], { l, body -> body() })
     helper.registerAllowedMethod('deleteDir', [], { true })
     helper.registerAllowedMethod('dir', [String.class], { s -> s })
+    helper.registerAllowedMethod('disableConcurrentBuilds', [Map.class], { 'OK' })
     helper.registerAllowedMethod('durabilityHint', [String.class], { s -> s })
     helper.registerAllowedMethod('echo', [String.class], { s -> s })
     helper.registerAllowedMethod('error', [String.class], { s ->
