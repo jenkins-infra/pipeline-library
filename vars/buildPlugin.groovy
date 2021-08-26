@@ -17,12 +17,9 @@ def call(Map params = [:]) {
 
     def useContainerAgent = params.containsKey('useContainerAgent') ? params.useContainerAgent : false
     if (params.containsKey('useAci')) {
-        deprecationMessage = 'The parameter "useAci" is deprecated. Please use "useContainerAgent" instead.'
+        deprecationMessage = 'The parameter "useAci" is deprecated. Please use "useContainerAgent" instead as per https://issues.jenkins.io/browse/INFRA-2918.'
         echo "WARNING: ${deprecationMessage}"
-        publishChecks conclusion: 'neutral'
-            name: 'useAci Deprecation'
-            title: 'useAci Deprecation'
-            text: deprecationMessage
+        publishChecks name: 'Jenkinsfile: "useAci" attribute is deprecated for "buildPlugin()"', conclusion: 'NEUTRAL', text: deprecationMessage
         useContainerAgent = params.containsKey('useAci')
     }
     if(timeoutValue > 180) {
