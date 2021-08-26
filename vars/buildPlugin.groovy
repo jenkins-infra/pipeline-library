@@ -17,7 +17,12 @@ def call(Map params = [:]) {
 
     def useContainerAgent = params.containsKey('useContainerAgent') ? params.useContainerAgent : false
     if (params.containsKey('useAci')) {
-        echo 'WARNING: deprecated "useAci" parameter. This parameter should be replaced by "useContainerAgent".'
+        deprecationMessage = 'The parameter "useAci" is deprecated. Please use "useContainerAgent" instead.'
+        echo "WARNING: ${deprecationMessage}"
+        publishChecks conclusion: 'neutral'
+            name: 'useAci Depreciation'
+            title: 'useAci Depreciation'
+            text: deprecationMessage
         useContainerAgent = params.containsKey('useAci')
     }
     if(timeoutValue > 180) {
