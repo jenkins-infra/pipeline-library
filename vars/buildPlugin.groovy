@@ -20,8 +20,8 @@ def call(Map params = [:]) {
         deprecationMessage = 'The parameter "useAci" is deprecated. Please use "useContainerAgent" instead.'
         echo "WARNING: ${deprecationMessage}"
         publishChecks conclusion: 'neutral'
-            name: 'useAci Depreciation'
-            title: 'useAci Depreciation'
+            name: 'useAci Deprecation'
+            title: 'useAci Deprecation'
             text: deprecationMessage
         useContainerAgent = params.containsKey('useAci')
     }
