@@ -47,9 +47,9 @@ Object checkoutSCM(String repo = null) {
  * Retrieves Settings file to be used with Maven.
  * If {@code MAVEN_SETTINGS_FILE_ID} variable is defined, the file will be retrieved from the specified
  * configuration ID provided by Config File Provider Plugin.
- * Otherwise it will fallback to a standard Jenkins infra resolution logic.
+ * Otherwise it will fallback to some unspecified file for Jenkins infrastructure (currently empty).
  * @param settingsXml Absolute path to the destination settings file
- * @param jdk Version of JDK to be used
+ * @param jdk Version of JDK to be used (no longer used)
  * @return {@code true} if the file has been defined
  */
 boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
@@ -62,9 +62,9 @@ boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
             }
         }
         return true
-    } else if (jdk.toInteger() > 7 && new InfraConfig(env).isRunningOnJenkinsInfra()) {
-        /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
-        writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
+    } else if (new InfraConfig(env).isRunningOnJenkinsInfra()) {
+        echo 'NOTE: infra.retrieveMavenSettingsFile currently writes an empty settings file.'
+        writeFile file: settingsXml, text: libraryResource('settings.xml')
         return true
     }
     return false
@@ -88,12 +88,6 @@ Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = nu
     ]
     if (settingsFile != null) {
         mvnOptions += "-s $settingsFile"
-    } else if (jdk.toInteger() > 7 && new InfraConfig(env).isRunningOnJenkinsInfra()) {
-        /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
-        def settingsXml = "${pwd tmp: true}/settings-azure.xml"
-        if (retrieveMavenSettingsFile(settingsXml)) {
-            mvnOptions += "-s $settingsXml"
-        }
     }
     mvnOptions.addAll(options)
     mvnOptions.unique()
@@ -273,21 +267,16 @@ void prepareToPublishIncrementals() {
 void maybePublishIncrementals() {
     if (new InfraConfig(env).isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
         stage('Deploy') {
-          timeout(15) {
-            node('maven || linux || windows') {
-                withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
-                    if (isUnix()) {
-                        sh '''
-curl --retry 10 --retry-delay 10 -i -H "Authorization: Bearer $FUNCTION_TOKEN" -H 'Content-Type: application/json' -d '{"build_url":"'$BUILD_URL'"}' "https://incrementals.jenkins.io/" || echo 'Problem calling Incrementals deployment function'
-                        '''
-                    } else {
-                        bat '''
-curl.exe --retry 10 --retry-delay 10 -i -H "Authorization: Bearer %FUNCTION_TOKEN%" -H "Content-Type: application/json" -d "{""build_url"":""%BUILD_URL%""}" "https://incrementals.jenkins.io/" || echo Problem calling Incrementals deployment function
-                        '''
-                    }
-                }
+            withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
+                httpRequest url: 'https://incrementals.jenkins.io/',
+                    httpMode: 'POST',
+                    contentType: 'APPLICATION_JSON',
+                    validResponseCodes: '100:599',
+                    timeout: 300,
+                    requestBody: /{"build_url":"$BUILD_URL"}/,
+                    customHeaders: [[name: 'Authorization', value: 'Bearer ' + FUNCTION_TOKEN]],
+                    consoleLogResponseBody: true
             }
-          }
         }
     } else {
         echo 'Skipping deployment to Incrementals'

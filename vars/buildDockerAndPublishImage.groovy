@@ -1,6 +1,7 @@
 
 import io.jenkins.infra.DockerConfig
 import io.jenkins.infra.InfraConfig
+import java.util.Date
 
 def call(String imageName, Map config=[:]) {
 
@@ -25,20 +26,20 @@ def call(String imageName, Map config=[:]) {
         image: config.builderImage ?: 'jenkinsciinfra/builder:latest',
         command: 'cat',
         ttyEnabled: true,
-        resourceRequestCpu: '500m',
-        resourceLimitCpu: '500m',
-        resourceRequestMemory: '512Mi',
-        resourceLimitMemory: '512Mi',
+        resourceRequestCpu: '2',
+        resourceLimitCpu: '2',
+        resourceRequestMemory: '2Gi',
+        resourceLimitMemory: '2Gi',
       ),
       containerTemplate(
         name: 'next-version',
         image: config.nextVersionImage ?: 'gcr.io/jenkinsxio/jx-release-version:2.3.4',
         command: 'cat',
         ttyEnabled: true,
-        resourceRequestCpu: '500m',
-        resourceLimitCpu: '500m',
-        resourceRequestMemory: '512Mi',
-        resourceLimitMemory: '512Mi',
+        resourceRequestCpu: '200m',
+        resourceLimitCpu: '200m',
+        resourceRequestMemory: '256Mi',
+        resourceLimitMemory: '256Mi',
       ),
     ]
   ) {
@@ -80,7 +81,8 @@ def call(String imageName, Map config=[:]) {
 
           stage("Lint ${dockerImageName}") {
             // Define the image name as prefix to support multi images per pipeline
-            def hadolintReportId = "${dockerImageName}-hadolint"
+            def now = new Date()
+            def hadolintReportId = "${dockerImageName}-hadolint-${now.getTime()}"
             def hadoLintReportFile = "${hadolintReportId}.json"
             withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
               try {

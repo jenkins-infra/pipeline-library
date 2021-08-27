@@ -15,7 +15,7 @@ def call(List<String> files, Map params = [:]) {
     withCredentials([
         string(credentialsId: 'azure-reports-access-key', variable: 'AZURE_STORAGE_KEY'),
     ]) {
-        docker.image('microsoft/azure-cli:2.0.41').inside {
+        docker.image('mcr.microsoft.com/azure-cli:2.0.41').inside {
             for(int i = 0; i < files.size(); ++i) {
                 String filename = files[i]
                 withEnv(['HOME=/tmp']) {
