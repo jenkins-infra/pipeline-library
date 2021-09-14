@@ -10,6 +10,7 @@ def call(String imageName, Map config=[:]) {
 
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
+  final String defaultNextVersionImage = libraryResource 'io/jenkins/infra/docker/jxNextVersionImage'
   final boolean semVerEnabled = dockerConfig.automaticSemanticVersioning && env.BRANCH_NAME == dockerConfig.mainBranch
 
   final String dockerImageName = dockerConfig.imageName
@@ -33,7 +34,7 @@ def call(String imageName, Map config=[:]) {
       ),
       containerTemplate(
         name: 'next-version',
-        image: config.nextVersionImage ?: 'gcr.io/jenkinsxio/jx-release-version:2.3.4',
+        image: config.nextVersionImage ?: defaultNextVersionImage,
         command: 'cat',
         ttyEnabled: true,
         resourceRequestCpu: '200m',
