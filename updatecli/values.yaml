@@ -1,0 +1,8 @@
+github:
+  user: "updatebot"
+  email: "updatebot@olblak.com"
+  username: "jenkins-infra-bot"
+  token: "UPDATECLI_GITHUB_TOKEN"
+  branch: "main"
+  owner: "jenkins-infra"
+  repository: "packer-images"
