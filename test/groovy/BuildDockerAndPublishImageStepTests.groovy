@@ -34,7 +34,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // Mock Pipeline method which are not already declared in the parent class
     helper.registerAllowedMethod('hadoLint', [Map.class], { m -> m })
-    helper.registerAllowedMethod('libraryResource', [String.class], { '' })
+    helper.registerAllowedMethod('libraryResource', [String.class], { s -> s == 'io/jenkins/infra/docker/jxNextVersionImage' ? 'jx-release-version:1.2.3' : '' })
     helper.registerAllowedMethod('fileExists', [String.class], { true })
     addEnvVar('WORKSPACE', '/tmp')
 
@@ -97,7 +97,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // And the correct pod template defined
     assertTrue(assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/builder:latest'))
-    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'gcr.io/jenkinsxio/jx-release-version:2.3.4'))
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'jx-release-version:1.2.3'))
 
     // And the make target called as shell steps
     assertTrue(assertMethodCallContainsPattern('sh','make lint'))
