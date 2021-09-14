@@ -1,0 +1,32 @@
+---
+title: "Bump jx-release-version version"
+sources:
+  default:
+    kind: githubRelease
+    name: Get the latest jx-release-version version
+    spec:
+      owner: "jenkins-x-plugins"
+      repository: "jx-release-version"
+      token: "{{ requiredEnv .github.token }}"
+      username: "{{ .github.username }}"
+      versionFilter:
+        kind: latest
+    transformers:
+      - trimPrefix: "v"
+      - addPrefix: "ghcr.io/jenkins-x/jx-release-version:"
+targets:
+  updateJxReleaseVersion:
+    name: Update jx-release-version in file
+    sourceID: default
+    kind: file
+    spec:
+      file: io/jenkins/infra/docker/jxNextVersionImage
+    scm:
+      github:
+        user: "{{ .github.user }}"
+        email: "{{ .github.email }}"
+        owner: "{{ .github.owner }}"
+        repository: "{{ .github.repository }}"
+        token: "{{ requiredEnv .github.token }}"
+        username: "{{ .github.username }}"
+        branch: "{{ .github.branch }}"
