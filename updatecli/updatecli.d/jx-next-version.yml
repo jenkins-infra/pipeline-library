@@ -20,7 +20,7 @@ targets:
     sourceID: default
     kind: file
     spec:
-      file: io/jenkins/infra/docker/jxNextVersionImage
+      file: resources/io/jenkins/infra/docker/jxNextVersionImage
     scm:
       github:
         user: "{{ .github.user }}"
