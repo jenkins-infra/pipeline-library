@@ -102,7 +102,7 @@ In order to work with that repository you will need:
 - Maven 3.6+: https://maven.apache.org/download.cgi
 - Groovy: https://groovy-lang.org/install.html
 
-An IDE or text editor of your choice, like [Vim](https://www.vim.org/), [Emacs](https://www.vim.org/) or [VS Code](https://www.vim.org/) for example.
+An IDE or text editor of your choice, like [Vim](https://www.vim.org/), [Emacs](https://www.gnu.org/software/emacs/) or [VS Code](https://code.visualstudio.com/) for example.
 
 ## Tips and Tricks: Discovering the Project
 
