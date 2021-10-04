@@ -1,6 +1,6 @@
 # Contributing to Pipeline Global Library for ci.jenkins.io
 
-👏 First off, thanks a lot for taking the time to contribute to this global library of pipeline components for [ci.jenkins.io](https://ci.jenkins.io/)!
+👏 First off, thanks a lot for taking the time to contribute to this global library of pipeline components for [ci.jenkins.io](https://ci.jenkins.io/) (and many more Jenkins controllers of the [Jenkins Infrastructure Platform](https://www.jenkins.io/projects/infrastructure/)!
 
 The following document contains all the resources you should need in order to get you started, from documents to read, to technical information allowing you to setup your environment. If you think this document is missing some information, feel free to contribute to it as well 😉
 
