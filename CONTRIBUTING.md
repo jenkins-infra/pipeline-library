@@ -6,24 +6,24 @@ The following document contains all the resources you should need in order to ge
 
 ## Table of Contents
 
-- Code Of Conduct
-- TL;DR: I'm lost and I just have a question!
-- What can I contribute?
-- How to contribute?
-- How will my contribution be evaluated?
-- How can I test my contribution?
-- How to setup my environment?
-    - Signing Commits
-    - Technical Requirements
-- Tips and Tricks: Discovering the Project
-    - Useful commands
-    - Finding the unit tests
-    - Shared library documentation
-- Licensing information
-- Styleguide
-    - Git Commit Messages
-    - Groovy Style
-- Links & Resources
+- [Code Of Conduct](#code-of-conduct)
+- [TL;DR: I'm lost and I just have a question!](#tl-dr--i-m-lost-and-i-just-have-a-question-)
+- [What can I contribute?](#what-can-i-contribute-)
+- [How to contribute?](#how-to-contribute-)
+- [How will my contribution be evaluated?](#how-will-my-contribution-be-evaluated-)
+- [How can I test my contribution?](#how-can-i-test-my-contribution-)
+- [How to setup my environment?](#how-to-setup-my-environment-)
+  - [Signing Commits](#signing-commits)
+  - [Technical Requirements](#technical-requirements)
+- [Tips and Tricks: Discovering the Project](#tips-and-tricks--discovering-the-project)
+  - [Useful commands](#useful-commands)
+  - [Finding the unit tests](#finding-the-unit-tests)
+  - [Shared library documentation](#shared-library-documentation)
+- [Licensing information](#licensing-information)
+- [Styleguide](#styleguide)
+  - [Git Commit Messages](#git-commit-messages)
+  - [Groovy Style](#groovy-style)
+- [Links & Resources](#links--resources)
 
 ## Code Of Conduct
 
