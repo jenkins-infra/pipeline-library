@@ -130,11 +130,24 @@ Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null
 Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null, Boolean addToolEnv = true) {
     List<String> env = [];
     if(addToolEnv) {
-        String jdkTool = "jdk${jdk}"
-        env = [
-            "JAVA_HOME=${tool jdkTool}",
-            'PATH+JAVA=${JAVA_HOME}/bin',
-        ]
+        if(fileExists('/opt/java/openjdk/bin/java')) {
+            env = [
+                'JAVA_HOME=/opt/java/openjdk', // https://github.com/adoptium/containers/blob/main/8/jdk/ubuntu/Dockerfile.releases.full#L63
+                'PATH+JAVA=${JAVA_HOME}/bin',
+            ]
+        } else if(fileExists("/opt/jdk-${jdk}/bin/java")) {
+            env = [
+                "JAVA_HOME=/opt/jdk-${jdk}",
+                'PATH+JAVA=${JAVA_HOME}/bin',
+            ]
+        } else if(fileExists($/C:\tools\jdk-${jdk}\bin\java/$)) {
+            env = [
+                $/JAVA_HOME=C:\tools\jdk-${jdk}\bin\java/$,
+                $/PATH+JAVA=$${JAVA_HOME}\bin/$,
+            ]
+        } else {
+            echo "WARNING: environment variables JAVA_HOME and PATH not updated, because no java binary found in either /opt/java/openjdk/bin/java or /opt/jdk-${jdk}/bin/java."
+        }
     }
 
     if (extraEnv != null) {
