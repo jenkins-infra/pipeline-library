@@ -130,11 +130,36 @@ Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null
 Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null, Boolean addToolEnv = true) {
     List<String> env = [];
     if(addToolEnv) {
-        String jdkTool = "jdk${jdk}"
-        env = [
-            "JAVA_HOME=${tool jdkTool}",
-            'PATH+JAVA=${JAVA_HOME}/bin',
-        ]
+        if (isUnix()) {
+            for(javaHome in [
+                '/opt/java/openjdk/bin/java', // Eclipse Termurin for Linux - // https://github.com/adoptium/containers
+                "/opt/jdk-${jdk}",            // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
+            ]) {
+                if(fileExists("${javaHome}/bin/java")) {
+                    env = [
+                        "JAVA_HOME=${javaHome}",
+                        'PATH+JAVA=${JAVA_HOME}/bin',
+                    ]
+                    break
+                }
+            }
+        } else {
+            for (javaHome in [
+                $/C:\openjdk-${jdk}/$,             // Eclipse Termurin for Linux - // https://github.com/adoptium/containers
+                $/C:\tools\jdk-${jdk}\bin\java/$,  // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
+            ]) {
+                if(fileExists("${javaHome}/bin/java")) {
+                    env = [
+                        "JAVA_HOME=${javaHome}",
+                        $/PATH+JAVA=$${JAVA_HOME}\bin/$,
+                    ]
+                    break
+                }
+            }
+        }
+        if(env.isEmpty()) {
+            echo "WARNING: environment variables JAVA_HOME and PATH not updated, because no java binary found in either /opt/java/openjdk/bin/java or /opt/jdk-${jdk}/bin/java."
+        }
     }
 
     if (extraEnv != null) {
