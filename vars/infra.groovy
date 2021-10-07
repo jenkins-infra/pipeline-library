@@ -130,22 +130,34 @@ Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null
 Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null, Boolean addToolEnv = true) {
     List<String> env = [];
     if(addToolEnv) {
-        if(fileExists('/opt/java/openjdk/bin/java')) {
-            env = [
-                'JAVA_HOME=/opt/java/openjdk', // https://github.com/adoptium/containers/blob/main/8/jdk/ubuntu/Dockerfile.releases.full#L63
-                'PATH+JAVA=${JAVA_HOME}/bin',
-            ]
-        } else if(fileExists("/opt/jdk-${jdk}/bin/java")) {
-            env = [
-                "JAVA_HOME=/opt/jdk-${jdk}",
-                'PATH+JAVA=${JAVA_HOME}/bin',
-            ]
-        } else if(fileExists($/C:\tools\jdk-${jdk}\bin\java/$)) {
-            env = [
-                $/JAVA_HOME=C:\tools\jdk-${jdk}\bin\java/$,
-                $/PATH+JAVA=$${JAVA_HOME}\bin/$,
-            ]
+        if (isUnix()) {
+            for(javaHome in [
+                '/opt/java/openjdk/bin/java', // Eclipse Termurin for Linux - // https://github.com/adoptium/containers
+                "/opt/jdk-${jdk}",            // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
+            ]) {
+                if(fileExists("${javaHome}/bin/java")) {
+                    env = [
+                        "JAVA_HOME=${javaHome}",
+                        'PATH+JAVA=${JAVA_HOME}/bin',
+                    ]
+                    break
+                }
+            }
         } else {
+            for (javaHome in [
+                $/C:\openjdk-${jdk}/$,             // Eclipse Termurin for Linux - // https://github.com/adoptium/containers
+                $/C:\tools\jdk-${jdk}\bin\java/$,  // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
+            ]) {
+                if(fileExists("${javaHome}/bin/java")) {
+                    env = [
+                        "JAVA_HOME=${javaHome}",
+                        $/PATH+JAVA=$${JAVA_HOME}\bin/$,
+                    ]
+                    break
+                }
+            }
+        }
+        if(env.isEmpty()) {
             echo "WARNING: environment variables JAVA_HOME and PATH not updated, because no java binary found in either /opt/java/openjdk/bin/java or /opt/jdk-${jdk}/bin/java."
         }
     }
