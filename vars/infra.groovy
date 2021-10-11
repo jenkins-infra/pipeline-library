@@ -152,7 +152,7 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null,
             if (!isUnix()) {
                 javaBinToTry += '.exe' // On windows, binaries have an extension
             }
-            if(fileExists(javaBinToTry)) {
+            if (fileExists(javaBinToTry)) {
                 javaHome = javaHomeToTry
                 break
             }
