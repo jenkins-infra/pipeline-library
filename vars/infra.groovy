@@ -130,36 +130,46 @@ Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null
 Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null, Boolean addToolEnv = true) {
     List<String> env = [];
     if(addToolEnv) {
-        if (isUnix()) {
-            for(javaHome in [
-                '/opt/java/openjdk/bin/java', // Eclipse Termurin for Linux - // https://github.com/adoptium/containers
-                "/opt/jdk-${jdk}",            // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
-            ]) {
-                if(fileExists("${javaHome}/bin/java")) {
-                    env = [
-                        "JAVA_HOME=${javaHome}",
-                        'PATH+JAVA=${JAVA_HOME}/bin',
-                    ]
-                    break
-                }
+        // Collection of well-known JDK locations on our agent templates (VMs and containers)
+        def agentJavaHomes = [
+            "linux": [
+                '/opt/java/openjdk',        // Adoptium (Eclipse Temurin) for Linux - // https://github.com/adoptium/containers
+                "/opt/jdk-${jdk}",          // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
+            ],
+            "windows": [
+                "C:/openjdk-${jdk}",      // Adoptium (Eclipse Temurin) for Windows - // https://github.com/adoptium/containers
+                "C:/tools/jdk-${jdk}",    // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
+            ],
+        ];
+
+        // Prepare the list of JDK locations to search for on the agent
+        List<String> javaHomesToTry = agentJavaHomes[isUnix() ? 'linux' : 'windows']
+
+        // Define the java home based on the found JDK (or fallback to the Jenkins tool)
+        String javaHome
+        for(javaHomeToTry in javaHomesToTry) {
+            String javaBinToTry = "${javaHomeToTry}/bin/java"
+            if (!isUnix()) {
+                javaBinToTry += '.exe' // On windows, binaries have an extension
             }
-        } else {
-            for (javaHome in [
-                $/C:\openjdk-${jdk}/$,             // Eclipse Termurin for Linux - // https://github.com/adoptium/containers
-                $/C:\tools\jdk-${jdk}\bin\java/$,  // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
-            ]) {
-                if(fileExists("${javaHome}/bin/java")) {
-                    env = [
-                        "JAVA_HOME=${javaHome}",
-                        $/PATH+JAVA=$${JAVA_HOME}\bin/$,
-                    ]
-                    break
-                }
+            if (fileExists(javaBinToTry)) {
+                javaHome = javaHomeToTry
+                break
             }
         }
-        if(env.isEmpty()) {
-            echo "WARNING: environment variables JAVA_HOME and PATH not updated, because no java binary found in either /opt/java/openjdk/bin/java or /opt/jdk-${jdk}/bin/java."
+        if (!javaHome) {
+            echo "WARNING: switching to the Jenkins tool named ${jdkTool} to set the environment variables JAVA_HOME and PATH, because no java installation found in any of the following locations: ${javaHomesToTry.join(", ")}"
+            String jdkTool = "jdk${jdk}"
+            javaHome = tool jdkTool
         }
+
+        // Define the environment to ensure that the correct JDK is used
+        env = [
+            "JAVA_HOME=${javaHome}",
+            'PATH+JAVA=${JAVA_HOME}/bin',
+        ]
+
+        echo "INFO: Using JAVA_HOME=${javaHome} as default JDK home."
     }
 
     if (extraEnv != null) {
