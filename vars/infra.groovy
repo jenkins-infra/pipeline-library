@@ -143,14 +143,10 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null,
         ];
 
         // Prepare the list of JDK locations to search for on the agent
-        def javaHomesToTry = agentJavaHomes["linux"]
-        if (!isUnix()) {
-            // Please note that the PATH are expressed in Unix style but it also works on Windows (path conversion is managed by the pipeline engine)
-            javaHomesToTry = agentJavaHomes["windows"]
-        }
+        def javaHomesToTry = agentJavaHomes[isUnix() ? 'linux' : 'windows']
 
         // Define the java home based on the found JDK (or fallback to the Jenkins tool)
-        String javaHome = ""
+        String javaHome
         for(javaHomeToTry in javaHomesToTry) {
             javaBinToTry = "${javaHomeToTry}/bin/java"
             if (!isUnix()) {
@@ -161,7 +157,7 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null,
                 break
             }
         }
-        if (javaHome == "") {
+        if (!javaHome) {
             echo "WARNING: switching to the Jenkins tool named ${jdkTool} to set the environment variables JAVA_HOME and PATH, because no java installation found in any of the following locations: ${javaHomesToTry.join(", ")}"
             String jdkTool = "jdk${jdk}"
             javaHome = tool jdkTool
