@@ -129,53 +129,51 @@ Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null
  */
 Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null, Boolean addToolEnv = true) {
     List<String> env = [];
-    def agentJavaHomes = [
-        "linux": [
-            '/opt/java/openjdk',        // Adoptium (Eclipse Temurin) for Linux - // https://github.com/adoptium/containers
-            "/opt/jdk-${jdk}",          // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
-        ],
-        "windows":
-            $/C:\openjdk-${jdk}/$,      // Adoptium (Eclipse Temurin) for Windows - // https://github.com/adoptium/containers
-            $/C:\tools\jdk-${jdk}/$,    // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
-        ],
-    ];
-    String jdkTool = "jdk${jdk}"        // Used as a fallback
     if(addToolEnv) {
-        if (isUnix()) {
-            for(javaHome in agentJavaHomes["linux"]) {
-                if(fileExists("${javaHome}/bin/java")) {
-                    env = [
-                        "JAVA_HOME=${javaHome}",
-                        'PATH+JAVA=${JAVA_HOME}/bin',
-                    ]
-                    break
-                }
+        // Collection of well-known JDK locations on our agent templates (VMs and containers)
+        def agentJavaHomes = [
+            "linux": [
+                '/opt/java/openjdk',        // Adoptium (Eclipse Temurin) for Linux - // https://github.com/adoptium/containers
+                "/opt/jdk-${jdk}",          // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
+            ],
+            "windows": [
+                $/C:\openjdk-${jdk}/$,      // Adoptium (Eclipse Temurin) for Windows - // https://github.com/adoptium/containers
+                $/C:\tools\jdk-${jdk}/$,    // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
+            ],
+        ];
+
+        // Prepare the list of JDK locations to search for on the agent
+        def javaHomesToTry = agentJavaHomes["linux"]
+        if (!isUnix()) {
+            // Please note that the PATH are expressed in Unix style but it also works on Windows (path conversion is managed by the pipeline engine)
+            javaHomesToTry = agentJavaHomes["windows"]
+        }
+
+        // Define the java home based on the found JDK (or fallback to the Jenkins tool)
+        String javaHome = ""
+        for(javaHomeToTry in javaHomesToTry) {
+            javaBinToTry = "${javaHomeToTry}/bin/java"
+            if (!isUnix()) {
+                javaBinToTry = $/${javaHomeToTry}\bin\java.exe/$
             }
-            if(env.isEmpty()) {
-                echo "WARNING: switching to the Jenkins tool named ${jdkTool} to set the environment variables JAVA_HOME and PATH, because no java installation found in any of the following locations: ${agentJavaHomes["linux"].join(", ")}"
-                env = [
-                    "JAVA_HOME=${tool jdkTool}",
-                    'PATH+JAVA=${JAVA_HOME}/bin',
-                ]
-            }
-        } else {
-            for(javaHome in agentJavaHomes["windows"]) {
-                if(fileExists("${javaHome}/bin/java")) {
-                    env = [
-                        "JAVA_HOME=${javaHome}",
-                        $/PATH+JAVA=$${JAVA_HOME}\bin/$,
-                    ]
-                    break
-                }
-            }
-            if(env.isEmpty()) {
-                echo "WARNING: switching to the Jenkins tool named ${jdkTool} to set the environment variables JAVA_HOME and PATH, because no java installation found in any of the following locations: ${agentJavaHomes["windows"].join(", ")}"
-                env = [
-                    "JAVA_HOME=${tool jdkTool}",
-                    $/PATH+JAVA=$${JAVA_HOME}\bin/$,
-                ]
+            if(fileExists(javaBinToTry)) {
+                javaHome = javaHomeToTry
+                break
             }
         }
+        if (javaHome == "") {
+            echo "WARNING: switching to the Jenkins tool named ${jdkTool} to set the environment variables JAVA_HOME and PATH, because no java installation found in any of the following locations: ${javaHomesToTry.join(", ")}"
+            String jdkTool = "jdk${jdk}"
+            javaHome = tool jdkTool
+        }
+
+        // Define the environment to ensure that the correct JDK is used
+        env = [
+            "JAVA_HOME=${javaHome}",
+            'PATH+JAVA=${JAVA_HOME}/bin',
+        ]
+
+        echo "INFO: Using JAVA_HOME=${javaHome} as default JDK home."
     }
 
     if (extraEnv != null) {
