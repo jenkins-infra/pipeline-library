@@ -137,20 +137,20 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null,
                 "/opt/jdk-${jdk}",          // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
             ],
             "windows": [
-                $/C:\openjdk-${jdk}/$,      // Adoptium (Eclipse Temurin) for Windows - // https://github.com/adoptium/containers
-                $/C:\tools\jdk-${jdk}/$,    // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
+                "C:/openjdk-${jdk}",      // Adoptium (Eclipse Temurin) for Windows - // https://github.com/adoptium/containers
+                "C:/tools/jdk-${jdk}",    // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
             ],
         ];
 
         // Prepare the list of JDK locations to search for on the agent
-        def javaHomesToTry = agentJavaHomes[isUnix() ? 'linux' : 'windows']
+        List<String> javaHomesToTry = agentJavaHomes[isUnix() ? 'linux' : 'windows']
 
         // Define the java home based on the found JDK (or fallback to the Jenkins tool)
         String javaHome
         for(javaHomeToTry in javaHomesToTry) {
-            javaBinToTry = "${javaHomeToTry}/bin/java"
+            String javaBinToTry = "${javaHomeToTry}/bin/java"
             if (!isUnix()) {
-                javaBinToTry = $/${javaHomeToTry}\bin\java.exe/$
+                javaBinToTry += '.exe' // On windows, binaries have an extension
             }
             if(fileExists(javaBinToTry)) {
                 javaHome = javaHomeToTry
