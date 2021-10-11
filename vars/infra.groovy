@@ -129,12 +129,19 @@ Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null
  */
 Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null, Boolean addToolEnv = true) {
     List<String> env = [];
+    def agentJavaHomes = [
+        "linux": [
+            '/opt/java/openjdk',        // Adoptium (Eclipse Temurin) for Linux - // https://github.com/adoptium/containers
+            "/opt/jdk-${jdk}",          // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
+        ],
+        "windows":
+            $/C:\openjdk-${jdk}/$,      // Adoptium (Eclipse Temurin) for Windows - // https://github.com/adoptium/containers
+            $/C:\tools\jdk-${jdk}/$,    // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
+        ],
+    ];
     if(addToolEnv) {
         if (isUnix()) {
-            for(javaHome in [
-                '/opt/java/openjdk/bin/java', // Eclipse Termurin for Linux - // https://github.com/adoptium/containers
-                "/opt/jdk-${jdk}",            // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
-            ]) {
+            for(javaHome in agentJavaHomes["linux"]) {
                 if(fileExists("${javaHome}/bin/java")) {
                     env = [
                         "JAVA_HOME=${javaHome}",
@@ -143,11 +150,11 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null,
                     break
                 }
             }
+            if(env.isEmpty()) {
+                echo "WARNING: environment variables JAVA_HOME and PATH not updated, because no java installation found in any of the following locations: ${agentJavaHomes["linux"].join(", ")}"
+            }
         } else {
-            for (javaHome in [
-                $/C:\openjdk-${jdk}/$,             // Eclipse Termurin for Linux - // https://github.com/adoptium/containers
-                $/C:\tools\jdk-${jdk}\bin\java/$,  // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
-            ]) {
+            for(javaHome in agentJavaHomes["windows"]) {
                 if(fileExists("${javaHome}/bin/java")) {
                     env = [
                         "JAVA_HOME=${javaHome}",
@@ -156,9 +163,9 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null,
                     break
                 }
             }
-        }
-        if(env.isEmpty()) {
-            echo "WARNING: environment variables JAVA_HOME and PATH not updated, because no java binary found in either /opt/java/openjdk/bin/java or /opt/jdk-${jdk}/bin/java."
+            if(env.isEmpty()) {
+                echo "WARNING: environment variables JAVA_HOME and PATH not updated, because no java installation found in any of the following locations: ${agentJavaHomes["windows"].join(", ")}"
+            }
         }
     }
 
