@@ -139,6 +139,7 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null,
             $/C:\tools\jdk-${jdk}/$,    // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
         ],
     ];
+    String jdkTool = "jdk${jdk}"        // Used as a fallback
     if(addToolEnv) {
         if (isUnix()) {
             for(javaHome in agentJavaHomes["linux"]) {
@@ -151,7 +152,11 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null,
                 }
             }
             if(env.isEmpty()) {
-                echo "WARNING: environment variables JAVA_HOME and PATH not updated, because no java installation found in any of the following locations: ${agentJavaHomes["linux"].join(", ")}"
+                echo "WARNING: switching to the Jenkins tool named ${jdkTool} to set the environment variables JAVA_HOME and PATH, because no java installation found in any of the following locations: ${agentJavaHomes["linux"].join(", ")}"
+                env = [
+                    "JAVA_HOME=${tool jdkTool}",
+                    'PATH+JAVA=${JAVA_HOME}/bin',
+                ]
             }
         } else {
             for(javaHome in agentJavaHomes["windows"]) {
@@ -164,7 +169,11 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null,
                 }
             }
             if(env.isEmpty()) {
-                echo "WARNING: environment variables JAVA_HOME and PATH not updated, because no java installation found in any of the following locations: ${agentJavaHomes["windows"].join(", ")}"
+                echo "WARNING: switching to the Jenkins tool named ${jdkTool} to set the environment variables JAVA_HOME and PATH, because no java installation found in any of the following locations: ${agentJavaHomes["windows"].join(", ")}"
+                env = [
+                    "JAVA_HOME=${tool jdkTool}",
+                    $/PATH+JAVA=$${JAVA_HOME}\bin/$,
+                ]
             }
         }
     }
