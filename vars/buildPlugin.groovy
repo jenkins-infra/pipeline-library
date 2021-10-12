@@ -3,17 +3,22 @@
  * Simple wrapper step for building a plugin
  */
 def call(Map params = [:]) {
-    // Faster build and reduces IO needs
     properties([
         disableConcurrentBuilds(abortPrevious: true),
-        durabilityHint('PERFORMANCE_OPTIMIZED'),
         buildDiscarder(logRotator(numToKeepStr: '5')),
     ])
 
     def repo = params.containsKey('repo') ? params.repo : null
     def failFast = params.containsKey('failFast') ? params.failFast : true
     def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
-    def useAci = params.containsKey('useAci') ? params.useAci : false
+
+    def useContainerAgent = params.containsKey('useContainerAgent') ? params.useContainerAgent : false
+    if (params.containsKey('useAci')) {
+        deprecationMessage = 'The parameter "useAci" is deprecated. Please use "useContainerAgent" instead as per https://issues.jenkins.io/browse/INFRA-2918.'
+        echo "WARNING: ${deprecationMessage}"
+        publishChecks name: 'pipeline-library', summary: 'Replace useAci with useContainerAgent', conclusion: 'NEUTRAL', text: deprecationMessage
+        useContainerAgent = params.containsKey('useAci')
+    }
     if(timeoutValue > 180) {
       echo "Timeout value requested was $timeoutValue, lowering to 180 to avoid Jenkins project's resource abusive consumption"
       timeoutValue = 180
@@ -33,14 +38,14 @@ def call(Map params = [:]) {
         String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
         boolean first = tasks.size() == 1
         boolean skipTests = params?.tests?.skip
-        boolean addToolEnv = !useAci
+        boolean addToolEnv = !useContainerAgent
 
-        if(useAci && (label == 'linux' || label == 'windows')) {
-            String aciLabel = jdk == '8' ? 'maven' : 'maven-11'
+        if(useContainerAgent && (label == 'linux' || label == 'windows')) {
+            String agentContainerLabel = jdk == '8' ? 'maven' : 'maven-11'
             if(label == 'windows') {
-                aciLabel += "-windows"
+                agentContainerLabel += "-windows"
             }
-            label = aciLabel
+            label = agentContainerLabel
         }
 
         tasks[stageIdentifier] = {

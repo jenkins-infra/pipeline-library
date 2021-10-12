@@ -24,6 +24,7 @@
     Retrieves a custom Maven settings file to the specified path if needed
     (depending on the environment where the Pipeline runs).
     Returns true if the file has been retrieved.
+    <strong>Note<strong>: currently does not return an interesting file.
 </p>
 
 <p>

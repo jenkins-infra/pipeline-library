@@ -47,9 +47,9 @@ Object checkoutSCM(String repo = null) {
  * Retrieves Settings file to be used with Maven.
  * If {@code MAVEN_SETTINGS_FILE_ID} variable is defined, the file will be retrieved from the specified
  * configuration ID provided by Config File Provider Plugin.
- * Otherwise it will fallback to a standard Jenkins infra resolution logic.
+ * Otherwise it will fallback to some unspecified file for Jenkins infrastructure (currently empty).
  * @param settingsXml Absolute path to the destination settings file
- * @param jdk Version of JDK to be used
+ * @param jdk Version of JDK to be used (no longer used)
  * @return {@code true} if the file has been defined
  */
 boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
@@ -62,9 +62,9 @@ boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
             }
         }
         return true
-    } else if (jdk.toInteger() > 7 && new InfraConfig(env).isRunningOnJenkinsInfra()) {
-        /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
-        writeFile file: settingsXml, text: libraryResource('settings-azure.xml')
+    } else if (new InfraConfig(env).isRunningOnJenkinsInfra()) {
+        echo 'NOTE: infra.retrieveMavenSettingsFile currently writes an empty settings file.'
+        writeFile file: settingsXml, text: libraryResource('settings.xml')
         return true
     }
     return false
@@ -88,12 +88,6 @@ Object runMaven(List<String> options, String jdk = 8, List<String> extraEnv = nu
     ]
     if (settingsFile != null) {
         mvnOptions += "-s $settingsFile"
-    } else if (jdk.toInteger() > 7 && new InfraConfig(env).isRunningOnJenkinsInfra()) {
-        /* Azure mirror only works for sufficiently new versions of the JDK due to Letsencrypt cert */
-        def settingsXml = "${pwd tmp: true}/settings-azure.xml"
-        if (retrieveMavenSettingsFile(settingsXml)) {
-            mvnOptions += "-s $settingsXml"
-        }
     }
     mvnOptions.addAll(options)
     mvnOptions.unique()
@@ -136,11 +130,46 @@ Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null
 Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null, Boolean addToolEnv = true) {
     List<String> env = [];
     if(addToolEnv) {
-        String jdkTool = "jdk${jdk}"
+        // Collection of well-known JDK locations on our agent templates (VMs and containers)
+        def agentJavaHomes = [
+            "linux": [
+                '/opt/java/openjdk',        // Adoptium (Eclipse Temurin) for Linux - // https://github.com/adoptium/containers
+                "/opt/jdk-${jdk}",          // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
+            ],
+            "windows": [
+                "C:/openjdk-${jdk}",      // Adoptium (Eclipse Temurin) for Windows - // https://github.com/adoptium/containers
+                "C:/tools/jdk-${jdk}",    // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
+            ],
+        ];
+
+        // Prepare the list of JDK locations to search for on the agent
+        List<String> javaHomesToTry = agentJavaHomes[isUnix() ? 'linux' : 'windows']
+
+        // Define the java home based on the found JDK (or fallback to the Jenkins tool)
+        String javaHome
+        for(javaHomeToTry in javaHomesToTry) {
+            String javaBinToTry = "${javaHomeToTry}/bin/java"
+            if (!isUnix()) {
+                javaBinToTry += '.exe' // On windows, binaries have an extension
+            }
+            if (fileExists(javaBinToTry)) {
+                javaHome = javaHomeToTry
+                break
+            }
+        }
+        if (!javaHome) {
+            echo "WARNING: switching to the Jenkins tool named ${jdkTool} to set the environment variables JAVA_HOME and PATH, because no java installation found in any of the following locations: ${javaHomesToTry.join(", ")}"
+            String jdkTool = "jdk${jdk}"
+            javaHome = tool jdkTool
+        }
+
+        // Define the environment to ensure that the correct JDK is used
         env = [
-            "JAVA_HOME=${tool jdkTool}",
+            "JAVA_HOME=${javaHome}",
             'PATH+JAVA=${JAVA_HOME}/bin',
         ]
+
+        echo "INFO: Using JAVA_HOME=${javaHome} as default JDK home."
     }
 
     if (extraEnv != null) {
@@ -260,6 +289,7 @@ void prepareToPublishIncrementals() {
     String version = sh script: 'mvn -Dset.changelist -Dexpression=project.version -q -DforceStdout help:evaluate', returnStdout: true
     echo "Collecting $version from $m2repo for possible Incrementals publishing"
     dir(m2repo) {
+        fingerprint '**/*-rc*.*/*-rc*.*' // includes any incrementals consumed
         archiveArtifacts "**/$version/*$version*"
     }
 }

@@ -4,9 +4,7 @@
  * Simple wrapper step for building a plugin with Gradle.
  */
 def call(Map params = [:]) {
-    // Faster build and reduces IO needs
     properties([
-        durabilityHint('PERFORMANCE_OPTIMIZED'),
         buildDiscarder(logRotator(numToKeepStr: '5')),
     ])
 
