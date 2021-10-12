@@ -30,6 +30,7 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('configFileProvider', [List.class, Closure.class], { l, body -> body() })
     helper.registerAllowedMethod('deleteDir', [], { true })
     helper.registerAllowedMethod('dir', [String.class], { s -> s })
+    helper.registerAllowedMethod('disableConcurrentBuilds', [Map.class], { 'OK' })
     helper.registerAllowedMethod('durabilityHint', [String.class], { s -> s })
     helper.registerAllowedMethod('echo', [String.class], { s -> s })
     helper.registerAllowedMethod('error', [String.class], { s ->
@@ -74,8 +75,6 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('withCredentials', [List.class, Closure.class], { list, body -> body() })
     helper.registerAllowedMethod('withEnv', [List.class, Closure.class], { list, body -> body() })
     helper.registerAllowedMethod('writeYaml', [Map.class], { })
-    helper.registerAllowedMethod('milestone', [String.class], { true })
-    helper.registerAllowedMethod('milestone', [Integer.class], { true }) // actually String but apparently this mock does not handle stock Groovy coercion?
 
     // Kubernetes Agents in scripted syntax
     helper.registerAllowedMethod('podTemplate', [Map.class, Closure.class], { m, body ->body() })
