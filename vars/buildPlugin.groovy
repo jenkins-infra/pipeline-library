@@ -5,9 +5,7 @@
 def call(Map params = [:]) {
     def buildNumber = BUILD_NUMBER as int; if (buildNumber > 1) milestone(buildNumber - 1); milestone(buildNumber) // JENKINS-43353 / JENKINS-58625
 
-    // Faster build and reduces IO needs
     properties([
-        durabilityHint('PERFORMANCE_OPTIMIZED'),
         buildDiscarder(logRotator(numToKeepStr: '5')),
     ])
 
