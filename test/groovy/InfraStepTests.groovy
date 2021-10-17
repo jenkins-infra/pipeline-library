@@ -1,6 +1,7 @@
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
+
 import static org.junit.Assert.assertTrue
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertEquals
@@ -99,4 +100,31 @@ class InfraStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('configFile', 'foo.id'))
   }
 
+  @Test
+  void testStashJenkinsWarFailsOnIncorrectData() throws Exception {
+    def script = loadScript(scriptName)
+    try {
+      script.stashJenkinsWar('sdfsdfsdfsdf')
+    } catch (e) {
+      // intentionally left blank
+    }
+
+    printCallStack()
+    assertTrue(assertMethodCallContainsPattern('error', 'Not sure how to interpret'))
+    assertJobStatusFailure()
+  }
+
+  @Test
+  void testStashJenkinsWarByVersion() throws Exception {
+    def version = '3.333.3'
+    helper.registerAllowedMethod('runMaven', [List], {List<String> command -> println command})
+
+    def script = loadScript(scriptName)
+
+    script.stashJenkinsWar(version)
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('stash', 'jenkins.war'))
+    assertJobStatusSuccess()
+  }
 }
