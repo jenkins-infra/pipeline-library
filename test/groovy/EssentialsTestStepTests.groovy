@@ -58,7 +58,7 @@ pct:
     // when running with !infra.isTrusted()
     script.call()
     printCallStack()
-    assertTrue(assertMethodCallContainsPattern('node', 'docker && highmem'))
+    assertTrue(assertMethodCallContainsPattern('node', 'docker-highmem'))
     assertTrue(assertMethodCallContainsPattern('dir', '.,'))
     assertTrue(assertMethodCallContainsPattern('readYaml', '/foo/essentials.yml'))
     assertTrue(assertMethodCallContainsPattern('runATH', 'jenkins=file:///bar/custom.war, metadataFile=/foo/essentials.yml'))
