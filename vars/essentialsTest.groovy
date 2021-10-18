@@ -1,7 +1,7 @@
 def call(Map params = [:]) {
     def baseDir = params.containsKey('baseDir') ? params.baseDir : "."
     def metadataFile = params.containsKey('metadataFile') ? params.metadataFile : "essentials.yml"
-    def labels = params.containsKey('labels') ? params.labels : "docker && highmem"
+    def labels = params.containsKey('labels') ? params.labels : "docker-highmem"
     def testPluginResolution
 
     node(labels) {

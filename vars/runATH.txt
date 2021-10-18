@@ -26,7 +26,7 @@ The list of step's params and the related default values are:
 </pre>
 
 <p>
-    <b>Note that this step uses the <i>linux</i> and <i>docker && highmem</i> nodes in case that you need to run in different nodes
+    <b>Note that this step uses the <i>linux</i> and <i>docker-highmem</i> nodes in case that you need to run in different nodes
     you can use the env variables <i>RUN_ATH_SOURCES_AND_VALIDATION_NODE</i> and <i>RUN_ATH_DOCKER_NODE</i> respectively to overwrite
     the node to use</b>. If you need to specify more than one label just use a comma separated list of labels
     Nodes are allocated automatically by the step if needed, but if the step is already running in the appropriate node no allocation is done
