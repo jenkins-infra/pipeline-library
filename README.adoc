@@ -138,7 +138,7 @@ Ensures that the given code block is runs in a node with the specified labels
 .Jenkinsfile
 [source,groovy]
 ----
-infra.ensureInNode(env, "docker,highmem", {
+infra.ensureInNode(env, "docker,java", {
     sh "docker -v"
 })
 ----
@@ -343,7 +343,7 @@ To make it usable in PR builders this step allows users to run the PCT using cus
 .Using development versions of plugins
 [source,groovy]
 ----
-node("docker&&highmem") {
+node("docker-highmem") {
     deleteDir()
     dir("localPlugins") {
         sh "git clone https://github.com/jenkinsci/ssh-slaves-plugin.git ssh-slaves -b ssh-slaves-1.25"
