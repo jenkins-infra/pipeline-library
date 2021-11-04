@@ -94,6 +94,7 @@ def call(Map params = [:]) {
         }
         stage("Running ATH") {
             dir("athSources") {
+                deleteDir()
                 unstash name: "athSources"
                 if (athContainerImageTag == "local") {
                     echo "'local' ATH container image specified, building it"
