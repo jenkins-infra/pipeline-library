@@ -96,8 +96,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
 
     // And the correct pod template defined
-    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/builder:latest'))
-    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'jx-release-version:1.2.3'))
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/builder:'))
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'jx-release-version:'))
 
     // And the make target called as shell steps
     assertTrue(assertMethodCallContainsPattern('sh','make lint'))
