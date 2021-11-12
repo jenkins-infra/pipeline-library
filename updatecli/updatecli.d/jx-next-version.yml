@@ -1,7 +1,7 @@
 ---
-title: "Bump jx-release-version version"
+title: "Bump jx-release-version version on shared library resources"
 sources:
-  default:
+  lastVersion:
     kind: githubRelease
     name: Get the latest jx-release-version version
     spec:
@@ -10,17 +10,28 @@ sources:
       token: "{{ requiredEnv .github.token }}"
       username: "{{ .github.username }}"
       versionFilter:
-        kind: latest
-    transformers:
-      - trimPrefix: "v"
-      - addPrefix: "ghcr.io/jenkins-x/jx-release-version:"
+        kind: semver
+
+# https://github.com/updatecli/updatecli/issues/365
+# conditions:
+#   checkIfDockerImageIsPublished:
+#     name: "Check if the Docker Image is published"
+#     kind: dockerImage
+#     spec:
+#       hostname: 'ghcr.io'
+#       image: 'jenkins-x/jx-release-version'
+
 targets:
-  updateJxReleaseVersion:
-    name: Update jx-release-version in file
-    sourceID: default
+  updateGroovyCode:
+    name: Update jx-release-version in groovy code
     kind: file
     spec:
-      file: resources/io/jenkins/infra/docker/jxNextVersionImage
+      file: vars/buildDockerAndPublishImage.groovy
+      # Please note that the patterns are specified as "block scalars" (>) with the last endline trimed (-) to avoid tedious escaping of simple quotes
+      matchpattern: >-
+        'ghcr.io/jenkins-x/jx-release-version:(.*)'
+      replacepattern: >-
+        'ghcr.io/jenkins-x/jx-release-version:{{ source `lastVersion` }}'
     scm:
       github:
         user: "{{ .github.user }}"
