@@ -24,9 +24,9 @@ jobs:
           UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Apply
         uses: updatecli/updatecli-action@v1
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
         with:
           command: apply
-          flags: "--config ./updatecli/updatecli.d --values ./updatecli/values.github-action.yaml"
+          flags: "--config ./updatecli/updatecli.d --values ./updatecli/values.yaml"
         env:
           UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

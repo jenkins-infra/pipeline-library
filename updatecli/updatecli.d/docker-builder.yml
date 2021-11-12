@@ -1,37 +1,35 @@
 ---
-title: "Bump jx-release-version version on shared library resources"
+title: "Bump docker-builder version on shared library resources"
 sources:
   lastVersion:
     kind: githubRelease
-    name: Get the latest jx-release-version version
+    name: Get the latest docker-builder version
     spec:
-      owner: "jenkins-x-plugins"
-      repository: "jx-release-version"
+      owner: "jenkins-infra"
+      repository: "docker-builder"
       token: "{{ requiredEnv .github.token }}"
       username: "{{ .github.username }}"
       versionFilter:
-        kind: semver
+        kind: latest
 
-# https://github.com/updatecli/updatecli/issues/365
-# conditions:
-#   checkIfDockerImageIsPublished:
-#     name: "Check if the Docker Image is published"
-#     kind: dockerImage
-#     spec:
-#       hostname: 'ghcr.io'
-#       image: 'jenkins-x/jx-release-version'
+conditions:
+  checkIfDockerImageIsPublished:
+    name: "Check if the Docker Image is published"
+    kind: dockerImage
+    spec:
+      image: "jenkinsciinfra/builder"
 
 targets:
   updateGroovyCode:
-    name: Update jx-release-version in groovy code
+    name: Update docker-builder in groovy code
     kind: file
     spec:
       file: vars/buildDockerAndPublishImage.groovy
       # Please note that the patterns are specified as "block scalars" (>) with the last endline trimed (-) to avoid tedious escaping of simple quotes
       matchpattern: >-
-        'ghcr.io/jenkins-x/jx-release-version:(.*)'
+        'jenkinsciinfra/builder:(.*)'
       replacepattern: >-
-        'ghcr.io/jenkins-x/jx-release-version:{{ source `lastVersion` }}'
+        'jenkinsciinfra/builder:{{ source `lastVersion` }}'
     scm:
       github:
         user: "{{ .github.user }}"
