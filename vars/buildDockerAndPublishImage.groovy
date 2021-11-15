@@ -33,7 +33,7 @@ def call(String imageName, Map config=[:]) {
       ),
       containerTemplate(
         name: 'next-version',
-        image: config.nextVersionImage ?: 'ghcr.io/jenkins-x/jx-release-version:2.4.13',
+        image: config.nextVersionImage ?: 'ghcr.io/jenkins-x/jx-release-version:2.5.1',
         command: 'cat',
         ttyEnabled: true,
         resourceRequestCpu: '200m',
