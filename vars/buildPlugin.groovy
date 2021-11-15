@@ -11,7 +11,7 @@ def call(Map params = [:]) {
     def repo = params.containsKey('repo') ? params.repo : null
     def failFast = params.containsKey('failFast') ? params.failFast : true
     def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
-    def gitDefaultBranch = params.containsKey('gitDefaultBranch') ? params.gitDefaultBranch : 'master'
+    def gitDefaultBranch = params.containsKey('gitDefaultBranch') ? params.gitDefaultBranch : null
 
     def useContainerAgent = params.containsKey('useContainerAgent') ? params.useContainerAgent : false
     if (params.containsKey('useAci')) {
@@ -78,14 +78,16 @@ def call(Map params = [:]) {
                                 }
                             }
 
-                            if (isUnix()) {
-                                sh(script: "git config --global init.defaultBranch '${gitDefaultBranch}'",
-                                   label: 'Set default branch for git',
-                                   returnStatus: true) // Ignore failure if CLI git is not available
-                            } else {
-                                bat(script: "git config --global init.defaultBranch '${gitDefaultBranch}'",
-                                    label: 'Set default branch for git',
-                                    returnStatus: true) // Ignore failure if CLI git is not available
+                            if (gitDefaultBranch) {
+                                if (isUnix()) {
+                                    sh(script: "git config --global init.defaultBranch '${gitDefaultBranch}'",
+                                       label: 'Set default branch for git',
+                                       returnStatus: true) // Ignore failure if CLI git is not available
+                                } else {
+                                    bat(script: "git config --global init.defaultBranch '${gitDefaultBranch}'",
+                                        label: 'Set default branch for git',
+                                        returnStatus: true) // Ignore failure if CLI git is not available
+                                }
                             }
                         }
 
