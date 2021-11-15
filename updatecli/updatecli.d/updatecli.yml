@@ -12,15 +12,14 @@ sources:
       versionFilter:
         kind: latest
 
-# https://github.com/updatecli/updatecli/issues/365
-# conditions:
-#   checkIfDockerImageIsPublished:
-#     name: "Check if the Docker Image is published"
-#     kind: dockerImage
-#     spec:
-#       hostname: "ghcr.io"
-#       image: "updatecli/updatecli"
-#       token: "{{ requiredEnv .github.token }}"
+conditions:
+  checkIfDockerImageIsPublished:
+    name: "Check if the Docker Image is published"
+    kind: dockerImage
+    spec:
+      image: "ghcr.io/updatecli/updatecli"
+      username: "{{ .github.username }}"
+      password: "{{ requiredEnv .github.token }}"
 
 targets:
   updateGroovyCode:
