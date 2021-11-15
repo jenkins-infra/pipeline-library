@@ -3,14 +3,14 @@ title: "Bump updatecli version on shared library resources"
 sources:
   lastVersion:
     kind: githubRelease
-    name: Get the latest docker-builder version
+    name: Get the latest updatecli version
     spec:
       owner: "updatecli"
       repository: "updatecli"
       token: "{{ requiredEnv .github.token }}"
       username: "{{ .github.username }}"
       versionFilter:
-        kind: semver
+        kind: latest
 
 # https://github.com/updatecli/updatecli/issues/365
 # conditions:
@@ -18,12 +18,13 @@ sources:
 #     name: "Check if the Docker Image is published"
 #     kind: dockerImage
 #     spec:
-#       hostname: 'ghcr.io'
-#       image: 'updatecli/updatecli'
+#       hostname: "ghcr.io"
+#       image: "updatecli/updatecli"
+#       token: "{{ requiredEnv .github.token }}"
 
 targets:
   updateGroovyCode:
-    name: Update docker-builder in groovy code
+    name: Update updatecli in groovy code
     kind: file
     spec:
       file: vars/updatecli.groovy
