@@ -34,7 +34,7 @@ class UpdatecliStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // And the correct pod template defined
-    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'ghcr.io/updatecli/updatecli:latest'))
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'ghcr.io/updatecli/updatecli:'))
 
     // And the repository checkouted
     assertTrue(assertMethodCallContainsPattern('checkout', ''))
