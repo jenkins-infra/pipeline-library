@@ -12,7 +12,7 @@ def call(Map params = [:]) {
     def jdks = params.get('jdks', [8])
     def athContainerImageTag = params.get("athImage", "jenkins/ath");
     def configFile = params.get("configFile", null)
-    def defaultJavaOptions = params.get('javaOptions', ['--no-transfer-progress'])
+    def defaultJavaOptions = params.get('javaOptions', [])
 
     def mirror = "http://mirrors.jenkins.io/"
     def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
