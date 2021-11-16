@@ -4,7 +4,7 @@ def call(userConfig = [:]) {
     action: 'diff',
     config: './updatecli/updatecli.d',
     values: './updatecli/values.yaml',
-    updatecliDockerImage: 'ghcr.io/updatecli/updatecli:latest',
+    updatecliDockerImage: 'ghcr.io/updatecli/updatecli:v0.14.1',
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
