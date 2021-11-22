@@ -34,7 +34,7 @@
         <!-- Dependency versions -->
         <groovy.version>3.0.9</groovy.version>
         <junit.version>5.8.1</junit.version>
-        <jenkins-pipeline-unit.version>1.10</jenkins-pipeline-unit.version>
+        <jenkins-pipeline-unit.version>1.12</jenkins-pipeline-unit.version>
         <groovy-eclipse-compiler.version>3.7.0</groovy-eclipse-compiler.version>
     </properties>
 
