@@ -30,8 +30,8 @@ def call(userConfig = [:]) {
         ttyEnabled: true,
         resourceRequestCpu: '200m',
         resourceLimitCpu: '200m',
-        resourceRequestMemory: '128Mi',
-        resourceLimitMemory: '128Mi',
+        resourceRequestMemory: '256Mi',
+        resourceLimitMemory: '256Mi',
       ),
     ]
   ) {
@@ -39,6 +39,7 @@ def call(userConfig = [:]) {
       container('updatecli') {
         stage("Updatecli: ${finalConfig.action}") {
           checkout scm
+          sh 'updatecli version'
           sh updatecliCommand
         }// stage
       } // container
