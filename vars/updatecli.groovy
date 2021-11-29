@@ -5,6 +5,7 @@ def call(userConfig = [:]) {
     config: './updatecli/updatecli.d',
     values: './updatecli/values.yaml',
     updatecliDockerImage: 'ghcr.io/updatecli/updatecli:v0.16.0',
+    containerMemory: '128Mi'
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -30,8 +31,8 @@ def call(userConfig = [:]) {
         ttyEnabled: true,
         resourceRequestCpu: '200m',
         resourceLimitCpu: '200m',
-        resourceRequestMemory: '256Mi',
-        resourceLimitMemory: '256Mi',
+        resourceRequestMemory: finalConfig.containerMemory,
+        resourceLimitMemory: finalConfig.containerMemory,
       ),
     ]
   ) {
