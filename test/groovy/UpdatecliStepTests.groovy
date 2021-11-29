@@ -35,6 +35,9 @@ class UpdatecliStepTests extends BaseTest {
 
     // And the correct pod template defined
     assertTrue(assertMethodCallContainsPattern('containerTemplate', 'ghcr.io/updatecli/updatecli:'))
+    // And the correct default container memory
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'resourceRequestMemory=128Mi'))
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'resourceLimitMemory=128Mi'))
 
     // And the repository checkouted
     assertTrue(assertMethodCallContainsPattern('checkout', ''))
@@ -42,6 +45,7 @@ class UpdatecliStepTests extends BaseTest {
     // And only the diff command called with default values
     assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
     assertFalse(assertMethodCallContainsPattern('sh','updatecli apply'))
+
   }
 
   @Test
@@ -68,7 +72,7 @@ class UpdatecliStepTests extends BaseTest {
     def script = loadScript(scriptName)
 
     // when calling with the "updatecli" function with a custom config and an empty values
-    script.call(config: './ops/config.yml', values: '')
+    script.call(config: './ops/config.yml', values: '', containerMemory: '512Mi')
     printCallStack()
 
     // Then we expect a successful build
@@ -81,6 +85,11 @@ class UpdatecliStepTests extends BaseTest {
     // And only the default command called with custom config and NO values
     assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --config ./ops/config.yml'))
     assertFalse(assertMethodCallContainsPattern('sh','--values'))
+
+    // And the correct container memory
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'resourceRequestMemory=512Mi'))
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'resourceLimitMemory=512Mi'))
+
   }
 
   @Test
