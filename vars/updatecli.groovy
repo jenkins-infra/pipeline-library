@@ -30,8 +30,8 @@ def call(userConfig = [:]) {
         ttyEnabled: true,
         resourceRequestCpu: '200m',
         resourceLimitCpu: '200m',
-        resourceRequestMemory: '256Mi',
-        resourceLimitMemory: '256Mi',
+        resourceRequestMemory: '512Mi',
+        resourceLimitMemory: '512Mi',
       ),
     ]
   ) {
