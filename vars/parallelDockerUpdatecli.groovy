@@ -29,16 +29,12 @@ def call(userConfig = [:]) {
       }
     },
     'updatecli': {
-      if (fileExists('/updatecli/')) {
-        withCredentials([string(credentialsId: finalConfig.credentialsId,variable: 'UPDATECLI_GITHUB_TOKEN')]) {
-          updatecli(action: 'diff')
-          if (env.BRANCH_IS_PRIMARY) {
-            updatecli(action: 'apply', cronTriggerExpression: finalConfig.cronTriggerExpression, containerMemory: finalConfig.containerMemory)
-          }
+      withCredentials([string(credentialsId: finalConfig.credentialsId,variable: 'UPDATECLI_GITHUB_TOKEN')]) {
+        updatecli(action: 'diff')
+        if (env.BRANCH_IS_PRIMARY) {
+          updatecli(action: 'apply', cronTriggerExpression: finalConfig.cronTriggerExpression, containerMemory: finalConfig.containerMemory)
         }
-      } else {
-        echo "WARNING: no updatecli folder."
       }
-    },
+    }
   )
 }
