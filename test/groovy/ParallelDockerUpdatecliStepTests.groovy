@@ -21,6 +21,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     // Mocks of the shared pipelines we want to test
     helper.registerAllowedMethod('buildDockerAndPublishImage', [String.class, Map.class], { s, m -> s + m })
     helper.registerAllowedMethod('updatecli', [Map.class], { m -> m })
+    helper.registerAllowedMethod('fileExists', [String.class], { true })
 
     // Default behavior is a build trigger by a timertrigger on the main branch (most frequent case)
     binding.setProperty('currentBuild', new CurrentBuild('SUCCESS', ['hudson.triggers.TimerTrigger']))
@@ -38,7 +39,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     assertJobStatusFailure()
 
     // And the error message is shown
-    assertTrue(assertMethodCallContainsPattern('echo', 'Error: no imageName provided.'))
+    assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: no imageName provided.'))
   }
 
   @Test
@@ -54,7 +55,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // And the error message is not shown
-    assertFalse(assertMethodCallContainsPattern('echo', 'Error: no imageName provided.'))
+    assertFalse(assertMethodCallContainsPattern('echo', 'ERROR: no imageName provided.'))
 
     // And the correct image name is passed to buildDockerAndPublishImage
     assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', testImageName))
@@ -78,7 +79,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // And the error message is not shown
-    assertFalse(assertMethodCallContainsPattern('echo', 'Error: no imageName provided.'))
+    assertFalse(assertMethodCallContainsPattern('echo', 'ERROR: no imageName provided.'))
 
     // And the correct image name is passed to buildDockerAndPublishImage
     assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', testImageName))
@@ -102,7 +103,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // And the error message is not shown
-    assertFalse(assertMethodCallContainsPattern('echo', 'Error: no imageName provided.'))
+    assertFalse(assertMethodCallContainsPattern('echo', 'ERROR: no imageName provided.'))
 
     // And buildDockerAndPublishImage is not called (default behavior set as a build trigger by a TimerTrigger)
     assertFalse(assertMethodCallContainsPattern('buildDockerAndPublishImage', testImageName))
@@ -124,7 +125,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // And the error message is not shown
-    assertFalse(assertMethodCallContainsPattern('echo', 'Error: no imageName provided.'))
+    assertFalse(assertMethodCallContainsPattern('echo', 'ERROR: no imageName provided.'))
 
     // And buildDockerAndPublishImage is called (default behavior set as a build trigger which is not a timertrigger)
     assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', testImageName))
@@ -133,6 +134,26 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('updatecli', 'action=diff'))
   }
 
+  @Test
+  void itRunsSuccessfullyWithoutUpdatecli() throws Exception {
+    def script = loadScript(scriptName)
+
+    // when calling with the "parallelDockerUpdatecli" function and when the folder 'updatecli' doesn't exist
+    helper.registerAllowedMethod('fileExists', [String.class], { false })
+    script.call(
+      imageName: testImageName
+    )
+    printCallStack()
+
+    // Then we expect a successfull build
+    assertJobStatusSuccess()
+
+    // And the error message is not shown
+    assertFalse(assertMethodCallContainsPattern('echo', 'ERROR: no imageName provided.'))
+
+    // And updatecli isn't called
+    assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: no updatecli folder.'))
+  }
 
   @Test
   void itRunsSuccessfullyWithCustomParameters() throws Exception {
@@ -154,7 +175,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // And the error message is not shown
-    assertFalse(assertMethodCallContainsPattern('echo', 'Error: no imageName provided.'))
+    assertFalse(assertMethodCallContainsPattern('echo', 'ERROR: no imageName provided.'))
 
     // And the correct image name is passed to buildDockerAndPublishImage
     assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', testImageName))

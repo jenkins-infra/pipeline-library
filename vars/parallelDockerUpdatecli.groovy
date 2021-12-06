@@ -12,7 +12,7 @@ def call(userConfig = [:]) {
   final Map finalConfig = defaultConfig << userConfig
 
   if (finalConfig.imageName == '') {
-    echo 'Error: no imageName provided.'
+    echo 'ERROR: no imageName provided.'
     currentBuild.result = 'FAILURE'
     return
   }
@@ -29,11 +29,15 @@ def call(userConfig = [:]) {
       }
     },
     'updatecli': {
-      withCredentials([string(credentialsId: finalConfig.credentialsId,variable: 'UPDATECLI_GITHUB_TOKEN')]) {
-        updatecli(action: 'diff')
-        if (env.BRANCH_IS_PRIMARY) {
-          updatecli(action: 'apply', cronTriggerExpression: finalConfig.cronTriggerExpression, containerMemory: finalConfig.containerMemory)
+      if (fileExists('/updatecli/')) {
+        withCredentials([string(credentialsId: finalConfig.credentialsId,variable: 'UPDATECLI_GITHUB_TOKEN')]) {
+          updatecli(action: 'diff')
+          if (env.BRANCH_IS_PRIMARY) {
+            updatecli(action: 'apply', cronTriggerExpression: finalConfig.cronTriggerExpression, containerMemory: finalConfig.containerMemory)
+          }
         }
+      } else {
+        echo "WARNING: no updatecli folder."
       }
     },
   )
