@@ -5,5 +5,15 @@ package mock
  */
 class CurrentBuild implements Serializable {
   String result
-  public CurrentBuild(String result) { this.result = result }
+  ArrayList buildCauses
+
+  public CurrentBuild(String result) {
+    this.result = result
+    this.buildCauses = []
+  }
+
+  public CurrentBuild(String result, ArrayList buildCauses) {
+    this.result = result
+    this.buildCauses = buildCauses
+  }
 }
