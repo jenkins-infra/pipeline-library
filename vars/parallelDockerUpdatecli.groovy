@@ -17,7 +17,7 @@ def call(userConfig = [:]) {
     return
   }
   parallel(
-    failFast: true,
+    failFast: false,
     'docker-image': {
       // Do not rebuild the image when triggered by a periodic job if the config desactivate them
       if (finalConfig.rebuildImageOnPeriodicJob || (!finalConfig.rebuildImageOnPeriodicJob && !currentBuild.getBuildCauses().contains('hudson.triggers.TimerTrigger'))) {
