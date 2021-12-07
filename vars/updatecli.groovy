@@ -46,10 +46,8 @@ def call(userConfig = [:]) {
           }
         }
         stage("Run updatecli: ${finalConfig.action}") {
-          steps {
-            sh 'updatecli version'
-            sh updatecliCommand
-          }
+          sh 'updatecli version'
+          sh updatecliCommand
         }// stage
       } // container
     } // node
