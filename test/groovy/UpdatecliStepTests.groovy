@@ -20,6 +20,9 @@ class UpdatecliStepTests extends BaseTest {
   @Before
   void setUp() throws Exception {
     super.setUp()
+
+    //Mock of updatecli folder existence
+    helper.registerAllowedMethod('fileExists', [String.class], { true })
   }
 
   @Test
@@ -45,7 +48,6 @@ class UpdatecliStepTests extends BaseTest {
     // And only the diff command called with default values
     assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
     assertFalse(assertMethodCallContainsPattern('sh','updatecli apply'))
-
   }
 
   @Test
@@ -111,6 +113,27 @@ class UpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --values ./values.yaml'))
     assertFalse(assertMethodCallContainsPattern('sh','--config'))
   }
+
+  // @Test
+  // void itRunsSuccessfullyWithoutUpdatecli() throws Exception {
+  //   def script = loadScript(scriptName)
+
+  //   // when calling with the "parallelDockerUpdatecli" function and when the folder 'updatecli' doesn't exist
+  //   helper.registerAllowedMethod('fileExists', [String.class], { false })
+  //   script.call(
+  //     imageName: testImageName
+  //   )
+  //   printCallStack()
+
+  //   // Then we expect a successfull build
+  //   assertJobStatusSuccess()
+
+  //   // And the error message is not shown
+  //   assertFalse(assertMethodCallContainsPattern('echo', 'ERROR: no imageName provided.'))
+
+  //   // And updatecli isn't called
+  //   assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: no updatecli folder.'))
+  // }
 
   @Test
   void itUsesCustomImageFromCustomConfig() throws Exception {
