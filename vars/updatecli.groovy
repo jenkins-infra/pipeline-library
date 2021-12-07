@@ -45,15 +45,16 @@ def call(userConfig = [:]) {
           if (!fileExists('/updatecli/')) {
             echo 'WARNING: no updatecli folder.'
             Utils.markStageSkippedForConditional(updatecliRunStage)
+            // runUpdatecli = false
             return
           } else {
             echo "DEBUG: updatecli folder exists, continue."
+            stage(updatecliRunStage) {
+              sh 'updatecli version'
+              sh updatecliCommand
+            }// stage
           }
         }
-        stage(updatecliRunStage) {
-          sh 'updatecli version'
-          sh updatecliCommand
-        }// stage
       } // container
     } // node
   } // podTemplate
