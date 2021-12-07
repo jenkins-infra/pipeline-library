@@ -40,8 +40,14 @@ def call(userConfig = [:]) {
       container('updatecli') {
         stage("Updatecli: ${finalConfig.action}") {
           checkout scm
-          sh 'updatecli version'
-          sh updatecliCommand
+          if fileExists('/updatecli/') {
+            steps {
+              sh 'updatecli version'
+              sh updatecliCommand
+            }
+          } else {
+            Utils.markStageSkippedForConditional("Updatecli: ${finalConfig.action}")
+          }
         }// stage
       } // container
     } // node
