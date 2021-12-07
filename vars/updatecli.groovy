@@ -46,11 +46,12 @@ def call(userConfig = [:]) {
             Utils.markStageSkippedForConditional("Run updatecli: ${finalConfig.action}")
             return
           }
+        } else {
+          stage("Run updatecli: ${finalConfig.action}") {
+            sh 'updatecli version'
+            sh updatecliCommand
+          }// stage
         }
-        stage("Run updatecli: ${finalConfig.action}") {
-          sh 'updatecli version'
-          sh updatecliCommand
-        }// stage
       } // container
     } // node
   } // podTemplate
