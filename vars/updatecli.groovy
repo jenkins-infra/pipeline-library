@@ -40,7 +40,7 @@ def call(userConfig = [:]) {
       container('updatecli') {
         stage("Updatecli: ${finalConfig.action}") {
           checkout scm
-          if fileExists('/updatecli/') {
+          if (fileExists('/updatecli/')) {
             steps {
               sh 'updatecli version'
               sh updatecliCommand
