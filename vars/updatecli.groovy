@@ -1,3 +1,4 @@
+import java.util.*
 
 def call(userConfig = [:]) {
   def defaultConfig = [
