@@ -42,15 +42,17 @@ def call(userConfig = [:]) {
         stage("Check if updatecli folder exists: ${finalConfig.action}") {
           checkout scm
           if (!fileExists('updatecli/')) {
-            echo 'WARNING: no updatecli folder.'
+            echo 'WARNING: updatecli folder doesn\'t exist.'
             runUpdatecli = false
-            org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional(updatecliRunStage)
+            // org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional(updatecliRunStage)
           }
         }
         stage(updatecliRunStage) {
           if (runUpdatecli) {
             sh 'updatecli version'
             sh updatecliCommand
+          } else {
+            org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional(updatecliRunStage)
           }
         }// stage
       } // container
