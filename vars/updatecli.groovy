@@ -44,7 +44,6 @@ def call(userConfig = [:]) {
           if (!fileExists('updatecli/')) {
             echo 'WARNING: updatecli folder doesn\'t exist.'
             runUpdatecli = false
-            // org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional(updatecliRunStage)
           }
         }
         stage(updatecliRunStage) {
@@ -53,8 +52,8 @@ def call(userConfig = [:]) {
             sh updatecliCommand
           } else {
             org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional(updatecliRunStage)
-          }
-        }// stage
+          } // if
+        } // stage
       } // container
     } // node
   } // podTemplate
