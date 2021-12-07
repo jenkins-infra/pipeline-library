@@ -40,21 +40,24 @@ def call(userConfig = [:]) {
     node(POD_LABEL) {
       container('updatecli') {
         final String updatecliRunStage = "Run updatecli: ${finalConfig.action}"
+        boolean runUpdatecli = true
         stage("Check if updatecli folder exists: ${finalConfig.action}") {
           checkout scm
           if (!fileExists('/updatecli/')) {
             echo 'WARNING: no updatecli folder.'
             Utils.markStageSkippedForConditional(updatecliRunStage)
-            // runUpdatecli = false
+            runUpdatecli = false
             return
           } else {
             echo "DEBUG: updatecli folder exists, continue."
-            stage(updatecliRunStage) {
-              sh 'updatecli version'
-              sh updatecliCommand
-            }// stage
           }
         }
+        stage(updatecliRunStage) {
+          if (runUpdatecli) {
+            sh 'updatecli version'
+            sh updatecliCommand
+          }
+        }// stage
       } // container
     } // node
   } // podTemplate
