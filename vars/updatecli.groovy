@@ -1,4 +1,4 @@
-import java.util.*
+import org.jenkinsci.plugins.pipeline.modeldefinition.Utils
 
 def call(userConfig = [:]) {
   def defaultConfig = [
