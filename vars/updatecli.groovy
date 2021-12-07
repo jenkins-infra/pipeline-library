@@ -1,4 +1,3 @@
-
 def call(userConfig = [:]) {
   def defaultConfig = [
     action: 'diff',
@@ -38,10 +37,21 @@ def call(userConfig = [:]) {
   ) {
     node(POD_LABEL) {
       container('updatecli') {
-        stage("Updatecli: ${finalConfig.action}") {
+        final String updatecliRunStage = "Run updatecli: ${finalConfig.action}"
+        boolean runUpdatecli = true
+        stage("Check if updatecli folder exists: ${finalConfig.action}") {
           checkout scm
-          sh 'updatecli version'
-          sh updatecliCommand
+          if (!fileExists('updatecli/')) {
+            echo 'WARNING: no updatecli folder.'
+            runUpdatecli = false
+            org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional(updatecliRunStage)
+          }
+        }
+        stage(updatecliRunStage) {
+          if (runUpdatecli) {
+            sh 'updatecli version'
+            sh updatecliCommand
+          }
         }// stage
       } // container
     } // node

@@ -2,14 +2,8 @@
 
 import org.junit.Before
 import org.junit.Test
-import groovy.mock.interceptor.StubFor
 
-import io.jenkins.infra.*
-import com.lesfurets.jenkins.unit.declarative.*
-
-import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
-import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
 
 class UpdatecliStepTests extends BaseTest {
@@ -20,6 +14,9 @@ class UpdatecliStepTests extends BaseTest {
   @Before
   void setUp() throws Exception {
     super.setUp()
+
+    //Mock of updatecli folder existence
+    helper.registerAllowedMethod('fileExists', [String.class], { true })
   }
 
   @Test
@@ -45,7 +42,6 @@ class UpdatecliStepTests extends BaseTest {
     // And only the diff command called with default values
     assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
     assertFalse(assertMethodCallContainsPattern('sh','updatecli apply'))
-
   }
 
   @Test
