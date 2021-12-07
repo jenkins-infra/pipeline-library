@@ -52,53 +52,77 @@ def call(String imageName, Map config=[:]) {
           "IMAGE_DOCKERFILE=${dockerConfig.dockerfile}",
           "IMAGE_PLATFORM=${dockerConfig.platform}",
         ]) {
-          stage("Prepare ${dockerImageName}") {
+          boolean runStages = true
+          stage("Check if ${dockerConfig.dockerfile} exists") {
             withCredentials([usernamePassword(credentialsId: dockerConfig.credentials, passwordVariable: 'DOCKER_REGISTRY_PSW', usernameVariable: 'DOCKER_REGISTRY_USR')]) {
               checkout scm
+              if (!fileExists(dockerConfig.dockerfile)) {
+                echo "WARNING: ${dockerConfig.dockerfile} file doesn't exist."
+                runStages = false
+              }
+            }
+          }
+          stage("Prepare ${dockerImageName}") {
+            if (runStages) {
+              withCredentials([usernamePassword(credentialsId: dockerConfig.credentials, passwordVariable: 'DOCKER_REGISTRY_PSW', usernameVariable: 'DOCKER_REGISTRY_USR')]) {
+                // Logging in on the Dockerhub helps to avoid request limit from DockerHub
+                sh 'echo "${DOCKER_REGISTRY_PSW}" | img login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
 
-              // Logging in on the Dockerhub helps to avoid request limit from DockerHub
-              sh 'echo "${DOCKER_REGISTRY_PSW}" | img login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
-
-              // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
-              // Even though we have mitigation trhough the multibranch job config only allowed to build PRs from repo. contributors
-              writeFile file: 'Makefile', text: makefileContent
-            } // withCredentials
+                // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
+                // Even though we have mitigation trhough the multibranch job config only allowed to build PRs from repo. contributors
+                writeFile file: 'Makefile', text: makefileContent
+              } // withCredentials
+            } else {
+              org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional("Prepare ${dockerImageName}") 
+            }// if
           } // stage
 
           // Automatic tagging on principal branch is not enabled by default
           if (semVerEnabled) {
             stage("Get Next Version of ${dockerImageName}") {
-              container('next-version') {
-                nextVersion = sh(script:"${dockerConfig.nextVersionCommand}", returnStdout: true).trim()
-                if (dockerConfig.metadataFromSh != '') {
-                  metadata = sh(script: "${dockerConfig.metadataFromSh}", returnStdout: true).trim()
-                  nextVersion = nextVersion + metadata
-                } // if
-              } // container
-              echo "Next Release Version = $nextVersion"
+              if (runStages) {
+                container('next-version') {
+                  nextVersion = sh(script:"${dockerConfig.nextVersionCommand}", returnStdout: true).trim()
+                  if (dockerConfig.metadataFromSh != '') {
+                    metadata = sh(script: "${dockerConfig.metadataFromSh}", returnStdout: true).trim()
+                    nextVersion = nextVersion + metadata
+                  } // if
+                } // container
+                echo "Next Release Version = $nextVersion"
+              } else {
+                org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional("Get Next Version of ${dockerImageName}") 
+              } // if
             } // stage
           } // if
 
           stage("Lint ${dockerImageName}") {
-            // Define the image name as prefix to support multi images per pipeline
-            def now = new Date()
-            def hadolintReportId = "${dockerImageName}-hadolint-${now.getTime()}"
-            def hadoLintReportFile = "${hadolintReportId}.json"
-            withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
-              try {
-                sh 'make lint'
-              } finally {
-                recordIssues(
-                  enabledForFailure: true,
-                  aggregatingResults: false,
-                  tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
-                )
-              }
-            }
+            if (runStages) {
+              // Define the image name as prefix to support multi images per pipeline
+              def now = new Date()
+              def hadolintReportId = "${dockerImageName}-hadolint-${now.getTime()}"
+              def hadoLintReportFile = "${hadolintReportId}.json"
+              withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
+                try {
+                  sh 'make lint'
+                } finally {
+                  recordIssues(
+                    enabledForFailure: true,
+                    aggregatingResults: false,
+                    tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
+                  )
+                } // try
+              } // withEnv
+            } else {
+              org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional("Lint ${dockerImageName}") 
+            } // if
           } // stage
 
           stage("Build ${dockerImageName}") {
-            sh 'make build'
+            if (runStages) {
+              sh 'make build'
+            } else {
+              org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional("Build ${dockerImageName}") 
+            } // if
           } //stage
 
           // There can be 2 kind of tests: per image and per repository
@@ -108,9 +132,13 @@ def call(String imageName, Map config=[:]) {
           ].each { testName, testHarness ->
             if (fileExists(testHarness)) {
               stage("Test ${testName} for ${dockerImageName}") {
-                withEnv(["TEST_HARNESS=${testHarness}"]) {
-                  sh 'make test'
-                } // withEnv
+                if (runStages) {
+                  withEnv(["TEST_HARNESS=${testHarness}"]) {
+                    sh 'make test'
+                  } // withEnv
+                } else {
+                  org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional("Test ${testName} for ${dockerImageName}") 
+                } // if
               } //stage
             } // if
           }
@@ -118,49 +146,61 @@ def call(String imageName, Map config=[:]) {
           // Automatic tagging on principal branch is not enabled by default
           if (semVerEnabled) {
             stage("Semantic Release of ${dockerImageName}") {
-              echo "Configuring credential.helper"
-              sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
+              if (runStages) {
+                echo "Configuring credential.helper"
+                sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
 
-              withCredentials([usernamePassword(credentialsId: "${dockerConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-                echo "Tagging New Version: $nextVersion"
-                sh "git tag $nextVersion"
+                withCredentials([usernamePassword(credentialsId: "${dockerConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                  echo "Tagging New Version: $nextVersion"
+                  sh "git tag $nextVersion"
 
-                echo "Pushing Tag"
-                sh "git push origin --tags"
-              }
+                  echo "Pushing Tag"
+                  sh "git push origin --tags"
+                } // withCredentials
+              } else {
+                org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional("Semantic Release of ${dockerImageName}") 
+              } // if
             } // stage
           } // if
 
           if (env.TAG_NAME || env.BRANCH_NAME == dockerConfig.mainBranch) {
             stage("Deploy ${dockerImageName}") {
-              def imageDeployName = dockerConfig.getFullImageName()
+              if (runStages) {
+                def imageDeployName = dockerConfig.getFullImageName()
 
-              if(env.TAG_NAME) {
-                // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
-                if(imageDeployName.contains(':')) {
-                  imageDeployName += "-${env.TAG_NAME}"
-                } else {
-                  imageDeployName += ":${env.TAG_NAME}"
+                if(env.TAG_NAME) {
+                  // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
+                  if(imageDeployName.contains(':')) {
+                    imageDeployName += "-${env.TAG_NAME}"
+                  } else {
+                    imageDeployName += ":${env.TAG_NAME}"
+                  }
                 }
-              }
-              sh "IMAGE_DEPLOY_NAME=${imageDeployName} make deploy"
-            } //stage
+                sh "IMAGE_DEPLOY_NAME=${imageDeployName} make deploy"
+              } else {
+                org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional("Deploy ${dockerImageName}") 
+              } // if
+            } // stage
           } // if
 
           if (env.TAG_NAME && dockerConfig.automaticSemanticVersioning) {
-            stage("GitHub Release") {
-              withCredentials([usernamePassword(credentialsId: "${dockerConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')]) {
-                String origin = sh(returnStdout: true, script: 'git remote -v | grep origin | grep push | sed \'s/^origin\\s//\' | sed \'s/\\s(push)//\'').trim() - '.git'
-                String org = origin.split('/')[3]
-                String repository = origin.split('/')[4]
+            stage("GitHub Release of ${dockerImageName}") {
+              if (runStages) {
+                withCredentials([usernamePassword(credentialsId: "${dockerConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')]) {
+                  String origin = sh(returnStdout: true, script: 'git remote -v | grep origin | grep push | sed \'s/^origin\\s//\' | sed \'s/\\s(push)//\'').trim() - '.git'
+                  String org = origin.split('/')[3]
+                  String repository = origin.split('/')[4]
 
-                try {
-                    String release = sh(returnStdout: true, script: "gh api /repos/${org}/${repository}/releases | jq -e -r '.[] | select(.draft == true and .name == \"next\") | .id'").trim()
-                    sh "gh api -X PATCH -F draft=false -F name=${env.TAG_NAME} -F tag_name=${env.TAG_NAME} /repos/${org}/${repository}/releases/$release"
-                } catch (err) {
-                    echo "Release named 'next' does not exist"
-                }
-              } // withCredentials
+                  try {
+                      String release = sh(returnStdout: true, script: "gh api /repos/${org}/${repository}/releases | jq -e -r '.[] | select(.draft == true and .name == \"next\") | .id'").trim()
+                      sh "gh api -X PATCH -F draft=false -F name=${env.TAG_NAME} -F tag_name=${env.TAG_NAME} /repos/${org}/${repository}/releases/$release"
+                  } catch (err) {
+                      echo "Release named 'next' does not exist"
+                  }
+                } // withCredentials
+              } else {
+                org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional("GitHub Release of ${dockerImageName}") 
+              } // if
             } // stage
           } // if
         } // withEnv

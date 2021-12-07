@@ -55,6 +55,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     dateMock.demand.with {
       getTime{ mockedTimestamp }
     }
+
+    //Mock of dockerfile existence
+    helper.registerAllowedMethod('fileExists', [String.class], { true })
   }
 
   void withMocks(Closure body) {
