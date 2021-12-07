@@ -2,14 +2,8 @@
 
 import org.junit.Before
 import org.junit.Test
-import groovy.mock.interceptor.StubFor
 
-import io.jenkins.infra.*
-import com.lesfurets.jenkins.unit.declarative.*
-
-import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
-import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
 
 class UpdatecliStepTests extends BaseTest {
@@ -113,27 +107,6 @@ class UpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --values ./values.yaml'))
     assertFalse(assertMethodCallContainsPattern('sh','--config'))
   }
-
-  // @Test
-  // void itRunsSuccessfullyWithoutUpdatecli() throws Exception {
-  //   def script = loadScript(scriptName)
-
-  //   // when calling with the "parallelDockerUpdatecli" function and when the folder 'updatecli' doesn't exist
-  //   helper.registerAllowedMethod('fileExists', [String.class], { false })
-  //   script.call(
-  //     imageName: testImageName
-  //   )
-  //   printCallStack()
-
-  //   // Then we expect a successfull build
-  //   assertJobStatusSuccess()
-
-  //   // And the error message is not shown
-  //   assertFalse(assertMethodCallContainsPattern('echo', 'ERROR: no imageName provided.'))
-
-  //   // And updatecli isn't called
-  //   assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: no updatecli folder.'))
-  // }
 
   @Test
   void itUsesCustomImageFromCustomConfig() throws Exception {
