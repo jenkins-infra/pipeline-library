@@ -171,8 +171,8 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null,
             }
         }
         if (!javaHome) {
-            echo "WARNING: switching to the Jenkins tool named ${jdkTool} to set the environment variables JAVA_HOME and PATH, because no java installation found in any of the following locations: ${javaHomesToTry.join(", ")}"
             String jdkTool = "jdk${jdk}"
+            echo "WARNING: switching to the Jenkins tool named ${jdkTool} to set the environment variables JAVA_HOME and PATH, because no java installation found in any of the following locations: ${javaHomesToTry.join(", ")}"
             javaHome = tool jdkTool
         }
 
