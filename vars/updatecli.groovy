@@ -1,5 +1,3 @@
-import org.jenkinsci.plugins.pipeline.modeldefinition.Utils
-
 def call(userConfig = [:]) {
   def defaultConfig = [
     action: 'diff',
@@ -46,7 +44,7 @@ def call(userConfig = [:]) {
           if (!fileExists('/updatecli/')) {
             echo 'WARNING: no updatecli folder.'
             runUpdatecli = false
-            Utils.markStageSkippedForConditional(updatecliRunStage)
+            org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional(updatecliRunStage)
           }
         }
         stage(updatecliRunStage) {
