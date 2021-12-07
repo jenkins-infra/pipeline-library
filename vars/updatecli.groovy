@@ -41,15 +41,14 @@ def call(userConfig = [:]) {
       container('updatecli') {
         stage("Check if updatecli folder exists: ${finalConfig.action}") {
           checkout scm
-          if (fileExists('/updatecli/')) {
-            stage("Run updatecli: ${finalConfig.action}") {
-              steps {
-                sh 'updatecli version'
-                sh updatecliCommand
-              }
-            }
-          } else {
+          if (!fileExists('/updatecli/')) {
             Utils.markStageSkippedForConditional("Run updatecli: ${finalConfig.action}")
+          }
+        }
+        stage("Run updatecli: ${finalConfig.action}") {
+          steps {
+            sh 'updatecli version'
+            sh updatecliCommand
           }
         }// stage
       } // container
