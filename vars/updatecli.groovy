@@ -45,11 +45,8 @@ def call(userConfig = [:]) {
           checkout scm
           if (!fileExists('/updatecli/')) {
             echo 'WARNING: no updatecli folder.'
-            Utils.markStageSkippedForConditional(updatecliRunStage)
             runUpdatecli = false
-            return
-          } else {
-            echo "DEBUG: updatecli folder exists, continue."
+            Utils.markStageSkippedForConditional(updatecliRunStage)
           }
         }
         stage(updatecliRunStage) {
