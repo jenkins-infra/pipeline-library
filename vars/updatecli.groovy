@@ -45,8 +45,6 @@ def call(userConfig = [:]) {
             echo 'WARNING: no updatecli folder.'
             runUpdatecli = false
             org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional(updatecliRunStage)
-          } else {
-            echo 'DEBUG: updatecli folder exists.'
           }
         }
         stage(updatecliRunStage) {
