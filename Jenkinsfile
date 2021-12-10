@@ -9,7 +9,9 @@ pipeline {
     stages {
         stage('Test') {
             steps {
-                sh 'mvn --no-transfer-progress -B clean test'
+                ansiColor('xterm') {
+                    sh 'mvn -Dstyle.color=always --no-transfer-progress -B clean test'
+                }
             }
             post {
                 always {

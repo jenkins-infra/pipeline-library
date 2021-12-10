@@ -81,6 +81,7 @@ boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
  */
 Object runMaven(List<String> options, String jdk = "8", List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = true) {
     List<String> mvnOptions = [
+        '-Dstyle.color=always',
         '--batch-mode',
         '--show-version',
         '--errors',
@@ -92,7 +93,9 @@ Object runMaven(List<String> options, String jdk = "8", List<String> extraEnv = 
     mvnOptions.addAll(options)
     mvnOptions.unique()
     String command = "mvn ${mvnOptions.join(' ')}"
-    runWithMaven(command, jdk, extraEnv, addToolEnv)
+    ansiColor('xterm') {
+        runWithMaven(command, jdk, extraEnv, addToolEnv)
+    }
 }
 
 /**
