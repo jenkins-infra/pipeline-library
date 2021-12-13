@@ -30,7 +30,7 @@ def call(userConfig = [:]) {
     },
     'updatecli': {
       withCredentials([string(credentialsId: finalConfig.credentialsId,variable: 'UPDATECLI_GITHUB_TOKEN')]) {
-        updatecli(action: 'diff')
+        updatecli(action: 'diff', containerMemory: finalConfig.containerMemory)
         if (env.BRANCH_IS_PRIMARY) {
           updatecli(action: 'apply', cronTriggerExpression: finalConfig.cronTriggerExpression, containerMemory: finalConfig.containerMemory)
         }
