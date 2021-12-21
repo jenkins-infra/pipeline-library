@@ -23,7 +23,7 @@ def call(String imageName, Map config=[:]) {
     containers: [
       containerTemplate(
         name: 'builder',
-        image: config.builderImage ?: 'jenkinsciinfra/builder:1.2.7',
+        image: config.builderImage ?: 'jenkinsciinfra/builder:1.2.8',
         command: 'cat',
         ttyEnabled: true,
         resourceRequestCpu: '2',
