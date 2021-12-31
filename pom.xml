@@ -54,6 +54,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.lesfurets</groupId>
             <artifactId>jenkins-pipeline-unit</artifactId>
             <version>${jenkins-pipeline-unit.version}</version>
@@ -108,7 +114,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M3</version>
+                <version>3.0.0-M5</version>
             </plugin>
         </plugins>
     </build>
