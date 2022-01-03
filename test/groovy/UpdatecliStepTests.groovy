@@ -31,10 +31,10 @@ class UpdatecliStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // And the correct pod template defined
-    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'ghcr.io/updatecli/updatecli:'))
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/helmfile:'))
     // And the correct default container memory
-    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'resourceRequestMemory=128Mi'))
-    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'resourceLimitMemory=128Mi'))
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'resourceRequestMemory=512Mi'))
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'resourceLimitMemory=512Mi'))
 
     // And the repository checkouted
     assertTrue(assertMethodCallContainsPattern('checkout', ''))

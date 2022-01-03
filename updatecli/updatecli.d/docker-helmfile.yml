@@ -1,12 +1,12 @@
 ---
-title: "Bump updatecli version on shared library resources"
+title: "Bump docker-helmfile version on shared library resources"
 sources:
   lastVersion:
     kind: githubRelease
     name: Get the latest updatecli version
     spec:
-      owner: "updatecli"
-      repository: "updatecli"
+      owner: "jenkins-infra"
+      repository: "docker-helmfile"
       token: "{{ requiredEnv .github.token }}"
       username: "{{ .github.username }}"
       versionFilter:
@@ -17,21 +17,35 @@ conditions:
     name: "Check if the Docker Image is published"
     kind: dockerImage
     spec:
-      image: "ghcr.io/updatecli/updatecli"
-      username: "{{ .github.username }}"
-      password: "{{ requiredEnv .github.token }}"
+      image: "jenkinsciinfra/helmfile"
 
 targets:
   updateGroovyCode:
-    name: Update updatecli in groovy code
+    name: Update docker-helmfile in groovy code
     kind: file
     spec:
       file: vars/updatecli.groovy
       # Please note that the patterns are specified as "block scalars" (>) with the last endline trimed (-) to avoid tedious escaping of simple quotes
       matchpattern: >-
-        'ghcr.io/updatecli/updatecli:(.*)'
+        'jenkinsciinfra/helmfile:(.*)'
       replacepattern: >-
-        'ghcr.io/updatecli/updatecli:{{ source `lastVersion` }}'
+        'jenkinsciinfra/helmfile:{{ source `lastVersion` }}'
+    scm:
+      github:
+        user: "{{ .github.user }}"
+        email: "{{ .github.email }}"
+        owner: "{{ .github.owner }}"
+        repository: "{{ .github.repository }}"
+        token: "{{ requiredEnv .github.token }}"
+        username: "{{ .github.username }}"
+        branch: "{{ .github.branch }}"
+  updateDoc:
+    name: Update docker-helmfile in documentation
+    kind: file
+    spec:
+      file: vars/updatecli.txt
+      matchpattern: jenkinsciinfra/helmfile:(\d\.\d\.\d)
+      replacepattern: jenkinsciinfra/helmfile:{{ source `lastVersion` }}
     scm:
       github:
         user: "{{ .github.user }}"
