@@ -1,5 +1,18 @@
 ---
 title: "Bump docker-builder version on shared library resources"
+
+scms:
+  default:
+    kind: github
+    spec:
+      user: "{{ .github.user }}"
+      email: "{{ .github.email }}"
+      owner: "{{ .github.owner }}"
+      repository: "{{ .github.repository }}"
+      token: "{{ requiredEnv .github.token }}"
+      username: "{{ .github.username }}"
+      branch: "{{ .github.branch }}"
+
 sources:
   lastVersion:
     kind: githubRelease
@@ -30,15 +43,7 @@ targets:
         'jenkinsciinfra/builder:(.*)'
       replacepattern: >-
         'jenkinsciinfra/builder:{{ source `lastVersion` }}'
-    scm:
-      github:
-        user: "{{ .github.user }}"
-        email: "{{ .github.email }}"
-        owner: "{{ .github.owner }}"
-        repository: "{{ .github.repository }}"
-        token: "{{ requiredEnv .github.token }}"
-        username: "{{ .github.username }}"
-        branch: "{{ .github.branch }}"
+    scmID: default
   updateDoc:
     updateDoc:
     name: Update docker-builder in documentation
@@ -47,12 +52,12 @@ targets:
       file: vars/buildDockerAndPublishImage.txt
       matchpattern: jenkinsciinfra/builder:(\d\.\d\.\d)
       replacepattern: jenkinsciinfra/builder:{{ source `lastVersion` }}
-    scm:
-      github:
-        user: "{{ .github.user }}"
-        email: "{{ .github.email }}"
-        owner: "{{ .github.owner }}"
-        repository: "{{ .github.repository }}"
-        token: "{{ requiredEnv .github.token }}"
-        username: "{{ .github.username }}"
-        branch: "{{ .github.branch }}"
+    scmID: default
+
+pullrequests:
+  default:
+    kind: github
+    scmID: default
+    targets:
+      - updateGroovyCode
+      - updateDoc
