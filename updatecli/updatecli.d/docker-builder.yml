@@ -39,3 +39,20 @@ targets:
         token: "{{ requiredEnv .github.token }}"
         username: "{{ .github.username }}"
         branch: "{{ .github.branch }}"
+  updateDoc:
+    updateDoc:
+    name: Update docker-builder in documentation
+    kind: file
+    spec:
+      file: vars/buildDockerAndPublishImage.txt
+      matchpattern: jenkinsciinfra/builder:(\d\.\d\.\d)
+      replacepattern: jenkinsciinfra/builder:{{ source `lastVersion` }}
+    scm:
+      github:
+        user: "{{ .github.user }}"
+        email: "{{ .github.email }}"
+        owner: "{{ .github.owner }}"
+        repository: "{{ .github.repository }}"
+        token: "{{ requiredEnv .github.token }}"
+        username: "{{ .github.username }}"
+        branch: "{{ .github.branch }}"

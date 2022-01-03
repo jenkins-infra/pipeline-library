@@ -34,7 +34,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // Mock Pipeline method which are not already declared in the parent class
     helper.registerAllowedMethod('hadoLint', [Map.class], { m -> m })
-    helper.registerAllowedMethod('libraryResource', [String.class], { s -> s == 'io/jenkins/infra/docker/jxNextVersionImage' ? 'jx-release-version:1.2.3' : '' })
     helper.registerAllowedMethod('fileExists', [String.class], { true })
     addEnvVar('WORKSPACE', '/tmp')
 
@@ -97,7 +96,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // And the correct pod template defined
     assertTrue(assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/builder:'))
-    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'jx-release-version:'))
 
     // And the make target called as shell steps
     assertTrue(assertMethodCallContainsPattern('sh','make lint'))
@@ -634,7 +632,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     withMocks{
       script.call(testImageName, [
         builderImage: 'alpine:3.13',
-        nextVersionImage: 'debian:slim',
       ])
     }
     printCallStack()
@@ -644,7 +641,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // And the correct pod template defined
     assertTrue(assertMethodCallContainsPattern('containerTemplate', 'alpine:3.13'))
-    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'debian:slim'))
 
     // And all mocked/stubbed methods have to be called
     verifyMocks()
