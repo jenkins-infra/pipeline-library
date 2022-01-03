@@ -3,7 +3,7 @@ def call(userConfig = [:]) {
     action: 'diff',
     config: './updatecli/updatecli.d',
     values: './updatecli/values.yaml',
-    updatecliDockerImage: 'ghcr.io/updatecli/updatecli:v0.17.1',
+    updatecliDockerImage: 'ghcr.io/updatecli/updatecli:v0.17.2',
     containerMemory: '128Mi'
   ]
 
