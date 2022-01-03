@@ -3,8 +3,8 @@ def call(userConfig = [:]) {
     action: 'diff',
     config: './updatecli/updatecli.d',
     values: './updatecli/values.yaml',
-    updatecliDockerImage: 'ghcr.io/updatecli/updatecli:v0.17.2',
-    containerMemory: '128Mi'
+    updatecliDockerImage: 'jenkinsciinfra/helmfile:1.6.2',
+    containerMemory: '512Mi'
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -21,39 +21,37 @@ def call(userConfig = [:]) {
     pipelineTriggers(finalConfig.cronTriggerExpression ? [cron(finalConfig.cronTriggerExpression)] : [])
   ])
 
+  // The podTemplate must define only a single container, named `jnlp`
+  // Ref - https://support.cloudbees.com/hc/en-us/articles/360054642231-Considerations-for-Kubernetes-Clients-Connections-when-using-Kubernetes-Plugin
   podTemplate(
     containers: [
       containerTemplate(
-        name: 'updatecli',
+        name: 'jnlp',
         image: finalConfig.updatecliDockerImage,
-        command: 'cat',
-        ttyEnabled: true,
-        resourceRequestCpu: '200m',
-        resourceLimitCpu: '200m',
+        resourceRequestCpu: '1',
+        resourceLimitCpu: '1',
         resourceRequestMemory: finalConfig.containerMemory,
         resourceLimitMemory: finalConfig.containerMemory,
       ),
     ]
   ) {
     node(POD_LABEL) {
-      container('updatecli') {
-        final String updatecliRunStage = "Run updatecli: ${finalConfig.action}"
-        boolean runUpdatecli = true
-        stage("Check if updatecli folder exists: ${finalConfig.action}") {
-          checkout scm
-          if (!fileExists('updatecli/')) {
-            echo 'WARNING: no updatecli folder.'
-            runUpdatecli = false
-            org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional(updatecliRunStage)
-          }
+      final String updatecliRunStage = "Run updatecli: ${finalConfig.action}"
+      boolean runUpdatecli = true
+      stage("Check if updatecli folder exists: ${finalConfig.action}") {
+        checkout scm
+        if (!fileExists('updatecli/')) {
+          echo 'WARNING: no updatecli folder.'
+          runUpdatecli = false
+          org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional(updatecliRunStage)
         }
-        stage(updatecliRunStage) {
-          if (runUpdatecli) {
-            sh 'updatecli version'
-            sh updatecliCommand
-          }
-        }// stage
-      } // container
+      }
+      stage(updatecliRunStage) {
+        if (runUpdatecli) {
+          sh 'updatecli version'
+          sh updatecliCommand
+        }
+      }// stage
     } // node
   } // podTemplate
 }
