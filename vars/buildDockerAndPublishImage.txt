@@ -19,7 +19,7 @@
           <li>Boolean automaticSemanticVersioning: (Optional, defaults to "false") Should we create a release for every merge to the mainBranch. This uses "jx-release-version" to determine the version number based on the commit history.</li>
           <li>String gitCredentials: (Optional, defaults to "") If "automaticSemanticVersioning" is set, name of the credential to use when tagging the git repository. Support User/password or GitHub App credential types.</li>
           <li>String metadataFromSh: (Optional, defaults to "") If "automaticSemanticVersioning" is set, use a script to calculate the build metadata to be appended to the generated version.</li>
-          <li>String builderImage: (Optional, defaults to "jenkinsciinfra/builder:2.0.4") Docker Image to be used for the container "builder" of the CI pod template.</li>
+          <li>String builderImage: (Optional, defaults to "jenkinsciinfra/builder:2.0.7") Docker Image to be used for the container "builder" of the CI pod template.</li>
         </ul>
       </li>
     </ul>
