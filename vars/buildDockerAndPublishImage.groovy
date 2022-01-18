@@ -70,7 +70,7 @@ def call(String imageName, Map config=[:]) {
         stage("Lint ${dockerImageName}") {
           // Define the image name as prefix to support multi images per pipeline
           def now = new Date()
-          def hadolintReportId = "${dockerImageName}-hadolint-${now.getTime()}"
+          def hadolintReportId = "${dockerImageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
           def hadoLintReportFile = "${hadolintReportId}.json"
           withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
             try {
