@@ -3,7 +3,7 @@ def call(userConfig = [:]) {
     action: 'diff',
     config: './updatecli/updatecli.d',
     values: './updatecli/values.yaml',
-    updatecliDockerImage: 'jenkinsciinfra/helmfile:2.1.1',
+    updatecliDockerImage: 'jenkinsciinfra/helmfile:2.1.5',
     containerMemory: '512Mi'
   ]
 
