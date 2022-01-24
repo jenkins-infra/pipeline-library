@@ -26,7 +26,7 @@ def call(String imageName, Map config=[:]) {
       // This container must be named `jnlp` and should use the default entrypoint/cmd (command/args) inherited from inbound-agent parent image
       containerTemplate(
         name: 'jnlp',
-        image: config.builderImage ?: 'jenkinsciinfra/builder:2.0.7',
+        image: config.builderImage ?: 'jenkinsciinfra/builder:2.0.9',
         resourceRequestCpu: '2',
         resourceLimitCpu: '2',
         resourceRequestMemory: '2Gi',
