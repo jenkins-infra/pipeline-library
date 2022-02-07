@@ -4,7 +4,7 @@ def call(userConfig = [:]) {
     mainBranch: 'main',
     rebuildImageOnPeriodicJob: true,
     cronTriggerExpression: '@weekly',
-    containerMemory: '128Mi',
+    containerMemory: '512Mi',
     credentialsId: 'updatecli-github-token'
   ]
 
