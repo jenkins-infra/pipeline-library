@@ -23,7 +23,7 @@ sources:
       token: "{{ requiredEnv .github.token }}"
       username: "{{ .github.username }}"
       versionFilter:
-        kind: latest
+        kind: semver
 
 conditions:
   checkIfDockerImageIsPublished:
@@ -31,6 +31,7 @@ conditions:
     kind: dockerImage
     spec:
       image: "jenkinsciinfra/builder"
+      architecture: amd64
 
 targets:
   updateGroovyCode:
@@ -38,7 +39,7 @@ targets:
     kind: file
     spec:
       file: vars/buildDockerAndPublishImage.groovy
-      # Please note that the patterns are specified as "block scalars" (>) with the last endline trimed (-) to avoid tedious escaping of simple quotes
+      # Please note that the patterns are specified as "block scalars" (>) with the last endline trimmed (-) to avoid tedious escaping of simple quotes
       matchpattern: >-
         'jenkinsciinfra/builder:(.*)'
       replacepattern: >-
@@ -57,7 +58,11 @@ targets:
 pullrequests:
   default:
     kind: github
+    title: Bump docker-builder version on shared library resources to {{ source "lastVersion" }}
     scmID: default
     targets:
       - updateGroovyCode
       - updateDoc
+    spec:
+      labels:
+        - dependencies
