@@ -51,8 +51,8 @@ targets:
     kind: file
     spec:
       file: vars/buildDockerAndPublishImage.txt
-      matchpattern: jenkinsciinfra/builder:(\d\.\d\.\d)
-      replacepattern: jenkinsciinfra/builder:{{ source `lastVersion` }}
+      matchpattern: jenkinsciinfra/builder:(\d+\.\d+\.\d+)\"
+      replacepattern: jenkinsciinfra/builder:{{ source `lastVersion` }}"
     scmID: default
 
 pullrequests:
