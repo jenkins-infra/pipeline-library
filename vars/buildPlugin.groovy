@@ -41,7 +41,7 @@ def call(Map params = [:]) {
         boolean addToolEnv = !useContainerAgent
 
         if(useContainerAgent && (label == 'linux' || label == 'windows')) {
-            String agentContainerLabel = jdk == '8' ? 'maven' : 'maven-11'
+            def agentContainerLabel = jdk == '8' ? 'maven' : 'maven-' + jdk
             if(label == 'windows') {
                 agentContainerLabel += "-windows"
             }
