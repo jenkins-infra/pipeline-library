@@ -33,7 +33,6 @@ class TerraformStepTests extends BaseTest {
 
     // Used by the publish checks
     addEnvVar('BUILD_URL', dummyBuildUrl)
-
   }
 
   @Test
