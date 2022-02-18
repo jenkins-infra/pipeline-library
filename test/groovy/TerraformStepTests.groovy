@@ -40,7 +40,7 @@ class TerraformStepTests extends BaseTest {
   void itRunSuccessfullyWithDefaultTimeTrigger() throws Exception {
     def script = loadScript(scriptName)
 
-    // when calling the shared library global function with defaults
+    // When calling the shared library global function with defaults
     script.call()
     printCallStack()
 
@@ -95,7 +95,7 @@ class TerraformStepTests extends BaseTest {
   void itRunSuccessfullyWithDefaultOnPR() throws Exception {
     def script = loadScript(scriptName)
 
-    // when calling the shared library global function with defaults
+    // When calling the shared library global function with defaults
     // on a change request (PR) from <fork_repo>/main -> <current_repo>/main
     addEnvVar('CHANGE_ID', '1234')
     script.call()
@@ -126,7 +126,7 @@ class TerraformStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('stage', 'Shipping Changes'))
     assertFalse(assertMethodCallContainsPattern('sh', 'make --directory=.shared-tools/terraform/ deploy'))
 
-    // no daily cron trigger for the PR jobs
+    // No daily cron trigger for the PR jobs
     assertFalse(assertMethodCallContainsPattern('pipelineTriggers', '@daily'))
   }
 
@@ -134,7 +134,7 @@ class TerraformStepTests extends BaseTest {
   void itRunSuccessfullyWithRepoScanOnFeatureBranch() throws Exception {
     def script = loadScript(scriptName)
 
-    // when calling the shared library global function with defaults
+    // When calling the shared library global function with defaults
     // on a feature branch (not  a change request) triggered by a periodic code scan
     binding.setProperty('currentBuild', new CurrentBuild(
       'SUCCESS',
@@ -179,7 +179,7 @@ class TerraformStepTests extends BaseTest {
   void itRunSuccessfullyWithManualBuildCause() throws Exception {
     def script = loadScript(scriptName)
 
-    // when calling the shared library global function with defaults
+    // When calling the shared library global function with defaults
     // with a user manually-trigger build on the main branch
     binding.setProperty('currentBuild', new CurrentBuild(
       'SUCCESS',
@@ -215,7 +215,7 @@ class TerraformStepTests extends BaseTest {
     def script = loadScript(scriptName)
     final String customImage = 'hashicorp/terraform-full:0.13.0'
 
-    // when calling the shared library global function with custom parameters
+    // When calling the shared library global function with custom parameters
     script.call(
       cronTriggerExpression: '@weekly',
       stagingCredentials: stagingCustomCreds,
