@@ -41,7 +41,6 @@ def call(userConfig = [:]) {
     "TF_INPUT=0",
   ]) {
 
-
     if (!isBuildCauseUser) {
       parallelStages['staging'] = {
         stage('Staging') {
