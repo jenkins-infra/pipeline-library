@@ -75,12 +75,15 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('withCredentials', [List.class, Closure.class], { list, body -> body() })
     helper.registerAllowedMethod('withEnv', [List.class, Closure.class], { list, body -> body() })
     helper.registerAllowedMethod('writeYaml', [Map.class], { })
+    helper.registerAllowedMethod('publishChecks', [Map.class], { m -> m })
+    helper.registerAllowedMethod('input', [Map.class], { m -> m })
 
     // Kubernetes Agents in scripted syntax
     helper.registerAllowedMethod('podTemplate', [Map.class, Closure.class], { m, body ->body() })
     helper.registerAllowedMethod('containerTemplate', [Map.class], { m -> m })
     helper.registerAllowedMethod('podAnnotation', [Map.class], { m -> m })
     helper.registerAllowedMethod('container', [String.class, Closure.class], { s, body ->body() })
+    helper.registerAllowedMethod('merge', [], { })
     binding.setVariable('POD_LABEL', 'builder')
   }
 
