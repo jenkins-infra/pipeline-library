@@ -30,7 +30,7 @@ def call(userConfig = [:]) {
   // Defines a cron trigger only if it's requested by the user through input parameter
   if (isBuildOnProductionBranch && !isBuildOnChangeRequest) {
     properties([
-      pipelineTriggers([defaultConfig.cronTriggerExpression])
+      pipelineTriggers([cron(finalConfig.cronTriggerExpression)])
     ])
   }
 

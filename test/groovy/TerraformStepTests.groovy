@@ -83,7 +83,7 @@ class TerraformStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('withCredentials','COMMON_SECRET'))
 
     // And a daily cron trigger for the job
-    assertTrue(assertMethodCallContainsPattern('pipelineTriggers', '@daily'))
+    assertTrue(assertMethodCallContainsPattern('cron', '@daily'))
 
     // And the correct pod templates defined
     assertTrue(assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/hashicorp-tools:')) // Not tag as it's managed by updatecli
@@ -126,7 +126,7 @@ class TerraformStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('sh', 'make --directory=.shared-tools/terraform/ deploy'))
 
     // No daily cron trigger for the PR jobs
-    assertFalse(assertMethodCallContainsPattern('pipelineTriggers', '@daily'))
+    assertFalse(assertMethodCallContainsPattern('cron', '@daily'))
   }
 
   @Test
@@ -171,7 +171,7 @@ class TerraformStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('withEnv','TF_CLI_ARGS_plan=-detailed-exitcode'))
 
     // And a daily cron trigger for the job
-    assertFalse(assertMethodCallContainsPattern('pipelineTriggers', '@daily'))
+    assertFalse(assertMethodCallContainsPattern('cron', '@daily'))
   }
 
   @Test
@@ -233,7 +233,7 @@ class TerraformStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withCredentials','COMMON_SECRET'))
 
     // And the custom cron trigger
-    assertTrue(assertMethodCallContainsPattern('pipelineTriggers', '@weekly'))
+    assertTrue(assertMethodCallContainsPattern('cron', '@weekly'))
 
     // And the custom agent container template defined
     assertFalse(assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/terraform:'))
