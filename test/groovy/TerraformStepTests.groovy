@@ -95,9 +95,13 @@ class TerraformStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('ansiColor', 'xterm'))
     assertTrue(assertMethodCallOccurrences('ansiColor', 2))
 
-    // Timeout of 1 hour
+    // Default timeout of 1 hour for each parallel branch
     assertTrue(assertMethodCallContainsPattern('timeout', 'time=1, unit=HOURS'))
     assertTrue(assertMethodCallOccurrences('timeout', 2))
+
+    // Default pipeline properties
+    assertTrue(assertMethodCallContainsPattern('disableConcurrentBuilds', ''))
+    assertTrue(assertMethodCallContainsPattern('logRotator', 'numToKeepStr=50'))
   }
 
   @Test
@@ -137,6 +141,8 @@ class TerraformStepTests extends BaseTest {
 
     // No daily cron trigger for the PR jobs
     assertFalse(assertMethodCallContainsPattern('cron', '@daily'))
+    // Only 5 builds per PR to keep
+    assertTrue(assertMethodCallContainsPattern('logRotator', 'numToKeepStr=5'))
   }
 
   @Test

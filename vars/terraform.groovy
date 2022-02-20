@@ -20,19 +20,22 @@ def call(userConfig = [:]) {
   final Boolean isBuildCauseTimer = currentBuild.getBuildCauses().contains('hudson.triggers.TimerTrigger')
   final Boolean isBuildCauseUser = currentBuild.getBuildCauses().contains('hudson.model.Cause$UserIdCause')
   final Boolean isBuildOnChangeRequest = env.CHANGE_ID
-  final Boolean isBuildOnProductionBranch = (env.BRANCH_NAME == finalConfig.productionBranch)
+  final Boolean isBuildOnProductionBranch = (env.BRANCH_NAME == finalConfig.productionBranch && !isBuildOnChangeRequest)
 
   Map parallelStages = [failFast: false]
 
   final String sharedToolsSubDir = '.shared-tools'
   final String makeCliCmd = "make --directory=${sharedToolsSubDir}/terraform/"
 
-  // Defines a cron trigger only if it's requested by the user through input parameter
-  if (isBuildOnProductionBranch && !isBuildOnChangeRequest) {
-    properties([
-      pipelineTriggers([cron(finalConfig.cronTriggerExpression)])
-    ])
-  }
+
+  properties([
+    // Defines a cron trigger only on the production branch
+    pipelineTriggers(isBuildOnProductionBranch ? [cron(finalConfig.cronTriggerExpression)] : []),
+    // Only run 1 build at a time, on a given branch, to ensure that infrastructure changes are sequentials (easier to audit)
+    disableConcurrentBuilds(),
+    // Only keep build history for long on the principal branch
+    buildDiscarder(logRotator(numToKeepStr: isBuildOnProductionBranch ? '50' : '5')),
+  ])
 
   withEnv([
     // https://www.terraform.io/docs/cli/config/environment-variables.html#tf_in_automation
