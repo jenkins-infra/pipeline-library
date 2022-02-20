@@ -31,6 +31,8 @@ class TerraformStepTests extends BaseTest {
     ))
     addEnvVar('BRANCH_NAME', 'main')
 
+    helper.registerAllowedMethod('ansiColor', [String.class, Closure.class], { s, body ->body() })
+
     // Used by the publish checks
     addEnvVar('BUILD_URL', dummyBuildUrl)
   }
@@ -88,6 +90,14 @@ class TerraformStepTests extends BaseTest {
     // And the correct pod templates defined
     assertTrue(assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/hashicorp-tools:')) // Not tag as it's managed by updatecli
     assertTrue(assertMethodCallOccurrences('containerTemplate', 2)) // Only 1 container per pod, but 2 pod spawn (staging and production)
+
+    // xterm color enabled (easier to read Terraform plans)
+    assertTrue(assertMethodCallContainsPattern('ansiColor', 'xterm'))
+    assertTrue(assertMethodCallOccurrences('ansiColor', 2))
+
+    // Timeout of 1 hour
+    assertTrue(assertMethodCallContainsPattern('timeout', 'time=1, unit=HOURS'))
+    assertTrue(assertMethodCallOccurrences('timeout', 2))
   }
 
   @Test

@@ -145,7 +145,11 @@ def agentTemplate(containerImage, body) {
     ]
   ) {
     node(POD_LABEL) {
-      body.call()
+      timeout(time: 1, unit: 'HOURS') {
+        ansiColor('xterm') {
+          body.call()
+        }
+      }
     }
   }
 }
