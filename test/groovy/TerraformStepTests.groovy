@@ -31,6 +31,8 @@ class TerraformStepTests extends BaseTest {
     ))
     addEnvVar('BRANCH_NAME', 'main')
 
+    helper.registerAllowedMethod('ansiColor', [String.class, Closure.class], { s, body ->body() })
+
     // Used by the publish checks
     addEnvVar('BUILD_URL', dummyBuildUrl)
   }
@@ -83,11 +85,23 @@ class TerraformStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('withCredentials','COMMON_SECRET'))
 
     // And a daily cron trigger for the job
-    assertTrue(assertMethodCallContainsPattern('pipelineTriggers', '@daily'))
+    assertTrue(assertMethodCallContainsPattern('cron', '@daily'))
 
     // And the correct pod templates defined
     assertTrue(assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/hashicorp-tools:')) // Not tag as it's managed by updatecli
     assertTrue(assertMethodCallOccurrences('containerTemplate', 2)) // Only 1 container per pod, but 2 pod spawn (staging and production)
+
+    // xterm color enabled (easier to read Terraform plans)
+    assertTrue(assertMethodCallContainsPattern('ansiColor', 'xterm'))
+    assertTrue(assertMethodCallOccurrences('ansiColor', 2))
+
+    // Default timeout of 1 hour for each parallel branch
+    assertTrue(assertMethodCallContainsPattern('timeout', 'time=1, unit=HOURS'))
+    assertTrue(assertMethodCallOccurrences('timeout', 2))
+
+    // Default pipeline properties
+    assertTrue(assertMethodCallContainsPattern('disableConcurrentBuilds', ''))
+    assertTrue(assertMethodCallContainsPattern('logRotator', 'numToKeepStr=50'))
   }
 
   @Test
@@ -126,7 +140,9 @@ class TerraformStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('sh', 'make --directory=.shared-tools/terraform/ deploy'))
 
     // No daily cron trigger for the PR jobs
-    assertFalse(assertMethodCallContainsPattern('pipelineTriggers', '@daily'))
+    assertFalse(assertMethodCallContainsPattern('cron', '@daily'))
+    // Only 5 builds per PR to keep
+    assertTrue(assertMethodCallContainsPattern('logRotator', 'numToKeepStr=5'))
   }
 
   @Test
@@ -171,7 +187,7 @@ class TerraformStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('withEnv','TF_CLI_ARGS_plan=-detailed-exitcode'))
 
     // And a daily cron trigger for the job
-    assertFalse(assertMethodCallContainsPattern('pipelineTriggers', '@daily'))
+    assertFalse(assertMethodCallContainsPattern('cron', '@daily'))
   }
 
   @Test
@@ -233,7 +249,7 @@ class TerraformStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withCredentials','COMMON_SECRET'))
 
     // And the custom cron trigger
-    assertTrue(assertMethodCallContainsPattern('pipelineTriggers', '@weekly'))
+    assertTrue(assertMethodCallContainsPattern('cron', '@weekly'))
 
     // And the custom agent container template defined
     assertFalse(assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/terraform:'))
