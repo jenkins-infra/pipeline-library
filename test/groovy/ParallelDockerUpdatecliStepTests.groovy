@@ -11,7 +11,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
   static final String testImageName = 'myImage'
   static final String anotherMainBranchName = 'another'
   static final String anotherCronTriggerExpression = '@daily'
-  static final String anotherContainerMemory = '512Mi'
+  static final String anotherContainerMemory = '345Mi' // different than the default value specified in ${scriptName}
   static final String anotherCredentialsId = 'another-github-token'
 
   @Override
@@ -40,6 +40,9 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
 
     // And the error message is shown
     assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: no imageName provided.'))
+
+    // No Warning issued
+    assertFalse(assertMethodCallContainsPattern('echo', 'WARNING:'))
   }
 
   @Test
@@ -65,6 +68,9 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
 
     // And updatecli(action: 'apply') is called only if we are on the primary branch
     assertTrue(assertMethodCallContainsPattern('updatecli', 'action=apply'))
+
+    // No Warning issued
+    assertFalse(assertMethodCallContainsPattern('echo', 'WARNING:'))
   }
 
   @Test
@@ -89,6 +95,9 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
 
     // And updatecli(action: 'apply') is called only if we are on the primary branch
     assertFalse(assertMethodCallContainsPattern('updatecli', 'action=apply'))
+
+    // No Warning issued
+    assertFalse(assertMethodCallContainsPattern('echo', 'WARNING:'))
   }
 
   @Test
@@ -110,6 +119,9 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
 
     // And updatecli(action: 'diff') is called
     assertTrue(assertMethodCallContainsPattern('updatecli', 'action=diff'))
+
+    // No Warning issued
+    assertFalse(assertMethodCallContainsPattern('echo', 'WARNING:'))
   }
 
   @Test
@@ -132,6 +144,9 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
 
     // And updatecli(action: 'diff') is called
     assertTrue(assertMethodCallContainsPattern('updatecli', 'action=diff'))
+
+    // No Warning issued
+    assertFalse(assertMethodCallContainsPattern('echo', 'WARNING:'))
   }
 
 
@@ -139,14 +154,16 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
   void itRunsSuccessfullyWithCustomParameters() throws Exception {
     def script = loadScript(scriptName)
 
-    // when calling with the "parallelDockerUpdatecli" function with custom parameters
+    // When the "parallelDockerUpdatecli" function is called with custom parameters
     // Note: imageName & rebuildImageOnPeriodicJob have already been tested in other tests
     addEnvVar('BRANCH_IS_PRIMARY', 'true')
     script.call(
       imageName: testImageName,
       mainBranch: anotherMainBranchName,
-      cronTriggerExpression: anotherCronTriggerExpression,
-      containerMemory: anotherContainerMemory,
+      updatecliApplyCronTriggerExpression: anotherCronTriggerExpression,
+      updatecliConfig: [
+        containerMemory: anotherContainerMemory,
+      ],
       credentialsId: anotherCredentialsId
     )
     printCallStack()
@@ -163,9 +180,50 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     // And updatecli(action: 'diff') is called
     assertTrue(assertMethodCallContainsPattern('updatecli', 'action=diff'))
 
-    // And the custom parameters are taken in account
+    // No Warning issued
+    assertFalse(assertMethodCallContainsPattern('echo', 'WARNING:'))
+
+    // And the custom parameters are taken in account for docker image build
     assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'mainBranch=' + anotherMainBranchName))
     assertTrue(assertMethodCallContainsPattern('string', anotherCredentialsId))
+
+    // And the method "updatecli()" is called for "diff" and "apply" actions (both with the same custom parameters)
+    assertTrue(assertMethodCallOccurrences('updatecli', 2))
+    assertTrue(assertMethodCallContainsPattern('updatecli', 'action=diff'))
+    assertTrue(assertMethodCallContainsPattern('updatecli', 'action=apply'))
+    assertTrue(assertMethodCallContainsPattern('updatecli', 'cronTriggerExpression=' + anotherCronTriggerExpression))
+    assertTrue(assertMethodCallContainsPattern('updatecli', 'containerMemory=' + anotherContainerMemory))
+  }
+
+  @Test
+  void itRunsSuccessfullyWithOutdatedUpdatecliConfig() throws Exception {
+    def script = loadScript(scriptName)
+
+    // When the "parallelDockerUpdatecli" function is called with custom parameters, including legcay parameters for updatecli
+    addEnvVar('BRANCH_IS_PRIMARY', 'true')
+    script.call(
+      imageName: testImageName,
+      containerMemory: anotherContainerMemory,
+      updatecliApplyCronTriggerExpression: anotherCronTriggerExpression,
+    )
+    printCallStack()
+
+    // Then a successfull build is expected
+    assertJobStatusSuccess()
+
+    // And the error message is not shown
+    assertFalse(assertMethodCallContainsPattern('echo', 'ERROR: no imageName provided.'))
+
+    // And the correct image name is passed to buildDockerAndPublishImage
+    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', testImageName))
+
+    // And a warning message is shown (updatecli legacy config is used)
+    assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: passing the attribute'))
+
+    // And the method "updatecli()" is called for "diff" and "apply" actions (both with the same custom config)
+    assertTrue(assertMethodCallOccurrences('updatecli', 2))
+    assertTrue(assertMethodCallContainsPattern('updatecli', 'action=diff'))
+    assertTrue(assertMethodCallContainsPattern('updatecli', 'action=apply'))
     assertTrue(assertMethodCallContainsPattern('updatecli', 'cronTriggerExpression=' + anotherCronTriggerExpression))
     assertTrue(assertMethodCallContainsPattern('updatecli', 'containerMemory=' + anotherContainerMemory))
   }
