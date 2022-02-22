@@ -11,7 +11,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
   static final String testImageName = 'myImage'
   static final String anotherMainBranchName = 'another'
   static final String anotherCronTriggerExpression = '@daily'
-  static final String anotherContainerMemory = '512Mi'
+  static final String anotherContainerMemory = '345Mi' // different than the default value specified in ${scriptName}
   static final String anotherCredentialsId = 'another-github-token'
 
   @Override
