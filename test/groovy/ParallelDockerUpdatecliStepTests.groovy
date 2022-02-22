@@ -154,7 +154,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
   void itRunsSuccessfullyWithCustomParameters() throws Exception {
     def script = loadScript(scriptName)
 
-    // when calling with the "parallelDockerUpdatecli" function with custom parameters
+    // When calling with the "parallelDockerUpdatecli" function with custom parameters
     // Note: imageName & rebuildImageOnPeriodicJob have already been tested in other tests
     addEnvVar('BRANCH_IS_PRIMARY', 'true')
     script.call(
@@ -183,43 +183,15 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     // No Warning issued
     assertFalse(assertMethodCallContainsPattern('echo', 'WARNING:'))
 
-    // And the custom parameters are taken in account
+    // And the custom parameters are taken in account for docker image build
     assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'mainBranch=' + anotherMainBranchName))
     assertTrue(assertMethodCallContainsPattern('string', anotherCredentialsId))
-    assertTrue(assertMethodCallContainsPattern('updatecli', 'cronTriggerExpression=' + anotherCronTriggerExpression))
-    assertTrue(assertMethodCallContainsPattern('updatecli', 'containerMemory=' + anotherContainerMemory))
-  }
 
-  @Test
-  void itRunsSuccessfullyWithCustomUpdatecliConfig() throws Exception {
-    def script = loadScript(scriptName)
-
-    addEnvVar('BRANCH_IS_PRIMARY', 'true')
-    script.call(
-      imageName: testImageName,
-      updatecliConfig: [
-        containerMemory: anotherContainerMemory,
-      ],
-    )
-    printCallStack()
-
-    // Then we expect a successfull build
-    assertJobStatusSuccess()
-
-    // And the error message is not shown
-    assertFalse(assertMethodCallContainsPattern('echo', 'ERROR: no imageName provided.'))
-
-    // No Warning issued
-    assertFalse(assertMethodCallContainsPattern('echo', 'WARNING:'))
-
-    // And the correct image name is passed to buildDockerAndPublishImage
-    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', testImageName))
-
-    // And the method "updatecli()" is called for "diff" and "apply" actions (both with the same custom config)
+    // And the method "updatecli()" is called for "diff" and "apply" actions (both with the same custom parameters)
     assertTrue(assertMethodCallOccurrences('updatecli', 2))
     assertTrue(assertMethodCallContainsPattern('updatecli', 'action=diff'))
     assertTrue(assertMethodCallContainsPattern('updatecli', 'action=apply'))
-    assertTrue(assertMethodCallContainsPattern('updatecli', 'cronTriggerExpression=@weekly'))
+    assertTrue(assertMethodCallContainsPattern('updatecli', 'cronTriggerExpression=' + anotherCronTriggerExpression))
     assertTrue(assertMethodCallContainsPattern('updatecli', 'containerMemory=' + anotherContainerMemory))
   }
 
@@ -227,6 +199,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
   void itRunsSuccessfullyWithOutdatedUpdatecliConfig() throws Exception {
     def script = loadScript(scriptName)
 
+    // When calling with the "parallelDockerUpdatecli" function with custom parameters, including legcay parameters for updatecli
     addEnvVar('BRANCH_IS_PRIMARY', 'true')
     script.call(
       imageName: testImageName,
