@@ -8,6 +8,7 @@ def call(userConfig = [:]) {
     credentialsId: 'updatecli-github-token',
     updatecliConfig: [:],
   ]
+  def defaultUpdatecliCronTriggerExpression = '@weekly'
 
   if (userConfig.containerMemory) {
     echo 'WARNING: passing the attribute "containerMemory" as top level argument is deprecated. Please use "updatecliConfig: [containerMemory: <value>]" instead.'
@@ -47,7 +48,7 @@ def call(userConfig = [:]) {
         updatecli(updatecliConfig)
         if (env.BRANCH_IS_PRIMARY) {
           // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
-          updatecliConfig = finalConfig.updatecliConfig << [action: 'apply', cronTriggerExpression: '@weekly']
+          updatecliConfig = finalConfig.updatecliConfig << [action: 'apply', cronTriggerExpression: defaultUpdatecliCronTriggerExpression]
           updatecli(updatecliConfig)
         }
       }
