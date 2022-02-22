@@ -154,7 +154,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
   void itRunsSuccessfullyWithCustomParameters() throws Exception {
     def script = loadScript(scriptName)
 
-    // When calling with the "parallelDockerUpdatecli" function with custom parameters
+    // When the "parallelDockerUpdatecli" function is called with custom parameters
     // Note: imageName & rebuildImageOnPeriodicJob have already been tested in other tests
     addEnvVar('BRANCH_IS_PRIMARY', 'true')
     script.call(
@@ -199,7 +199,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
   void itRunsSuccessfullyWithOutdatedUpdatecliConfig() throws Exception {
     def script = loadScript(scriptName)
 
-    // When calling with the "parallelDockerUpdatecli" function with custom parameters, including legcay parameters for updatecli
+    // When the "parallelDockerUpdatecli" function is called with custom parameters, including legcay parameters for updatecli
     addEnvVar('BRANCH_IS_PRIMARY', 'true')
     script.call(
       imageName: testImageName,
@@ -208,7 +208,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     )
     printCallStack()
 
-    // Then we expect a successfull build
+    // Then a successfull build is expected
     assertJobStatusSuccess()
 
     // And the error message is not shown
