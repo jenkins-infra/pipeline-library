@@ -160,9 +160,9 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     script.call(
       imageName: testImageName,
       mainBranch: anotherMainBranchName,
+      updatecliApplyCronTriggerExpression: anotherCronTriggerExpression,
       updatecliConfig: [
         containerMemory: anotherContainerMemory,
-        cronTriggerExpression: anotherCronTriggerExpression,
       ],
       credentialsId: anotherCredentialsId
     )
@@ -204,7 +204,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     script.call(
       imageName: testImageName,
       containerMemory: anotherContainerMemory,
-      cronTriggerExpression: anotherCronTriggerExpression,
+      updatecliApplyCronTriggerExpression: anotherCronTriggerExpression,
     )
     printCallStack()
 
