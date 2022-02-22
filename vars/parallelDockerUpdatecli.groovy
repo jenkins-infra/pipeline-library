@@ -1,21 +1,32 @@
+/**
+**/
 def call(userConfig = [:]) {
   def defaultConfig = [
     imageName: '',
     mainBranch: 'main',
     rebuildImageOnPeriodicJob: true,
-    cronTriggerExpression: '@weekly',
-    containerMemory: '512Mi',
-    credentialsId: 'updatecli-github-token'
+    credentialsId: 'updatecli-github-token',
+    updatecliConfig: [:],
   ]
+
+  if (userConfig.containerMemory) {
+    echo 'WARNING: passing the attribute "containerMemory" as top level argument is deprecated. Please use "updatecliConfig: [containerMemory: <value>]" instead.'
+    defaultConfig.updatecliConfig.containerMemory = userConfig.containerMemory
+  }
+  if (userConfig.cronTriggerExpression) {
+    echo 'WARNING: passing the attribute "cronTriggerExpression" as top level argument is deprecated. Please use "updatecliConfig: [cronTriggerExpression: <value>]" instead.'
+    defaultConfig.updatecliConfig.cronTriggerExpression = userConfig.cronTriggerExpression
+  }
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
   final Map finalConfig = defaultConfig << userConfig
 
-  if (finalConfig.imageName == '') {
+  if (!finalConfig.imageName) {
     echo 'ERROR: no imageName provided.'
     currentBuild.result = 'FAILURE'
     return
   }
+
   parallel(
     failFast: false,
     'docker-image': {
@@ -30,9 +41,14 @@ def call(userConfig = [:]) {
     },
     'updatecli': {
       withCredentials([string(credentialsId: finalConfig.credentialsId,variable: 'UPDATECLI_GITHUB_TOKEN')]) {
-        updatecli(action: 'diff', containerMemory: finalConfig.containerMemory)
+        // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
+        Map updatecliConfig = finalConfig.updatecliConfig << [action: 'diff']
+
+        updatecli(updatecliConfig)
         if (env.BRANCH_IS_PRIMARY) {
-          updatecli(action: 'apply', cronTriggerExpression: finalConfig.cronTriggerExpression, containerMemory: finalConfig.containerMemory)
+          // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
+          updatecliConfig = finalConfig.updatecliConfig << [action: 'apply', cronTriggerExpression: '@weekly']
+          updatecli(updatecliConfig)
         }
       }
     }
