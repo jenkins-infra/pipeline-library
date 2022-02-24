@@ -115,7 +115,7 @@ def call(Map params = [:]) {
                                     infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
                                 } finally {
                                     if (!skipTests) {
-                                        junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
+                                        junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/TEST*.xml')
                                         if (first) {
                                             publishCoverage calculateDiffForChangeRequests: true, adapters: [jacocoAdapter('**/target/site/jacoco/jacoco.xml')]
                                         }
