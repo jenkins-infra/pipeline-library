@@ -19,6 +19,7 @@ class InfraConfig implements Serializable {
     return jenkinsURL.startsWith('https://infra.ci.jenkins.io')
   }
 
+  // Returns the Docker registry hostname which this instance has credentials for
   String getDockerRegistry() {
     if (isTrusted() || isInfra()) {
       return 'jenkinsciinfra'
