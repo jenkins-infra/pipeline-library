@@ -1,11 +1,11 @@
-Lints, Builds, Tests and eventually Deploys a Docker image.
+Lints, builds, tests and eventually deploys a Docker image.
 
 Please reference to <a href="https://github.com/jenkins-infra/pipeline-library/blob/master/resources/io/jenkins/infra/docker/README.adoc">related documentation</a> for more details.
 
 The following arguments are available for this function:
 
-- String **imageName**: (Mandatory) name of the image to built, usually referenced as the "Repository" part of a Docker image's name without any tag (Example: "builder" or "terraform").
-- Map **config**: (Optional) custom configuration for the image build an deploy process. The maps can holds any of the following keys:
+- String **imageName**: (Mandatory) name of the image to build, usually referenced as the "Repository" part of a Docker image's name without any tag (Example: "builder" or "terraform").
+- Map **config**: (Optional) custom configuration for the image build and deploy process. The maps can holds any of the following keys:
   * String **dockerfile**: (Optional, defaults to "Dockerfile") Relative path to the Dockerfile to use within the repository (Example: "build.dockerfile", "docker/Dockerfile").
   * String **imageDir**: (Optional, defaults to the parent directory of "Dockerfile") Path to a directory to use as build context (Example: "docker/", "python/2.7").
   * String **credentials**: (Optional, defaults to "jenkins-dockerhub") Name of the Jenkins' credentials used to authenticate on the Docker remote registry during the full build process. (Example: "internal-registry-credential").
@@ -13,22 +13,22 @@ The following arguments are available for this function:
   * String **platform**: (Optional, defaults to "linux/amd64") Name of the docker platform to use when building this image, for multiple use a comma separated list (Example: "linux/amd64,linux/arm64").
   * Boolean **automaticSemanticVersioning**: (Optional, defaults to "false") Should we create a release for every merge to the mainBranch. This uses "jx-release-version" to determine the version number based on the commit history.
   * String **gitCredentials**: (Optional, defaults to "") If "automaticSemanticVersioning" is set, name of the credential to use when tagging the git repository. Support User/password or GitHub App credential types
-  * String **nextVersionCommand** (Optional, defaults to "jx-release-version" ) If "automaticSemanticVersioning" is set, this is the command to retrieve the next version (to use for tagging and releasing)
+  * String **nextVersionCommand** (Optional, defaults to "jx-release-version") If "automaticSemanticVersioning" is set, this is the command to retrieve the next version (to use for tagging and releasing)
 
-The Lint phase generates a report when it fails, recorded by the hadolint tool in your Jenkins instance.
+The lint phase generates a report when it fails, recorded by the hadolint tool in your Jenkins instance.
 
-The build phase adds a bunch of build args that you can use in your Dockerfile:
+The build phase adds build args that you can use in your Dockerfile:
 
 - **GIT_COMMIT_REV** - The commit that triggered this build
 - **GIT_SCM_URL** - Url to repo
-- **BUILD_DATE** - Date that the image was built (now)
+- **BUILD_DATE** - Date of the image build (now)
 
 The test phase is only executed if a file `cst.yml` is found at the root of the repository with the "TAR" driver for security concerns.
 Please reference to https://github.com/GoogleContainerTools/container-structure-test.
 
-Publication of the Docker Image only happens when the build is triggered by:
+Publication of the Docker image only happens when the build is triggered by:
 
-- A push event on the repository's principal branch referenced by "config.mainBranch".
+- A push event on the repository's principal branch.
 - A tag event on the repository.
 
 
