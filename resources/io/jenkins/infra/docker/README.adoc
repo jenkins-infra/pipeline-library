@@ -120,13 +120,13 @@ You can check the file `Makefile` if you want to get a better deep-dive understa
 
 * Contributing to this documentation or tooling must follow the contribution rules of this repository (please check link:../../../../../README.adoc#Contributing[])
 
-* Start by writing an issue in the Jenkins Infra's JIRA project located at https://issues.jenkins.io/browse/INFRA[], and take time to describe the problem you want to solve:
+* Start by writing an issue in link:https://github.com/jenkins-infra/helpdesk/issues[the Jenkins Infrastructure help desk], and take time to describe the problem you want to solve:
 ** Why do you need it?
 ** Is it an unexpected behavior? Or is it a new behavior you envision?
 ** Any contextual information explaining your proposal
 
 * Then you can proceed to a Github's Pull Request "classic" workflow described in their documentation at link:https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/about-pull-requests[]:
 ** Fork the repository
-** Add the code (it includes documentation) changes
+** Add the code changes (which should include related documentation)
 ** Ensure that the test harnesses are working correctly
-** Open a Pull request referencing the JIRA issue you've created earlier to help reviewers
+** Open a Pull request referencing the help desk issue you've created earlier to help reviewers
