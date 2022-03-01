@@ -96,11 +96,25 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   // return if the set of method expected for ALL pipeline run have been detected in the callstack
   Boolean assertBaseWorkflow() {
     return assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile') \
-      && assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/builder:') \
       && assertMethodCallContainsPattern('sh','make lint') \
       && assertMethodCallContainsPattern('sh','make build') \
-      && assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}") \
-      && assertMethodCallContainsPattern('sh','img login') \
+      && assertMethodCallContainsPattern('sh','"${CONTAINER_BIN}" login') \
+      && assertMethodCallContainsPattern('sh','"${CONTAINER_BIN}" logout') \
+      && assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}")
+  }
+
+  // return if the mocked pipeline ran in a container agent with the `img` containerless engine
+  Boolean assertContainerAgent() {
+    return assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/builder:') \
+      && assertMethodCallContainsPattern('withEnv', 'CONTAINER_BIN=img') \
+      && !assertContainerVM()
+  }
+
+  // return if the mocked pipeline ran in a VM agent with the Docker Engine
+  Boolean assertContainerVM(expectedNodeLabelPattern = 'docker') {
+    return assertMethodCallContainsPattern('node', expectedNodeLabelPattern) \
+      && assertMethodCallContainsPattern('withEnv', 'CONTAINER_BIN=docker') \
+      && !assertContainerAgent()
   }
 
   // return if the usual static checks had been recorded with the usual pattern
@@ -144,6 +158,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
+    assertTrue(assertContainerAgent())
 
     // And the expected environment variable defined to their defaults
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
@@ -181,6 +196,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
+    assertTrue(assertContainerAgent())
 
     // And generated reports are recorded with named without ':' but '-' instead
     assertTrue(assertRecordIssues(customImageNameWithTag.replaceAll(':','-')))
@@ -214,6 +230,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
+    assertTrue(assertContainerAgent())
 
     // And generated reports are recorded
     assertTrue(assertRecordIssues())
@@ -253,6 +270,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
+    assertTrue(assertContainerAgent())
 
     // And the environement variables set with the custom configuration values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=docker/'))
@@ -284,6 +302,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
+    assertTrue(assertContainerAgent())
 
     // But no deploy step called for latest
     assertFalse(assertMakeDeploy())
@@ -314,6 +333,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
      // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
+    assertTrue(assertContainerAgent())
 
     // And the deploy step called for latest
     assertTrue(assertMakeDeploy("${fullTestImageName}:${defaultGitTag}"))
@@ -422,6 +442,81 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // And a lint report recorded
     assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, aggregatingResults=false, tool={id=hadolint-bitcoinMinerImage, pattern=/tmp/bitcoinMinerImage-hadolint.json}}'))
+
+    // And all mocked/stubbed methods have to be called
+    verifyMocks()
+  }
+
+  @Test
+  void itBuildsAndDeploysWithDockerEngineOnPrincipalBranch() throws Exception {
+    def script = loadScript(scriptName)
+
+    mockPrincipalBranch()
+
+    withMocks {
+      script.call(testImageName, [
+        useContainer: false,
+      ])
+    }
+    printCallStack()
+
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+
+    // With the common workflow run as expected
+    assertTrue(assertBaseWorkflow())
+    assertTrue(assertContainerVM())
+
+    // And the expected environment variable defined to their defaults
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/amd64'))
+
+    // And generated reports are recorded
+    assertTrue(assertRecordIssues())
+
+    // And the deploy step called
+    assertTrue(assertMakeDeploy())
+
+    // But no release created automatically
+    assertFalse(assertTagPushed(defaultGitTag))
+
+    // And all mocked/stubbed methods have to be called
+    verifyMocks()
+  }
+
+  @Test
+  void itBuildsOnlyOnChangeRequestWithWindowsContainers() throws Exception {
+    def script = loadScript(scriptName)
+
+    withMocks {
+      script.call(testImageName, [
+        useContainer: false,
+        agentLabels: 'docker-windows',
+      ])
+    }
+    printCallStack()
+
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+
+    // With the common workflow run as expected
+    assertTrue(assertBaseWorkflow())
+    assertTrue(assertContainerVM('docker-windows'))
+
+    // And the expected environment variable defined to their defaults
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/amd64'))
+
+    // And generated reports are recorded
+    assertTrue(assertRecordIssues())
+
+    // But no deploy step called (not on princiopal branch)
+    assertFalse(assertMakeDeploy())
+
+    // But no release created automatically
+    assertFalse(assertTagPushed(defaultGitTag))
 
     // And all mocked/stubbed methods have to be called
     verifyMocks()

@@ -11,7 +11,6 @@ TEST_HARNESS ?= $(IMAGE_DIR)/cst.yml
 ## Use this variable if you want to use Docker instead
 CONTAINER_BIN ?= img
 
-
 ## Image metadatas
 GIT_COMMIT_REV ?= $(shell git log -n 1 --pretty=format:'%h')
 GIT_SCM_URL ?= $(shell git config --get remote.origin.url)
