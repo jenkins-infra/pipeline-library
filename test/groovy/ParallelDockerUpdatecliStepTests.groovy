@@ -9,7 +9,6 @@ import static org.junit.Assert.assertTrue
 class ParallelDockerUpdatecliStepTests extends BaseTest {
   static final String scriptName = 'vars/parallelDockerUpdatecli.groovy'
   static final String testImageName = 'myImage'
-  static final String anotherMainBranchName = 'another'
   static final String anotherCronTriggerExpression = '@daily'
   static final String anotherContainerMemory = '345Mi' // different than the default value specified in ${scriptName}
   static final String anotherCredentialsId = 'another-github-token'
@@ -23,7 +22,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     helper.registerAllowedMethod('updatecli', [Map.class], { m -> m })
     helper.registerAllowedMethod('fileExists', [String.class], { true })
 
-    // Default behavior is a build trigger by a timertrigger on the main branch (most frequent case)
+    // Default behavior is a build trigger by a timertrigger on the principal branch (most frequent case)
     binding.setProperty('currentBuild', new CurrentBuild('SUCCESS', ['hudson.triggers.TimerTrigger']))
   }
 
@@ -159,7 +158,6 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     addEnvVar('BRANCH_IS_PRIMARY', 'true')
     script.call(
       imageName: testImageName,
-      mainBranch: anotherMainBranchName,
       updatecliApplyCronTriggerExpression: anotherCronTriggerExpression,
       updatecliConfig: [
         containerMemory: anotherContainerMemory,
@@ -184,7 +182,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('echo', 'WARNING:'))
 
     // And the custom parameters are taken in account for docker image build
-    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'mainBranch=' + anotherMainBranchName))
+    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'github-app-infra'))
     assertTrue(assertMethodCallContainsPattern('string', anotherCredentialsId))
 
     // And the method "updatecli()" is called for "diff" and "apply" actions (both with the same custom parameters)
