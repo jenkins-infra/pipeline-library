@@ -3,7 +3,6 @@
 def call(userConfig = [:]) {
   def defaultConfig = [
     imageName: '',
-    mainBranch: 'main',
     rebuildImageOnPeriodicJob: true,
     credentialsId: 'updatecli-github-token',
     updatecliApplyCronTriggerExpression: '@weekly',
@@ -30,7 +29,6 @@ def call(userConfig = [:]) {
       // Do not rebuild the image when triggered by a periodic job if the config desactivate them
       if (finalConfig.rebuildImageOnPeriodicJob || (!finalConfig.rebuildImageOnPeriodicJob && !currentBuild.getBuildCauses().contains('hudson.triggers.TimerTrigger'))) {
         buildDockerAndPublishImage(finalConfig.imageName, [
-          mainBranch: finalConfig.mainBranch,
           automaticSemanticVersioning: true,
           gitCredentials: 'github-app-infra'
         ])

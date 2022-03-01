@@ -1,19 +1,30 @@
-
-import io.jenkins.infra.DockerConfig
 import io.jenkins.infra.InfraConfig
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.text.DateFormat
 
-def call(String imageName, Map config=[:]) {
+def call(String imageName, Map userConfig=[:]) {
+  def defaultConfig = [
+    builderImage: 'jenkinsciinfra/builder:2.0.2', // Version managed by updatecli
+    automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
+    dockerfile: 'Dockerfile', // Obvious default
+    platform: 'linux/amd64', // Intel/AMD 64 Bits, following Docker platform identifiers
+    nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
+    gitCredentials: '', // Credential ID for tagging and creating release
+    imageDir: '.', // Relative path to the context directory for the Docker build
+    credentials: 'jenkins-dockerhub'
+  ]
 
-  // Initialize the groovy context
-  final DockerConfig dockerConfig = new DockerConfig(imageName, new InfraConfig(env), config)
+  // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
+  final Map finalConfig = defaultConfig << userConfig
 
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
-  final boolean semVerEnabled = dockerConfig.automaticSemanticVersioning && env.BRANCH_NAME == dockerConfig.mainBranch
+  final boolean semVerEnabled = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
 
-  final String dockerImageName = dockerConfig.imageName
-  final String dockerImageDir = dockerConfig.dockerImageDir
+  final Date now = new Date()
+  DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
+  final String buildDate = dateFormat.format(now)
 
   // The podTemplate must define only a single container, named `jnlp`
   // Ref - https://support.cloudbees.com/hc/en-us/articles/360054642231-Considerations-for-Kubernetes-Clients-Connections-when-using-Kubernetes-Plugin
@@ -26,7 +37,7 @@ def call(String imageName, Map config=[:]) {
       // This container must be named `jnlp` and should use the default entrypoint/cmd (command/args) inherited from inbound-agent parent image
       containerTemplate(
         name: 'jnlp',
-        image: config.builderImage ?: 'jenkinsciinfra/builder:2.0.2',
+        image: finalConfig.builderImage,
         resourceRequestCpu: '2',
         resourceLimitCpu: '2',
         resourceRequestMemory: '2Gi',
@@ -36,14 +47,14 @@ def call(String imageName, Map config=[:]) {
   ) {
     node(POD_LABEL) {
       withEnv([
-        "BUILD_DATE=${dockerConfig.buildDate}",
-        "IMAGE_NAME=${dockerImageName}",
-        "IMAGE_DIR=${dockerImageDir}",
-        "IMAGE_DOCKERFILE=${dockerConfig.dockerfile}",
-        "IMAGE_PLATFORM=${dockerConfig.platform}",
+        "BUILD_DATE=${buildDate}",
+        "IMAGE_NAME=${imageName}",
+        "IMAGE_DIR=${finalConfig.imageDir}",
+        "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
+        "IMAGE_PLATFORM=${finalConfig.platform}",
       ]) {
-        stage("Prepare ${dockerImageName}") {
-          withCredentials([usernamePassword(credentialsId: dockerConfig.credentials, passwordVariable: 'DOCKER_REGISTRY_PSW', usernameVariable: 'DOCKER_REGISTRY_USR')]) {
+        stage("Prepare ${imageName}") {
+          withCredentials([usernamePassword(credentialsId: finalConfig.credentials, passwordVariable: 'DOCKER_REGISTRY_PSW', usernameVariable: 'DOCKER_REGISTRY_USR')]) {
             checkout scm
 
             // Logging in on the Dockerhub helps to avoid request limit from DockerHub
@@ -57,20 +68,15 @@ def call(String imageName, Map config=[:]) {
 
         // Automatic tagging on principal branch is not enabled by default
         if (semVerEnabled) {
-          stage("Get Next Version of ${dockerImageName}") {
-            nextVersion = sh(script:"${dockerConfig.nextVersionCommand}", returnStdout: true).trim()
-            if (dockerConfig.metadataFromSh != '') {
-              metadata = sh(script: "${dockerConfig.metadataFromSh}", returnStdout: true).trim()
-              nextVersion = nextVersion + metadata
-            } // if
+          stage("Get Next Version of ${imageName}") {
+            nextVersion = sh(script:"${finalConfig.nextVersionCommand}", returnStdout: true).trim()
             echo "Next Release Version = $nextVersion"
           } // stage
         } // if
 
-        stage("Lint ${dockerImageName}") {
+        stage("Lint ${imageName}") {
           // Define the image name as prefix to support multi images per pipeline
-          def now = new Date()
-          def hadolintReportId = "${dockerImageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
+          def hadolintReportId = "${imageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
           def hadoLintReportFile = "${hadolintReportId}.json"
           withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
             try {
@@ -85,17 +91,17 @@ def call(String imageName, Map config=[:]) {
           }
         } // stage
 
-        stage("Build ${dockerImageName}") {
+        stage("Build ${imageName}") {
           sh 'make build'
         } //stage
 
         // There can be 2 kind of tests: per image and per repository
         [
-          "Image Test Harness": "${dockerImageDir}/cst.yml",
+          "Image Test Harness": "${finalConfig.imageDir}/cst.yml",
           "Common Test Harness": "${env.WORKSPACE}/common-cst.yml"
         ].each { testName, testHarness ->
           if (fileExists(testHarness)) {
-            stage("Test ${testName} for ${dockerImageName}") {
+            stage("Test ${testName} for ${imageName}") {
               withEnv(["TEST_HARNESS=${testHarness}"]) {
                 sh 'make test'
               } // withEnv
@@ -105,11 +111,11 @@ def call(String imageName, Map config=[:]) {
 
         // Automatic tagging on principal branch is not enabled by default
         if (semVerEnabled) {
-          stage("Semantic Release of ${dockerImageName}") {
+          stage("Semantic Release of ${imageName}") {
             echo "Configuring credential.helper"
             sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
 
-            withCredentials([usernamePassword(credentialsId: "${dockerConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+            withCredentials([usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
               echo "Tagging New Version: $nextVersion"
               sh "git tag $nextVersion"
 
@@ -119,9 +125,10 @@ def call(String imageName, Map config=[:]) {
           } // stage
         } // if
 
-        if (env.TAG_NAME || env.BRANCH_NAME == dockerConfig.mainBranch) {
-          stage("Deploy ${dockerImageName}") {
-            def imageDeployName = dockerConfig.getFullImageName()
+        if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
+          stage("Deploy ${imageName}") {
+            final InfraConfig infraConfig = new InfraConfig(env)
+            String imageDeployName = infraConfig.dockerRegistry + '/' + imageName
 
             if(env.TAG_NAME) {
               // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
@@ -135,9 +142,9 @@ def call(String imageName, Map config=[:]) {
           } //stage
         } // if
 
-        if (env.TAG_NAME && dockerConfig.automaticSemanticVersioning) {
+        if (env.TAG_NAME && finalConfig.automaticSemanticVersioning) {
           stage("GitHub Release") {
-            withCredentials([usernamePassword(credentialsId: "${dockerConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')]) {
+            withCredentials([usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')]) {
               String origin = sh(returnStdout: true, script: 'git remote -v | grep origin | grep push | sed \'s/^origin\\s//\' | sed \'s/\\s(push)//\'').trim() - '.git'
               String org = origin.split('/')[3]
               String repository = origin.split('/')[4]

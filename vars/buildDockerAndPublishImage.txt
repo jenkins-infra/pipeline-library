@@ -1,87 +1,63 @@
-<p>
-    Lints, Builds, Tests and eventually Publishes a Docker image.
+Lints, builds, tests and eventually deploys a Docker image.
 
-    Please reference to <a href="https://github.com/jenkins-infra/pipeline-library/blob/master/resources/io/jenkins/infra/docker/README.adoc">related documentation</a> for more details.
+Please reference to <a href="https://github.com/jenkins-infra/pipeline-library/blob/master/resources/io/jenkins/infra/docker/README.adoc">related documentation</a> for more details.
 
-    <p>
-    The following arguments are available for this function:
-    <ul>
-      <li>String imageName: (Mandatory) name of the image to built, usually referenced as the "Repository" part of a Docker image's name without any tag (Example: "builder" or "terraform").</li>
-      <li>Map config: (Optional) custom configuration for the image build an deploy process. The maps can holds any of the following keys:
-        <ul>
-          <li>String registry: (Optional, defaults to "registry-1.docker.io/jenkinsciinfra") Registry reference of the Docker image to be published. It might contains hostname, port and "namespace".
-          (Valid examples: "jenkinsci", "registry.quay.io/jenkins-beta", "10.0.2.15:8080/admin").</li>
-          <li>String mainBranch: (Optional, defaults to "master") Name of the git's principal branch used to trigger deploy of the "latest" tag (Example: "main").</li>
-          <li>String dockerfile: (Optional, defaults to "Dockerfile") Relative path to the Dockerfile to use within the repository (Example: "build.dockerfile", "docker/Dockerfile").</li>
-          <li>String imageDir: (Optional, defaults to the parent directory of "Dockerfile") Path to a directory to use as build context (Example: "docker/", "python/2.7").</li>
-          <li>String credentials: (Optional, defaults to "jenkins-dockerhub") Name of the Jenkins' credentials used to authenticate on the Docker remote registry during the full build process. (Example: "internal-registry-credential").</li>
-          <li>String platform: (Optional, defaults to "linux/amd64") Name of the docker platform to use when building this image, for multiple use a comma separated list (Example: "linux/amd64,linux/arm64").</li>
-          <li>Boolean automaticSemanticVersioning: (Optional, defaults to "false") Should we create a release for every merge to the mainBranch. This uses "jx-release-version" to determine the version number based on the commit history.</li>
-          <li>String gitCredentials: (Optional, defaults to "") If "automaticSemanticVersioning" is set, name of the credential to use when tagging the git repository. Support User/password or GitHub App credential types.</li>
-          <li>String metadataFromSh: (Optional, defaults to "") If "automaticSemanticVersioning" is set, use a script to calculate the build metadata to be appended to the generated version.</li>
-          <li>String builderImage: (Optional, defaults to "jenkinsciinfra/builder:2.0.2") Docker Image to be used for the container "builder" of the CI pod template.</li>
-        </ul>
-      </li>
-    </ul>
-    </p>
+The following arguments are available for this function:
 
-    <p>
-    The Lint phase generates a report when it fails, recorded by the hadolint tool in your Jenkins instance.
-    </p>
+- String **imageName**: (Mandatory) name of the image to build, usually referenced as the "Repository" part of a Docker image name without any tag (Example: "builder" or "terraform").
+- Map **config**: (Optional) custom configuration for the image build and deploy process. This map can hold any of the following keys:
+  * String **dockerfile**: (Optional, defaults to "Dockerfile") Relative path to the Dockerfile to use within the repository (Example: "build.dockerfile", "docker/Dockerfile").
+  * String **imageDir**: (Optional, defaults to the parent directory of "Dockerfile") Path to a directory to use as build context (Example: "docker/", "python/2.7").
+  * String **credentials**: (Optional, defaults to "jenkins-dockerhub") Name of the Jenkins' credentials used to authenticate on the Docker remote registry during the full build process. (Example: "internal-registry-credential").
+  * String **builderImage**: (Optional, defaults to "jenkinsciinfra/builder:2.0.2") Docker Image to be used for the container "builder" of the CI pod template.
+  * String **platform**: (Optional, defaults to "linux/amd64") Name of the docker platform to use when building this image. For multiple platforms use a comma separated list (Example: "linux/amd64,linux/arm64").
+  * Boolean **automaticSemanticVersioning**: (Optional, defaults to "false") Should a release be created for every merge to the mainBranch. This uses "jx-release-version" to determine the version number based on the commit history.
+  * String **gitCredentials**: (Optional, defaults to "") If "automaticSemanticVersioning" is set, name of the credential to use when tagging the git repository. Support user/password or GitHub App credential types.
+  * String **nextVersionCommand** (Optional, defaults to "jx-release-version") If "automaticSemanticVersioning" is set, this is the command to retrieve the next version (to use for tagging and releasing)
 
-    <p>
-    The build phase adds a bunch of build args that you can use in your Dockerfile:
-    <ul>
-      <li>GIT_COMMIT_REV - The commit that triggered this build</li>
-      <li>GIT_SCM_URL - Url to repo </li>
-      <li>BUILD_DATE - Date that the image was built (now) </li>
-    </ul>
-    </p>
+The lint phase generates a report when it fails, recorded by the hadolint tool in your Jenkins instance.
 
-    <p>
-    The test phase is only executed if a file `cst.yml` is found at the root of the repository with the "TAR" driver for security concerns.
-    Please reference to <a href="https://github.com/GoogleContainerTools/container-structure-test">Google's Container Structure Tests documentation</a>.
-    </p>
+The build phase adds build arguments you can use in your Dockerfile:
 
-    <p>
-    Publication of the Docker Image only happens when the build is triggered by:
-    <ul>
-      <li>A push event on the repository's principal branch referenced by "config.mainBranch".</li>
-      <li>A tag event on the repository.</li>
-    </ul>
+- **GIT_COMMIT_REV** - The commit that triggered this build
+- **GIT_SCM_URL** - Url to repo
+- **BUILD_DATE** - Date of the image build (now)
 
-    <b>Example Usages</b>
+The test phase is only executed if a file `cst.yml` is found at the root of the repository with the "TAR" driver for security concerns.
+Please reference to https://github.com/GoogleContainerTools/container-structure-test.
 
-    <pre><code>
-    buildDockerAndPublishImage('terraform', [
-      mainBranch: 'main',
+Publication of the Docker image only happens when the build is triggered by:
+
+- A push event on the repository principal branch
+- A tag event on the repository
+
+
+Example Usages
+
+<pre><code>
+buildDockerAndPublishImage('terraform', [
+  dockerfile: 'docker/Dockerfile',
+  registry: 'docker4eval'
+])
+</code></pre>
+
+<pre><code>
+parallel(
+  failFast: true,
+  'docker': {
+    buildDockerAndPublishImage('docker', [
       dockerfile: 'docker/Dockerfile',
-      registry: 'docker4eval'
     ])
-    </code></pre>
-
-    <pre><code>
-    parallel(
-      failFast: true,
-      'docker': {
-        buildDockerAndPublishImage('docker', [
-          dockerfile: 'docker/Dockerfile',
-        ])
-      },
-      'golang': {
-        buildDockerAndPublishImage('golang', [
-          dockerfile: 'golang/Dockerfile',
-        ])
-      },
-      'coreruntime-2.2': {
-        buildDockerAndPublishImage('coreruntime-2.2', [
-          dockerfile: 'coreruntime/22/Dockerfile',
-        ])
-      },
-    )
-    </code></pre>
-</p>
-
-<!--
-vim: ft=html
--->
+  },
+  'golang': {
+    buildDockerAndPublishImage('golang', [
+      dockerfile: 'golang/Dockerfile',
+    ])
+  },
+  'coreruntime-2.2': {
+    buildDockerAndPublishImage('coreruntime-2.2', [
+      dockerfile: 'coreruntime/22/Dockerfile',
+    ])
+  },
+)
+</code></pre>

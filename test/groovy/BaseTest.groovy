@@ -1,7 +1,6 @@
 import com.lesfurets.jenkins.unit.declarative.DeclarativePipelineTest
 import mock.CurrentBuild
 import mock.CustomWARPackager
-import mock.Docker
 import mock.Infra
 import org.junit.Before
 import org.junit.Test
@@ -20,7 +19,6 @@ class BaseTest extends DeclarativePipelineTest {
     binding.setProperty('scm', new String())
     binding.setProperty('buildPlugin', loadScript('vars/buildPlugin.groovy'))
     binding.setProperty('customWARPackager', new CustomWARPackager())
-    binding.setProperty('docker', new Docker())
     binding.setProperty('infra', new Infra())
     binding.setProperty('mvnSettingsFile', 'settings.xml')
 
