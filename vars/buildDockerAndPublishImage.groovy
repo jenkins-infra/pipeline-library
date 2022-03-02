@@ -177,7 +177,10 @@ def withContainerEngineAgent(finalConfig, body) {
     }
   } else {
     node(finalConfig.agentLabels) {
-      withEnv(['CONTAINER_BIN=docker']) {
+      withEnv([
+        'CONTAINER_BIN=docker',
+        'HADOLINT_BIN=docker run --rm -v "$(pwd):$(pwd)" -w "$(pwd)" hadolint/hadolint hadolint',
+        ]) {
         body.call()
       }
     }
