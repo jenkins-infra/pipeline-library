@@ -6,7 +6,7 @@ import java.text.DateFormat
 def call(String imageName, Map userConfig=[:]) {
   def defaultConfig = [
     useContainer: true, // Wether to use a container (with a container-less and root-less tool) or a VM (with a full-fledge Docker Engine) for executing the steps
-    agentLabels: 'docker', // String expression for the labels that the agent must match
+    agentLabels: 'docker || linux-amd64-docker', // String expression for the labels that the agent must match
     builderImage: 'jenkinsciinfra/builder:2.0.2', // Version managed by updatecli
     automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
     dockerfile: 'Dockerfile', // Obvious default
@@ -179,7 +179,7 @@ def withContainerEngineAgent(finalConfig, body) {
     node(finalConfig.agentLabels) {
       withEnv([
         'CONTAINER_BIN=docker',
-        'HADOLINT_BIN=docker run --rm -v "$(pwd):$(pwd)" -w "$(pwd)" hadolint/hadolint hadolint',
+        'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint',
         ]) {
         body.call()
       }

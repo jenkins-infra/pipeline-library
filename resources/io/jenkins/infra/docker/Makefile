@@ -26,7 +26,7 @@ all: clean lint build test ## Execute the complete process except the "deploy" s
 lint: ## Lint the $(IMAGE_DOCKERFILE) content
 	@echo "== Linting $(IMAGE_DOCKERFILE)..."
 	@echo "Writing Lint results to $(HADOLINT_REPORT)"
-	@hadolint --format=json $(IMAGE_DOCKERFILE) > $(HADOLINT_REPORT)
+	@$(HADOLINT_BIN) --format=json - < $(IMAGE_DOCKERFILE) > $(HADOLINT_REPORT)
 	@echo "== Lint ✅ Succeeded"
 
 build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE) and export it to $(IMAGE_ARCHIVE)

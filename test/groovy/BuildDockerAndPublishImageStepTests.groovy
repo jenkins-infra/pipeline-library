@@ -114,7 +114,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   Boolean assertContainerVM(expectedNodeLabelPattern = 'docker') {
     return assertMethodCallContainsPattern('node', expectedNodeLabelPattern) \
       && assertMethodCallContainsPattern('withEnv', 'CONTAINER_BIN=docker') \
-      && assertMethodCallContainsPattern('withEnv', 'HADOLINT_BIN=docker run --rm -v "$(pwd):$(pwd)" -w "$(pwd)" hadolint/hadolint hadolint') \
+      && assertMethodCallContainsPattern('withEnv', 'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint') \
       && !assertContainerAgent()
   }
 
