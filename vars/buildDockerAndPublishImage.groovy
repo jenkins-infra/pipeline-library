@@ -61,7 +61,10 @@ def call(String imageName, Map userConfig=[:]) {
         // Define the image name as prefix to support multi images per pipeline
         def hadolintReportId = "${imageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
         def hadoLintReportFile = "${hadolintReportId}.json"
-        withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
+        withEnv([
+          "HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}",
+          'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint', // Do not put the command (right part of the assignation) between quote to ensure that bash treat it as an array of string
+        ]) {
           try {
             sh 'make lint'
           } finally {
@@ -84,9 +87,26 @@ def call(String imageName, Map userConfig=[:]) {
         "Common Test Harness": "${env.WORKSPACE}/common-cst.yml"
       ].each { testName, testHarness ->
         if (fileExists(testHarness)) {
+          final String[] platform = finalConfig.platform.split('/')
           stage("Test ${testName} for ${imageName}") {
-            withEnv(["TEST_HARNESS=${testHarness}"]) {
-              sh 'make test'
+            withEnv([
+              "TEST_HARNESS=${testHarness}",
+              "cst_url=https://github.com/GoogleContainerTools/container-structure-test/releases/download/v1.11.0/container-structure-test-${platform[0]}-${platform[1]}",
+            ]) {
+              sh '''
+              set -x
+              export CST_BIN=container-structure-test
+              if ! command -v "${CST_BIN}" 2>/dev/null >/dev/null
+              then
+                export CST_BIN="${WORKSPACE}/cst"
+                curl --silent --location --output "${CST_BIN}" "${cst_url}"
+                chmod a+x "${CST_BIN}"
+              fi
+
+              echo "Using container-structure-test binary ${CST_BIN} with version $(${CST_BIN} version)."
+
+              make test
+              '''
             } // withEnv
           } //stage
         } // if
@@ -179,7 +199,7 @@ def withContainerEngineAgent(finalConfig, body) {
     node(finalConfig.agentLabels) {
       withEnv([
         'CONTAINER_BIN=docker',
-        'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint',
+        'CST_DRIVER=docker',
         ]) {
         body.call()
       }
