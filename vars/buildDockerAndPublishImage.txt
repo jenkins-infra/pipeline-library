@@ -6,6 +6,7 @@ The following arguments are available for this function:
 
 - String **imageName**: (Mandatory) name of the image to build, usually referenced as the "Repository" part of a Docker image name without any tag (Example: "builder" or "terraform").
 - Map **config**: (Optional) custom configuration for the image build and deploy process. This map can hold any of the following keys:
+  * Boolean **useContainer** (Optional, defaults to false) Execute the phases inside a container, using a container-less and root-less tool. If set to false, then the phases are run with Docker CE running in a VM.
   * String **dockerfile**: (Optional, defaults to "Dockerfile") Relative path to the Dockerfile to use within the repository (Example: "build.dockerfile", "docker/Dockerfile").
   * String **imageDir**: (Optional, defaults to the parent directory of "Dockerfile") Path to a directory to use as build context (Example: "docker/", "python/2.7").
   * String **credentials**: (Optional, defaults to "jenkins-dockerhub") Name of the Jenkins' credentials used to authenticate on the Docker remote registry during the full build process. (Example: "internal-registry-credential").
