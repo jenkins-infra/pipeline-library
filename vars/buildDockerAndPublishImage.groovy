@@ -5,8 +5,8 @@ import java.text.DateFormat
 
 def call(String imageName, Map userConfig=[:]) {
   def defaultConfig = [
-    useContainer: true, // Wether to use a container (with a container-less and root-less tool) or a VM (with a full-fledge Docker Engine) for executing the steps
-    agentLabels: 'docker || linux-amd64-docker', // String expression for the labels that the agent must match
+    useContainer: true, // Wether to use a container (with a container-less and root-less tool) or a VM (with a full-fledged Docker Engine) for executing the steps
+    agentLabels: 'docker || linux-amd64-docker', // String expression for the labels the agent must match
     builderImage: 'jenkinsciinfra/builder:2.0.2', // Version managed by updatecli
     automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
     dockerfile: 'Dockerfile', // Obvious default
@@ -44,7 +44,7 @@ def call(String imageName, Map userConfig=[:]) {
           sh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
 
           // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
-          // Even though we have mitigation trhough the multibranch job config only allowed to build PRs from repo. contributors
+          // Even though we have mitigation through the multibranch job config allowing to build PRs only from the repository contributors
           writeFile file: 'Makefile', text: makefileContent
         } // withCredentials
       } // stage
@@ -63,7 +63,7 @@ def call(String imageName, Map userConfig=[:]) {
         def hadoLintReportFile = "${hadolintReportId}.json"
         withEnv([
           "HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}",
-          'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint', // Do not put the command (right part of the assignation) between quote to ensure that bash treat it as an array of string
+          'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint', // Do not put the command (right part of the assignation) between quotes to ensure that bash treat it as an array of strings
         ]) {
           try {
             sh 'make lint'
@@ -162,7 +162,7 @@ def call(String imageName, Map userConfig=[:]) {
         } // stage
       } // if
 
-      // Logging out to ensure that credentials are cleanup up if the current agent is reused
+      // Logging out to ensure credentials are cleaned up if the current agent is reused
       sh '"${CONTAINER_BIN}" logout'
     } // withEnv
   }) // withContainerEngineAgent

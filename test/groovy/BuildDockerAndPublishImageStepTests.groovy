@@ -93,7 +93,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     }
   }
 
-  // return if the set of method expected for ALL pipeline run have been detected in the callstack
+  // Return if the set of methods expected for ALL pipeline run have been detected in the callstack
   Boolean assertBaseWorkflow() {
     return assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile') \
       && assertMethodCallContainsPattern('sh','make lint') \
@@ -103,14 +103,14 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       && assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}")
   }
 
-  // return if the mocked pipeline ran in a container agent with the `img` containerless engine
+  // Return if the mocked pipeline ran in a container agent with the `img` containerless engine
   Boolean assertContainerAgent() {
     return assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/builder:') \
       && assertMethodCallContainsPattern('withEnv', 'CONTAINER_BIN=img') \
       && !assertContainerVM()
   }
 
-  // return if the mocked pipeline ran in a VM agent with the Docker Engine
+  // Return if the mocked pipeline ran in a VM agent with the Docker Engine
   Boolean assertContainerVM(expectedNodeLabelPattern = 'docker') {
     return assertMethodCallContainsPattern('node', expectedNodeLabelPattern) \
       && assertMethodCallContainsPattern('withEnv', 'CONTAINER_BIN=docker') \
@@ -118,7 +118,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       && !assertContainerAgent()
   }
 
-  // return if the usual static checks had been recorded with the usual pattern
+  // Return if the usual static checks had been recorded with the usual pattern
   Boolean assertRecordIssues(String imageName = testImageName) {
     return assertMethodCallContainsPattern('recordIssues', "{enabledForFailure=true, aggregatingResults=false, tool={id=${imageName}-hadolint-${mockedTimestamp}, pattern=${imageName}-hadolint-${mockedTimestamp}.json}}")
   }
@@ -468,12 +468,12 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertBaseWorkflow())
     assertTrue(assertContainerVM())
 
-    // And the expected environment variable defined to their defaults
+    // And the expected environment variables set to their default values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/amd64'))
 
-    // And generated reports are recorded
+    // And generated reports recorded
     assertTrue(assertRecordIssues())
 
     // And the deploy step called
@@ -482,7 +482,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // But no release created automatically
     assertFalse(assertTagPushed(defaultGitTag))
 
-    // And all mocked/stubbed methods have to be called
+    // And all mocked/stubbed methods been called
     verifyMocks()
   }
 
@@ -505,21 +505,21 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertBaseWorkflow())
     assertTrue(assertContainerVM('docker-windows'))
 
-    // And the expected environment variable defined to their defaults
+    // And the expected environment variables set to their default values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/amd64'))
 
-    // And generated reports are recorded
+    // And generated reports recorded
     assertTrue(assertRecordIssues())
 
-    // But no deploy step called (not on princiopal branch)
+    // But no deploy step called (not on principal branch)
     assertFalse(assertMakeDeploy())
 
     // But no release created automatically
     assertFalse(assertTagPushed(defaultGitTag))
 
-    // And all mocked/stubbed methods have to be called
+    // And all mocked/stubbed methods been called
     verifyMocks()
   }
 }
