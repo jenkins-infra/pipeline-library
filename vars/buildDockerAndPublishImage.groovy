@@ -68,7 +68,7 @@ def call(String imageName, Map userConfig=[:]) {
               then
                 echo "INFO: No jx-release-version binary found: Installing it from ${jxrv_url}."
                 curl --silent --location "${jxrv_url}" | tar xzv
-                mv jx-release-version "${WORKSPACE}/.bin/jx-release-version"
+                mv ./jx-release-version "${WORKSPACE}/.bin/jx-release-version"
               fi
               '''
             }
@@ -85,7 +85,6 @@ def call(String imageName, Map userConfig=[:]) {
         def hadoLintReportFile = "${hadolintReportId}.json"
         withEnv([
           "HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}",
-          'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint', // Do not put the command (right part of the assignation) between quotes to ensure that bash treat it as an array of strings
         ]) {
           try {
             sh 'make lint'
@@ -174,18 +173,17 @@ def call(String imageName, Map userConfig=[:]) {
 
             try {
               withEnv([
-              "platform_id=${operatingSystem}_${cpuArch}",
-              'gh_version=2.5.1',
-              'gh_url="https://github.com/cli/cli/releases/download/v${gh_version}/gh_${gh_version}_${platform_id}.tar.gz"',
+              "platform_id=${platformId}",
+              "gh_url=${ghUrl}",
             ]) {
               sh '''
               if ! command -v gh 2>/dev/null >/dev/null
               then
-                echo "INFO: No gh binary found: Installing it from ${gh_url}."
+                echo "INFO: No gh binary found: Installing it from ${ghUrl}."
                 temp_dir="$(mktemp -d)"
                 curl --silent --show-error --location --output "${temp_dir}/gh.tgz" "${gh_url}"
                 tar xvfz "${temp_dir}/gh.tgz" -C "${temp_dir}"
-                mv "$(find "${temp_dir}"/*/bin -type f -name gh)" "${WORKSPACE}/.bin/gh"
+                mv "${temp_dir}/gh.tgz" "${WORKSPACE}/.bin/gh"
                 rm -rf "${temp_dir}"
                 gh --version
               fi
@@ -238,6 +236,7 @@ def withContainerEngineAgent(finalConfig, body) {
       withEnv([
         'CONTAINER_BIN=docker',
         'CST_DRIVER=docker',
+        'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint', // Do not put the command (right part of the assignation) between quotes to ensure that bash treat it as an array of strings
         ]) {
         body.call()
       }
