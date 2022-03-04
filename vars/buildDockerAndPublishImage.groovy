@@ -171,8 +171,7 @@ def call(String imageName, Map userConfig=[:]) {
             final String platformId = "${operatingSystem}_${cpuArch}"
             final String ghUrl = "https://github.com/cli/cli/releases/download/v${ghVersion}/gh_${ghVersion}_${platformId}.tar.gz"
 
-            try {
-              withEnv([
+            withEnv([
               "platform_id=${platformId}",
               "gh_url=${ghUrl}",
             ]) {
@@ -189,11 +188,9 @@ def call(String imageName, Map userConfig=[:]) {
               fi
               '''
             }
-              String release = sh(returnStdout: true, script: "gh api /repos/${org}/${repository}/releases | jq -e -r '.[] | select(.draft == true and .name == \"next\") | .id'").trim()
-              sh "gh api -X PATCH -F draft=false -F name=${env.TAG_NAME} -F tag_name=${env.TAG_NAME} /repos/${org}/${repository}/releases/$release"
-            } catch (err) {
-                echo "Release named 'next' does not exist"
-            }
+
+            final String release = sh(returnStdout: true, script: "gh api /repos/${org}/${repository}/releases | jq -e -r '.[] | select(.draft == true and .name == \"next\") | .id'").trim()
+            sh "gh api -X PATCH -F draft=false -F name=${env.TAG_NAME} -F tag_name=${env.TAG_NAME} /repos/${org}/${repository}/releases/$release"
           } // withCredentials
         } // stage
       } // if
