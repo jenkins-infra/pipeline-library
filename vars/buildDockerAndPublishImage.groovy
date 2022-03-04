@@ -28,6 +28,9 @@ def call(String imageName, Map userConfig=[:]) {
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
   final String buildDate = dateFormat.format(now)
 
+  final String operatingSystem = finalConfig.platform.split('/')[0]
+  final String cpuArch = finalConfig.platform.split('/')[1]
+
   withContainerEngineAgent(finalConfig, {
     withEnv([
       "BUILD_DATE=${buildDate}",
@@ -35,6 +38,7 @@ def call(String imageName, Map userConfig=[:]) {
       "IMAGE_DIR=${finalConfig.imageDir}",
       "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
       "IMAGE_PLATFORM=${finalConfig.platform}",
+      "PATH+BINS=${env.WORKSPACE}/.bin", // Add to the path the directory with the custom binaries that could be installed during the build
     ]) {
       stage("Prepare ${imageName}") {
         withCredentials([usernamePassword(credentialsId: finalConfig.credentials, passwordVariable: 'DOCKER_REGISTRY_PSW', usernameVariable: 'DOCKER_REGISTRY_USR')]) {
@@ -46,12 +50,30 @@ def call(String imageName, Map userConfig=[:]) {
           // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
           // Even though we have mitigation through the multibranch job config allowing to build PRs only from the repository contributors
           writeFile file: 'Makefile', text: makefileContent
+
+          // Custom tools might be installed in the .bin directory in the workspace
+          sh 'mkdir -p "${WORKSPACE}/.bin"'
         } // withCredentials
       } // stage
 
       // Automatic tagging on principal branch is not enabled by default
       if (semVerEnabled) {
         stage("Get Next Version of ${imageName}") {
+          if(finalConfig.nextVersionCommand.contains('jx-release-version')) {
+            withEnv([
+                "jxrv_url=https://github.com/jenkins-x-plugins/jx-release-version/releases/download/v2.5.1/jx-release-version-${operatingSystem}-${cpuArch}.tar.gz", // TODO: track with updatecli
+              ]) {
+              sh '''
+              if ! command -v jx-release-version 2>/dev/null >/dev/null
+              then
+                echo "INFO: No jx-release-version binary found: Installing it from ${jxrv_url}."
+                curl --silent --location "${jxrv_url}" | tar xzv
+                mv ./jx-release-version "${WORKSPACE}/.bin/jx-release-version"
+              fi
+              '''
+            }
+          }
+
           nextVersion = sh(script:"${finalConfig.nextVersionCommand}", returnStdout: true).trim()
           echo "Next Release Version = $nextVersion"
         } // stage
@@ -63,7 +85,6 @@ def call(String imageName, Map userConfig=[:]) {
         def hadoLintReportFile = "${hadolintReportId}.json"
         withEnv([
           "HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}",
-          'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint', // Do not put the command (right part of the assignation) between quotes to ensure that bash treat it as an array of strings
         ]) {
           try {
             sh 'make lint'
@@ -87,23 +108,18 @@ def call(String imageName, Map userConfig=[:]) {
         "Common Test Harness": "${env.WORKSPACE}/common-cst.yml"
       ].each { testName, testHarness ->
         if (fileExists(testHarness)) {
-          final String[] platform = finalConfig.platform.split('/')
           stage("Test ${testName} for ${imageName}") {
             withEnv([
               "TEST_HARNESS=${testHarness}",
-              "cst_url=https://github.com/GoogleContainerTools/container-structure-test/releases/download/v1.11.0/container-structure-test-${platform[0]}-${platform[1]}",
+              "cst_url=https://github.com/GoogleContainerTools/container-structure-test/releases/download/v1.11.0/container-structure-test-${operatingSystem}-${cpuArch}", // TODO: track with updatecli
             ]) {
               sh '''
-              set -x
-              export CST_BIN=container-structure-test
-              if ! command -v "${CST_BIN}" 2>/dev/null >/dev/null
+              if ! command -v container-structure-test 2>/dev/null >/dev/null
               then
-                export CST_BIN="${WORKSPACE}/cst"
-                curl --silent --location --output "${CST_BIN}" "${cst_url}"
-                chmod a+x "${CST_BIN}"
+                echo "INFO: No container-structure-test binary found: Installing it from ${cst_url}."
+                curl --silent --location --output "${WORKSPACE}/.bin/container-structure-test" "${cst_url}"
+                chmod a+x "${WORKSPACE}/.bin/container-structure-test"
               fi
-
-              echo "Using container-structure-test binary ${CST_BIN} with version $(${CST_BIN} version)."
 
               make test
               '''
@@ -148,16 +164,33 @@ def call(String imageName, Map userConfig=[:]) {
       if (env.TAG_NAME && finalConfig.automaticSemanticVersioning) {
         stage("GitHub Release") {
           withCredentials([usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')]) {
-            String origin = sh(returnStdout: true, script: 'git remote -v | grep origin | grep push | sed \'s/^origin\\s//\' | sed \'s/\\s(push)//\'').trim() - '.git'
-            String org = origin.split('/')[3]
-            String repository = origin.split('/')[4]
+            final String origin = sh(returnStdout: true, script: 'git remote -v | grep origin | grep push | sed \'s/^origin\\s//\' | sed \'s/\\s(push)//\'').trim() - '.git'
+            final String org = origin.split('/')[3]
+            final String repository = origin.split('/')[4]
+            final String ghVersion = "2.5.2" // TODO: track with updatecli
+            final String platformId = "${operatingSystem}_${cpuArch}"
+            final String ghUrl = "https://github.com/cli/cli/releases/download/v${ghVersion}/gh_${ghVersion}_${platformId}.tar.gz"
 
-            try {
-                String release = sh(returnStdout: true, script: "gh api /repos/${org}/${repository}/releases | jq -e -r '.[] | select(.draft == true and .name == \"next\") | .id'").trim()
-                sh "gh api -X PATCH -F draft=false -F name=${env.TAG_NAME} -F tag_name=${env.TAG_NAME} /repos/${org}/${repository}/releases/$release"
-            } catch (err) {
-                echo "Release named 'next' does not exist"
+            withEnv([
+              "platform_id=${platformId}",
+              "gh_url=${ghUrl}",
+            ]) {
+              sh '''
+              if ! command -v gh 2>/dev/null >/dev/null
+              then
+                echo "INFO: No gh binary found: Installing it from ${ghUrl}."
+                temp_dir="$(mktemp -d)"
+                curl --silent --show-error --location --output "${temp_dir}/gh.tgz" "${gh_url}"
+                tar xvfz "${temp_dir}/gh.tgz" -C "${temp_dir}"
+                mv "${temp_dir}/gh.tgz" "${WORKSPACE}/.bin/gh"
+                rm -rf "${temp_dir}"
+                gh --version
+              fi
+              '''
             }
+
+            final String release = sh(returnStdout: true, script: "gh api /repos/${org}/${repository}/releases | jq -e -r '.[] | select(.draft == true and .name == \"next\") | .id'").trim()
+            sh "gh api -X PATCH -F draft=false -F name=${env.TAG_NAME} -F tag_name=${env.TAG_NAME} /repos/${org}/${repository}/releases/$release"
           } // withCredentials
         } // stage
       } // if
@@ -200,6 +233,7 @@ def withContainerEngineAgent(finalConfig, body) {
       withEnv([
         'CONTAINER_BIN=docker',
         'CST_DRIVER=docker',
+        'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint', // Do not put the command (right part of the assignation) between quotes to ensure that bash treat it as an array of strings
         ]) {
         body.call()
       }
