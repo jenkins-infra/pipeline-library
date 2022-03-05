@@ -182,7 +182,7 @@ def call(String imageName, Map userConfig=[:]) {
                 temp_dir="$(mktemp -d)"
                 curl --silent --show-error --location --output "${temp_dir}/gh.tgz" "${gh_url}"
                 tar xvfz "${temp_dir}/gh.tgz" -C "${temp_dir}"
-                mv "${temp_dir}/gh.tgz" "${WORKSPACE}/.bin/gh"
+                mv "$(find "${temp_dir}"/*/bin -type f -name gh)" "${WORKSPACE}/.bin/gh"
                 rm -rf "${temp_dir}"
                 gh --version
               fi
