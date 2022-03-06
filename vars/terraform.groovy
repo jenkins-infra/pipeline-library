@@ -28,7 +28,7 @@ def call(userConfig = [:]) {
   final String makeCliCmd = "make --directory=${sharedToolsSubDir}/terraform/"
 
   // Only define a cron trigger on the "principal" branch
-  if(isBuildOnProductionBranch && finalConfig.cronTriggerExpression) {
+  if (isBuildOnProductionBranch && finalConfig.cronTriggerExpression) {
     properties([
       pipelineTriggers([
         cron(finalConfig.cronTriggerExpression)

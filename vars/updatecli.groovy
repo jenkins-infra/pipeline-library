@@ -1,8 +1,8 @@
 def call(userConfig = [:]) {
   def defaultConfig = [
-    action: 'diff', // updatecli subcommand to execute
-    config: './updatecli/updatecli.d', // config manifest used by updatecli (can be a file or a directory) -
-    values: './updatecli/values.yaml', // values file used by updatecli
+    action: 'diff', // Updatecli subcommand to execute
+    config: './updatecli/updatecli.d', // Config manifest used by updatecli (can be a file or a directory)
+    values: './updatecli/values.yaml', // Values file used by updatecli
     updatecliDockerImage: 'jenkinsciinfra/helmfile:2.3.0', // Container image to use for running updatecli
     containerMemory: '512Mi', // When using 'updatecliDockerImage', this is the memory limit+request of the container
     cronTriggerExpression: '', // When specified, it enables cron trigger for the calling pipeline
@@ -17,8 +17,8 @@ def call(userConfig = [:]) {
   // Do not add the flag "--values" if the provided value is "empty string"
   updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ''
 
-  // Define a cron trigger only if it's requested by the user through attribute
-  if(finalConfig.cronTriggerExpression) {
+  // Define a cron trigger only if requested by the user through attribute
+  if (finalConfig.cronTriggerExpression) {
     properties([
       pipelineTriggers([
         cron(finalConfig.cronTriggerExpression)
