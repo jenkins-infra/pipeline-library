@@ -9,7 +9,7 @@ HADOLINT_REPORT ?= $(IMAGE_DIR)/hadolint.json
 TEST_HARNESS ?= $(IMAGE_DIR)/cst.yml
 
 ## Locate command line tools. Defaults to rely on PATH
-CONTAINER_BIN ?= img
+CONTAINER_BIN ?= docker
 HADOLINT_BIN ?= hadolint
 CST_BIN ?= container-structure-test
 
@@ -20,7 +20,7 @@ SCM_URI ?= $(subst git@github.com:,https://github.com/,$(GIT_SCM_URL))
 BUILD_DATE ?= $(shell date --utc '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || gdate --utc '+%Y-%m-%dT%H:%M:%S')
 
 ## Test Harness settings
-CST_DRIVER ?= tar # https://github.com/GoogleContainerTools/container-structure-test#running-file-tests-without-docker
+CST_DRIVER ?= docker # https://github.com/GoogleContainerTools/container-structure-test#running-file-tests-without-docker
 ifeq ($(CST_DRIVER),tar)
 CST_SUT = $(IMAGE_ARCHIVE)
 else

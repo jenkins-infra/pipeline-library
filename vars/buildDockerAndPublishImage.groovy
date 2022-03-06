@@ -223,7 +223,10 @@ def withContainerEngineAgent(finalConfig, body) {
       ]
     ) {
       node(POD_LABEL) {
-        withEnv(['CONTAINER_BIN=img']) {
+        withEnv([
+          'CONTAINER_BIN=img',
+          'CST_DRIVER=tar',
+          ]) {
           body.call()
         }
       }
