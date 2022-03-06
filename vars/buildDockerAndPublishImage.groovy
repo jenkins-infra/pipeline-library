@@ -226,7 +226,7 @@ def withContainerEngineAgent(finalConfig, body) {
         withEnv([
           'CONTAINER_BIN=img',
           'CST_DRIVER=tar',
-          ]) {
+        ]) {
           body.call()
         }
       }
