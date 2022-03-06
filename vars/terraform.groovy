@@ -27,10 +27,16 @@ def call(userConfig = [:]) {
   final String sharedToolsSubDir = '.shared-tools'
   final String makeCliCmd = "make --directory=${sharedToolsSubDir}/terraform/"
 
+  // Only define a cron trigger on the "principal" branch
+  if(isBuildOnProductionBranch && finalConfig.cronTriggerExpression) {
+    properties([
+      pipelineTriggers([
+        cron(finalConfig.cronTriggerExpression)
+      ]),
+    ])
+  }
 
   properties([
-    // Defines a cron trigger only on the production branch
-    pipelineTriggers(isBuildOnProductionBranch ? [cron(finalConfig.cronTriggerExpression)] : []),
     // Only run 1 build at a time, on a given branch, to ensure that infrastructure changes are sequentials (easier to audit)
     disableConcurrentBuilds(),
     // Only keep build history for long on the principal branch

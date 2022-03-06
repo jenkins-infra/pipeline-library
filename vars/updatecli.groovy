@@ -1,10 +1,11 @@
 def call(userConfig = [:]) {
   def defaultConfig = [
-    action: 'diff',
-    config: './updatecli/updatecli.d',
-    values: './updatecli/values.yaml',
-    updatecliDockerImage: 'jenkinsciinfra/helmfile:2.3.0',
-    containerMemory: '512Mi'
+    action: 'diff', // updatecli subcommand to execute
+    config: './updatecli/updatecli.d', // config manifest used by updatecli (can be a file or a directory) -
+    values: './updatecli/values.yaml', // values file used by updatecli
+    updatecliDockerImage: 'jenkinsciinfra/helmfile:2.3.0', // Container image to use for running updatecli
+    containerMemory: '512Mi', // When using 'updatecliDockerImage', this is the memory limit+request of the container
+    cronTriggerExpression: '', // When specified, it enables cron trigger for the calling pipeline
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -17,9 +18,13 @@ def call(userConfig = [:]) {
   updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ''
 
   // Define a cron trigger only if it's requested by the user through attribute
-  properties([
-    pipelineTriggers(finalConfig.cronTriggerExpression ? [cron(finalConfig.cronTriggerExpression)] : [])
-  ])
+  if(finalConfig.cronTriggerExpression) {
+    properties([
+      pipelineTriggers([
+        cron(finalConfig.cronTriggerExpression)
+      ])
+    ])
+  }
 
   // The podTemplate must define only a single container, named `jnlp`
   // Ref - https://support.cloudbees.com/hc/en-us/articles/360054642231-Considerations-for-Kubernetes-Clients-Connections-when-using-Kubernetes-Plugin
