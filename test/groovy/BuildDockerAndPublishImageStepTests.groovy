@@ -107,6 +107,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   Boolean assertContainerAgent() {
     return assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/builder:') \
       && assertMethodCallContainsPattern('withEnv', 'CONTAINER_BIN=img') \
+      && assertMethodCallContainsPattern('withEnv', 'CST_DRIVER=tar') \
       && !assertMethodCallContainsPattern('withEnv', 'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint')
   }
 
@@ -114,6 +115,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   Boolean assertContainerVM(expectedNodeLabelPattern = 'docker') {
     return assertMethodCallContainsPattern('node', expectedNodeLabelPattern) \
       && assertMethodCallContainsPattern('withEnv', 'CONTAINER_BIN=docker') \
+      && assertMethodCallContainsPattern('withEnv', 'CST_DRIVER=docker') \
       && assertMethodCallContainsPattern('withEnv', 'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint')
   }
 
