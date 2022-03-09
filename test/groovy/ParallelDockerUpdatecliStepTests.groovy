@@ -61,6 +61,9 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
 
     // And the correct image name is passed to buildDockerAndPublishImage
     assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', testImageName))
+    // And the correct settings
+    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'automaticSemanticVersioning=true'))
+    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'gitCredentials=github-app-infra'))
 
     // And updatecli(action: 'diff') is called
     assertTrue(assertMethodCallContainsPattern('updatecli', 'action=diff'))
@@ -162,6 +165,9 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
       updatecliConfig: [
         containerMemory: anotherContainerMemory,
       ],
+      buildDockerConfig: [
+        useContainer: false,
+      ],
       credentialsId: anotherCredentialsId
     )
     printCallStack()
@@ -174,6 +180,11 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
 
     // And the correct image name is passed to buildDockerAndPublishImage
     assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', testImageName))
+    // And the correct fixed settings for buildDockerAndPublishImage
+    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'automaticSemanticVersioning=true'))
+    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'gitCredentials=github-app-infra'))
+    // And the custom settings for buildDockerAndPublishImage
+    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'useContainer=false'))
 
     // And updatecli(action: 'diff') is called
     assertTrue(assertMethodCallContainsPattern('updatecli', 'action=diff'))

@@ -7,6 +7,7 @@ def call(userConfig = [:]) {
     credentialsId: 'updatecli-github-token',
     updatecliApplyCronTriggerExpression: '@weekly',
     updatecliConfig: [:],
+    buildDockerConfig: [:],
   ]
 
   if (userConfig.containerMemory) {
@@ -28,10 +29,9 @@ def call(userConfig = [:]) {
     'docker-image': {
       // Do not rebuild the image when triggered by a periodic job if the config desactivate them
       if (finalConfig.rebuildImageOnPeriodicJob || (!finalConfig.rebuildImageOnPeriodicJob && !currentBuild.getBuildCauses().contains('hudson.triggers.TimerTrigger'))) {
-        buildDockerAndPublishImage(finalConfig.imageName, [
-          automaticSemanticVersioning: true,
-          gitCredentials: 'github-app-infra'
-        ])
+        // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
+        final Map dockerBuildConfig = [automaticSemanticVersioning: true, gitCredentials: 'github-app-infra'] << finalConfig.buildDockerConfig
+        buildDockerAndPublishImage(finalConfig.imageName, dockerBuildConfig)
       }
     },
     'updatecli': {
