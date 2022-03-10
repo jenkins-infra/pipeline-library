@@ -6,8 +6,10 @@ def call(userConfig = [:]) {
     updatecliDockerImage: 'jenkinsciinfra/helmfile:2.3.0', // Container image to use for running updatecli
     containerMemory: '512Mi', // When using 'updatecliDockerImage', this is the memory limit+request of the container
     cronTriggerExpression: '', // When specified, it enables cron trigger for the calling pipeline
-    credentialsId: 'github-app-updatecli-on-jenkins-infra', // githubApp credentials id to use to get an Access Token
+    credentialsId: 'github-app-updatecli-on-jenkins-infra', // githubApp or usernamePassword credentials id to use to get an Access Token. The corresponding populated env vars are USERNAME_VALUE & UPDATECLI_GITHUB_TOKEN
   ]
+
+  // TODO: use isInfra() to set a default githubApp credentials id for infra & for ci
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
   final Map finalConfig = defaultConfig << userConfig
@@ -56,7 +58,7 @@ def call(userConfig = [:]) {
         if (runUpdatecli) {
           withCredentials([usernamePassword(
             credentialsId: finalConfig.credentialsId,
-            usernameVariable: 'USERNAME_NOT_USED', // Setting this variable is mandatory, even if of not used
+            usernameVariable: 'USERNAME_VALUE', // Setting this variable is mandatory, even if of not used when the credentials is a githubApp one
             passwordVariable: 'UPDATECLI_GITHUB_TOKEN'
           )]) {
             sh 'updatecli version'
