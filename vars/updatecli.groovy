@@ -56,7 +56,7 @@ def call(userConfig = [:]) {
         if (runUpdatecli) {
           withCredentials([usernamePassword(
             credentialsId: finalConfig.credentialsId,
-            usernameVariable: 'USERNAME_NOT_USED', // Setting this variable is mandatory, even if of no use
+            usernameVariable: 'USERNAME_NOT_USED', // Setting this variable is mandatory, even if of not used
             passwordVariable: 'UPDATECLI_GITHUB_TOKEN'
           )]) {
             sh 'updatecli version'
