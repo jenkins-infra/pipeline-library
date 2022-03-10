@@ -143,6 +143,6 @@ class UpdatecliStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // And the custom credentialsId is taken in account
-    assertTrue(assertMethodCallContainsPattern('withCredentials', anotherCredentialsId))
+    assertTrue(assertMethodCallContainsPattern('usernamePassword', "credentialsId=${anotherCredentialsId}"))
   }
 }
