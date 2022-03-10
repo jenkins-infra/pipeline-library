@@ -12,6 +12,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
   static final String anotherCronTriggerExpression = '@daily'
   static final String anotherContainerMemory = '345Mi' // different than the default value specified in ${scriptName}
   static final String defaultCredentialsId = 'github-app-updatecli-on-jenkins-infra'
+  static final String defaultDockerGitCredentialsId = 'github-docker-github-app-infra'
   static final String anotherCredentialsId = 'another-github-token'
 
   @Override
