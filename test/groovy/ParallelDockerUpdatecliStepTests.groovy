@@ -183,7 +183,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', testImageName))
     // And the correct fixed settings for buildDockerAndPublishImage
     assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'automaticSemanticVersioning=true'))
-    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', "gitCredentials=${defaultCredentialsId}"))
+    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', "gitCredentials=${defaultDockerGitCredentialsId}"))
     // And the custom settings for buildDockerAndPublishImage
     assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'useContainer=false'))
 
