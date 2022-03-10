@@ -195,6 +195,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('echo', 'WARNING:'))
 
     // And the custom parameters are taken in account for docker image build
+    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', "gitCredentials=${defaultDockerGitCredentialsId}"))
     assertTrue(assertMethodCallContainsPattern('string', anotherCredentialsId))
 
     // And the method "updatecli()" is called for "diff" and "apply" actions (both with the same custom parameters)
