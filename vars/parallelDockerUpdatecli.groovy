@@ -4,7 +4,8 @@ def call(userConfig = [:]) {
   def defaultConfig = [
     imageName: '',
     rebuildImageOnPeriodicJob: true,
-    credentialsId: 'updatecli-github-token',
+    updatecliCredentialsId: 'github-app-updatecli-on-jenkins-infra',
+    buildDockerAndPublishImageCredentialsId: 'github-app-infra',
     updatecliApplyCronTriggerExpression: '@weekly',
     updatecliConfig: [:],
     buildDockerConfig: [:],
@@ -30,21 +31,19 @@ def call(userConfig = [:]) {
       // Do not rebuild the image when triggered by a periodic job if the config desactivate them
       if (finalConfig.rebuildImageOnPeriodicJob || (!finalConfig.rebuildImageOnPeriodicJob && !currentBuild.getBuildCauses().contains('hudson.triggers.TimerTrigger'))) {
         // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
-        final Map dockerBuildConfig = [automaticSemanticVersioning: true, gitCredentials: 'github-app-infra'] << finalConfig.buildDockerConfig
+        final Map dockerBuildConfig = [automaticSemanticVersioning: true, gitCredentials: finalConfig.buildDockerAndPublishImageCredentialsId] << finalConfig.buildDockerConfig
         buildDockerAndPublishImage(finalConfig.imageName, dockerBuildConfig)
       }
     },
     'updatecli': {
-      withCredentials([string(credentialsId: finalConfig.credentialsId,variable: 'UPDATECLI_GITHUB_TOKEN')]) {
-        // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
-        Map updatecliConfig = finalConfig.updatecliConfig << [action: 'diff']
+      // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
+      Map updatecliConfig = finalConfig.updatecliConfig << [action: 'diff', credentialsId: finalConfig.updatecliCredentialsId]
 
+      updatecli(updatecliConfig)
+      if (env.BRANCH_IS_PRIMARY) {
+        // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
+        updatecliConfig = finalConfig.updatecliConfig << [action: 'apply', cronTriggerExpression: finalConfig.updatecliApplyCronTriggerExpression, credentialsId: finalConfig.updatecliCredentialsId]
         updatecli(updatecliConfig)
-        if (env.BRANCH_IS_PRIMARY) {
-          // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
-          updatecliConfig = finalConfig.updatecliConfig << [action: 'apply', cronTriggerExpression: finalConfig.updatecliApplyCronTriggerExpression]
-          updatecli(updatecliConfig)
-        }
       }
     }
   )
