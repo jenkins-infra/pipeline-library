@@ -4,7 +4,7 @@ def call(userConfig = [:]) {
   def defaultConfig = [
     imageName: '',
     rebuildImageOnPeriodicJob: true,
-    credentialsId: 'updatecli-github-token',
+    credentialsId: 'github-app-updatecli-on-jenkins-infra',
     updatecliApplyCronTriggerExpression: '@weekly',
     updatecliConfig: [:],
     buildDockerConfig: [:],
@@ -35,16 +35,14 @@ def call(userConfig = [:]) {
       }
     },
     'updatecli': {
-      withCredentials([string(credentialsId: finalConfig.credentialsId,variable: 'UPDATECLI_GITHUB_TOKEN')]) {
-        // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
-        Map updatecliConfig = finalConfig.updatecliConfig << [action: 'diff']
+      // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
+      Map updatecliConfig = finalConfig.updatecliConfig << [action: 'diff', credentialsId: finalConfig.credentialsId]
 
+      updatecli(updatecliConfig)
+      if (env.BRANCH_IS_PRIMARY) {
+        // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
+        updatecliConfig = finalConfig.updatecliConfig << [action: 'apply', cronTriggerExpression: finalConfig.updatecliApplyCronTriggerExpression]
         updatecli(updatecliConfig)
-        if (env.BRANCH_IS_PRIMARY) {
-          // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
-          updatecliConfig = finalConfig.updatecliConfig << [action: 'apply', cronTriggerExpression: finalConfig.updatecliApplyCronTriggerExpression]
-          updatecli(updatecliConfig)
-        }
       }
     }
   )

@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue
 
 class UpdatecliStepTests extends BaseTest {
   static final String scriptName = "vars/updatecli.groovy"
+  static final String anotherCredentialsId = 'another-credentials-id'
   Map env = [:]
 
   @Override
@@ -23,7 +24,7 @@ class UpdatecliStepTests extends BaseTest {
   void itRunSuccessfullyWithDefault() throws Exception {
     def script = loadScript(scriptName)
 
-    // when calling with the "updatecli" function with default configuration
+    // when calling the "updatecli" function with default configuration
     script.call()
     printCallStack()
 
@@ -48,7 +49,7 @@ class UpdatecliStepTests extends BaseTest {
   void itRunSuccessfullyWithCustomAction() throws Exception {
     def script = loadScript(scriptName)
 
-    // when calling with the "updatecli" function with a custom action "eat"
+    // when calling the "updatecli" function with a custom action "eat"
     script.call(action: 'eat')
     printCallStack()
 
@@ -67,7 +68,7 @@ class UpdatecliStepTests extends BaseTest {
   void itRunSuccessfullyWithCustomConfigAndEmptyValues() throws Exception {
     def script = loadScript(scriptName)
 
-    // when calling with the "updatecli" function with a custom config and an empty values
+    // when calling the "updatecli" function with a custom config and an empty values
     script.call(config: './ops/config.yml', values: '', containerMemory: '512Mi')
     printCallStack()
 
@@ -92,7 +93,7 @@ class UpdatecliStepTests extends BaseTest {
   void itRunSuccessfullyWithEmptyConfigAndCustomValues() throws Exception {
     def script = loadScript(scriptName)
 
-    // when calling with the "updatecli" function with a custom config and an empty values
+    // when calling the "updatecli" function with custom values and an empty config
     script.call(values: './values.yaml', config: '')
     printCallStack()
 
@@ -112,7 +113,7 @@ class UpdatecliStepTests extends BaseTest {
   void itUsesCustomImageFromCustomConfig() throws Exception {
     def script = loadScript(scriptName)
 
-    // when calling with the "updatecli" function with a custom action "eat"
+    // when calling the "updatecli" function with a custom Docker image
     script.call(updatecliDockerImage: 'golang:1.16-alpine')
     printCallStack()
 
@@ -128,5 +129,20 @@ class UpdatecliStepTests extends BaseTest {
     // And only the diff command called with default values
     assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
     assertFalse(assertMethodCallContainsPattern('sh','updatecli apply'))
+  }
+
+  @Test
+  void itUsesCustomCredentialsId() throws Exception {
+    def script = loadScript(scriptName)
+
+    // when calling the "updatecli" function with a custom credentialsId
+    script.call(credentialsId: anotherCredentialsId)
+    printCallStack()
+
+    // Then we expect a successful build
+    assertJobStatusSuccess()
+
+    // And the custom credentialsId is taken in account
+    assertTrue(assertMethodCallContainsPattern('string', anotherCredentialsId))
   }
 }
