@@ -41,7 +41,7 @@ def call(userConfig = [:]) {
       updatecli(updatecliConfig)
       if (env.BRANCH_IS_PRIMARY) {
         // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
-        updatecliConfig = finalConfig.updatecliConfig << [action: 'apply', cronTriggerExpression: finalConfig.updatecliApplyCronTriggerExpression]
+        updatecliConfig = finalConfig.updatecliConfig << [action: 'apply', cronTriggerExpression: finalConfig.updatecliApplyCronTriggerExpression, credentialsId: finalConfig.credentialsId]
         updatecli(updatecliConfig)
       }
     }
