@@ -16,7 +16,6 @@ import java.text.SimpleDateFormat
 
 class BuildDockerAndPublishImageStepTests extends BaseTest {
   static final String scriptName = 'vars/buildDockerAndPublishImage.groovy'
-  Map env = [:]
   static final String testImageName = 'bitcoinMinerImage'
   static final String defaultDockerRegistry = 'jenkinsciinfra'
   static final String fullTestImageName = defaultDockerRegistry + '/' + testImageName

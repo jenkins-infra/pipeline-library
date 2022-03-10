@@ -11,6 +11,8 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
   static final String testImageName = 'myImage'
   static final String anotherCronTriggerExpression = '@daily'
   static final String anotherContainerMemory = '345Mi' // different than the default value specified in ${scriptName}
+  static final String defaultUpdatecliCredentialsId = 'github-app-updatecli-on-jenkins-infra'
+  static final String defaultDockerGitCredentialsId = 'github-app-infra'
   static final String anotherCredentialsId = 'another-github-token'
 
   @Override
@@ -63,7 +65,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', testImageName))
     // And the correct settings
     assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'automaticSemanticVersioning=true'))
-    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'gitCredentials=github-app-infra'))
+    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', "gitCredentials=${defaultDockerGitCredentialsId}"))
 
     // And updatecli(action: 'diff') is called
     assertTrue(assertMethodCallContainsPattern('updatecli', 'action=diff'))
@@ -151,7 +153,6 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('echo', 'WARNING:'))
   }
 
-
   @Test
   void itRunsSuccessfullyWithCustomParameters() throws Exception {
     def script = loadScript(scriptName)
@@ -168,7 +169,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
       buildDockerConfig: [
         useContainer: false,
       ],
-      credentialsId: anotherCredentialsId
+      updatecliCredentialsId: anotherCredentialsId
     )
     printCallStack()
 
@@ -182,7 +183,7 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', testImageName))
     // And the correct fixed settings for buildDockerAndPublishImage
     assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'automaticSemanticVersioning=true'))
-    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'gitCredentials=github-app-infra'))
+    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', "gitCredentials=${defaultDockerGitCredentialsId}"))
     // And the custom settings for buildDockerAndPublishImage
     assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'useContainer=false'))
 
@@ -193,8 +194,8 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('echo', 'WARNING:'))
 
     // And the custom parameters are taken in account for docker image build
-    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', 'github-app-infra'))
-    assertTrue(assertMethodCallContainsPattern('string', anotherCredentialsId))
+    assertTrue(assertMethodCallContainsPattern('buildDockerAndPublishImage', "gitCredentials=${defaultDockerGitCredentialsId}"))
+    assertTrue(assertMethodCallContainsPattern('updatecli', "credentialsId=${anotherCredentialsId}"))
 
     // And the method "updatecli()" is called for "diff" and "apply" actions (both with the same custom parameters)
     assertTrue(assertMethodCallOccurrences('updatecli', 2))
