@@ -21,7 +21,7 @@ def call(userConfig = [:]) {
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
   final Map finalConfig = defaultConfig << userConfig
 
-  if (!finalConfig.imageName) {
+  if (!finalConfig.imageName && !finalConfig.buildDockerConfig.imageName) {
     echo 'ERROR: no imageName provided.'
     currentBuild.result = 'FAILURE'
     return
