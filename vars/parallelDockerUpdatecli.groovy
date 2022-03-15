@@ -1,5 +1,7 @@
 /**
+Note: this shared pipeline is tailored to Jenkins infrastructure usage and thus set some default values which might not be desirable for yours.
 **/
+
 def call(userConfig = [:]) {
   def defaultConfig = [
     imageName: '',
