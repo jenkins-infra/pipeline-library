@@ -39,12 +39,12 @@ def call(userConfig = [:]) {
     },
     'updatecli': {
       // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
-      Map updatecliConfig = finalConfig.updatecliConfig << [action: 'diff', credentialsId: finalConfig.updatecliCredentialsId]
+      Map updatecliConfig = [action: 'diff', credentialsId: finalConfig.updatecliCredentialsId] << finalConfig.updatecliConfig
 
       updatecli(updatecliConfig)
       if (env.BRANCH_IS_PRIMARY) {
         // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
-        updatecliConfig = finalConfig.updatecliConfig << [action: 'apply', cronTriggerExpression: finalConfig.updatecliApplyCronTriggerExpression, credentialsId: finalConfig.updatecliCredentialsId]
+        updatecliConfig = [action: 'apply', cronTriggerExpression: finalConfig.updatecliApplyCronTriggerExpression, credentialsId: finalConfig.updatecliCredentialsId] << finalConfig.updatecliConfig
         updatecli(updatecliConfig)
       }
     }
