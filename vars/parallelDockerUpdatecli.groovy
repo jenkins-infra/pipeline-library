@@ -1,5 +1,7 @@
 /**
+Note: this shared pipeline is tailored to Jenkins infrastructure usage and thus set some default values which might not be desirable for yours.
 **/
+
 def call(userConfig = [:]) {
   def defaultConfig = [
     imageName: '',
@@ -19,7 +21,7 @@ def call(userConfig = [:]) {
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
   final Map finalConfig = defaultConfig << userConfig
 
-  if (!finalConfig.imageName) {
+  if (!finalConfig.imageName && !finalConfig.buildDockerConfig.imageName) {
     echo 'ERROR: no imageName provided.'
     currentBuild.result = 'FAILURE'
     return
@@ -37,12 +39,12 @@ def call(userConfig = [:]) {
     },
     'updatecli': {
       // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
-      Map updatecliConfig = finalConfig.updatecliConfig << [action: 'diff', credentialsId: finalConfig.updatecliCredentialsId]
+      Map updatecliConfig = [action: 'diff', credentialsId: finalConfig.updatecliCredentialsId] << finalConfig.updatecliConfig
 
       updatecli(updatecliConfig)
       if (env.BRANCH_IS_PRIMARY) {
         // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
-        updatecliConfig = finalConfig.updatecliConfig << [action: 'apply', cronTriggerExpression: finalConfig.updatecliApplyCronTriggerExpression, credentialsId: finalConfig.updatecliCredentialsId]
+        updatecliConfig = [action: 'apply', cronTriggerExpression: finalConfig.updatecliApplyCronTriggerExpression, credentialsId: finalConfig.updatecliCredentialsId] << finalConfig.updatecliConfig
         updatecli(updatecliConfig)
       }
     }
