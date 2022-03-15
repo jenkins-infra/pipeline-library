@@ -1,5 +1,6 @@
 /**
 terraform.groovy: Please look at https://github.com/jenkins-infra/shared-tools/tree/main/terraform#jenkins-pipeline for documentation and usage.
+Note: this shared pipeline is tailored to Jenkins infrastructure usage and thus set some default values which might not be desirable for yours.
 **/
 
 def call(userConfig = [:]) {
@@ -27,7 +28,7 @@ def call(userConfig = [:]) {
   final String sharedToolsSubDir = '.shared-tools'
   final String makeCliCmd = "make --directory=${sharedToolsSubDir}/terraform/"
 
-  // Only define a cron trigger on the "principal" branch
+  // Only define a cron trigger on the primary branch
   if (isBuildOnProductionBranch && finalConfig.cronTriggerExpression) {
     properties([
       pipelineTriggers([
