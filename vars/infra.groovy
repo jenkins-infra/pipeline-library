@@ -28,6 +28,22 @@ Object withDockerCredentials(Closure body) {
   }
 }
 
+Object withDockerPushCredentials(Closure body) {
+    orgAndCredentialsId = new InfraConfig(env).getDockerPushOrgAndCredentialsId()
+    env.DOCKERHUB_ORGANISATION = orgAndCredentialsId.organisation
+    withCredentials([[$class: 'ZipFileBinding', credentialsId: orgAndCredentialsId.credentialId, variable: 'DOCKER_CONFIG']]) {
+        return body.call()
+    }
+}
+
+Object withDockerPullCredentials(Closure body) {
+    orgAndCredentialsId = new InfraConfig(env).getDockerPullOrgAndCredentialsId()
+    env.DOCKERHUB_ORGANISATION = orgAndCredentialsId.organisation
+    withCredentials([[$class: 'ZipFileBinding', credentialsId: orgAndCredentialsId.credentialId, variable: 'DOCKER_CONFIG']]) {
+        return body.call()
+    }
+}
+
 Object checkoutSCM(String repo = null) {
   // Enable long paths to avoid problems with tests on Windows agents
   if (!isUnix()) {
