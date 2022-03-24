@@ -34,6 +34,9 @@ Object checkout(String repo = null) {
 }
 
 Object checkoutSCM(String repo = null) {
+    // Enable long paths to avoid problems with tests on Windows agents 
+    git config core.longpaths true
+
     if (env.BRANCH_NAME) {
         checkout scm
     } else if ((env.BRANCH_NAME == null) && (repo)) {
