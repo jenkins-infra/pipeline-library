@@ -18,29 +18,30 @@ Boolean isInfra() {
 }
 
 Object withDockerCredentials(Closure body) {
-  if (new InfraConfig(env).isRunningOnJenkinsInfra()) {
-    env.DOCKERHUB_ORGANISATION = isTrusted() ? 'jenkins' : 'jenkins4eval'
-    withCredentials([[$class: 'ZipFileBinding', credentialsId: 'jenkins-dockerhub', variable: 'DOCKER_CONFIG']]) {
-      return body.call()
-    }
-  } else {
-    echo 'Cannot use Docker credentials outside of jenkins infra environment'
-  }
+    return withDockerPushCredentials(body)
 }
 
 Object withDockerPushCredentials(Closure body) {
     orgAndCredentialsId = new InfraConfig(env).getDockerPushOrgAndCredentialsId()
-    env.DOCKERHUB_ORGANISATION = orgAndCredentialsId.organisation
-    withCredentials([[$class: 'ZipFileBinding', credentialsId: orgAndCredentialsId.credentialId, variable: 'DOCKER_CONFIG']]) {
-        return body.call()
+    if (orgAndCredentialsId.error) {
+        echo orgAndCredentialsId.msg
+    } else {
+        env.DOCKERHUB_ORGANISATION = orgAndCredentialsId.organisation
+        withCredentials([[$class: 'ZipFileBinding', credentialsId: orgAndCredentialsId.credentialId, variable: 'DOCKER_CONFIG']]) {
+            return body.call()
+        }
     }
 }
 
 Object withDockerPullCredentials(Closure body) {
     orgAndCredentialsId = new InfraConfig(env).getDockerPullOrgAndCredentialsId()
-    env.DOCKERHUB_ORGANISATION = orgAndCredentialsId.organisation
-    withCredentials([[$class: 'ZipFileBinding', credentialsId: orgAndCredentialsId.credentialId, variable: 'DOCKER_CONFIG']]) {
-        return body.call()
+    if (orgAndCredentialsId.error) {
+        echo orgAndCredentialsId.msg
+    } else {
+        env.DOCKERHUB_ORGANISATION = orgAndCredentialsId.organisation
+        withCredentials([[$class: 'ZipFileBinding', credentialsId: orgAndCredentialsId.credentialId, variable: 'DOCKER_CONFIG']]) {
+            return body.call()
+        }
     }
 }
 

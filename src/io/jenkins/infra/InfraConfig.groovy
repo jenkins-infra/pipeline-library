@@ -47,29 +47,31 @@ class InfraConfig implements Serializable {
   def getDockerPullOrgAndCredentialsId() {
     switch(jenkinsHostname){
       case "ci.jenkins.io": 
-        return [organisation:"cijenkinsioinfra", credentialId: "cijenkinsioinfra-dockerhub-pull"]
+        return [error:false, organisation:"cijenkinsioinfra", credentialId:"cijenkinsioinfra-dockerhub-pull"]
         break;
       case "trusted.ci.jenkins.io": 
-        return [organisation:"trustedcijenkinsio", credentialId: "trustedcijenkinsio-dockerhub-pull"]
+        return [error:false, organisation:"trustedcijenkinsio", credentialId:"trustedcijenkinsio-dockerhub-pull"]
         break;
       case "infra.ci.jenkins.io": 
-        return [organisation:"infracijenkinsio", credentialId: "infracijenkinsio-dockerhub-pull"]
+        return [error:false, organisation:"infracijenkinsio", credentialId:"infracijenkinsio-dockerhub-pull"]
         break;
     }
+    return [error:true, msg:"Cannot use Docker credentials outside of jenkins infra environment"]
   }
 
   // Returns the Docker Informations for pushing images
   def getDockerPushOrgAndCredentialsId() {
     switch(jenkinsHostname){
       case "ci.jenkins.io": 
-        return [organisation:"jenkins4eval", credentialId: "jenkins4eval-dockerhub-push"]
+        return [error:false, organisation:"jenkins4eval", credentialId:"jenkins4eval-dockerhub-push"]
         break;
       case "trusted.ci.jenkins.io": 
-        return [organisation:"jenkins", credentialId: "jenkins-dockerhub-push"]
+        return [error:false, organisation:"jenkins", credentialId:"jenkins-dockerhub-push"]
         break;
       case "infra.ci.jenkins.io": 
-        return [organisation:"jenkinsciinfra", credentialId: "jenkinsciinfra-dockerhub-push"]
+        return [error:false, organisation:"jenkinsciinfra", credentialId:"jenkinsciinfra-dockerhub-push"]
         break;
     }
+    return [error:true, msg:"Cannot use Docker credentials outside of jenkins infra environment"]
   }
 }
