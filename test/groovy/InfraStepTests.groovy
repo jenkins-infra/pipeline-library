@@ -82,7 +82,7 @@ class InfraStepTests extends BaseTest {
     }
     printCallStack()
     assertFalse(isOK)
-    assertTrue(assertMethodCallContainsPattern('echo', 'Cannot use Docker credentials outside of jenkins infra environment'))
+    assertTrue(assertMethodCallContainsPattern('echo', 'Cannot use Docker credentials outside of jenkins infra environments'))
     assertJobStatusSuccess()
   }
 
@@ -109,7 +109,7 @@ class InfraStepTests extends BaseTest {
     }
     printCallStack()
     assertFalse(isOK)
-    assertTrue(assertMethodCallContainsPattern('echo', 'Cannot use Docker credentials outside of jenkins infra environment'))
+    assertTrue(assertMethodCallContainsPattern('echo', 'Cannot use Docker credentials outside of jenkins infra environments'))
     assertJobStatusSuccess()
   }
 

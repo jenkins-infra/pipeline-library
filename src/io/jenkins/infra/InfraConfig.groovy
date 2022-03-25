@@ -54,8 +54,9 @@ class InfraConfig implements Serializable {
       case "infra.ci.jenkins.io": 
         return [error: false, organisation: "infracijenkinsio", credentialId: "infracijenkinsio-dockerhub-pull"]
         break;
+      default:
+        return [error: true, msg: "Cannot use Docker credentials outside of jenkins infra environments"]
     }
-    return [error: true, msg: "Cannot use Docker credentials outside of jenkins infra environment"]
   }
 
   // Returns the Docker Informations for pushing images
@@ -70,7 +71,8 @@ class InfraConfig implements Serializable {
       case "infra.ci.jenkins.io": 
         return [error: false, organisation: "jenkinsciinfra", credentialId: "jenkinsciinfra-dockerhub-push"]
         break;
+      default:
+        return [error: true, msg: "Cannot use Docker credentials outside of jenkins infra environments"]
     }
-    return [error: true, msg: "Cannot use Docker credentials outside of jenkins infra environment"]
   }
 }
