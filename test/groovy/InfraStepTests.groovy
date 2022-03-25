@@ -38,8 +38,6 @@ class InfraStepTests extends BaseTest {
     script.withDockerCredentials() {
       isOK = true
     }
-    print "as it been executed within the dockers credentials ? "
-    print isOK
     printCallStack()
     assertTrue(isOK)
     assertJobStatusSuccess()
