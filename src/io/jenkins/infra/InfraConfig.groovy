@@ -14,7 +14,7 @@ class InfraConfig implements Serializable {
   }
 
   Boolean isJenkinsURLcontains(String search) {
-    return jenkinsURL.startsWith('https://'+search+'.jenkins.io/') || jenkinsURL.startsWith('https://'+search+'.jenkins.io:')
+    return jenkinsURL.startsWith('https://' + search + '.jenkins.io/') || jenkinsURL.startsWith('https://' + search + '.jenkins.io:')
   }
 
   Boolean isCI() {
