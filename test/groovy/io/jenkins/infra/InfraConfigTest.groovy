@@ -64,8 +64,8 @@ class InfraConfigTest {
       assertFalse(infraConfig.isCI())
       assertFalse(infraConfig.isRunningOnJenkinsInfra())
       assertEquals('jenkins4eval', infraConfig.getDockerRegistry())
-      assertFalse(infraConfig.getDockerPullOrgAndCredentialsId())
-      assertFalse(infraConfig.getDockerPushOrgAndCredentialsId())
+      assertTrue(infraConfig.getDockerPullOrgAndCredentialsId().error)
+      assertTrue(infraConfig.getDockerPushOrgAndCredentialsId().error)
     }
 
   @Test
@@ -77,8 +77,8 @@ class InfraConfigTest {
       assertFalse(infraConfig.isCI())
       assertFalse(infraConfig.isRunningOnJenkinsInfra())
       assertEquals('jenkins4eval', infraConfig.getDockerRegistry())
-      assertFalse(infraConfig.getDockerPullOrgAndCredentialsId())
-      assertFalse(infraConfig.getDockerPushOrgAndCredentialsId())
+      assertTrue(infraConfig.getDockerPullOrgAndCredentialsId().error)
+      assertTrue(infraConfig.getDockerPushOrgAndCredentialsId().error)
     }
 
     @Test
@@ -90,8 +90,8 @@ class InfraConfigTest {
       assertFalse(infraConfig.isCI())
       assertFalse(infraConfig.isRunningOnJenkinsInfra())
       assertEquals('jenkins4eval', infraConfig.getDockerRegistry())
-      assertFalse(infraConfig.getDockerPullOrgAndCredentialsId())
-      assertFalse(infraConfig.getDockerPushOrgAndCredentialsId())
+      assertTrue(infraConfig.getDockerPullOrgAndCredentialsId().error)
+      assertTrue(infraConfig.getDockerPushOrgAndCredentialsId().error)
     }
 
     assertFalse(infraConfig.isTrusted())
