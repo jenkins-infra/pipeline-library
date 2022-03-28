@@ -7,7 +7,7 @@ def call(userConfig = [:]) {
     action: 'diff', // Updatecli subcommand to execute
     config: './updatecli/updatecli.d', // Config manifest used by updatecli (can be a file or a directory)
     values: './updatecli/values.yaml', // Values file used by updatecli
-    updatecliDockerImage: 'jenkinsciinfra/helmfile:2.3.16', // Container image to use for running updatecli
+    updatecliDockerImage: 'jenkinsciinfra/helmfile:2.3.18', // Container image to use for running updatecli
     containerMemory: '512Mi', // When using 'updatecliDockerImage', this is the memory limit+request of the container
     cronTriggerExpression: '', // When specified, it enables cron trigger for the calling pipeline
     credentialsId: 'github-app-updatecli-on-jenkins-infra', // githubApp or usernamePassword credentials id to use to get an Access Token. The corresponding populated env vars are USERNAME_VALUE & UPDATECLI_GITHUB_TOKEN
