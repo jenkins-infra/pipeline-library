@@ -203,5 +203,5 @@ def getInfraSharedTools(String sharedToolsSubDir) {
   checkout changelog: false, poll: false,
     scm: [$class: 'GitSCM', branches: [[name: '*/main']],
     extensions: [[$class: 'CleanBeforeCheckout', deleteUntrackedNestedRepositories: true], [$class: 'RelativeTargetDirectory', relativeTargetDir: sharedToolsSubDir],
-      [$class: 'GitSCMStatusChecksExtension', skip: true]], userRemoteConfigs: [[credentialsId: 'github-app-infra', url: 'https://github.com/jenkins-infra/shared-tools.git']]]
+      [$class: 'GitSCMStatusChecksExtension', skip: true]], userRemoteConfigs: [[credentialsId: 'github-app-updatecli-on-jenkins-infra', url: 'https://github.com/jenkins-infra/shared-tools.git']]]
 }
