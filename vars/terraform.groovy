@@ -106,12 +106,38 @@ def call(userConfig = [:]) {
             }
 
             if (isBuildOnChangeRequest) {
-              stage('🗣 Notify User on the PR ') {
+              stage('🗣 Notify User on the PR') {
                 final String planFileUrl = "${env.BUILD_URL}artifact/terraform-plan-for-humans.txt"
                 publishChecks name: "terraform-plan",
                   title: "Terraform plan for this change request",
                   text: "The terraform plan for this change request can be found at <${planFileUrl}>.",
                   detailsURL: planFileUrl
+              }
+              stage('💸 Report estimated costs') {
+                try {
+                  Boolean commentReport = false
+                  // On Azure we can use the terraform plan to estimate the costs as it doesn't contains the most sensible secrets like AWS
+                  if (env.GIT_URL.contains('jenkins-infra/azure')) {
+                    final String planFileUrl = "${env.BUILD_URL}artifact/terraform-plan-for-humans.txt"
+                    sh "terraform show -json ${planFileUrl} > plan.json"
+                    sh 'infracost breakdown --path plan.json --show-skipped --format json --out-file infracost.json'
+                    commentReport = true
+                  }
+                  // On other supported terraform projects, we're using the experimental HCL parser instead
+                  // so infracost doesn't need the terraform plan and thus doesn't have access to any sensitive values
+                  // As soon as the parser gets out of experimental state, we can use this safer method only
+                  if (env.GIT_URL.contains('jenkins-infra/aws')) {
+                    sh 'infracost breakdown --path . --terraform-parce-hcl --show-skipped --format json --out-file infracost.json'
+                    commentReport = true
+                  }
+                  // Convert the report as github comment
+                  if (commentReport) {
+                    sh 'export INFRACOST_REPORT=$(infracost output --path infracost.json --format github-comment --show-skipped)'
+                    pullRequest.comment(env.INFRACOST_REPORT)
+                  }
+                } catch(e) {
+                  echo 'Warning: an error occurred during cost estimation, continuing the pipeline.'
+                }
               }
             }
 

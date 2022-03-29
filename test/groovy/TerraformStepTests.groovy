@@ -5,6 +5,12 @@ import mock.CurrentBuild
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertTrue
 
+class PullRequestMock {
+  def comment(String message) {
+
+  }
+}
+
 class TerraformStepTests extends BaseTest {
   static final String scriptName = 'vars/terraform.groovy'
   static final String dummyBuildUrl = 'https://ci.jenkins.io/dummy/jobs/main/1/' // Trailing slash is mandatory
@@ -30,8 +36,10 @@ class TerraformStepTests extends BaseTest {
       ['hudson.triggers.TimerTrigger']
     ))
     addEnvVar('BRANCH_NAME', 'main')
+    addEnvVar('GIT_URL', 'jenkins-infra/azure')
 
     helper.registerAllowedMethod('ansiColor', [String.class, Closure.class], { s, body ->body() })
+    binding.setVariable('pullRequest', new PullRequestMock())
 
     // Used by the publish checks
     addEnvVar('BUILD_URL', dummyBuildUrl)
@@ -62,9 +70,10 @@ class TerraformStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('stage', 'Generate Terraform Plan'))
     assertTrue(assertMethodCallContainsPattern('sh', 'make --directory=.shared-tools/terraform/ plan'))
     assertTrue(assertMethodCallContainsPattern('archiveArtifacts', 'terraform-plan-for-humans.txt'))
-    // Default is the principal branch: not a PR, no notification
+    // Default is the principal branch: not a PR, no notification, no estimated costs report
     assertFalse(assertMethodCallContainsPattern('stage', 'Notify User on the PR'))
     assertFalse(assertMethodCallContainsPattern('publishChecks', dummyBuildUrl + 'artifact/terraform-plan-for-humans.txt'))
+    assertFalse(assertMethodCallContainsPattern('stage', 'Report estimated costs'))
     // Despite being on the principal branch, default build trigger is "timer"
     assertFalse(assertMethodCallContainsPattern('stage', 'Waiting for User Input (Manual Approval)'))
     assertFalse(assertMethodCallContainsPattern('input', 'Should we apply these changes to production?'))
@@ -129,9 +138,10 @@ class TerraformStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh', 'make --directory=.shared-tools/terraform/ plan'))
     assertTrue(assertMethodCallContainsPattern('archiveArtifacts', 'terraform-plan-for-humans.txt'))
 
-    // It's a change request: we expect a user notify
+    // It's a change request: we expect a user notify and an estimated costs report
     assertTrue(assertMethodCallContainsPattern('stage', 'Notify User on the PR'))
     assertTrue(assertMethodCallContainsPattern('publishChecks', dummyBuildUrl + 'artifact/terraform-plan-for-humans.txt'))
+    assertTrue(assertMethodCallContainsPattern('stage', 'Report estimated costs'))
     // No User Approval on change requests
     assertFalse(assertMethodCallContainsPattern('stage', 'Waiting for User Input (Manual Approval)'))
     assertFalse(assertMethodCallContainsPattern('input', 'Should we apply these changes to production?'))
@@ -174,9 +184,10 @@ class TerraformStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh', 'make --directory=.shared-tools/terraform/ plan'))
     assertTrue(assertMethodCallContainsPattern('archiveArtifacts', 'terraform-plan-for-humans.txt'))
 
-    // Default is the principal branch: not a PR, no notification
+    // Default is the principal branch: not a PR, no notification, no estimated costs report
     assertFalse(assertMethodCallContainsPattern('stage', 'Notify User on the PR'))
     assertFalse(assertMethodCallContainsPattern('publishChecks', dummyBuildUrl + 'artifact/terraform-plan-for-humans.txt'))
+    assertFalse(assertMethodCallContainsPattern('stage', 'Report estimated costs'))
     // Despite being on the principal branch, default build trigger is "timer"
     assertFalse(assertMethodCallContainsPattern('stage', 'Waiting for User Input (Manual Approval)'))
     assertFalse(assertMethodCallContainsPattern('input', 'Should we apply these changes to production?'))
