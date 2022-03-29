@@ -69,7 +69,7 @@ class InfraConfig implements Serializable {
         return [error: false, organisation: "jenkins", credentialId: "jenkins-dockerhub-push"]
         break;
       case "infra.ci.jenkins.io": 
-        return [error: false, organisation: "jenkinsciinfra", credentialId: "jenkinsciinfra-dockerhub-push"]
+        return [error: false, organisation: "jenkinsinfraadmin", credentialId: "jenkinsinfraadmin-dockerhub-push"]
         break;
       default:
         return [error: true, msg: "Cannot use Docker credentials outside of jenkins infra environments"]
