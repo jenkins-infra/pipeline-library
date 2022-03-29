@@ -138,6 +138,7 @@ def call(userConfig = [:]) {
                 } catch(e) {
                   echo 'Warning: an error occurred during cost estimation, continuing the pipeline.'
                 }
+              }
             }
 
             // Only ask for manual approval when the build was manually launched by a human
