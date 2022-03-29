@@ -123,7 +123,7 @@ def call(userConfig = [:]) {
                     sh "terraform show -json ${planFileUrl} > plan.json"
                     sh 'infracost breakdown --path plan.json --show-skipped --format json --out-file infracost.json'
                     // Also try the experimental HCL method for comparison and upstream contrib
-                    sh 'infracost breakdown --path . --terraform-parce-hcl --show-skipped --format json --out-file infracost-hcl.json'
+                    sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost-hcl.json'
                     commentReport = true
                     commentComparison = true
                   }
@@ -131,7 +131,7 @@ def call(userConfig = [:]) {
                   // so infracost doesn't need the terraform plan and thus doesn't have access to any sensitive values
                   // As soon as the parser gets out of experimental state, we can use this safer method only
                   if (env.GIT_URL.contains('jenkins-infra/azure')) {
-                    sh 'infracost breakdown --path . --terraform-parce-hcl --show-skipped --format json --out-file infracost.json'
+                    sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost.json'
                     commentReport = true
                   }
                   // Convert the report as github comment
