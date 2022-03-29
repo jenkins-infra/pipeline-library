@@ -65,7 +65,7 @@ class TerraformStepTests extends BaseTest {
     // Default is the principal branch: not a PR, no notification, no estimated costs report
     assertFalse(assertMethodCallContainsPattern('stage', 'Notify User on the PR'))
     assertFalse(assertMethodCallContainsPattern('publishChecks', dummyBuildUrl + 'artifact/terraform-plan-for-humans.txt'))
-    assertFalse(assertMethodCallContainsPattern('stage', 'Estimated Costs Report'))
+    assertFalse(assertMethodCallContainsPattern('stage', 'Report estimated costs'))
     // Despite being on the principal branch, default build trigger is "timer"
     assertFalse(assertMethodCallContainsPattern('stage', 'Waiting for User Input (Manual Approval)'))
     assertFalse(assertMethodCallContainsPattern('input', 'Should we apply these changes to production?'))
@@ -133,7 +133,7 @@ class TerraformStepTests extends BaseTest {
     // It's a change request: we expect a user notify and an estimated costs report
     assertTrue(assertMethodCallContainsPattern('stage', 'Notify User on the PR'))
     assertTrue(assertMethodCallContainsPattern('publishChecks', dummyBuildUrl + 'artifact/terraform-plan-for-humans.txt'))
-    assertTrue(assertMethodCallContainsPattern('stage', 'Estimated Costs Report'))
+    assertTrue(assertMethodCallContainsPattern('stage', 'Report estimated costs'))
     // No User Approval on change requests
     assertFalse(assertMethodCallContainsPattern('stage', 'Waiting for User Input (Manual Approval)'))
     assertFalse(assertMethodCallContainsPattern('input', 'Should we apply these changes to production?'))
@@ -179,7 +179,7 @@ class TerraformStepTests extends BaseTest {
     // Default is the principal branch: not a PR, no notification, no estimated costs report
     assertFalse(assertMethodCallContainsPattern('stage', 'Notify User on the PR'))
     assertFalse(assertMethodCallContainsPattern('publishChecks', dummyBuildUrl + 'artifact/terraform-plan-for-humans.txt'))
-    assertFalse(assertMethodCallContainsPattern('stage', 'Estimated Costs Report'))
+    assertFalse(assertMethodCallContainsPattern('stage', 'Report estimated costs'))
     // Despite being on the principal branch, default build trigger is "timer"
     assertFalse(assertMethodCallContainsPattern('stage', 'Waiting for User Input (Manual Approval)'))
     assertFalse(assertMethodCallContainsPattern('input', 'Should we apply these changes to production?'))
