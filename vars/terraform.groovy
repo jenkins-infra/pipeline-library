@@ -116,24 +116,35 @@ def call(userConfig = [:]) {
               stage('💸 Report estimated costs') {
                 try {
                   Boolean commentReport = false
-                  // On Azure we can use the terraform plan to estimate the costs as it doesn't contains the most sensible secrets like AWS
-                  if (env.GIT_URL.contains('jenkins-infra/azure')) {
+                  Boolean commentComparison = false
+                  // On AWS we can use the terraform plan to estimate the costs as it doesn't contains most sensible secrets
+                  if (env.GIT_URL.contains('jenkins-infra/aws')) {
                     final String planFileUrl = "${env.BUILD_URL}artifact/terraform-plan-for-humans.txt"
                     sh "terraform show -json ${planFileUrl} > plan.json"
                     sh 'infracost breakdown --path plan.json --show-skipped --format json --out-file infracost.json'
+                    // Also try the experimental HCL method for comparison and upstream contrib
+                    sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost-hcl.json'
                     commentReport = true
+                    commentComparison = true
                   }
                   // On other supported terraform projects, we're using the experimental HCL parser instead
                   // so infracost doesn't need the terraform plan and thus doesn't have access to any sensitive values
                   // As soon as the parser gets out of experimental state, we can use this safer method only
-                  if (env.GIT_URL.contains('jenkins-infra/aws')) {
-                    sh 'infracost breakdown --path . --terraform-parce-hcl --show-skipped --format json --out-file infracost.json'
+                  if (env.GIT_URL.contains('jenkins-infra/azure')) {
+                    sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost.json'
                     commentReport = true
                   }
                   // Convert the report as github comment
                   if (commentReport) {
-                    sh 'export INFRACOST_REPORT=$(infracost output --path infracost.json --format github-comment --show-skipped)'
+                    sh 'infracost output --path infracost.json --format github-comment --show-skipped --out-file github.md'
+                    sh 'export INFRACOST_REPORT=$(cat github.md)'
                     pullRequest.comment(env.INFRACOST_REPORT)
+                  }
+                  // Compare the outputs of the two methods
+                  if (commentComparison) {
+                    sh 'infracost output --path infracost-hcl.json --format github-comment --show-skipped --out-file github-hcl.md'
+                    sh 'export INFRACOST_COMPARISON=$(git diff --no-index github.md github-hcl.md)'
+                    pullRequest.comment("Comparison between infracost plan & HCL methods: <details>\n\n```diff\n${env.INFRACOST_COMPARISON}\n```\n\n</details>")
                   }
                 } catch(e) {
                   echo 'Warning: an error occurred during cost estimation, continuing the pipeline.'
