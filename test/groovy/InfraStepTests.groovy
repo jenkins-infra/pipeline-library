@@ -58,8 +58,6 @@ class InfraStepTests extends BaseTest {
   }
 
   @Test
-<<<<<<< HEAD
-=======
   void testWithDockerPushCredentials() throws Exception {
     def script = loadScript(scriptName)
     env.JENKINS_URL = 'https://ci.jenkins.io/'
@@ -116,7 +114,6 @@ class InfraStepTests extends BaseTest {
 
   @Test
   @Ignore("Some stackoverflow issues")
->>>>>>> 3d3f99e (feat:unit test for DockerCredential Pull and Push)
   void testCheckoutWithEnvVariable() throws Exception {
     def script = loadScript(scriptName)
     env.BRANCH_NAME = 'BRANCH'
