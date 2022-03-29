@@ -29,10 +29,6 @@ Object withDockerCredentials(Closure body) {
     }
 }
 
-Object checkout(String repo = null) {
-    checkoutSCM(repo);
-}
-
 Object checkoutSCM(String repo = null) {
     // Enable long paths to avoid problems with tests on Windows agents 
     if (!isUnix()) {
