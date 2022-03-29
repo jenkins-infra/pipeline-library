@@ -5,6 +5,12 @@ import mock.CurrentBuild
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertTrue
 
+class PullRequestMock {
+  def comment(String message) {
+
+  }
+}
+
 class TerraformStepTests extends BaseTest {
   static final String scriptName = 'vars/terraform.groovy'
   static final String dummyBuildUrl = 'https://ci.jenkins.io/dummy/jobs/main/1/' // Trailing slash is mandatory
@@ -33,7 +39,7 @@ class TerraformStepTests extends BaseTest {
     addEnvVar('GIT_URL', 'jenkins-infra/azure')
 
     helper.registerAllowedMethod('ansiColor', [String.class, Closure.class], { s, body ->body() })
-    helper.registerAllowedMethod('pullRequest', [String.class, Closure.class], { s, body ->body() })
+    binding.setVariable('pullRequest', new PullRequestMock())
 
     // Used by the publish checks
     addEnvVar('BUILD_URL', dummyBuildUrl)
