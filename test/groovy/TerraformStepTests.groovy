@@ -30,6 +30,7 @@ class TerraformStepTests extends BaseTest {
       ['hudson.triggers.TimerTrigger']
     ))
     addEnvVar('BRANCH_NAME', 'main')
+    addEnvVar('GIT_URL', 'jenkins-infra/azure')
 
     helper.registerAllowedMethod('ansiColor', [String.class, Closure.class], { s, body ->body() })
 
