@@ -33,6 +33,7 @@ class TerraformStepTests extends BaseTest {
     addEnvVar('GIT_URL', 'jenkins-infra/azure')
 
     helper.registerAllowedMethod('ansiColor', [String.class, Closure.class], { s, body ->body() })
+    helper.registerAllowedMethod('pullRequest', [String.class, Closure.class], { s, body ->body() })
 
     // Used by the publish checks
     addEnvVar('BUILD_URL', dummyBuildUrl)
