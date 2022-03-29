@@ -58,7 +58,6 @@ class InfraStepTests extends BaseTest {
   }
 
   @Test
-  @Ignore("Some stackoverflow issues")
   void testCheckoutWithEnvVariable() throws Exception {
     def script = loadScript(scriptName)
     env.BRANCH_NAME = 'BRANCH'
