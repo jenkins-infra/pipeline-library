@@ -117,8 +117,9 @@ def call(userConfig = [:]) {
                 // try {
                   Boolean commentReport = false
                   Boolean commentComparison = false
+                  final String gitUrl = env.GIT_URL
                   // On AWS we can use the terraform plan to estimate the costs as it doesn't contains most sensible secrets
-                  if (env.GIT_URL.contains('jenkins-infra/aws')) {
+                  if (gitUrl.contains('jenkins-infra/aws')) {
                     final String planFileUrl = "${env.BUILD_URL}artifact/terraform-plan-for-humans.txt"
                     sh "terraform show -json ${planFileUrl} > plan.json"
                     sh 'infracost breakdown --path plan.json --show-skipped --format json --out-file infracost.json'
@@ -130,7 +131,7 @@ def call(userConfig = [:]) {
                   // On other supported terraform projects, we're using the experimental HCL parser instead
                   // so infracost doesn't need the terraform plan and thus doesn't have access to any sensitive values
                   // As soon as the parser gets out of experimental state, we can use this safer method only
-                  if (env.GIT_URL.contains('jenkins-infra/azure')) {
+                  if (gitUrl.contains('jenkins-infra/azure')) {
                     sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost.json'
                     commentReport = true
                   }
