@@ -117,8 +117,7 @@ def call(userConfig = [:]) {
                 // try {
                   Boolean commentReport = false
                   Boolean commentComparison = false
-                  sh 'env | sort'
-                  final String gitUrl = env.GIT_URL
+                  final String gitUrl = env.CHANGE_URL
                   // On AWS we can use the terraform plan to estimate the costs as it doesn't contains most sensible secrets
                   //if (gitUrl.contains('jenkins-infra/aws')) {
                     final String planFileUrl = "${env.BUILD_URL}artifact/terraform-plan-for-humans.txt"
