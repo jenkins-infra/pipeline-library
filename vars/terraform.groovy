@@ -114,7 +114,7 @@ def call(userConfig = [:]) {
                   detailsURL: planFileUrl
               }
               stage('💸 Report estimated costs') {
-                try {
+                // try {
                   Boolean commentReport = false
                   Boolean commentComparison = false
                   // On AWS we can use the terraform plan to estimate the costs as it doesn't contains most sensible secrets
@@ -146,9 +146,9 @@ def call(userConfig = [:]) {
                     sh 'export INFRACOST_COMPARISON=$(git diff --no-index github.md github-hcl.md)'
                     pullRequest.comment("Comparison between infracost plan & HCL methods: <details>\n\n```diff\n${env.INFRACOST_COMPARISON}\n```\n\n</details>")
                   }
-                } catch(e) {
-                  echo 'Warning: an error occurred during cost estimation, continuing the pipeline.'
-                }
+                // } catch(e) {
+                //   echo 'Warning: an error occurred during cost estimation, continuing the pipeline.'
+                // }
               }
             }
 
