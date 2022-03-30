@@ -119,7 +119,7 @@ def call(userConfig = [:]) {
                   Boolean commentComparison = false
                   final String gitUrl = env.GIT_URL
                   // On AWS we can use the terraform plan to estimate the costs as it doesn't contains most sensible secrets
-                  if (gitUrl.contains('jenkins-infra/aws')) {
+                  //if (gitUrl.contains('jenkins-infra/aws')) {
                     final String planFileUrl = "${env.BUILD_URL}artifact/terraform-plan-for-humans.txt"
                     sh "terraform show -json ${planFileUrl} > plan.json"
                     sh 'infracost breakdown --path plan.json --show-skipped --format json --out-file infracost.json'
@@ -127,14 +127,14 @@ def call(userConfig = [:]) {
                     sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost-hcl.json'
                     commentReport = true
                     commentComparison = true
-                  }
+                  //}
                   // On other supported terraform projects, we're using the experimental HCL parser instead
                   // so infracost doesn't need the terraform plan and thus doesn't have access to any sensitive values
                   // As soon as the parser gets out of experimental state, we can use this safer method only
-                  if (gitUrl.contains('jenkins-infra/azure')) {
-                    sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost.json'
-                    commentReport = true
-                  }
+                  // if (gitUrl.contains('jenkins-infra/azure')) {
+                  //   sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost.json'
+                  //   commentReport = true
+                  // }
                   // Convert the report as github comment
                   if (commentReport) {
                     sh 'infracost output --path infracost.json --format github-comment --show-skipped --out-file github.md'
