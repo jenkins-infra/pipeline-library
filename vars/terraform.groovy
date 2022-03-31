@@ -138,11 +138,8 @@ def call(userConfig = [:]) {
                   // Convert the report as github comment
                   if (commentReport) {
                     sh 'infracost output --path infracost.json --format github-comment --show-skipped --out-file github.md'
-                    sh 'export INFRACOST_REPORT=$(cat github.md)'
-                    final String report = env.INFRACOST_REPORT
-                    pullRequest.comment("bidule")
-                    sh 'env|sort'
-                    echo report
+                    final String report = readFile(file: 'github.md')
+                    pullRequest.comment(report)
                   }
                   // // Compare the outputs of the two methods
                   // if (commentComparison) {
