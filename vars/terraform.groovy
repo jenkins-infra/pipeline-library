@@ -141,12 +141,12 @@ def call(userConfig = [:]) {
                     sh 'export INFRACOST_REPORT=$(cat github.md)'
                     pullRequest.comment(env.INFRACOST_REPORT)
                   }
-                  // Compare the outputs of the two methods
-                  if (commentComparison) {
-                    sh 'infracost output --path infracost-hcl.json --format github-comment --show-skipped --out-file github-hcl.md'
-                    sh 'export INFRACOST_COMPARISON=$(git diff --no-index github.md github-hcl.md)'
-                    pullRequest.comment("Comparison between infracost plan & HCL methods: <details>\n\n%60%60%60diff\n${env.INFRACOST_COMPARISON}\n%60%60%60\n\n</details>")
-                  }
+                  // // Compare the outputs of the two methods
+                  // if (commentComparison) {
+                  //   sh 'infracost output --path infracost-hcl.json --format github-comment --show-skipped --out-file github-hcl.md'
+                  //   sh 'export INFRACOST_COMPARISON=$(git diff --no-index github.md github-hcl.md)'
+                  //   pullRequest.comment("Comparison between infracost plan & HCL methods: <details>\n\n%60%60%60diff\n${env.INFRACOST_COMPARISON}\n%60%60%60\n\n</details>")
+                  // }
                 // } catch(e) {
                 //   echo 'Warning: an error occurred during cost estimation, continuing the pipeline.'
                 // }
