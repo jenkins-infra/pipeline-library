@@ -66,27 +66,20 @@ def call(Map params = [:]) {
                             isMaven = fileExists('pom.xml')
                             incrementals = fileExists('.mvn/extensions.xml') &&
                                     readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')
+                            final String gitUnavailableMessage = "[buildPlugin] Git CLI may not be available"
                             if (incrementals) { // Incrementals needs 'git status -s' to be empty at start of job
                                 if (isUnix()) {
-                                    sh(script: 'git clean -xffd > /dev/null 2>&1',
-                                       label: 'Clean for incrementals',
-                                       returnStatus: true) // Ignore failure if CLI git is not available
+                                    sh 'git clean -xffd || echo "${gitUnavailableMessage}"'
                                 } else {
-                                    bat(script: 'git clean -xffd 1> nul 2>&1',
-                                        label: 'Clean for incrementals',
-                                        returnStatus: true) // Ignore failure if CLI git is not available
+                                    bat 'git clean -xffd || echo "${gitUnavailableMessage}"'
                                 }
                             }
 
                             if (gitDefaultBranch) {
                                 if (isUnix()) {
-                                    sh(script: "git config --global init.defaultBranch '${gitDefaultBranch}'",
-                                       label: 'Set default branch for git',
-                                       returnStatus: true) // Ignore failure if CLI git is not available
+                                    sh "git config --global init.defaultBranch '${gitDefaultBranch}' || echo '${gitUnavailableMessage}'"
                                 } else {
-                                    bat(script: "git config --global init.defaultBranch '${gitDefaultBranch}'",
-                                        label: 'Set default branch for git',
-                                        returnStatus: true) // Ignore failure if CLI git is not available
+                                    bat "git config --global init.defaultBranch '${gitDefaultBranch}' || echo '${gitUnavailableMessage}'"
                                 }
                             }
                         }
