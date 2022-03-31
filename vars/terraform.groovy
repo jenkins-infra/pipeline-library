@@ -114,6 +114,7 @@ def call(userConfig = [:]) {
                   detailsURL: planFileUrl
               }
               stage('💸 Report estimated costs') {
+                withCredentials([string(credentialsId: 'infracost-api-key', variable: 'INFRACOST_API_KEY')]) {
                 // try {
                   Boolean commentReport = false
                   Boolean commentComparison = false
@@ -149,6 +150,7 @@ def call(userConfig = [:]) {
                 // } catch(e) {
                 //   echo 'Warning: an error occurred during cost estimation, continuing the pipeline.'
                 // }
+                }
               }
             }
 
