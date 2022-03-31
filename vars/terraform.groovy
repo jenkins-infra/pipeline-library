@@ -136,9 +136,10 @@ def call(userConfig = [:]) {
                   //   commentReport = true
                   // }
                   // Convert the report as github comment
+                  def comment = ''
                   if (commentReport) {
                     sh 'infracost output --path infracost.json --format github-comment --show-skipped --out-file github.md'
-                    pullRequest.comment('# Plan parsing method\n' + readFile(file: 'github.md'))
+                    comment = '# Plan parsing method\n' + readFile(file: 'github.md')
                   }
                   // Compare the outputs of the two methods
                   if (commentComparison) {
@@ -146,7 +147,11 @@ def call(userConfig = [:]) {
                     // sh 'git diff --no-index github.md github-hcl.md > diff.md'
                     // final String reportDiff = readFile(file: 'diff.md')
                     // pullRequest.comment("Comparison between infracost plan & HCL methods: <details>\n\n%60%60%60diff\n${reportDiff}\n%60%60%60\n\n</details>")
-                    pullRequest.comment('# HCL parsing method\n' + readFile(file: 'github-hcl.md'))
+                    comment += '\n\n# HCL parsing method\n' + readFile(file: 'github-hcl.md')
+                    //pullRequest.comment('# HCL parsing method\n' + readFile(file: 'github-hcl.md'))
+                  }
+                  if (comment != '') {
+                    pullRequest.comment(comment)
                   }
                 // } catch(e) {
                 //   echo 'Warning: an error occurred during cost estimation, continuing the pipeline.'
