@@ -140,7 +140,8 @@ def call(userConfig = [:]) {
                     sh 'infracost output --path infracost.json --format github-comment --show-skipped --out-file github.md'
                     // sh 'export INFRACOST_REPORT=$(cat github.md)'
                     sh 'export INFRACOST_REPORT="stuff"'
-                    pullRequest.comment(env.INFRACOST_REPORT)
+                    final String report = env.INFRACOST_REPORT
+                    pullRequest.comment(report)
                     sh 'env|sort'
                   }
                   // // Compare the outputs of the two methods
