@@ -141,7 +141,7 @@ def call(userConfig = [:]) {
                     // sh 'export INFRACOST_REPORT=$(cat github.md)'
                     sh 'export INFRACOST_REPORT="stuff"'
                     final String report = env.INFRACOST_REPORT
-                    pullRequest.comment(report)
+                    pullRequest.comment("bidule")
                     sh 'env|sort'
                   }
                   // // Compare the outputs of the two methods
