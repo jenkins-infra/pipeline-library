@@ -147,7 +147,7 @@ def call(userConfig = [:]) {
                   }
                   if (githubComment != '') {
                     sh 'git log --pretty=%s -1 > git-log.txt'
-                    githubComment = "# Report for \"${readFile(file: 'git-log.txt')}\"\n\n${githubComment}"
+                    githubComment = "# Report for ${readFile(file: 'git-log.txt')}\n${githubComment}"
                     pullRequest.comment(githubComment)
                   }
                 }
