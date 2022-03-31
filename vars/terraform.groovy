@@ -138,14 +138,16 @@ def call(userConfig = [:]) {
                   def githubComment = ''
                   if (commentReport) {
                     sh 'infracost output --path infracost.json --format github-comment --show-skipped --out-file github.md'
-                    githubComment = '## Plan parsing method\n' + readFile(file: 'github.md')
+                    githubComment = "## Plan parsing method\n${readFile(file: 'github.md')}"
                   }
                   // Compare the outputs of the two methods
                   if (commentComparison) {
                     sh 'infracost output --path infracost-hcl.json --format github-comment --show-skipped --out-file github-hcl.md'
-                    githubComment += '\n\n## HCL parsing method\n' + readFile(file: 'github-hcl.md')
+                    githubComment += "\n\n## HCL parsing method\n${readFile(file: 'github-hcl.md')}"
                   }
                   if (githubComment != '') {
+                    commitMsgFirstLine = sh(script: "git log --pretty=format:%s -1", returnStatus: true)
+                    githubComment = "# Report for \"${commitMsgFirstLine}\"\n\n${githubComment}"
                     pullRequest.comment(githubComment)
                   }
                 }
