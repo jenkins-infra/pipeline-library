@@ -77,7 +77,7 @@ def call(Map params = [:]) {
                             error 'There were test failures; halting early'
                         }
                         if (doArchiveArtifacts) {
-                            archiveArtifacts artifacts: '**/build/libs/*.hpi,**/build/libs/*.jpi', fingerprint: true
+                            archiveArtifacts artifacts: '**/build/libs/*.hpi,**/build/libs/*.jpi', fingerprint: true, allowEmptyArchive: true
                         }
                     }
                 }

@@ -29,11 +29,12 @@ Object withDockerCredentials(Closure body) {
     }
 }
 
-Object checkout(String repo = null) {
-    checkoutSCM(repo);
-}
-
 Object checkoutSCM(String repo = null) {
+    // Enable long paths to avoid problems with tests on Windows agents 
+    if (!isUnix()) {
+        bat 'git config --global core.longpaths true'
+    }
+
     if (env.BRANCH_NAME) {
         checkout scm
     } else if ((env.BRANCH_NAME == null) && (repo)) {
@@ -171,8 +172,8 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null,
             }
         }
         if (!javaHome) {
-            echo "WARNING: switching to the Jenkins tool named ${jdkTool} to set the environment variables JAVA_HOME and PATH, because no java installation found in any of the following locations: ${javaHomesToTry.join(", ")}"
             String jdkTool = "jdk${jdk}"
+            echo "WARNING: switching to the Jenkins tool named ${jdkTool} to set the environment variables JAVA_HOME and PATH, because no java installation found in any of the following locations: ${javaHomesToTry.join(", ")}"
             javaHome = tool jdkTool
         }
 

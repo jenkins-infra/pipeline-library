@@ -32,9 +32,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <!-- Dependency versions -->
-        <groovy.version>3.0.9</groovy.version>
-        <junit.version>5.8.1</junit.version>
-        <jenkins-pipeline-unit.version>1.10</jenkins-pipeline-unit.version>
+        <jenkins-pipeline-unit.version>1.14</jenkins-pipeline-unit.version>
         <groovy-eclipse-compiler.version>3.7.0</groovy-eclipse-compiler.version>
     </properties>
 
@@ -42,15 +40,25 @@
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>${groovy.version}</version>
+            <version>3.0.10</version>
             <!-- Type pom replaces the über "groovy-all.jar", for version 3+ -->
             <type>pom</type>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.codehaus.groovy</groupId>
+                    <artifactId>groovy-test-junit5</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.codehaus.groovy</groupId>
+                    <artifactId>groovy-testng</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>${junit.version}</version>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -62,7 +70,7 @@
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.29</version>
+            <version>1.30</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -82,7 +90,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.10.1</version>
                 <configuration>
                     <compilerId>groovy-eclipse-compiler</compilerId>
                     <includes>
@@ -108,7 +116,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M3</version>
+                <version>3.0.0-M5</version>
             </plugin>
         </plugins>
     </build>
