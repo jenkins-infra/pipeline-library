@@ -120,7 +120,7 @@ def call(userConfig = [:]) {
                   final String gitUrl = env.CHANGE_URL
                   // On AWS we can use the terraform plan to estimate the costs as it doesn't contains most sensible secrets
                   //if (gitUrl.contains('jenkins-infra/aws')) {
-                    sh "terraform show -json ${planFileName} > plan.json"
+                    sh "terraform show -json tfplan > plan.json"
                     sh 'infracost breakdown --path plan.json --show-skipped --format json --out-file infracost.json'
                     // Also try the experimental HCL method for comparison and upstream contrib
                     sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost-hcl.json'
