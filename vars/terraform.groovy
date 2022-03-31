@@ -107,7 +107,7 @@ def call(userConfig = [:]) {
 
             if (isBuildOnChangeRequest) {
               stage('🗣 Notify User on the PR') {
-                final String planFileUrl = "${env.BUILD_URL}artifact/terraform-plan-for-humans.txt"
+                final String planFileUrl = "${env.BUILD_URL}artifact/${planFileName}"
                 publishChecks name: "terraform-plan",
                   title: "Terraform plan for this change request",
                   text: "The terraform plan for this change request can be found at <${planFileUrl}>.",
