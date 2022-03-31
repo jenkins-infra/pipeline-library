@@ -146,7 +146,7 @@ def call(userConfig = [:]) {
                     githubComment += "\n\n## HCL parsing method\n${readFile(file: 'github-hcl.md')}"
                   }
                   if (githubComment != '') {
-                    commitMsgFirstLine = sh(script: "git log --pretty=%s -1 ${GIT_COMMIT}", returnStatus: true)
+                    commitMsgFirstLine = sh(script: "git log --pretty=%s -1 ${env.GIT_COMMIT}", returnStatus: true)
                     githubComment = "# Report for \"${commitMsgFirstLine}\"\n\n${githubComment}"
                     pullRequest.comment(githubComment)
                   }
