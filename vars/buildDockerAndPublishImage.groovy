@@ -73,8 +73,8 @@ def call(String imageName, Map userConfig=[:]) {
               '''
             }
           }
-
-          nextVersion = sh(script:"${finalConfig.nextVersionCommand}", returnStdout: true).trim()
+          sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
+          nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
           echo "Next Release Version = $nextVersion"
         } // stage
       } // if
