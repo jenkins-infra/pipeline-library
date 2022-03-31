@@ -145,7 +145,7 @@ def call(userConfig = [:]) {
                   if (commentComparison) {
                     sh 'infracost output --path infracost-hcl.json --format github-comment --show-skipped --out-file github-hcl.md'
                     sh 'export INFRACOST_COMPARISON=$(git diff --no-index github.md github-hcl.md)'
-                    pullRequest.comment("Comparison between infracost plan & HCL methods: <details>\n\n\`\`\`diff\n${env.INFRACOST_COMPARISON}\n\`\`\`\n\n</details>")
+                    pullRequest.comment("Comparison between infracost plan & HCL methods: <details>\n\n\x60\x60\x60diff\n${env.INFRACOST_COMPARISON}\n\x60\x60\x60\n\n</details>")
                   }
                 // } catch(e) {
                 //   echo 'Warning: an error occurred during cost estimation, continuing the pipeline.'
