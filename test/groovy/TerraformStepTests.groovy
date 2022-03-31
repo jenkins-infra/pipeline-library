@@ -120,6 +120,7 @@ class TerraformStepTests extends BaseTest {
     // When calling the shared library global function with defaults
     // on a change request (PR) from <fork_repo>/main -> <current_repo>/main
     addEnvVar('CHANGE_ID', '1234')
+    addEnvVar('CHANGE_URL', 'org/repo')
     script.call()
     printCallStack()
 
