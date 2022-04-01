@@ -94,7 +94,9 @@ def call(userConfig = [:]) {
                 "TF_CLI_ARGS_plan=${tfCliArsPlan}",
                 "PLAN_FILE_NAME=${planFileName}",
               ]) {
-                getInfraSharedTools(sharedToolsSubDir)
+                def stuff = getInfraSharedTools(sharedToolsSubDir)
+
+                echo stuff
 
                 try {
                   sh makeCliCmd + ' plan'
@@ -148,6 +150,7 @@ def call(userConfig = [:]) {
                   if (githubComment != '') {
                     sh 'git log --pretty=%s -1 > git-log.txt'
                     githubComment = "# Report for ${readFile(file: 'git-log.txt').trim()}\n${githubComment}"
+                    sh 'env|sort'
                     pullRequest.comment(githubComment)
                   }
                 }
@@ -207,7 +210,7 @@ def agentTemplate(containerImage, body) {
 // Retrieves the shared tooling
 def getInfraSharedTools(String sharedToolsSubDir) {
   // Checkout the actual project on the same gitref as the Jenkinsfile
-  checkout scm
+  outputs = checkout scm
 
   // Remove any leftover from developers (normal content or submodule) to avoid injection
   sh 'rm -rf ' + sharedToolsSubDir
@@ -217,4 +220,6 @@ def getInfraSharedTools(String sharedToolsSubDir) {
     scm: [$class: 'GitSCM', branches: [[name: '*/main']],
     extensions: [[$class: 'CleanBeforeCheckout', deleteUntrackedNestedRepositories: true], [$class: 'RelativeTargetDirectory', relativeTargetDir: sharedToolsSubDir],
       [$class: 'GitSCMStatusChecksExtension', skip: true]], userRemoteConfigs: [[credentialsId: 'github-app-infra', url: 'https://github.com/jenkins-infra/shared-tools.git']]]
+    
+  return outputs
 }
