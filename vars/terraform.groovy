@@ -82,6 +82,7 @@ def call(userConfig = [:]) {
         agentTemplate(finalConfig.agentContainerImage, {
           withCredentials(defaultConfig.productionCredentials) {
             final String planFileName = 'terraform-plan-for-humans.txt'
+            def scmOutput
             stage('🦅 Generate Terraform Plan') {
               // When the job is triggered by the daily cron timer, then the plan succeed only if there is no changes found (e.g. no config drift)
               // For all other triggers, the plan succeed either there are changes or not
@@ -94,9 +95,7 @@ def call(userConfig = [:]) {
                 "TF_CLI_ARGS_plan=${tfCliArsPlan}",
                 "PLAN_FILE_NAME=${planFileName}",
               ]) {
-                def stuff = getInfraSharedTools(sharedToolsSubDir)
-
-                echo stuff
+                scmOutput = getInfraSharedTools(sharedToolsSubDir)
 
                 try {
                   sh makeCliCmd + ' plan'
@@ -120,6 +119,8 @@ def call(userConfig = [:]) {
                   Boolean commentReport = false
                   Boolean commentComparison = false
                   final String gitUrl = env.CHANGE_URL
+                  echo "env.CHANGE_URL: ${env.CHANGE_URL}"
+                  echo "scmOutput.GIT_URL: ${scmOutput.GIT_URL}"
                   // On AWS we can use the terraform plan to estimate the costs as it doesn't contains most sensible secrets
                   if (gitUrl.contains('jenkins-infra/aws')) {
                     sh "terraform show -json tfplan > plan.json"
@@ -148,7 +149,7 @@ def call(userConfig = [:]) {
                     githubComment += "\n\n## HCL parsing method\n${readFile(file: 'github-hcl.md')}"
                   }
                   if (githubComment != '') {
-                    sh 'git log --pretty=%s -1 > git-log.txt'
+                    sh "git log --pretty=%s -1 ${scmOutput.GIT_COMMIT} > git-log.txt"
                     githubComment = "# Report for ${readFile(file: 'git-log.txt').trim()}\n${githubComment}"
                     sh 'env|sort'
                     pullRequest.comment(githubComment)
