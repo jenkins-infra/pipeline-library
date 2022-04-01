@@ -118,11 +118,8 @@ def call(userConfig = [:]) {
                 withCredentials([string(credentialsId: 'infracost-api-key', variable: 'INFRACOST_API_KEY')]) {
                   Boolean commentReport = false
                   Boolean commentComparison = false
-                  final String gitUrl = env.CHANGE_URL
-                  echo "env.CHANGE_URL: ${env.CHANGE_URL}"
-                  echo "scmOutput.GIT_URL: ${scmOutput.GIT_URL}"
                   // On AWS we can use the terraform plan to estimate the costs as it doesn't contains most sensible secrets
-                  if (gitUrl.contains('jenkins-infra/aws')) {
+                  if (scmOutput.GIT_URL.contains('jenkins-infra/aws')) {
                     sh "terraform show -json tfplan > plan.json"
                     sh 'infracost breakdown --path plan.json --show-skipped --format json --out-file infracost.json'
                     // Also try the experimental HCL method for comparison and upstream contrib
@@ -133,7 +130,7 @@ def call(userConfig = [:]) {
                   // On other supported terraform projects, we're using the experimental HCL parser instead
                   // so infracost doesn't need the terraform plan and thus doesn't have access to any sensitive values
                   // As soon as the parser gets out of experimental state, we can use this safer method only
-                  if (gitUrl.contains('jenkins-infra/azure')) {
+                  if (scmOutput.GIT_URL.contains('jenkins-infra/azure')) {
                     sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost.json'
                     commentReport = true
                   }
@@ -141,17 +138,16 @@ def call(userConfig = [:]) {
                   def githubComment = ''
                   if (commentReport) {
                     sh 'infracost output --path infracost.json --format github-comment --show-skipped --out-file github.md'
-                    githubComment = "## Plan parsing method\n${readFile(file: 'github.md')}"
+                    githubComment = "### Plan parsing method\n${readFile(file: 'github.md')}"
                   }
                   // Compare the outputs of the two methods
                   if (commentComparison) {
                     sh 'infracost output --path infracost-hcl.json --format github-comment --show-skipped --out-file github-hcl.md'
-                    githubComment += "\n\n## HCL parsing method\n${readFile(file: 'github-hcl.md')}"
+                    githubComment += "\n\n### HCL parsing method\n${readFile(file: 'github-hcl.md')}"
                   }
                   if (githubComment != '') {
                     sh "git log --pretty=%s -1 ${scmOutput.GIT_COMMIT} > git-log.txt"
-                    githubComment = "# Report for ${readFile(file: 'git-log.txt').trim()}\n${githubComment}"
-                    sh 'env|sort'
+                    githubComment = "## Report for \"${readFile(file: 'git-log.txt').trim()}\"\n${githubComment}"
                     pullRequest.comment(githubComment)
                   }
                 }
