@@ -51,8 +51,8 @@ class InfraConfigTest {
       assertEquals('jenkinsciinfra', infraConfig.getDockerRegistry())
       assertEquals('infracijenkinsio', infraConfig.getDockerPullOrgAndCredentialsId().organisation)
       assertEquals('infracijenkinsio-dockerhub-pull', infraConfig.getDockerPullOrgAndCredentialsId().credentialId)
-      assertEquals('jenkinsciinfra', infraConfig.getDockerPushOrgAndCredentialsId().organisation)
-      assertEquals('jenkinsciinfra-dockerhub-push', infraConfig.getDockerPushOrgAndCredentialsId().credentialId)
+      assertEquals('jenkinsinfraadmin', infraConfig.getDockerPushOrgAndCredentialsId().organisation)
+      assertEquals('jenkinsinfraadmin-dockerhub-push', infraConfig.getDockerPushOrgAndCredentialsId().credentialId)
     }
 
   @Test

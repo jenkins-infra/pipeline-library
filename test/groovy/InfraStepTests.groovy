@@ -111,9 +111,7 @@ class InfraStepTests extends BaseTest {
     assertJobStatusSuccess()
   }
 
-
   @Test
-  @Ignore("Some stackoverflow issues")
   void testCheckoutWithEnvVariable() throws Exception {
     def script = loadScript(scriptName)
     env.BRANCH_NAME = 'BRANCH'
