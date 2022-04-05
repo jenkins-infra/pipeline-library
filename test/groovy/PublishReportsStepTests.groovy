@@ -2,6 +2,7 @@ import org.junit.Before
 import org.junit.Test
 import mock.Infra
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertTrue
 
 class PublishReportsStepTests extends BaseTest {
@@ -40,7 +41,7 @@ class PublishReportsStepTests extends BaseTest {
     // then hardcoded credentials is correct
     assertTrue(assertMethodCallContainsPattern('string', 'credentialsId=azure-reports-access-key'))
     // No execution
-    assertTrue(helper.callStack.findAll { call -> call.methodName == 'sh' }.isEmpty())
+    assertFalse(assertMethodCallContainsPattern('sh','az storage blob'))
     assertJobStatusSuccess()
   }
 
