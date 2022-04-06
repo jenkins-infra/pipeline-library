@@ -36,9 +36,11 @@ class TerraformStepTests extends BaseTest {
       ['hudson.triggers.TimerTrigger']
     ))
     addEnvVar('BRANCH_NAME', 'main')
-    addEnvVar('GIT_URL', 'jenkins-infra/azure')
 
+    binding.setProperty('scm', ['GIT_URL': 'https://github.com/lesfurets/jenkins-unit-test.git'])
     helper.registerAllowedMethod('ansiColor', [String.class, Closure.class], { s, body ->body() })
+    helper.registerAllowedMethod('checkout', [Map.class], { m -> m })
+
     binding.setVariable('pullRequest', new PullRequestMock())
 
     // Used by the publish checks
