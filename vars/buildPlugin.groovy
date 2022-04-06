@@ -79,9 +79,9 @@ def call(Map params = [:]) {
                                 if (gitDefaultBranch) {
                                     withEnv(["GITDEFAULTBRANCH=${gitDefaultBranch}"]) {
                                         if (isUnix()) {
-                                            sh 'git config --global init.defaultBranch "$GITDEFAULTBRANCH" || echo "$GITDEFAULTBRANCH"'
+                                            sh 'git config --global init.defaultBranch "$GITDEFAULTBRANCH" || echo "$GITUNAVAILABLEMESSAGE"'
                                         } else {
-                                            bat 'git config --global init.defaultBranch %GITDEFAULTBRANCH% || echo %GITDEFAULTBRANCH%'
+                                            bat 'git config --global init.defaultBranch %GITDEFAULTBRANCH% || echo %GITUNAVAILABLEMESSAGE%'
                                         }
                                     }
                                 }
