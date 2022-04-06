@@ -81,11 +81,12 @@ def call(userConfig = [:]) {
       stage('Production') {
         agentTemplate(finalConfig.agentContainerImage, {
           withCredentials(defaultConfig.productionCredentials) {
+            final String planFileName = 'terraform-plan-for-humans.txt'
+            def scmOutput
             stage('🦅 Generate Terraform Plan') {
               // When the job is triggered by the daily cron timer, then the plan succeed only if there is no changes found (e.g. no config drift)
               // For all other triggers, the plan succeed either there are changes or not
               String tfCliArsPlan = ''
-              final String planFileName = 'terraform-plan-for-humans.txt'
               if (isBuildCauseTimer) {
                 tfCliArsPlan = '-detailed-exitcode'
               }
@@ -94,7 +95,7 @@ def call(userConfig = [:]) {
                 "TF_CLI_ARGS_plan=${tfCliArsPlan}",
                 "PLAN_FILE_NAME=${planFileName}",
               ]) {
-                getInfraSharedTools(sharedToolsSubDir)
+                scmOutput = getInfraSharedTools(sharedToolsSubDir)
 
                 try {
                   sh makeCliCmd + ' plan'
@@ -107,47 +108,52 @@ def call(userConfig = [:]) {
 
             if (isBuildOnChangeRequest) {
               stage('🗣 Notify User on the PR') {
-                final String planFileUrl = "${env.BUILD_URL}artifact/terraform-plan-for-humans.txt"
+                final String planFileUrl = "${env.BUILD_URL}artifact/${planFileName}"
                 publishChecks name: "terraform-plan",
                   title: "Terraform plan for this change request",
                   text: "The terraform plan for this change request can be found at <${planFileUrl}>.",
                   detailsURL: planFileUrl
               }
               stage('💸 Report estimated costs') {
-                try {
+                withCredentials([string(credentialsId: 'infracost-api-key', variable: 'INFRACOST_API_KEY')]) {
                   Boolean commentReport = false
                   Boolean commentComparison = false
-                  // On AWS we can use the terraform plan to estimate the costs as it doesn't contains most sensible secrets
-                  if (env.GIT_URL.contains('jenkins-infra/aws')) {
-                    final String planFileUrl = "${env.BUILD_URL}artifact/terraform-plan-for-humans.txt"
-                    sh "terraform show -json ${planFileUrl} > plan.json"
-                    sh 'infracost breakdown --path plan.json --show-skipped --format json --out-file infracost.json'
-                    // Also try the experimental HCL method for comparison and upstream contrib
-                    sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost-hcl.json'
-                    commentReport = true
-                    commentComparison = true
+                  try {
+                    // On AWS we can use the terraform plan to estimate the costs as it doesn't contains most sensible secrets
+                    if (scmOutput.GIT_URL.contains('jenkins-infra/aws')) {
+                      sh "terraform show -json tfplan > plan.json"
+                      sh 'infracost breakdown --path plan.json --show-skipped --format json --out-file infracost.json'
+                      // Also try the experimental HCL method for comparison and upstream contrib
+                      sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost-hcl.json'
+                      commentReport = true
+                      commentComparison = true
+                    }
+                    // On other supported terraform projects, we're using the experimental HCL parser instead
+                    // so infracost doesn't need the terraform plan and thus doesn't have access to any sensitive values
+                    // As soon as the parser gets out of experimental state, we can use this safer method only
+                    if (scmOutput.GIT_URL.contains('jenkins-infra/azure')) {
+                      sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost.json'
+                      commentReport = true
+                    }
+                    // Convert the report as github comment
+                    def githubComment = ''
+                    if (commentReport) {
+                      sh 'infracost output --path infracost.json --format github-comment --show-skipped --out-file github.md'
+                      githubComment = "### Plan parsing method\n${readFile(file: 'github.md')}"
+                    }
+                    // Compare the outputs of the two methods
+                    if (commentComparison) {
+                      sh 'infracost output --path infracost-hcl.json --format github-comment --show-skipped --out-file github-hcl.md'
+                      githubComment += "\n\n### HCL parsing method\n${readFile(file: 'github-hcl.md')}"
+                    }
+                    if (githubComment != '') {
+                      sh "git log --pretty=%s -1 ${scmOutput.GIT_COMMIT} > git-log.txt"
+                      githubComment = "## Report for \"${readFile(file: 'git-log.txt').trim()}\"\n${githubComment}"
+                      pullRequest.comment(githubComment)
+                    }
+                  } catch(e) {
+                    echo 'Warning: an error occurred during cost estimation: ' + e.toString()
                   }
-                  // On other supported terraform projects, we're using the experimental HCL parser instead
-                  // so infracost doesn't need the terraform plan and thus doesn't have access to any sensitive values
-                  // As soon as the parser gets out of experimental state, we can use this safer method only
-                  if (env.GIT_URL.contains('jenkins-infra/azure')) {
-                    sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost.json'
-                    commentReport = true
-                  }
-                  // Convert the report as github comment
-                  if (commentReport) {
-                    sh 'infracost output --path infracost.json --format github-comment --show-skipped --out-file github.md'
-                    sh 'export INFRACOST_REPORT=$(cat github.md)'
-                    pullRequest.comment(env.INFRACOST_REPORT)
-                  }
-                  // Compare the outputs of the two methods
-                  if (commentComparison) {
-                    sh 'infracost output --path infracost-hcl.json --format github-comment --show-skipped --out-file github-hcl.md'
-                    sh 'export INFRACOST_COMPARISON=$(git diff --no-index github.md github-hcl.md)'
-                    pullRequest.comment("Comparison between infracost plan & HCL methods: <details>\n\n```diff\n${env.INFRACOST_COMPARISON}\n```\n\n</details>")
-                  }
-                } catch(e) {
-                  echo 'Warning: an error occurred during cost estimation, continuing the pipeline.'
                 }
               }
             }
@@ -205,7 +211,7 @@ def agentTemplate(containerImage, body) {
 // Retrieves the shared tooling
 def getInfraSharedTools(String sharedToolsSubDir) {
   // Checkout the actual project on the same gitref as the Jenkinsfile
-  checkout scm
+  outputs = checkout scm
 
   // Remove any leftover from developers (normal content or submodule) to avoid injection
   sh 'rm -rf ' + sharedToolsSubDir
@@ -215,4 +221,6 @@ def getInfraSharedTools(String sharedToolsSubDir) {
     scm: [$class: 'GitSCM', branches: [[name: '*/main']],
     extensions: [[$class: 'CleanBeforeCheckout', deleteUntrackedNestedRepositories: true], [$class: 'RelativeTargetDirectory', relativeTargetDir: sharedToolsSubDir],
       [$class: 'GitSCMStatusChecksExtension', skip: true]], userRemoteConfigs: [[credentialsId: 'github-app-infra', url: 'https://github.com/jenkins-infra/shared-tools.git']]]
+    
+  return outputs
 }
