@@ -67,19 +67,23 @@ def call(Map params = [:]) {
                             incrementals = fileExists('.mvn/extensions.xml') &&
                                     readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')
                             final String gitUnavailableMessage = "[buildPlugin] Git CLI may not be available"
-                            if (incrementals) { // Incrementals needs 'git status -s' to be empty at start of job
-                                if (isUnix()) {
-                                    sh 'git clean -xffd || echo "${gitUnavailableMessage}"'
-                                } else {
-                                    bat 'git clean -xffd || echo "${gitUnavailableMessage}"'
+                            withEnv(["GITUNAVAILABLEMESSAGE=${gitUnavailableMessage}"]) {
+                                if (incrementals) { // Incrementals needs 'git status -s' to be empty at start of job
+                                    if (isUnix()) {
+                                        sh 'git clean -xffd || echo "$GITUNAVAILABLEMESSAGE"'
+                                    } else {
+                                        bat 'git clean -xffd || echo %GITUNAVAILABLEMESSAGE%'
+                                    }
                                 }
-                            }
 
-                            if (gitDefaultBranch) {
-                                if (isUnix()) {
-                                    sh "git config --global init.defaultBranch '${gitDefaultBranch}' || echo '${gitUnavailableMessage}'"
-                                } else {
-                                    bat "git config --global init.defaultBranch '${gitDefaultBranch}' || echo '${gitUnavailableMessage}'"
+                                if (gitDefaultBranch) {
+                                    withEnv(["GITDEFAULTBRANCH=${gitDefaultBranch}"]) {
+                                        if (isUnix()) {
+                                            sh 'git config --global init.defaultBranch "$GITDEFAULTBRANCH" || echo "$GITDEFAULTBRANCH"'
+                                        } else {
+                                            bat 'git config --global init.defaultBranch %GITDEFAULTBRANCH% || echo %GITDEFAULTBRANCH%'
+                                        }
+                                    }
                                 }
                             }
                         }
