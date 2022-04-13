@@ -1,0 +1,50 @@
+title: "Update updatecli version"
+
+scms:
+  default:
+    kind: github
+    spec:
+      user: "{{ .github.user }}"
+      email: "{{ .github.email }}"
+      owner: "{{ .github.owner }}"
+      repository: "{{ .github.repository }}"
+      token: "{{ requiredEnv .github.token }}"
+      username: "{{ .github.username }}"
+      branch: "{{ .github.branch }}"
+
+sources:
+  latestUpdatecliVersion:
+    kind: githubRelease
+    name: Get the latest stable updatecli version
+    spec:
+      owner: "updatecli"
+      repository: "updatecli"
+      token: "{{ requiredEnv .github.token }}"
+      username: "{{ .github.username }}"
+      versionFilter:
+        kind: semver
+
+conditions:
+  checkIfUpdateCliBinaryIsPublished:
+    name: "Ensure that the updatecli Linux Intel binary is published"
+    disablesourceinput: true
+    kind: shell
+    spec:
+      command: curl --location --head --fail --silent --show-error https://github.com/updatecli/updatecli/releases/download/v{{ source `latestUpdatecliVersion`}}/updatecli_Linux_x86_64.tar.gz
+
+targets:
+  setUpdatecliVersion:
+    name: "Set the updatecli version in the github workflow"
+    sourceid: latestUpdatecliVersion
+    kind: yaml
+    spec:
+      file: ".github/workflows/updatecli.yaml"
+      key: "jobs.updatecli.steps[1].env.UPDATECLI_VERSION"
+    scmid: default
+
+pullrequests:
+  default:
+    kind: github
+    scmid: default
+    targets:
+      - setUpdatecliVersion

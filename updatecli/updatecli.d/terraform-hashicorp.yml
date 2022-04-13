@@ -40,12 +40,12 @@ targets:
         'jenkinsciinfra/hashicorp-tools:(.*)'
       replacepattern: >-
         'jenkinsciinfra/hashicorp-tools:{{ source `dockerHashicorpToolsImageVersion` }}'
-    scmID: default
+    scmid: default
 
 pullrequests:
   default:
     kind: github
-    scmID: default
+    scmid: default
     targets:
       - updateTerraformFile
     spec:
