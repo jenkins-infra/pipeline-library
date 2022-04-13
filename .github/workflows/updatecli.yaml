@@ -32,12 +32,12 @@ jobs:
       ## Please make sure that the 2 secrets are defined (usually at organization level, with a per-repository access)
       - uses: tibdex/github-app-token@v1.5
         id: generate_token
-        if: github.ref == 'refs/heads/production'
+        if: github.ref == 'refs/heads/master'
         with:
           app_id: ${{ secrets.JENKINS_ADMIN_APP_ID }}
           private_key: ${{ secrets.JENKINS_ADMIN_APP_PRIVKEY }}
       - name: Apply
-        if: github.ref == 'refs/heads/production'
+        if: github.ref == 'refs/heads/master'
         run: |
           updatecli apply --config ./updatecli/updatecli.d --values ./updatecli/values.yaml
         env:
