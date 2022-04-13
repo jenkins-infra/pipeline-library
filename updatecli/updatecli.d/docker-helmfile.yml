@@ -44,7 +44,7 @@ targets:
         'jenkinsciinfra/helmfile:(.*)'
       replacepattern: >-
         'jenkinsciinfra/helmfile:{{ source `lastVersion` }}'
-    scmID: default
+    scmid: default
   updateDoc:
     name: Update docker-helmfile in documentation
     kind: file
@@ -52,13 +52,13 @@ targets:
       file: vars/updatecli.txt
       matchpattern: jenkinsciinfra/helmfile:(\d+\.\d+\.\d+)\"
       replacepattern: jenkinsciinfra/helmfile:{{ source `lastVersion` }}"
-    scmID: default
+    scmid: default
 
 pullrequests:
   default:
     kind: github
     title: Bump docker-helmfile version on shared library resources to {{ source "lastVersion" }}
-    scmID: default
+    scmid: default
     targets:
       - updateGroovyCode
       - updateDoc

@@ -14,25 +14,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Updatecli Version
-        uses: updatecli/updatecli-action@v1.30.0
-        with:
-          command: version
-          flags: ""
+      - name: Install updatecli CLI
         env:
-          UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPDATECLI_VERSION: "0.23.2"
+        run: |
+          curl --silent --location --show-error --output /tmp/updatecli.tgz \
+            "https://github.com/updatecli/updatecli/releases/download/v${UPDATECLI_VERSION}/updatecli_$(uname -s)_$(uname -m).tar.gz"
+          tar xzf /tmp/updatecli.tgz -C /usr/local/bin/ updatecli
+          rm -f /tmp/updatecli.tgz
       - name: Diff
-        uses: updatecli/updatecli-action@v1.30.0
-        with:
-          command: diff
-          flags: "--config ./updatecli/updatecli.d --values ./updatecli/values.yaml"
+        continue-on-error: true
+        run: |
+          updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml
         env:
           UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ## This step allows to generate a short-lived token which is allowed to modify GitHub Workflow files (that the default GITHUB_TOKEN cannot)
+      ## Please make sure that the 2 secrets are defined (usually at organization level, with a per-repository access)
+      - uses: tibdex/github-app-token@v1.5
+        id: generate_token
+        if: github.ref == 'refs/heads/production'
+        with:
+          app_id: ${{ secrets.JENKINS_ADMIN_APP_ID }}
+          private_key: ${{ secrets.JENKINS_ADMIN_APP_PRIVKEY }}
       - name: Apply
-        uses: updatecli/updatecli-action@v1.30.0
-        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
-        with:
-          command: apply
-          flags: "--config ./updatecli/updatecli.d --values ./updatecli/values.yaml"
+        if: github.ref == 'refs/heads/production'
+        run: |
+          updatecli apply --config ./updatecli/updatecli.d --values ./updatecli/values.yaml
         env:
-          UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPDATECLI_GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
