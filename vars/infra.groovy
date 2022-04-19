@@ -190,6 +190,10 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null,
         env.addAll(extraEnv)
     }
 
+    if (!env.any { it.startsWith('MAVEN_OPTS=') }) {
+        env += 'MAVEN_OPTS=-XX:+PrintCommandLineFlags'
+    }
+
     withEnv(env) {
         if (isUnix()) { // TODO JENKINS-44231 candidate for simplification
             sh command
