@@ -1,0 +1,53 @@
+title: Bump `hashicorp-tools` docker image version from lastest image release
+
+scms:
+  default:
+    kind: github
+    spec:
+      user: "{{ .github.user }}"
+      email: "{{ .github.email }}"
+      owner: "{{ .github.owner }}"
+      repository: "{{ .github.repository }}"
+      token: "{{ requiredEnv .github.token }}"
+      username: "{{ .github.username }}"
+      branch: "{{ .github.branch }}"
+
+sources:
+  dockerHashicorpToolsImageVersion:
+    kind: githubRelease
+    spec:
+      owner: "jenkins-infra"
+      repository: "docker-hashicorp-tools"
+      token: "{{ requiredEnv .github.token }}"
+      username: "{{ .github.username }}"
+
+conditions:
+  checkIfDockerImageIsPublished:
+    name: "Check if the Docker Image is published"
+    kind: dockerImage
+    spec:
+      image: "jenkinsciinfra/hashicorp-tools"
+      architecture: amd64
+
+targets:
+  updateTerraformFile:
+    name: Update Terraform file in groovy code
+    kind: file
+    spec:
+      file: ./vars/terraform.groovy
+      # Please note that the patterns are specified as "block scalars" (>) - https://yaml-multiline.info/ - with the last endline trimmed (-) to avoid tedious escaping of simple quotes
+      matchpattern: >-
+        'jenkinsciinfra/hashicorp-tools:(.*)'
+      replacepattern: >-
+        'jenkinsciinfra/hashicorp-tools:{{ source `dockerHashicorpToolsImageVersion` }}'
+    scmid: default
+
+pullrequests:
+  default:
+    kind: github
+    scmid: default
+    targets:
+      - updateTerraformFile
+    spec:
+      labels:
+        - dependencies

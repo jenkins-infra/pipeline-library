@@ -51,7 +51,7 @@ class CustomWARPackagerStepTests extends BaseTest {
   void setUp() throws Exception {
     super.setUp()
 
-    helper.registerAllowedMethod('findFiles', [Map.class], { String[] files = ["bom.yml", "d1/bom.yml"] })
+    helper.registerAllowedMethod('findFiles', [Map.class], { String[] files = ['bom.yml', 'd1/bom.yml'] })
     helper.registerAllowedMethod('pwd', [], { '/foo' })
     helper.registerAllowedMethod('pwd', [Map.class], { '/bar' })
     helper.registerAllowedMethod('readYaml', [Map.class], {
@@ -70,7 +70,7 @@ class CustomWARPackagerStepTests extends BaseTest {
     // when running without metadata.packaging
     try {
       script.build('metadataFile', 'outputWAR', 'outputBOM', 'settings')
-    } catch(e){
+    } catch(e) {
       //NOOP
     }
     printCallStack()
@@ -89,7 +89,7 @@ class CustomWARPackagerStepTests extends BaseTest {
     // when running without metadata.packaging
     try {
       script.build('metadataFile', 'outputWAR', 'outputBOM', 'settings')
-    } catch(e){
+    } catch(e) {
       //NOOP
     }
     printCallStack()

@@ -1,7 +1,6 @@
 import com.lesfurets.jenkins.unit.declarative.DeclarativePipelineTest
 import mock.CurrentBuild
 import mock.CustomWARPackager
-import mock.Docker
 import mock.Infra
 import org.junit.Before
 import org.junit.Test
@@ -20,7 +19,6 @@ class BaseTest extends DeclarativePipelineTest {
     binding.setProperty('scm', new String())
     binding.setProperty('buildPlugin', loadScript('vars/buildPlugin.groovy'))
     binding.setProperty('customWARPackager', new CustomWARPackager())
-    binding.setProperty('docker', new Docker())
     binding.setProperty('infra', new Infra())
     binding.setProperty('mvnSettingsFile', 'settings.xml')
 
@@ -75,12 +73,15 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('withCredentials', [List.class, Closure.class], { list, body -> body() })
     helper.registerAllowedMethod('withEnv', [List.class, Closure.class], { list, body -> body() })
     helper.registerAllowedMethod('writeYaml', [Map.class], { })
+    helper.registerAllowedMethod('publishChecks', [Map.class], { m -> m })
+    helper.registerAllowedMethod('input', [Map.class], { m -> m })
 
     // Kubernetes Agents in scripted syntax
     helper.registerAllowedMethod('podTemplate', [Map.class, Closure.class], { m, body ->body() })
     helper.registerAllowedMethod('containerTemplate', [Map.class], { m -> m })
     helper.registerAllowedMethod('podAnnotation', [Map.class], { m -> m })
     helper.registerAllowedMethod('container', [String.class, Closure.class], { s, body ->body() })
+    helper.registerAllowedMethod('merge', [], { })
     binding.setVariable('POD_LABEL', 'builder')
   }
 

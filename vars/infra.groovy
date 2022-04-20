@@ -18,29 +18,29 @@ Boolean isInfra() {
 }
 
 Object withDockerCredentials(Closure body) {
-    if (new InfraConfig(env).isRunningOnJenkinsInfra()) {
-      env.DOCKERHUB_ORGANISATION =  ( isTrusted() ? 'jenkins' : 'jenkins4eval')
-      withCredentials([[$class: 'ZipFileBinding', credentialsId: 'jenkins-dockerhub', variable: 'DOCKER_CONFIG']]) {
-          return body.call()
-      }
+  if (new InfraConfig(env).isRunningOnJenkinsInfra()) {
+    env.DOCKERHUB_ORGANISATION = isTrusted() ? 'jenkins' : 'jenkins4eval'
+    withCredentials([[$class: 'ZipFileBinding', credentialsId: 'jenkins-dockerhub', variable: 'DOCKER_CONFIG']]) {
+      return body.call()
     }
-    else {
-        echo 'Cannot use Docker credentials outside of jenkins infra environment'
-    }
-}
-
-Object checkout(String repo = null) {
-    checkoutSCM(repo);
+  } else {
+    echo 'Cannot use Docker credentials outside of jenkins infra environment'
+  }
 }
 
 Object checkoutSCM(String repo = null) {
-    if (env.BRANCH_NAME) {
-        checkout scm
-    } else if ((env.BRANCH_NAME == null) && (repo)) {
-        git repo
-    } else {
-        error 'buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided'
-    }
+  // Enable long paths to avoid problems with tests on Windows agents
+  if (!isUnix()) {
+    bat 'git config --global core.longpaths true'
+  }
+
+  if (env.BRANCH_NAME) {
+    checkout scm
+  } else if (env.BRANCH_NAME == null && repo) {
+    git repo
+  } else {
+    error 'buildPlugin must be used as part of a Multibranch Pipeline *or* a `repo` argument must be provided'
+  }
 }
 
 /**
@@ -53,21 +53,21 @@ Object checkoutSCM(String repo = null) {
  * @return {@code true} if the file has been defined
  */
 boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
-    if (env.MAVEN_SETTINGS_FILE_ID != null) {
-        configFileProvider([configFile(fileId: env.MAVEN_SETTINGS_FILE_ID, variable: 'mvnSettingsFile')]) {
-            if (isUnix()) {
-                sh "cp ${mvnSettingsFile} ${settingsXml}"
-            } else {
-                bat "copy ${mvnSettingsFile} ${settingsXml}"
-            }
-        }
-        return true
-    } else if (new InfraConfig(env).isRunningOnJenkinsInfra()) {
-        echo 'NOTE: infra.retrieveMavenSettingsFile currently writes an empty settings file.'
-        writeFile file: settingsXml, text: libraryResource('settings.xml')
-        return true
+  if (env.MAVEN_SETTINGS_FILE_ID != null) {
+    configFileProvider([configFile(fileId: env.MAVEN_SETTINGS_FILE_ID, variable: 'mvnSettingsFile')]) {
+      if (isUnix()) {
+        sh "cp ${mvnSettingsFile} ${settingsXml}"
+      } else {
+        bat "copy ${mvnSettingsFile} ${settingsXml}"
+      }
     }
-    return false
+    return true
+  } else if (new InfraConfig(env).isRunningOnJenkinsInfra()) {
+    echo 'NOTE: infra.retrieveMavenSettingsFile currently writes an empty settings file.'
+    writeFile file: settingsXml, text: libraryResource('settings.xml')
+    return true
+  }
+  return false
 }
 
 /**
@@ -79,23 +79,17 @@ boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
  * @return nothing
  * @see #retrieveMavenSettingsFile(String)
  */
-Object runMaven(List<String> options, String jdk = "8", List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = true) {
-    List<String> mvnOptions = [
-        '-Dstyle.color=always',
-        '--batch-mode',
-        '--show-version',
-        '--errors',
-        '--no-transfer-progress',
-    ]
-    if (settingsFile != null) {
-        mvnOptions += "-s $settingsFile"
-    }
-    mvnOptions.addAll(options)
-    mvnOptions.unique()
-    String command = "mvn ${mvnOptions.join(' ')}"
-    ansiColor('xterm') {
-        runWithMaven(command, jdk, extraEnv, addToolEnv)
-    }
+Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = true) {
+  List<String> mvnOptions = ['-Dstyle.color=always', '--batch-mode', '--show-version', '--errors', '--no-transfer-progress']
+  if (settingsFile != null) {
+    mvnOptions += "-s $settingsFile"
+  }
+  mvnOptions.addAll(options)
+  mvnOptions.unique()
+  String command = "mvn ${mvnOptions.join(' ')}"
+  ansiColor('xterm') {
+    runWithMaven(command, jdk, extraEnv, addToolEnv)
+  }
 }
 
 /**
@@ -108,7 +102,7 @@ Object runMaven(List<String> options, String jdk = "8", List<String> extraEnv = 
  * @see #retrieveMavenSettingsFile(String)
  */
 Object runMaven(List<String> options, Integer jdk, List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = true) {
-    runMaven(options, jdk.toString(), extraEnv, settingsFile, addToolEnv)
+  runMaven(options, jdk.toString(), extraEnv, settingsFile, addToolEnv)
 }
 
 /**
@@ -120,18 +114,16 @@ Object runMaven(List<String> options, Integer jdk, List<String> extraEnv = null,
  * @return nothing
  */
 Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null, Boolean addToolEnv = true) {
-    List<String> env = [];
-    if(addToolEnv) {
-        env = [
-        "PATH+MAVEN=${tool 'mvn'}/bin"
-        ]
-    }
+  List<String> env = []
+  if (addToolEnv) {
+    env = ["PATH+MAVEN=${tool 'mvn'}/bin"]
+  }
 
-    if (extraEnv != null) {
-        env.addAll(extraEnv)
-    }
+  if (extraEnv != null) {
+    env.addAll(extraEnv)
+  }
 
-    runWithJava(command, jdk, env, addToolEnv)
+  runWithJava(command, jdk, env, addToolEnv)
 }
 
 /**
@@ -144,61 +136,66 @@ Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null
  * @return nothing
  */
 Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null, Boolean addToolEnv = true) {
-    List<String> env = [];
-    if(addToolEnv) {
-        // Collection of well-known JDK locations on our agent templates (VMs and containers)
-        def agentJavaHomes = [
-            "linux": [
-                '/opt/java/openjdk',        // Adoptium (Eclipse Temurin) for Linux - // https://github.com/adoptium/containers
-                "/opt/jdk-${jdk}",          // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
-            ],
-            "windows": [
-                "C:/openjdk-${jdk}",      // Adoptium (Eclipse Temurin) for Windows - // https://github.com/adoptium/containers
-                "C:/tools/jdk-${jdk}",    // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
-            ],
-        ];
+  List<String> env = []
+  if (addToolEnv) {
+    // Collection of well-known JDK locations on our agent templates (VMs and containers)
+    def agentJavaHomes = [
+      'linux': [
+        // Adoptium (Eclipse Temurin) for Linux - https://github.com/adoptium/containers
+        '/opt/java/openjdk',
+        // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
+        "/opt/jdk-${jdk}",
+      ],
+      'windows': [
+        // Adoptium (Eclipse Temurin) for Windows - https://github.com/adoptium/containers
+        "C:/openjdk-${jdk}",
+        // Our own custom VMs/containers - https://github.com/jenkins-infra/packer-images
+        "C:/tools/jdk-${jdk}",
+      ],
+    ]
 
-        // Prepare the list of JDK locations to search for on the agent
-        List<String> javaHomesToTry = agentJavaHomes[isUnix() ? 'linux' : 'windows']
+    // Prepare the list of JDK locations to search for on the agent
+    List<String> javaHomesToTry = agentJavaHomes[isUnix() ? 'linux' : 'windows']
 
-        // Define the java home based on the found JDK (or fallback to the Jenkins tool)
-        String javaHome
-        for(javaHomeToTry in javaHomesToTry) {
-            String javaBinToTry = "${javaHomeToTry}/bin/java"
-            if (!isUnix()) {
-                javaBinToTry += '.exe' // On windows, binaries have an extension
-            }
-            if (fileExists(javaBinToTry)) {
-                javaHome = javaHomeToTry
-                break
-            }
-        }
-        if (!javaHome) {
-            String jdkTool = "jdk${jdk}"
-            echo "WARNING: switching to the Jenkins tool named ${jdkTool} to set the environment variables JAVA_HOME and PATH, because no java installation found in any of the following locations: ${javaHomesToTry.join(", ")}"
-            javaHome = tool jdkTool
-        }
-
-        // Define the environment to ensure that the correct JDK is used
-        env = [
-            "JAVA_HOME=${javaHome}",
-            'PATH+JAVA=${JAVA_HOME}/bin',
-        ]
-
-        echo "INFO: Using JAVA_HOME=${javaHome} as default JDK home."
+    // Define the java home based on the found JDK (or fallback to the Jenkins tool)
+    String javaHome
+    for (javaHomeToTry in javaHomesToTry) {
+      String javaBinToTry = "${javaHomeToTry}/bin/java"
+      if (!isUnix()) {
+        javaBinToTry += '.exe' // On windows, binaries have an extension
+      }
+      if (fileExists(javaBinToTry)) {
+        javaHome = javaHomeToTry
+        break
+      }
+    }
+    if (!javaHome) {
+      String jdkTool = "jdk${jdk}"
+      echo "WARNING: switching to the Jenkins tool named ${jdkTool} to set the environment variables JAVA_HOME and PATH, because no java installation found in any of the following locations: ${javaHomesToTry.join(", ")}"
+      javaHome = tool jdkTool
     }
 
-    if (extraEnv != null) {
-        env.addAll(extraEnv)
-    }
+    // Define the environment to ensure that the correct JDK is used
+    env = ["JAVA_HOME=${javaHome}", 'PATH+JAVA=${JAVA_HOME}/bin']
 
-    withEnv(env) {
-        if (isUnix()) { // TODO JENKINS-44231 candidate for simplification
-            sh command
-        } else {
-            bat command
-        }
+    echo "INFO: Using JAVA_HOME=${javaHome} as default JDK home."
+  }
+
+  if (extraEnv != null) {
+    env.addAll(extraEnv)
+  }
+
+  if (!env.any { it.startsWith('MAVEN_OPTS=') }) {
+    env += 'MAVEN_OPTS=-XX:+PrintCommandLineFlags'
+  }
+
+  withEnv(env) {
+    if (isUnix()) { // TODO JENKINS-44231 candidate for simplification
+      sh command
+    } else {
+      bat command
     }
+  }
 }
 
 /**
@@ -206,57 +203,57 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null,
  * @param Specification for a jenkins war, can be a jenkins URI to the jenkins.war, a Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol
  * @param stashName The name used to stash the jenkins war file, defaults to "jenkinsWar"
  */
-void stashJenkinsWar(String jenkins, String stashName = "jenkinsWar") {
-    def isVersionNumber = (jenkins =~ /^\d+([.]\d+)*(-rc[0-9]+[.][0-9a-f]{12})?$/).matches()
-    def isLocalJenkins = jenkins.startsWith("file://")
-    def mirror = "http://mirrors.jenkins.io/"
+void stashJenkinsWar(String jenkins, String stashName = 'jenkinsWar') {
+  def isVersionNumber = (jenkins =~ /^\d+([.]\d+)*(-rc[0-9]+[.][0-9a-f]{12})?$/).matches()
+  def isLocalJenkins = jenkins.startsWith('file://')
+  def mirror = 'http://mirrors.jenkins.io/'
 
-    def jenkinsURL
+  def jenkinsURL
 
-    if (jenkins == "latest") {
-        jenkinsURL = mirror + "war/latest/jenkins.war"
-    } else if (jenkins == "latest-rc") {
-        jenkinsURL = mirror + "/war-rc/latest/jenkins.war"
-    } else if (jenkins == "lts") {
-        jenkinsURL = mirror + "war-stable/latest/jenkins.war"
-    } else if (jenkins == "lts-rc") {
-        jenkinsURL = mirror + "war-stable-rc/latest/jenkins.war"
-    }
+  if (jenkins == 'latest') {
+    jenkinsURL = mirror + 'war/latest/jenkins.war'
+  } else if (jenkins == 'latest-rc') {
+    jenkinsURL = mirror + '/war-rc/latest/jenkins.war'
+  } else if (jenkins == 'lts') {
+    jenkinsURL = mirror + 'war-stable/latest/jenkins.war'
+  } else if (jenkins == 'lts-rc') {
+    jenkinsURL = mirror + 'war-stable-rc/latest/jenkins.war'
+  }
 
-    if (isLocalJenkins) {
-        if (!fileExists(jenkins - "file://")) {
-            error "Specified Jenkins file does not exists"
-        }
+  if (isLocalJenkins) {
+    if (!fileExists(jenkins - 'file://')) {
+      error 'Specified Jenkins file does not exists'
     }
-    if (!isVersionNumber && !isLocalJenkins) {
-        if (jenkinsURL == null) {
-            error "Not sure how to interpret $jenkins as a version, alias, or URL"
-        }
-        echo 'Checking whether Jenkins WAR is available…'
-        sh "curl -ILf ${jenkinsURL}"
+  }
+  if (!isVersionNumber && !isLocalJenkins) {
+    if (jenkinsURL == null) {
+      error "Not sure how to interpret $jenkins as a version, alias, or URL"
     }
+    echo 'Checking whether Jenkins WAR is available…'
+    sh "curl -ILf ${jenkinsURL}"
+  }
 
-    if (isVersionNumber) {
-        List<String> downloadCommand = [
-                "dependency:copy",
-                "-Dartifact=org.jenkins-ci.main:jenkins-war:${jenkins}:war",
-                "-DoutputDirectory=.",
-                "-Dmdep.stripVersion=true"
-        ]
-        dir("deps") {
-            runMaven(downloadCommand)
-            sh "cp jenkins-war.war jenkins.war"
-            stash includes: 'jenkins.war', name: stashName
-        }
-    } else if (isLocalJenkins) {
-        dir(pwd(tmp: true)) {
-            sh "cp ${jenkins - 'file://'} jenkins.war"
-            stash includes: "*.war", name: "jenkinsWar"
-        }
-    } else {
-        sh("curl -o jenkins.war -L ${jenkinsURL}")
-        stash includes: '*.war', name: 'jenkinsWar'
+  if (isVersionNumber) {
+    List<String> downloadCommand = [
+      'dependency:copy',
+      "-Dartifact=org.jenkins-ci.main:jenkins-war:${jenkins}:war",
+      '-DoutputDirectory=.',
+      '-Dmdep.stripVersion=true',
+    ]
+    dir('deps') {
+      runMaven(downloadCommand)
+      sh 'cp jenkins-war.war jenkins.war'
+      stash includes: 'jenkins.war', name: stashName
     }
+  } else if (isLocalJenkins) {
+    dir(pwd(tmp: true)) {
+      sh "cp ${jenkins - 'file://'} jenkins.war"
+      stash includes: '*.war', name: 'jenkinsWar'
+    }
+  } else {
+    sh("curl -o jenkins.war -L ${jenkinsURL}")
+    stash includes: '*.war', name: 'jenkinsWar'
+  }
 }
 
 /**
@@ -271,26 +268,26 @@ void stashJenkinsWar(String jenkins, String stashName = "jenkinsWar") {
  * @param body The code to run in the desired node
  */
 void ensureInNode(env, nodeLabels, body) {
-    def inCorrectNode = true
-    def splitted = nodeLabels.split(",")
-    if (env.NODE_LABELS == null) {
+  def inCorrectNode = true
+  def splitted = nodeLabels.split(',')
+  if (env.NODE_LABELS == null) {
+    inCorrectNode = false
+  } else {
+    for (label in splitted) {
+      if (!env.NODE_LABELS.contains(label)) {
         inCorrectNode = false
-    } else {
-        for (label in splitted) {
-            if (!env.NODE_LABELS.contains(label)) {
-                inCorrectNode = false
-                break
-            }
-        }
+        break
+      }
     }
+  }
 
-    if (inCorrectNode) {
-        body()
-    } else {
-        node(splitted.join("&&")) {
-            body()
-        }
+  if (inCorrectNode) {
+    body()
+  } else {
+    node(splitted.join('&&')) {
+      body()
     }
+  }
 }
 
 /**
@@ -299,15 +296,15 @@ void ensureInNode(env, nodeLabels, body) {
  * Follow up with #maybePublishIncrementals.
  */
 void prepareToPublishIncrementals() {
-    // MINSTALL-126 would make this easier by letting us publish to a different directory to begin with:
-    String m2repo = sh script: 'mvn -Dset.changelist -Dexpression=settings.localRepository -q -DforceStdout help:evaluate', returnStdout: true
-    // No easy way to load both of these in one command: https://stackoverflow.com/q/23521889/12916
-    String version = sh script: 'mvn -Dset.changelist -Dexpression=project.version -q -DforceStdout help:evaluate', returnStdout: true
-    echo "Collecting $version from $m2repo for possible Incrementals publishing"
-    dir(m2repo) {
-        fingerprint '**/*-rc*.*/*-rc*.*' // includes any incrementals consumed
-        archiveArtifacts "**/$version/*$version*"
-    }
+  // MINSTALL-126 would make this easier by letting us publish to a different directory to begin with:
+  String m2repo = sh script: 'mvn -Dset.changelist -Dexpression=settings.localRepository -q -DforceStdout help:evaluate', returnStdout: true
+  // No easy way to load both of these in one command: https://stackoverflow.com/q/23521889/12916
+  String version = sh script: 'mvn -Dset.changelist -Dexpression=project.version -q -DforceStdout help:evaluate', returnStdout: true
+  echo "Collecting $version from $m2repo for possible Incrementals publishing"
+  dir(m2repo) {
+    fingerprint '**/*-rc*.*/*-rc*.*' // includes any incrementals consumed
+    archiveArtifacts "**/$version/*$version*"
+  }
 }
 
 /**
@@ -316,20 +313,20 @@ void prepareToPublishIncrementals() {
  * See INFRA-1571 and JEP-305.
  */
 void maybePublishIncrementals() {
-    if (new InfraConfig(env).isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
-        stage('Deploy') {
-            withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
-                httpRequest url: 'https://incrementals.jenkins.io/',
-                    httpMode: 'POST',
-                    contentType: 'APPLICATION_JSON',
-                    validResponseCodes: '100:599',
-                    timeout: 300,
-                    requestBody: /{"build_url":"$BUILD_URL"}/,
-                    customHeaders: [[name: 'Authorization', value: 'Bearer ' + FUNCTION_TOKEN]],
-                    consoleLogResponseBody: true
-            }
-        }
-    } else {
-        echo 'Skipping deployment to Incrementals'
+  if (new InfraConfig(env).isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
+    stage('Deploy') {
+      withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
+        httpRequest url: 'https://incrementals.jenkins.io/',
+        httpMode: 'POST',
+        contentType: 'APPLICATION_JSON',
+        validResponseCodes: '100:599',
+        timeout: 300,
+        requestBody: /{"build_url":"$BUILD_URL"}/,
+        customHeaders: [[name: 'Authorization', value: 'Bearer ' + FUNCTION_TOKEN]],
+        consoleLogResponseBody: true
+      }
     }
+  } else {
+    echo 'Skipping deployment to Incrementals'
+  }
 }
