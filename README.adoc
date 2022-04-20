@@ -131,16 +131,16 @@ if (infra.isTrusted()) {
 }
 ----
 
-=== infra.ensureInNode(env, nodeLabels, body)
+=== infra.ensureInNode(nodeLabels, body)
 
 Ensures that the given code block is runs in a node with the specified labels
 
 .Jenkinsfile
 [source,groovy]
 ----
-infra.ensureInNode(env, "docker,java", {
-    sh "docker -v"
-})
+infra.ensureInNode('docker,java') {
+    sh 'docker -v'
+}
 ----
 
 === infra.stashJenkinsWar(jenkins, stashName)
