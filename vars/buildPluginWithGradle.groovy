@@ -43,7 +43,7 @@ def call(Map params = [:]) {
               infra.publishDeprecationCheck('Remove javaLevel', 'Ignoring deprecated "javaLevel" parameter. This parameter should be removed from your "Jenkinsfile".')
             }
             //TODO(oleg-nenashev): Once supported by Gradle JPI Plugin, pass jenkinsVersion
-            if (jenkinsVersion != null) {
+            if (jenkinsVersion) {
               echo "WARNING: 'jenkinsVersion' parameter is not supported in buildPluginWithGradle(). It will be ignored"
             }
             List<String> gradleOptions = ['--no-daemon', 'cleanTest', 'build']

@@ -19,7 +19,7 @@ def call(String artifacts = null) {
       }
 
       stage('Archive reports') {
-        if (artifacts != null) {
+        if (artifacts) {
           archiveArtifacts artifacts: artifacts
         } else {
           echo 'No artifacts to archive, skipping...'
