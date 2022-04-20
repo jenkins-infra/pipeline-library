@@ -161,16 +161,16 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     // Note: imageName & rebuildImageOnPeriodicJob have already been tested in other tests
     addEnvVar('BRANCH_IS_PRIMARY', 'true')
     script.call(
-      imageName: testImageName,
-      updatecliApplyCronTriggerExpression: anotherCronTriggerExpression,
-      updatecliConfig: [
-        containerMemory: anotherContainerMemory,
-      ],
-      buildDockerConfig: [
-        useContainer: false,
-      ],
-      updatecliCredentialsId: anotherCredentialsId
-    )
+        imageName: testImageName,
+        updatecliApplyCronTriggerExpression: anotherCronTriggerExpression,
+        updatecliConfig: [
+          containerMemory: anotherContainerMemory,
+        ],
+        buildDockerConfig: [
+          useContainer: false,
+        ],
+        updatecliCredentialsId: anotherCredentialsId
+        )
     printCallStack()
 
     // Then we expect a successfull build
@@ -212,10 +212,10 @@ class ParallelDockerUpdatecliStepTests extends BaseTest {
     // When the "parallelDockerUpdatecli" function is called with custom parameters, including legcay parameters for updatecli
     addEnvVar('BRANCH_IS_PRIMARY', 'true')
     script.call(
-      imageName: testImageName,
-      containerMemory: anotherContainerMemory,
-      updatecliApplyCronTriggerExpression: anotherCronTriggerExpression,
-    )
+        imageName: testImageName,
+        containerMemory: anotherContainerMemory,
+        updatecliApplyCronTriggerExpression: anotherCronTriggerExpression,
+        )
     printCallStack()
 
     // Then a successfull build is expected
