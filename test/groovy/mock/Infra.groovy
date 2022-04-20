@@ -41,4 +41,6 @@ class Infra implements Serializable {
   }
 
   public void maybePublishIncrementals() { }
+
+  void publishDeprecationCheck(String deprecationSummary, String deprecationMessage) { }
 }

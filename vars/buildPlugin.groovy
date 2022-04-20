@@ -15,9 +15,7 @@ def call(Map params = [:]) {
 
   def useContainerAgent = params.containsKey('useContainerAgent') ? params.useContainerAgent : false
   if (params.containsKey('useAci')) {
-    deprecationMessage = 'The parameter "useAci" is deprecated. Please use "useContainerAgent" instead as per https://issues.jenkins.io/browse/INFRA-2918.'
-    echo "WARNING: ${deprecationMessage}"
-    publishChecks name: 'pipeline-library', summary: 'Replace useAci with useContainerAgent', conclusion: 'NEUTRAL', text: deprecationMessage
+    infra.publishDeprecationCheck('Replace useAci with useContainerAgent', 'The parameter "useAci" is deprecated. Please use "useContainerAgent" instead as per https://issues.jenkins.io/browse/INFRA-2918.')
     useContainerAgent = params.containsKey('useAci')
   }
   if (timeoutValue > 180) {
@@ -33,7 +31,7 @@ def call(Map params = [:]) {
     String jdk = config.jdk
     String jenkinsVersion = config.jenkins
     if (config.containsKey('javaLevel')) {
-      echo 'WARNING: Ignoring deprecated "javaLevel" parameter. This parameter should be removed from your "Jenkinsfile".'
+      infra.publishDeprecationCheck('Remove javaLevel', 'Ignoring deprecated "javaLevel" parameter. This parameter should be removed from your "Jenkinsfile".')
     }
 
     String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
@@ -132,7 +130,7 @@ def call(Map params = [:]) {
                   }
                 }
               } else {
-                echo 'WARNING: Gradle mode for buildPlugin() is deprecated, please use buildPluginWithGradle()'
+                infra.publishDeprecationCheck('Replace buildPlugin with buildPluginWithGradle', 'Gradle mode for buildPlugin() is deprecated, please use buildPluginWithGradle()')
                 List<String> gradleOptions = [
                   '--no-daemon',
                   'cleanTest',
