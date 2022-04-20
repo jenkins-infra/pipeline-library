@@ -79,7 +79,7 @@ class InfraStepTests extends BaseTest {
     def script = loadScript(scriptName)
     try {
       script.checkoutSCM()
-    } catch(e){
+    } catch(e) {
       //NOOP
     }
     printCallStack()

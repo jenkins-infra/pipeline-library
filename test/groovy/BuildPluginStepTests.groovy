@@ -65,8 +65,10 @@ class BuildPluginStepTests extends BaseTest {
     def script = loadScript(scriptName)
     def configurations = script.getConfigurations([:])
 
-    def expected = [['platform': 'linux', 'jdk': '8', 'jenkins': null],
-                    ['platform': 'windows', 'jdk': '8', 'jenkins': null]]
+    def expected = [
+      ['platform': 'linux', 'jdk': '8', 'jenkins': null],
+      ['platform': 'windows', 'jdk': '8', 'jenkins': null],
+    ]
     assertEquals(expected, configurations)
     printCallStack()
     assertJobStatusSuccess()
@@ -243,10 +245,11 @@ class BuildPluginStepTests extends BaseTest {
   void test_buildPlugin_with_warnings_ng_and_thresholds() throws Exception {
     def script = loadScript(scriptName)
     script.call(spotbugs: [
-            qualityGates: [
-                [threshold: 3, type: 'TOTAL', unstable: true],
-                [threshold: 4, type: 'NEW', unstable: true]],
-            sourceCodeEncoding: 'UTF-16'])
+      qualityGates: [
+        [threshold: 3, type: 'TOTAL', unstable: true],
+        [threshold: 4, type: 'NEW', unstable: true],
+      ],
+      sourceCodeEncoding: 'UTF-16'])
     printCallStack()
 
     assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=spotbugs, sourceCodeEncoding=UTF-16, skipBlames=true, trendChartType=TOOLS_ONLY, qualityGates=[{threshold=3, type=TOTAL, unstable=true}, {threshold=4, type=NEW, unstable=true}]}'))
@@ -256,10 +259,11 @@ class BuildPluginStepTests extends BaseTest {
   void test_buildPlugin_with_warnings_ng_and_checkstyle() throws Exception {
     def script = loadScript(scriptName)
     script.call(checkstyle: [
-            qualityGates: [
-                    [threshold: 3, type: 'TOTAL', unstable: true],
-                    [threshold: 4, type: 'NEW', unstable: true]],
-            filters: '[includeFile(\'MyFile.*.java\'), excludeCategory(\'WHITESPACE\')]'])
+      qualityGates: [
+        [threshold: 3, type: 'TOTAL', unstable: true],
+        [threshold: 4, type: 'NEW', unstable: true],
+      ],
+      filters: '[includeFile(\'MyFile.*.java\'), excludeCategory(\'WHITESPACE\')]'])
     printCallStack()
 
     assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=checkstyle, sourceCodeEncoding=UTF-8, skipBlames=true, trendChartType=TOOLS_ONLY, qualityGates=[{threshold=3, type=TOTAL, unstable=true}, {threshold=4, type=NEW, unstable=true}], filters=[includeFile(\'MyFile.*.java\'), excludeCategory(\'WHITESPACE\')]}'))
