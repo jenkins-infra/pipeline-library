@@ -30,7 +30,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   def mockedSimpleDate = '2022-02-02T20:20:20222'
 
   @Rule
-  public ExpectedException thrown = ExpectedException.none();
+  public ExpectedException thrown = ExpectedException.none()
 
   @Override
   @Before
@@ -332,7 +332,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Then we expect a successful build
     assertJobStatusSuccess()
 
-     // With the common workflow run as expected
+    // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
     assertTrue(assertContainerAgent())
 

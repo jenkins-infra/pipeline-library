@@ -14,7 +14,7 @@ def call(String imageName, Map userConfig=[:]) {
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: '', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
-    credentials: 'jenkins-dockerhub'
+    credentials: 'jenkins-dockerhub',
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -41,7 +41,9 @@ def call(String imageName, Map userConfig=[:]) {
       "PATH+BINS=${env.WORKSPACE}/.bin", // Add to the path the directory with the custom binaries that could be installed during the build
     ]) {
       stage("Prepare ${imageName}") {
-        withCredentials([usernamePassword(credentialsId: finalConfig.credentials, passwordVariable: 'DOCKER_REGISTRY_PSW', usernameVariable: 'DOCKER_REGISTRY_USR')]) {
+        withCredentials([
+          usernamePassword(credentialsId: finalConfig.credentials, passwordVariable: 'DOCKER_REGISTRY_PSW', usernameVariable: 'DOCKER_REGISTRY_USR')
+        ]) {
           checkout scm
 
           // Logging in on the Dockerhub helps to avoid request limit from DockerHub
@@ -59,10 +61,10 @@ def call(String imageName, Map userConfig=[:]) {
       // Automatic tagging on principal branch is not enabled by default
       if (semVerEnabled) {
         stage("Get Next Version of ${imageName}") {
-          if(finalConfig.nextVersionCommand.contains('jx-release-version')) {
+          if (finalConfig.nextVersionCommand.contains('jx-release-version')) {
             withEnv([
-                "jxrv_url=https://github.com/jenkins-x-plugins/jx-release-version/releases/download/v2.5.1/jx-release-version-${operatingSystem}-${cpuArch}.tar.gz", // TODO: track with updatecli
-              ]) {
+              "jxrv_url=https://github.com/jenkins-x-plugins/jx-release-version/releases/download/v2.5.1/jx-release-version-${operatingSystem}-${cpuArch}.tar.gz", // TODO: track with updatecli
+            ]) {
               sh '''
               if ! command -v jx-release-version 2>/dev/null >/dev/null
               then
@@ -83,17 +85,15 @@ def call(String imageName, Map userConfig=[:]) {
         // Define the image name as prefix to support multi images per pipeline
         def hadolintReportId = "${imageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
         def hadoLintReportFile = "${hadolintReportId}.json"
-        withEnv([
-          "HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}",
-        ]) {
+        withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
           try {
             sh 'make lint'
           } finally {
             recordIssues(
-              enabledForFailure: true,
-              aggregatingResults: false,
-              tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
-            )
+                enabledForFailure: true,
+                aggregatingResults: false,
+                tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
+                )
           }
         }
       } // stage
@@ -104,8 +104,8 @@ def call(String imageName, Map userConfig=[:]) {
 
       // There can be 2 kind of tests: per image and per repository
       [
-        "Image Test Harness": "${finalConfig.imageDir}/cst.yml",
-        "Common Test Harness": "${env.WORKSPACE}/common-cst.yml"
+        'Image Test Harness': "${finalConfig.imageDir}/cst.yml",
+        'Common Test Harness': "${env.WORKSPACE}/common-cst.yml"
       ].each { testName, testHarness ->
         if (fileExists(testHarness)) {
           stage("Test ${testName} for ${imageName}") {
@@ -134,12 +134,14 @@ def call(String imageName, Map userConfig=[:]) {
           echo "Configuring credential.helper"
           sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
 
-          withCredentials([usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+          withCredentials([
+            usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
+          ]) {
             echo "Tagging New Version: $nextVersion"
             sh "git tag $nextVersion"
 
-            echo "Pushing Tag"
-            sh "git push origin --tags"
+            echo 'Pushing Tag'
+            sh 'git push origin --tags'
           }
         } // stage
       } // if
@@ -149,9 +151,9 @@ def call(String imageName, Map userConfig=[:]) {
           final InfraConfig infraConfig = new InfraConfig(env)
           String imageDeployName = infraConfig.dockerRegistry + '/' + imageName
 
-          if(env.TAG_NAME) {
+          if (env.TAG_NAME) {
             // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
-            if(imageDeployName.contains(':')) {
+            if (imageDeployName.contains(':')) {
               imageDeployName += "-${env.TAG_NAME}"
             } else {
               imageDeployName += ":${env.TAG_NAME}"
@@ -162,19 +164,18 @@ def call(String imageName, Map userConfig=[:]) {
       } // if
 
       if (env.TAG_NAME && finalConfig.automaticSemanticVersioning) {
-        stage("GitHub Release") {
-          withCredentials([usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')]) {
+        stage('GitHub Release') {
+          withCredentials([
+            usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
+          ]) {
             final String origin = sh(returnStdout: true, script: 'git remote -v | grep origin | grep push | sed \'s/^origin\\s//\' | sed \'s/\\s(push)//\'').trim() - '.git'
             final String org = origin.split('/')[3]
             final String repository = origin.split('/')[4]
-            final String ghVersion = "2.5.2" // TODO: track with updatecli
+            final String ghVersion = '2.5.2' // TODO: track with updatecli
             final String platformId = "${operatingSystem}_${cpuArch}"
             final String ghUrl = "https://github.com/cli/cli/releases/download/v${ghVersion}/gh_${ghVersion}_${platformId}.tar.gz"
 
-            withEnv([
-              "platform_id=${platformId}",
-              "gh_url=${ghUrl}",
-            ]) {
+            withEnv(["platform_id=${platformId}", "gh_url=${ghUrl}"]) {
               sh '''
               if ! command -v gh 2>/dev/null >/dev/null
               then
@@ -206,38 +207,35 @@ def withContainerEngineAgent(finalConfig, body) {
     // The podTemplate must define only a single container, named `jnlp`
     // Ref - https://support.cloudbees.com/hc/en-us/articles/360054642231-Considerations-for-Kubernetes-Clients-Connections-when-using-Kubernetes-Plugin
     podTemplate(
-      annotations: [
-        podAnnotation(key: 'container.apparmor.security.beta.kubernetes.io/jnlp', value: 'unconfined'),
-        podAnnotation(key: 'container.seccomp.security.alpha.kubernetes.io/jnlp', value: 'unconfined'),
-      ],
-      containers: [
-        // This container must be named `jnlp` and should use the default entrypoint/cmd (command/args) inherited from inbound-agent parent image
-        containerTemplate(
+        annotations: [
+          podAnnotation(key: 'container.apparmor.security.beta.kubernetes.io/jnlp', value: 'unconfined'),
+          podAnnotation(key: 'container.seccomp.security.alpha.kubernetes.io/jnlp', value: 'unconfined'),
+        ],
+        containers: [
+          // This container must be named `jnlp` and should use the default entrypoint/cmd (command/args) inherited from inbound-agent parent image
+          containerTemplate(
           name: 'jnlp',
           image: finalConfig.builderImage,
           resourceRequestCpu: '2',
           resourceLimitCpu: '2',
           resourceRequestMemory: '2Gi',
           resourceLimitMemory: '2Gi',
-        ),
-      ]
-    ) {
-      node(POD_LABEL) {
-        withEnv([
-          'CONTAINER_BIN=img',
-          'CST_DRIVER=tar',
-        ]) {
-          body.call()
+          ),
+        ]
+        ) {
+          node(POD_LABEL) {
+            withEnv(['CONTAINER_BIN=img', 'CST_DRIVER=tar']) {
+              body.call()
+            }
+          }
         }
-      }
-    }
   } else {
     node(finalConfig.agentLabels) {
       withEnv([
         'CONTAINER_BIN=docker',
         'CST_DRIVER=docker',
         'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint', // Do not put the command (right part of the assignation) between quotes to ensure that bash treat it as an array of strings
-        ]) {
+      ]) {
         body.call()
       }
     }

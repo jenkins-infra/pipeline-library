@@ -22,7 +22,7 @@ class PublishReportsStepTests extends BaseTest {
     // when running with !infra.isTrusted()
     try {
       script.call(null)
-    } catch(e){
+    } catch(e) {
       //NOOP
     }
     printCallStack()
@@ -48,7 +48,7 @@ class PublishReportsStepTests extends BaseTest {
   void test_with_trusted_and_html_infra() throws Exception {
     def script = loadScript(scriptName)
     // when running with a html filename
-    script.call([ 'foo.html' ])
+    script.call(['foo.html'])
     printCallStack()
     // then timeout is default and filename manipulations is in place
     assertTrue(assertMethodCallContainsPattern('sh', '--timeout=60 --file=foo.html --name=foo.html --content-type="text/html"'))
@@ -64,7 +64,7 @@ class PublishReportsStepTests extends BaseTest {
   void test_with_trusted_and_full_path_css_infra() throws Exception {
     def script = loadScript(scriptName)
     // when running with a css full path filename
-    script.call([ '/bar/foo.css' ])
+    script.call(['/bar/foo.css'])
     printCallStack()
     // then timeout is default and filename manipulations is in place
     assertTrue(assertMethodCallContainsPattern('sh', '--timeout=60 --file=/bar/foo.css --name=/bar/foo.css --content-type="text/css'))
