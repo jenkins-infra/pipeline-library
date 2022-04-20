@@ -52,7 +52,7 @@ Object checkoutSCM(String repo = null) {
  * @param jdk Version of JDK to be used (no longer used)
  * @return {@code true} if the file has been defined
  */
-boolean retrieveMavenSettingsFile(String settingsXml, String jdk = 8) {
+boolean retrieveMavenSettingsFile(String settingsXml) {
   if (env.MAVEN_SETTINGS_FILE_ID != null) {
     configFileProvider([configFile(fileId: env.MAVEN_SETTINGS_FILE_ID, variable: 'mvnSettingsFile')]) {
       if (isUnix()) {
