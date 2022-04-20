@@ -111,17 +111,21 @@ Object runMaven(List<String> options, Integer jdk, List<String> extraEnv = null,
  * @param extraEnv Extra environment variables to be passed
  * @return nothing
  */
-Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null, Boolean addToolEnv = true) {
-  List<String> env = []
+Object runWithMaven(String command, String jdk = '8', List<String> extraEnv = null, Boolean addToolEnv = true) {
+  List<String> javaEnv = []
   if (addToolEnv) {
-    env = ["PATH+MAVEN=${tool 'mvn'}/bin"]
+    javaEnv += "PATH+MAVEN=${tool 'mvn'}/bin"
   }
 
   if (extraEnv != null) {
-    env.addAll(extraEnv)
+    javaEnv.addAll(extraEnv)
   }
 
-  runWithJava(command, jdk, env, addToolEnv)
+  if (!javaEnv.any { it.startsWith('MAVEN_OPTS=') }) {
+    javaEnv += 'MAVEN_OPTS=-XX:+PrintCommandLineFlags'
+  }
+
+  runWithJava(command, jdk, javaEnv, addToolEnv)
 }
 
 /**
@@ -133,8 +137,8 @@ Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null
  * @param extraEnv Extra environment variables to be passed
  * @return nothing
  */
-Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null, Boolean addToolEnv = true) {
-  List<String> env = []
+Object runWithJava(String command, String jdk = '8', List<String> extraEnv = null, Boolean addToolEnv = true) {
+  List<String> javaEnv = []
   if (addToolEnv) {
     // Collection of well-known JDK locations on our agent templates (VMs and containers)
     def agentJavaHomes = [
@@ -174,20 +178,17 @@ Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null,
     }
 
     // Define the environment to ensure that the correct JDK is used
-    env = ["JAVA_HOME=${javaHome}", 'PATH+JAVA=${JAVA_HOME}/bin']
+    javaEnv += "JAVA_HOME=${javaHome}"
+    javaEnv += 'PATH+JAVA=${JAVA_HOME}/bin'
 
     echo "INFO: Using JAVA_HOME=${javaHome} as default JDK home."
   }
 
   if (extraEnv != null) {
-    env.addAll(extraEnv)
+    javaEnv.addAll(extraEnv)
   }
 
-  if (!env.any { it.startsWith('MAVEN_OPTS=') }) {
-    env += 'MAVEN_OPTS=-XX:+PrintCommandLineFlags'
-  }
-
-  withEnv(env) {
+  withEnv(javaEnv) {
     if (isUnix()) { // TODO JENKINS-44231 candidate for simplification
       sh command
     } else {
