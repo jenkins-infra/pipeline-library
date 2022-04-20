@@ -1,7 +1,7 @@
 /**
-terraform.groovy: Please look at https://github.com/jenkins-infra/shared-tools/tree/main/terraform#jenkins-pipeline for documentation and usage.
-Note: this shared pipeline is tailored to Jenkins infrastructure usage and thus set some default values which might not be desirable for yours.
-**/
+ terraform.groovy: Please look at https://github.com/jenkins-infra/shared-tools/tree/main/terraform#jenkins-pipeline for documentation and usage.
+ Note: this shared pipeline is tailored to Jenkins infrastructure usage and thus set some default values which might not be desirable for yours.
+ **/
 
 def call(userConfig = [:]) {
   def defaultConfig = [
@@ -30,11 +30,7 @@ def call(userConfig = [:]) {
 
   // Only define a cron trigger on the primary branch
   if (isBuildOnProductionBranch && finalConfig.cronTriggerExpression) {
-    properties([
-      pipelineTriggers([
-        cron(finalConfig.cronTriggerExpression)
-      ]),
-    ])
+    properties([pipelineTriggers([cron(finalConfig.cronTriggerExpression)])])
   }
 
   properties([
@@ -46,9 +42,9 @@ def call(userConfig = [:]) {
 
   withEnv([
     // https://www.terraform.io/docs/cli/config/environment-variables.html#tf_in_automation
-    "TF_IN_AUTOMATION=1",
+    'TF_IN_AUTOMATION=1',
     // https://www.terraform.io/docs/cli/config/environment-variables.html#tf_input
-    "TF_INPUT=0",
+    'TF_INPUT=0',
   ]) {
 
     if (!isBuildCauseUser) {
@@ -109,10 +105,10 @@ def call(userConfig = [:]) {
             if (isBuildOnChangeRequest) {
               stage('🗣 Notify User on the PR') {
                 final String planFileUrl = "${env.BUILD_URL}artifact/${planFileName}"
-                publishChecks name: "terraform-plan",
-                  title: "Terraform plan for this change request",
-                  text: "The terraform plan for this change request can be found at <${planFileUrl}>.",
-                  detailsURL: planFileUrl
+                publishChecks name: 'terraform-plan',
+                title: 'Terraform plan for this change request',
+                text: "The terraform plan for this change request can be found at <${planFileUrl}>.",
+                detailsURL: planFileUrl
               }
               stage('💸 Report estimated costs') {
                 withCredentials([string(credentialsId: 'infracost-api-key', variable: 'INFRACOST_API_KEY')]) {
@@ -121,7 +117,7 @@ def call(userConfig = [:]) {
                   try {
                     // On AWS we can use the terraform plan to estimate the costs as it doesn't contains most sensible secrets
                     if (scmOutput.GIT_URL.contains('jenkins-infra/aws')) {
-                      sh "terraform show -json tfplan > plan.json"
+                      sh 'terraform show -json tfplan > plan.json'
                       sh 'infracost breakdown --path plan.json --show-skipped --format json --out-file infracost.json'
                       // Also try the experimental HCL method for comparison and upstream contrib
                       sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost-hcl.json'
@@ -160,9 +156,9 @@ def call(userConfig = [:]) {
 
             // Only ask for manual approval when the build was manually launched by a human
             // Note that we keep waiting with the current node agent as we want to keep the context
-            if (isBuildCauseUser){
-              stage("⏳ Waiting for User Input (Manual Approval)") {
-                input message: "Should we apply these changes to production?", ok: "🚢 Yes, ship it!"
+            if (isBuildCauseUser) {
+              stage('⏳ Waiting for User Input (Manual Approval)') {
+                input message: 'Should we apply these changes to production?', ok: '🚢 Yes, ship it!'
               }
             }
             if (!isBuildCauseTimer && isBuildOnProductionBranch) {
@@ -182,29 +178,23 @@ def call(userConfig = [:]) {
 
 def agentTemplate(containerImage, body) {
   podTemplate(
-    // Custom YAML definition to enforce no service account token (if Terraform uses kubernetes, it would grant it a wrong access)
-    yaml: '''
+      // Custom YAML definition to enforce no service account token (if Terraform uses kubernetes, it would grant it a wrong access)
+      yaml: '''
       apiVersion: v1
       kind: Pod
       spec:
         automountServiceAccountToken: false
     ''',
-    // The Docker image here is aimed at "1 container per pod" and is embedding Jenkins agent tooling
-    containers: [
-      containerTemplate(
-        name: 'jnlp',
-        image: containerImage,
-      ),
-    ]
-  ) {
-    node(POD_LABEL) {
-      timeout(time: 1, unit: 'HOURS') {
-        ansiColor('xterm') {
-          body.call()
+      // The Docker image here is aimed at "1 container per pod" and is embedding Jenkins agent tooling
+      containers: [containerTemplate(name: 'jnlp', image: containerImage)]) {
+        node(POD_LABEL) {
+          timeout(time: 1, unit: 'HOURS') {
+            ansiColor('xterm') {
+              body.call()
+            }
+          }
         }
       }
-    }
-  }
 }
 
 
@@ -218,9 +208,12 @@ def getInfraSharedTools(String sharedToolsSubDir) {
 
   // Retrieve the "legit" shared tooling (should be the same as the submodule but we're never sure enough)
   checkout changelog: false, poll: false,
-    scm: [$class: 'GitSCM', branches: [[name: '*/main']],
-    extensions: [[$class: 'CleanBeforeCheckout', deleteUntrackedNestedRepositories: true], [$class: 'RelativeTargetDirectory', relativeTargetDir: sharedToolsSubDir],
-      [$class: 'GitSCMStatusChecksExtension', skip: true]], userRemoteConfigs: [[credentialsId: 'github-app-infra', url: 'https://github.com/jenkins-infra/shared-tools.git']]]
-    
+  scm: [$class: 'GitSCM', branches: [[name: '*/main']],
+    extensions: [
+      [$class: 'CleanBeforeCheckout', deleteUntrackedNestedRepositories: true],
+      [$class: 'RelativeTargetDirectory', relativeTargetDir: sharedToolsSubDir],
+      [$class: 'GitSCMStatusChecksExtension', skip: true],
+    ], userRemoteConfigs: [[credentialsId: 'github-app-infra', url: 'https://github.com/jenkins-infra/shared-tools.git']]]
+
   return outputs
 }

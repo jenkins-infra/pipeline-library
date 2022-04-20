@@ -7,7 +7,6 @@ import static org.junit.Assert.assertTrue
 
 class PullRequestMock {
   def comment(String message) {
-
   }
 }
 
@@ -18,11 +17,11 @@ class TerraformStepTests extends BaseTest {
   // The
   ArrayList stagingCustomCreds = [
     [$class: 'UsernamePasswordMultiBinding', credentialsId: 'credential-1', passwordVariable: 'STAGING_PSW', usernameVariable: 'STAGING_USR'],
-    [$class: 'StringBinding', credentialsId: 'credential-common', variable: 'COMMON_SECRET']
+    [$class: 'StringBinding', credentialsId: 'credential-common', variable: 'COMMON_SECRET'],
   ]
   ArrayList productionCustomCreds = [
     [$class: 'UsernamePasswordMultiBinding', credentialsId: 'credential-2', passwordVariable: 'PRODUCTION_PSW', usernameVariable: 'PRODUCTION_USR'],
-    [$class: 'StringBinding', credentialsId: 'credential-common', variable: 'COMMON_SECRET']
+    [$class: 'StringBinding', credentialsId: 'credential-common', variable: 'COMMON_SECRET'],
   ]
 
   @Override
@@ -31,10 +30,7 @@ class TerraformStepTests extends BaseTest {
     super.setUp()
 
     // Default behavior is a build triggered by a timertrigger on the main branch (most common case)
-    binding.setProperty('currentBuild', new CurrentBuild(
-      'SUCCESS',
-      ['hudson.triggers.TimerTrigger']
-    ))
+    binding.setProperty('currentBuild', new CurrentBuild('SUCCESS', ['hudson.triggers.TimerTrigger']))
     addEnvVar('BRANCH_NAME', 'main')
 
     binding.setProperty('scm', ['GIT_URL': 'https://github.com/lesfurets/jenkins-unit-test.git'])
@@ -163,10 +159,7 @@ class TerraformStepTests extends BaseTest {
 
     // When calling the shared library global function with defaults
     // on a feature branch (not  a change request) triggered by a periodic code scan
-    binding.setProperty('currentBuild', new CurrentBuild(
-      'SUCCESS',
-      ['hudson.triggers.PeriodicFolderTrigger']
-    ))
+    binding.setProperty('currentBuild', new CurrentBuild('SUCCESS', ['hudson.triggers.PeriodicFolderTrigger']))
     addEnvVar('BRANCH_NAME', 'feat/terraform')
     script.call()
     printCallStack()
@@ -209,10 +202,7 @@ class TerraformStepTests extends BaseTest {
 
     // When calling the shared library global function with defaults
     // with a user manually-trigger build on the main branch
-    binding.setProperty('currentBuild', new CurrentBuild(
-      'SUCCESS',
-      ['hudson.model.Cause$UserIdCause']
-    ))
+    binding.setProperty('currentBuild', new CurrentBuild('SUCCESS', ['hudson.model.Cause$UserIdCause']))
     script.call()
     printCallStack()
 
@@ -245,11 +235,11 @@ class TerraformStepTests extends BaseTest {
 
     // When calling the shared library global function with custom parameters
     script.call(
-      cronTriggerExpression: '@weekly',
-      stagingCredentials: stagingCustomCreds,
-      productionCredentials: productionCustomCreds,
-      agentContainerImage: customImage,
-    )
+        cronTriggerExpression: '@weekly',
+        stagingCredentials: stagingCustomCreds,
+        productionCredentials: productionCustomCreds,
+        agentContainerImage: customImage,
+        )
     printCallStack()
 
     // Then we expect a successful build
