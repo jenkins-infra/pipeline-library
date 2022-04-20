@@ -138,7 +138,7 @@ def call(String imageName, Map userConfig=[:]) {
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
           ]) {
             echo "Tagging New Version: $nextVersion"
-            sh "git tag -a $nextVersion -m $IMAGE_NAME"
+            sh "git tag -a $nextVersion -m ${imageName}"
 
             echo 'Pushing Tag'
             sh 'git push origin --tags'
