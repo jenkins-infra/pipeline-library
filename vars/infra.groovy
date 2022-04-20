@@ -328,3 +328,8 @@ void maybePublishIncrementals() {
     echo 'Skipping deployment to Incrementals'
   }
 }
+
+void publishDeprecationCheck(String deprecationSummary, String deprecationMessage) {
+  echo "WARNING: ${deprecationMessage}"
+  publishChecks name: 'pipeline-library', summary: deprecationSummary, conclusion: 'NEUTRAL', text: deprecationMessage
+}

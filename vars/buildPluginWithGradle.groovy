@@ -21,7 +21,6 @@ def call(Map params = [:]) {
     String label = config.platform
     String jdk = config.jdk
     String jenkinsVersion = config.jenkins
-    String javaLevel = config.javaLevel
 
     String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
     boolean skipTests = params?.tests?.skip
@@ -40,8 +39,8 @@ def call(Map params = [:]) {
           }
 
           stage("Build (${stageIdentifier})") {
-            if (javaLevel != null) {
-              echo "WARNING: 'javaLevel' parameter is not supported in buildPluginWithGradle(). It will be ignored"
+            if (config.containsKey('javaLevel')) {
+              infra.publishDeprecationCheck('Remove javaLevel', 'Ignoring deprecated "javaLevel" parameter. This parameter should be removed from your "Jenkinsfile".')
             }
             //TODO(oleg-nenashev): Once supported by Gradle JPI Plugin, pass jenkinsVersion
             if (jenkinsVersion != null) {
