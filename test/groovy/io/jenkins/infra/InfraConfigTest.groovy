@@ -81,9 +81,9 @@ class InfraConfigTest {
       assertTrue(infraConfig.getDockerPushOrgAndCredentialsId().error)
     }
 
-    @Test
-    void canHandleUnsetJenkinsUrl() throws Exception {
-      def infraConfig = new InfraConfig([:])
+  @Test
+  void canHandleUnsetJenkinsUrl() throws Exception {
+    def infraConfig = new InfraConfig([:])
 
       assertFalse(infraConfig.isTrusted())
       assertFalse(infraConfig.isInfra())
@@ -94,9 +94,4 @@ class InfraConfigTest {
       assertTrue(infraConfig.getDockerPushOrgAndCredentialsId().error)
     }
 
-    assertFalse(infraConfig.isTrusted())
-    assertFalse(infraConfig.isInfra())
-    assertFalse(infraConfig.isRunningOnJenkinsInfra())
-    assertEquals('jenkins4eval', infraConfig.getDockerRegistry())
-  }
 }
