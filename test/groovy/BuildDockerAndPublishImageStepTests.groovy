@@ -44,7 +44,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     helper.addShMock('git remote -v | grep origin | grep push | sed \'s/^origin\\s//\' | sed \'s/\\s(push)//\'', 'https://github.com/org/repository.git', 0)
     helper.addShMock('gh api /repos/org/repository/releases | jq -e -r \'.[] | select(.draft == true and .name == "next") | .id\'', '12345', 0)
     addEnvVar('WORKSPACE', '/tmp')
-    addEnvVar('IMAGE_NAME', testImageName)
 
     // Define mocks/stubs for the data objects
     infraConfigMock = new StubFor(InfraConfig.class)
