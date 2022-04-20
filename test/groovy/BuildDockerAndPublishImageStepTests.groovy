@@ -131,7 +131,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   Boolean assertTagPushed(String newVersion) {
     return assertMethodCallContainsPattern('echo','Configuring credential.helper') \
       && assertMethodCallContainsPattern('echo','Configuring git user and email') \
-      && assertMethodCallContainsPattern('sh','git config user.name "jenkins"') \
+      && assertMethodCallContainsPattern('sh','git config user.name "${GIT_USERNAME}"') \
       && assertMethodCallContainsPattern('sh','git config user.email "jenkins-infra@googlegroups.com"') \
       && assertMethodCallContainsPattern('echo',"Tagging New Version: ${newVersion}") \
       && assertMethodCallContainsPattern('sh',"git tag -a ${newVersion} -m ${testImageName}") \
