@@ -138,7 +138,7 @@ def call(String imageName, Map userConfig=[:]) {
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
           ]) {
             echo "Configuring git user and email"
-            sh 'git config user.name "jenkins"'
+            sh 'git config user.name "${GIT_USERNAME}"'
             sh 'git config user.email "jenkins-infra@googlegroups.com"'
 
             echo "Tagging New Version: $nextVersion"
