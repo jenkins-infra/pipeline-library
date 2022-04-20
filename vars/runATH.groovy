@@ -30,7 +30,7 @@ def call(Map params = [:]) {
 
   def localPluginsStashName = env.RUN_ATH_LOCAL_PLUGINS_STASH_NAME ?: 'localPlugins'
 
-  infra.ensureInNode(env, env.RUN_ATH_SOURCES_AND_VALIDATION_NODE ?: 'docker-highmem', {
+  infra.ensureInNode(env.RUN_ATH_SOURCES_AND_VALIDATION_NODE ?: 'docker-highmem') {
     if (!fileExists(metadataFile)) {
       echo "Skipping ATH execution because the metadata file does not exist. Current value is ${metadataFile}."
       skipExecution = true
@@ -86,9 +86,9 @@ def call(Map params = [:]) {
       }
 
     }
-  })
+  }
 
-  infra.ensureInNode(env, env.RUN_ATH_DOCKER_NODE ?: 'docker-highmem', {
+  infra.ensureInNode(env.RUN_ATH_DOCKER_NODE ?: 'docker-highmem') {
     if (skipExecution) {
       return
     }
@@ -185,7 +185,7 @@ def call(Map params = [:]) {
 
       parallel testingbranches
     }
-  })
+  }
 }
 
 private void test(discriminator, commandBase, localSnapshots, localPluginsStashName, containerArgs, athContainerImage, javaOptions) {
