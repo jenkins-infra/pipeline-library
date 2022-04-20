@@ -18,31 +18,35 @@ Boolean isInfra() {
 }
 
 Object withDockerCredentials(Closure body) {
-    return withDockerPushCredentials(body)
+  return withDockerPushCredentials(body)
 }
 
 Object withDockerPushCredentials(Closure body) {
-    orgAndCredentialsId = new InfraConfig(env).getDockerPushOrgAndCredentialsId()
-    if (orgAndCredentialsId.error) {
-        echo orgAndCredentialsId.msg
-    } else {
-        env.DOCKERHUB_ORGANISATION = orgAndCredentialsId.organisation
-        withCredentials([[$class: 'ZipFileBinding', credentialsId: orgAndCredentialsId.credentialId, variable: 'DOCKER_CONFIG']]) {
-            return body.call()
-        }
+  orgAndCredentialsId = new InfraConfig(env).getDockerPushOrgAndCredentialsId()
+  if (orgAndCredentialsId.error) {
+    echo orgAndCredentialsId.msg
+  } else {
+    env.DOCKERHUB_ORGANISATION = orgAndCredentialsId.organisation
+    withCredentials([
+      [$class: 'ZipFileBinding', credentialsId: orgAndCredentialsId.credentialId, variable: 'DOCKER_CONFIG']
+    ]) {
+      return body.call()
     }
+  }
 }
 
 Object withDockerPullCredentials(Closure body) {
-    orgAndCredentialsId = new InfraConfig(env).getDockerPullOrgAndCredentialsId()
-    if (orgAndCredentialsId.error) {
-        echo orgAndCredentialsId.msg
-    } else {
-        env.DOCKERHUB_ORGANISATION = orgAndCredentialsId.organisation
-        withCredentials([[$class: 'ZipFileBinding', credentialsId: orgAndCredentialsId.credentialId, variable: 'DOCKER_CONFIG']]) {
-            return body.call()
-        }
+  orgAndCredentialsId = new InfraConfig(env).getDockerPullOrgAndCredentialsId()
+  if (orgAndCredentialsId.error) {
+    echo orgAndCredentialsId.msg
+  } else {
+    env.DOCKERHUB_ORGANISATION = orgAndCredentialsId.organisation
+    withCredentials([
+      [$class: 'ZipFileBinding', credentialsId: orgAndCredentialsId.credentialId, variable: 'DOCKER_CONFIG']
+    ]) {
+      return body.call()
     }
+  }
 }
 
 Object checkoutSCM(String repo = null) {

@@ -1,5 +1,5 @@
 package io.jenkins.infra
-import java.net.URL;
+import java.net.URL
 
 class InfraConfig implements Serializable {
   String jenkinsURL
@@ -47,16 +47,16 @@ class InfraConfig implements Serializable {
     switch(jenkinsHostname){
       case "ci.jenkins.io":
         return [error: false, organisation: "cijenkinsioinfra", credentialId: "cijenkinsioinfra-dockerhub-pull"]
-        break;
+        break
       case "trusted.ci.jenkins.io":
         return [error: false, organisation: "trustedcijenkinsio", credentialId: "trustedcijenkinsio-dockerhub-pull"]
-        break;
+        break
       case "infra.ci.jenkins.io":
         return [error: false, organisation: "infracijenkinsio", credentialId: "infracijenkinsio-dockerhub-pull"]
-        break;
+        break
       case "release.ci.jenkins.io":
         return [error: false, organisation: "releasecijenkinsio", credentialId: "releasecijenkinsio-dockerhub-pull"]
-        break;
+        break
       default:
         return [error: true, msg: "Cannot use Docker credentials outside of jenkins infra environments"]
     }
@@ -67,13 +67,13 @@ class InfraConfig implements Serializable {
     switch(jenkinsHostname){
       case "ci.jenkins.io":
         return [error: false, organisation: "jenkins4eval", credentialId: "jenkins4eval-dockerhub-push"]
-        break;
+        break
       case "trusted.ci.jenkins.io":
         return [error: false, organisation: "jenkins", credentialId: "jenkins-dockerhub-push"]
-        break;
+        break
       case "infra.ci.jenkins.io":
         return [error: false, organisation: "jenkinsinfraadmin", credentialId: "jenkinsinfraadmin-dockerhub-push"]
-        break;
+        break
       default:
         return [error: true, msg: "Cannot use Docker credentials outside of jenkins infra environments"]
     }
