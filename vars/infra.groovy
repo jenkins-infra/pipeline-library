@@ -261,11 +261,10 @@ void stashJenkinsWar(String jenkins, String stashName = 'jenkinsWar') {
  * Please note that this step is not able to manage complex labels and checks for them literally, so do not try to use labels like 'docker,(lowmemory&&linux)' as it will result in
  * the step launching a new node as is unable to find the label '(lowmemory&amp;&amp;linux)' in the list of labels for the current node
  *
- * @param env The run environment, used to access the current node labels
  * @param nodeLabels The node labels, a string containing the comma separated labels
  * @param body The code to run in the desired node
  */
-void ensureInNode(env, nodeLabels, body) {
+void ensureInNode(nodeLabels, body) {
   def inCorrectNode = true
   def splitted = nodeLabels.split(',')
   if (env.NODE_LABELS == null) {
