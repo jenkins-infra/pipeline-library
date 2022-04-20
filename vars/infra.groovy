@@ -111,7 +111,7 @@ Object runMaven(List<String> options, Integer jdk, List<String> extraEnv = null,
  * @param extraEnv Extra environment variables to be passed
  * @return nothing
  */
-Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null, Boolean addToolEnv = true) {
+Object runWithMaven(String command, String jdk = '8', List<String> extraEnv = null, Boolean addToolEnv = true) {
   List<String> javaEnv = []
   if (addToolEnv) {
     javaEnv += "PATH+MAVEN=${tool 'mvn'}/bin"
@@ -137,7 +137,7 @@ Object runWithMaven(String command, String jdk = 8, List<String> extraEnv = null
  * @param extraEnv Extra environment variables to be passed
  * @return nothing
  */
-Object runWithJava(String command, String jdk = 8, List<String> extraEnv = null, Boolean addToolEnv = true) {
+Object runWithJava(String command, String jdk = '8', List<String> extraEnv = null, Boolean addToolEnv = true) {
   List<String> javaEnv = []
   if (addToolEnv) {
     // Collection of well-known JDK locations on our agent templates (VMs and containers)
