@@ -137,8 +137,12 @@ def call(String imageName, Map userConfig=[:]) {
           withCredentials([
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
           ]) {
+            echo "Configuring git user and email"
+            sh 'git config user.name "${GIT_USERNAME}"'
+            sh 'git config user.email "jenkins-infra@googlegroups.com"'
+
             echo "Tagging New Version: $nextVersion"
-            sh "git tag $nextVersion"
+            sh "git tag -a $nextVersion -m ${imageName}"
 
             echo 'Pushing Tag'
             sh 'git push origin --tags'
