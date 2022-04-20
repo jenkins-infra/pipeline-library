@@ -71,7 +71,7 @@
     Gets a specification for a jenkins version or war and downloads and stashes it under the name provided
 </p>
 
-<strong>infra.ensureInNode(env, nodeLabels, body)</strong>
+<strong>infra.ensureInNode(nodeLabels, body)</strong>
 
 <p>
     Runs a code block in a node with the all the specified nodeLabels as labels, if already running in that node it simply
