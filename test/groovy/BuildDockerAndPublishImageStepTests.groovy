@@ -125,17 +125,16 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
   // return if the "make deploy" was detected with the provided argument as image name
   Boolean assertMakeDeploy(String expectedImageName = fullTestImageName) {
-    return assertMethodCallContainsPattern('sh','IMAGE_DEPLOY_NAME=' + expectedImageName + ' make deploy')
+    return assertMethodCallContainsPattern('sh','make deploy') \
+      && assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=${expectedImageName}")
   }
 
   Boolean assertTagPushed(String newVersion) {
     return assertMethodCallContainsPattern('echo','Configuring credential.helper') \
-      && assertMethodCallContainsPattern('echo','Configuring git user and email') \
+      && assertMethodCallContainsPattern('echo',"Tagging and pushing the new version: ${newVersion}") \
       && assertMethodCallContainsPattern('sh','git config user.name "${GIT_USERNAME}"') \
       && assertMethodCallContainsPattern('sh','git config user.email "jenkins-infra@googlegroups.com"') \
-      && assertMethodCallContainsPattern('echo',"Tagging New Version: ${newVersion}") \
-      && assertMethodCallContainsPattern('sh',"git tag -a ${newVersion} -m ${testImageName}") \
-      && assertMethodCallContainsPattern('echo','Pushing Tag') \
+      && assertMethodCallContainsPattern('sh','git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"') \
       && assertMethodCallContainsPattern('sh','git push origin --tags')
   }
 
@@ -143,7 +142,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     return assertMethodCallContainsPattern('stage','GitHub Release') \
       && assertMethodCallContainsPattern('withCredentials', 'GITHUB_TOKEN') \
       && assertMethodCallContainsPattern('withCredentials', 'GITHUB_USERNAME') \
-      && assertMethodCallContainsPattern('sh', 'gh api /repos/')
+      && assertMethodCallContainsPattern('sh', 'gh api ${GH_RELEASES_API_URI}')
   }
 
   @Test
