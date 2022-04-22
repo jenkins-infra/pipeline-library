@@ -137,16 +137,17 @@ def call(String imageName, Map userConfig=[:]) {
           withCredentials([
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
           ]) {
-            echo "Configuring git user and email"
-            sh 'git config user.name "${GIT_USERNAME}"'
-            sh 'git config user.email "jenkins-infra@googlegroups.com"'
+            withEnv(["NEXT_VERSION=${nextVersion}"]) {
+              echo "Tagging and pushing the new version: $nextVersion"
+              sh '''
+              git config user.name "${GIT_USERNAME}"
+              git config user.email "jenkins-infra@googlegroups.com"
 
-            echo "Tagging New Version: $nextVersion"
-            sh "git tag -a $nextVersion -m ${imageName}"
-
-            echo 'Pushing Tag'
-            sh 'git push origin --tags'
-          }
+              git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
+              git push origin --tags
+              '''
+            } // withEnv
+          } // withCredentials
         } // stage
       } // if
 
@@ -163,7 +164,10 @@ def call(String imageName, Map userConfig=[:]) {
               imageDeployName += ":${env.TAG_NAME}"
             }
           }
-          sh "IMAGE_DEPLOY_NAME=${imageDeployName} make deploy"
+          withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
+            // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
+            sh 'make deploy'
+          } // withEnv
         } //stage
       } // if
 
@@ -178,24 +182,29 @@ def call(String imageName, Map userConfig=[:]) {
             final String ghVersion = '2.5.2' // TODO: track with updatecli
             final String platformId = "${operatingSystem}_${cpuArch}"
             final String ghUrl = "https://github.com/cli/cli/releases/download/v${ghVersion}/gh_${ghVersion}_${platformId}.tar.gz"
-
-            withEnv(["platform_id=${platformId}", "gh_url=${ghUrl}"]) {
+            final String ghReleasesApiUri = "/repos/${org}/${repository}/releases"
+            withEnv([
+              "GH_URL=${ghUrl}",
+              "GH_RELEASES_API_URI=${ghReleasesApiUri}",
+            ]) {
               sh '''
               if ! command -v gh 2>/dev/null >/dev/null
               then
                 echo "INFO: No gh binary found: Installing it from ${ghUrl}."
                 temp_dir="$(mktemp -d)"
-                curl --silent --show-error --location --output "${temp_dir}/gh.tgz" "${gh_url}"
+                curl --silent --show-error --location --output "${temp_dir}/gh.tgz" "${GH_URL}"
                 tar xvfz "${temp_dir}/gh.tgz" -C "${temp_dir}"
                 mv "$(find "${temp_dir}"/*/bin -type f -name gh)" "${WORKSPACE}/.bin/gh"
                 rm -rf "${temp_dir}"
                 gh --version
               fi
               '''
-            }
 
-            final String release = sh(returnStdout: true, script: "gh api /repos/${org}/${repository}/releases | jq -e -r '.[] | select(.draft == true and .name == \"next\") | .id'").trim()
-            sh "gh api -X PATCH -F draft=false -F name=${env.TAG_NAME} -F tag_name=${env.TAG_NAME} /repos/${org}/${repository}/releases/$release"
+              final String release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'.[] | select(.draft == true and .name == "next") | .id\'').trim()
+              withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${release}"]) {
+                sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
+              } // withEnv
+            } // withEnv
           } // withCredentials
         } // stage
       } // if
