@@ -76,7 +76,6 @@ boolean retrieveMavenSettingsFile(String settingsXml) {
  * @param jdk JDK to be used
  * @param options Options to be passed to the Maven command
  * @param extraEnv Extra environment variables to be passed when invoking the command
- * @return nothing
  * @see #retrieveMavenSettingsFile(String)
  */
 Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = true) {
@@ -96,7 +95,6 @@ Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = 
  * @param Major version of JDK to be used (integer)
  * @param options Options to be passed to the Maven command
  * @param extraEnv Extra environment variables to be passed when invoking the command
- * @return nothing
  * @see #retrieveMavenSettingsFile(String)
  */
 Object runMaven(List<String> options, Integer jdk, List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = true) {
@@ -109,7 +107,6 @@ Object runMaven(List<String> options, Integer jdk, List<String> extraEnv = null,
  * @param command Command to be executed
  * @param jdk JDK version to be used
  * @param extraEnv Extra environment variables to be passed
- * @return nothing
  */
 Object runWithMaven(String command, String jdk = '8', List<String> extraEnv = null, Boolean addToolEnv = true) {
   List<String> javaEnv = []
@@ -135,7 +132,6 @@ Object runWithMaven(String command, String jdk = '8', List<String> extraEnv = nu
  * @param command Command to be executed
  * @param jdk JDK version to be used
  * @param extraEnv Extra environment variables to be passed
- * @return nothing
  */
 Object runWithJava(String command, String jdk = '8', List<String> extraEnv = null, Boolean addToolEnv = true) {
   List<String> javaEnv = []
