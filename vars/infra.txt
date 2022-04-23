@@ -1,84 +1,131 @@
-<strong>infra.isTrusted()</strong>
-
-<p>
-    Returns true if this Pipeline is executing on a trusted CI environment
-</p>
-
 <strong>infra.isRunningOnJenkinsInfra()</strong>
 
 <p>
-    Returns true if this Pipeline is executing on Jenkins infrastructure.
-    It may be ci.jenkins.io or trusted CI environment
+    Return true if this Pipeline is executing on Jenkins infrastructure.
+    It may be <code>ci.jenkins.io</code>, a trusted CI environment, or an infrastructure CI environment.
+</p>
+
+<strong>infra.isTrusted()</strong>
+
+<p>
+    Return true if this Pipeline is executing on a trusted CI environment.
+</p>
+
+<strong>infra.isInfra()</strong>
+
+<p>
+    Return true if this Pipeline is executing on an infrastructure CI environment.
 </p>
 
 <strong>infra.withDockerCredentials(Closure body)</strong>
 
 <p>
-    Runs the specified Closure with Docker credentials.
-    Note that the credentials are available only on trusted CI environment, execution will fail on other CI instances
+    Run the specified Closure with Docker credentials.
+    Note that the credentials are available only on a trusted CI environment; execution will fail on other CI instances.
+</p>
+
+<strong>infra.checkoutSCM(String repo = null)</strong>
+
+<p>
+    Check out a repository.
+    Either this must be used as part of a Multibranch Pipeline or a repository argument must be provided.
 </p>
 
 <strong>infra.retrieveMavenSettingsFile(String settingsXml)</strong>
 
 <p>
-    Retrieves a custom Maven settings file to the specified path if needed
-    (depending on the environment where the Pipeline runs).
-    Returns true if the file has been retrieved.
-    <strong>Note<strong>: currently does not return an interesting file.
+    Retrieve a custom Maven settings file to the specified path if needed
+    (depending on the environment where the Pipeline runs),
+    returning true if the file has been retrieved.
+    <strong>Note:</strong> currently does not return an interesting file.
 </p>
 
 <p>
-    See method Javadoc in the repository for more information.
+    See the method Javadoc in the repository for more information.
 </p>
 
-<strong>infra.runMaven(List&lt;String&gt; options, String jdk = 8, List&lt;String&gt; extraEnv = null, String settingsFile = null)</strong>
+<strong>infra.runMaven(List&lt;String&gt; options, String jdk = '8', List&lt;String&gt; extraEnv = null, String settingsFile = null, Boolean addToolEnv = true)</strong>
 
 <p>
-    Runs Maven for the specified options in the current workspace.
-    If <code>settingsFile</code> is <code>null</code>, Maven settings will be added usin <code>retrieveMavenSettingsFile</code>.
+    Run Maven with the specified options in the current workspace.
+    If <code>settingsFile</code> is <code>null</code>, Maven settings will be added using <code>infra.retrieveMavenSettingsFile()</code>.
 </p>
 
 <p>
-    See method Javadoc in the repository for more information.
+    See the method Javadoc in the repository for more information.
 </p>
 
-<strong>runWithMaven(String command, String jdk = 8, List&lt;String&gt; extraEnv = null)</strong>
+<strong>runMaven(List&lt;String&gt; options, Integer jdk, List&lt;String&gt; extraEnv = null, String settingsFile = null, Boolean addToolEnv = true)</strong>
 
 <p>
-     Runs the specified command with Java and Maven environments.
+    Run Maven with the specified options in the current workspace.
+    If <code>settingsFile</code> is <code>null</code>, Maven settings will be added using <code>infra.retrieveMavenSettingsFile()</code>.
+</p>
+
+<p>
+    See the method Javadoc in the repository for more information.
+</p>
+
+<strong>runWithMaven(String command, String jdk = '8', List&lt;String&gt; extraEnv = null, Boolean addToolEnv = true)</strong>
+
+<p>
+     Run the specified command with custom Java and Maven environments.
      The command may be either Batch or Shell depending on the OS.
 </p>
 
 <p>
-    See method Javadoc in the repository for more information.
+    See the method Javadoc in the repository for more information.
 </p>
 
-<strong>runWithJava(String command, String jdk = 8, List&lt;String&gt; extraEnv = null)</strong>
+<strong>runWithJava(String command, String jdk = '8', List&lt;String&gt; extraEnv = null, Boolean addToolEnv = true)</strong>
 
 <p>
-     Runs the specified command with Java tool.
+     Run the specified command with the Java tool.
      <code>PATH</code> and <code>JAVA_HOME</code> will be set.
      The command may be either Batch or Shell depending on the OS.
 </p>
 
 <p>
-    See method Javadoc in the repository for more information.
+    See the method Javadoc in the repository for more information.
 </p>
 
-<strong>infra.stashJenkinsWar(jenkins, stashName)</strong>
+<strong>infra.stashJenkinsWar(String jenkins, String stashName)</strong>
 
 <p>
-    Gets a specification for a jenkins version or war and downloads and stashes it under the name provided
+    Get a specification for a Jenkins version or WAR, download it, and stash it under the name provided.
 </p>
 
 <strong>infra.ensureInNode(nodeLabels, body)</strong>
 
 <p>
-    Runs a code block in a node with the all the specified nodeLabels as labels, if already running in that node it simply
-    executes the code block, if not allocates the desired node and runs the code inside it. Node labels must be specified
-    as String formed by a comma separated list of labels
-    <b>Please note that this step is not able to manage complex labels and checks for them literally, so do not try to use labels like 'docker,(lowmemory&&linux)' as it will result in
-    the step launching a new node as is unable to find the label '(lowmemory&amp;&amp;linux)' in the list of labels for the current node</b>
+    Run a code block in a node with the all the specified nodeLabels as labels.
+    If already running in that node, simply execute the code block.
+    Otherwise, allocate the desired node and run the code inside it.
+    Node labels must be specified as a <code>String</code> consisting of a comma-separated list of labels.
+    <strong>Note:</strong> This step is not able to manage complex labels and checks for them literally, so do not try to use labels like <code>docker,(lowmemory&amp;&amp;linux)</code>.
+    This will result in the step launching a new node, as it will be unable to find the label <code>(lowmemory&amp;&amp;linux)</code> in the list of labels for the current node.
+</p>
+
+<strong>infra.prepareToPublishIncrementals()</strong>
+
+<p>
+    Record artifacts created by this build which could be published via Incrementals (JEP-305).
+    Call at most once per build, on a Linux node, after running <code>mvn -Dset.changelist install</code>.
+    Follow up with <code>infra.maybePublishIncrementals()</code>.
+</p>
+
+<strong>infra.maybePublishIncrementals()</strong>
+
+<p>
+    When appropriate, publish artifacts from the current build to the Incrementals repository.
+    Call at the end of the build, outside any node, when <code>infra.prepareToPublishIncrementals()</code> may have been called previously.
+    See <a href="https://issues.jenkins.io/browse/INFRA-1571">INFRA-1571</a> and <a href="https://www.jenkins.io/jep/305">JEP-305</a>.
+</p>
+
+<strong>infra.publishDeprecationCheck(String deprecationSummary, String deprecationMessage)</strong>
+
+<p>
+    Log a warning to the build console and publish a deprecation check via the Checks API.
 </p>
 
 <!--
