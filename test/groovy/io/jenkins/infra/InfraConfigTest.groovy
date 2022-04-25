@@ -19,10 +19,10 @@ class InfraConfigTest {
     assertTrue(infraConfig.isCI())
     assertTrue(infraConfig.isRunningOnJenkinsInfra())
     assertEquals('jenkins4eval', infraConfig.getDockerRegistry())
-    assertEquals('cijenkinsioinfra', infraConfig.getDockerPullOrgAndCredentialsId().organisation)
-    assertEquals('cijenkinsioinfra-dockerhub-pull', infraConfig.getDockerPullOrgAndCredentialsId().credentialId)
-    assertEquals('jenkins4eval', infraConfig.getDockerPushOrgAndCredentialsId().organisation)
-    assertEquals('jenkins4eval-dockerhub-push', infraConfig.getDockerPushOrgAndCredentialsId().credentialId)
+    assertEquals('cijenkinsio', infraConfig.getDockerPullOrgAndCredentialsId().organisation)
+    assertEquals('cijenkinsio-dockerhub-pull', infraConfig.getDockerPullOrgAndCredentialsId().credentialId)
+    assertEquals('cijenkinsio', infraConfig.getDockerPushOrgAndCredentialsId().organisation)
+    assertEquals('cijenkinsio-dockerhub-push', infraConfig.getDockerPushOrgAndCredentialsId().credentialId)
   }
 
   @Test
@@ -36,8 +36,8 @@ class InfraConfigTest {
     assertEquals('jenkinsciinfra', infraConfig.getDockerRegistry())
     assertEquals('trustedcijenkinsio', infraConfig.getDockerPullOrgAndCredentialsId().organisation)
     assertEquals('trustedcijenkinsio-dockerhub-pull', infraConfig.getDockerPullOrgAndCredentialsId().credentialId)
-    assertEquals('jenkins', infraConfig.getDockerPushOrgAndCredentialsId().organisation)
-    assertEquals('jenkins-dockerhub-push', infraConfig.getDockerPushOrgAndCredentialsId().credentialId)
+    assertEquals('jenkinsciinfra', infraConfig.getDockerPushOrgAndCredentialsId().organisation)
+    assertEquals('jenkinsciinfra-dockerhub-push', infraConfig.getDockerPushOrgAndCredentialsId().credentialId)
   }
 
   @Test

@@ -46,7 +46,7 @@ class InfraConfig implements Serializable {
   def getDockerPullOrgAndCredentialsId() {
     switch(jenkinsHostname){
       case "ci.jenkins.io":
-        return [error: false, organisation: "cijenkinsioinfra", credentialId: "cijenkinsioinfra-dockerhub-pull"]
+        return [error: false, organisation: "cijenkinsio", credentialId: "cijenkinsio-dockerhub-pull"]
         break
       case "trusted.ci.jenkins.io":
         return [error: false, organisation: "trustedcijenkinsio", credentialId: "trustedcijenkinsio-dockerhub-pull"]
@@ -66,10 +66,10 @@ class InfraConfig implements Serializable {
   def getDockerPushOrgAndCredentialsId() {
     switch(jenkinsHostname){
       case "ci.jenkins.io":
-        return [error: false, organisation: "jenkins4eval", credentialId: "jenkins4eval-dockerhub-push"]
+        return [error: false, organisation: "cijenkinsio", credentialId: "cijenkinsio-dockerhub-push"]
         break
       case "trusted.ci.jenkins.io":
-        return [error: false, organisation: "jenkins", credentialId: "jenkins-dockerhub-push"]
+        return [error: false, organisation: "jenkinsciinfra", credentialId: "jenkinsciinfra-dockerhub-push"]
         break
       case "infra.ci.jenkins.io":
         return [error: false, organisation: "jenkinsinfraadmin", credentialId: "jenkinsinfraadmin-dockerhub-push"]
