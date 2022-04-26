@@ -6,24 +6,26 @@ The following document contains all the resources you should need in order to ge
 
 ## Table of Contents
 
-- [Code Of Conduct](#code-of-conduct)
-- [TL;DR: I'm lost and I just have a question!](#tl-dr--i-m-lost-and-i-just-have-a-question-)
-- [What can I contribute?](#what-can-i-contribute-)
-- [How to contribute?](#how-to-contribute-)
-- [How will my contribution be evaluated?](#how-will-my-contribution-be-evaluated-)
-- [How can I test my contribution?](#how-can-i-test-my-contribution-)
-- [How to setup my environment?](#how-to-setup-my-environment-)
-  - [Signing Commits](#signing-commits)
-  - [Technical Requirements](#technical-requirements)
-- [Tips and Tricks: Discovering the Project](#tips-and-tricks--discovering-the-project)
-  - [Useful commands](#useful-commands)
-  - [Finding the unit tests](#finding-the-unit-tests)
-  - [Shared library documentation](#shared-library-documentation)
-- [Licensing information](#licensing-information)
-- [Styleguide](#styleguide)
-  - [Git Commit Messages](#git-commit-messages)
-  - [Groovy Style](#groovy-style)
-- [Links & Resources](#links--resources)
+- [Contributing to Pipeline Global Library for ci.jenkins.io](#contributing-to-pipeline-global-library-for-cijenkinsio)
+  - [Table of Contents](#table-of-contents)
+  - [Code Of Conduct](#code-of-conduct)
+  - [TL;DR: I'm lost and I just have a question!](#tldr-im-lost-and-i-just-have-a-question)
+  - [What can I contribute?](#what-can-i-contribute)
+  - [How to contribute?](#how-to-contribute)
+  - [How will my contribution be evaluated?](#how-will-my-contribution-be-evaluated)
+  - [How can I test my contribution?](#how-can-i-test-my-contribution)
+  - [How to setup my environment?](#how-to-setup-my-environment)
+    - [Signing Commits](#signing-commits)
+    - [Technical Requirements](#technical-requirements)
+  - [Tips and Tricks: Discovering the Project](#tips-and-tricks-discovering-the-project)
+    - [Useful commands](#useful-commands)
+    - [Finding the unit tests](#finding-the-unit-tests)
+    - [Shared library documentation](#shared-library-documentation)
+  - [Licensing information](#licensing-information)
+  - [Styleguide](#styleguide)
+    - [Git Commit Messages](#git-commit-messages)
+    - [Groovy Style](#groovy-style)
+  - [Links & Resources](#links--resources)
 
 ## Code Of Conduct
 
@@ -140,7 +142,15 @@ In short, when you submit code changes, your submissions are understood to be un
 
 ### Groovy Style
 
-TO BE DEFINED
+This project uses the [Spotless Maven plugin](https://github.com/diffplug/spotless/tree/main/plugin-maven) to manage the code formatting.
+The enforced code formatting rules are defined in the file `src/spotless/greclipse.properties` derived from <https://github.com/google/styleguide/blob/gh-pages/eclipse-java-google-style.xml>.
+
+As a contributor, you can:
+
+- Format the code locally by executing the command line `mvn spotless:apply` and/or setting up your text editor to format with the code formatting rules.
+- Verify that the code is correctly formatted by running the command line `mvn spotless:check`.
+
+Please note that the continuous integration process executes the goal `spotless:check` as part of the `verify` step (as per the pipeline definition in `Jenkinsfile`).
 
 ## Links & Resources
 
