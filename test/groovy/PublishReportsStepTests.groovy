@@ -48,16 +48,20 @@ class PublishReportsStepTests extends BaseTest {
   @Test
   void test_with_trusted_and_html_infra() throws Exception {
     def script = loadScript(scriptName)
+    def file = 'foo.html'
     // when running with a html filename
-    script.call(['foo.html'])
+    script.call([file])
     printCallStack()
     // then timeout is default and filename manipulations is in place
-    assertTrue(assertMethodCallContainsPattern('sh', '--timeout=60 --file=foo.html --name=foo.html --content-type="text/html"'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'TIMEOUT=60'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "FILENAME=${file}"))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'UPLOADFLAGS=--content-type="text/html"'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${TIMEOUT} --file=${FILENAME} --name=${FILENAME} ${UPLOADFLAGS} --overwrite'))
     // another filename manipulations is in place
-    assertTrue(assertMethodCallContainsPattern('sh', '--source . '))
-    assertTrue(assertMethodCallContainsPattern('sh', '--destination-path / '))
-    assertTrue(assertMethodCallContainsPattern('sh', '--pattern foo.html '))
-    assertTrue(assertMethodCallContainsPattern('sh', '--content-type="text/html"'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'SOURCE_DIRNAME=.'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'DESTINATION_PATH=/'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'PATTERN=foo.html'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'az storage file upload-batch --account-name prodjenkinsreports --destination reports --source ${SOURCE_DIRNAME} --destination-path ${DESTINATION_PATH} --pattern ${PATTERN} ${UPLOADFLAGS}'))
     assertJobStatusSuccess()
   }
 
@@ -65,15 +69,19 @@ class PublishReportsStepTests extends BaseTest {
   void test_with_trusted_and_full_path_css_infra() throws Exception {
     def script = loadScript(scriptName)
     // when running with a css full path filename
-    script.call(['/bar/foo.css'])
+    def file = '/bar/foo.css'
+    script.call([file])
     printCallStack()
     // then timeout is default and filename manipulations is in place
-    assertTrue(assertMethodCallContainsPattern('sh', '--timeout=60 --file=/bar/foo.css --name=/bar/foo.css --content-type="text/css'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'TIMEOUT=60'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "FILENAME=${file}"))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'UPLOADFLAGS=--content-type="text/css"'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${TIMEOUT} --file=${FILENAME} --name=${FILENAME} ${UPLOADFLAGS} --overwrite'))
     // another filename manipulations is in place
-    assertTrue(assertMethodCallContainsPattern('sh', '--source /bar '))
-    assertTrue(assertMethodCallContainsPattern('sh', '--destination-path /bar '))
-    assertTrue(assertMethodCallContainsPattern('sh', '--pattern foo.css '))
-    assertTrue(assertMethodCallContainsPattern('sh', '--content-type="text/css"'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'SOURCE_DIRNAME=/bar'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'DESTINATION_PATH=/bar'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'PATTERN=foo.css'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'az storage file upload-batch --account-name prodjenkinsreports --destination reports --source ${SOURCE_DIRNAME} --destination-path ${DESTINATION_PATH} --pattern ${PATTERN} ${UPLOADFLAGS}'))
     assertJobStatusSuccess()
   }
 }

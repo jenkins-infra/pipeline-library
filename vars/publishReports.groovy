@@ -40,22 +40,24 @@ def call(List<String> files, Map params = [:]) {
             uploadFlags = '--content-type="image/png"'
             break
         }
-        // Blob container can be removed once files are uploaded on the azure file storage
-        sh "az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${timeout} --file=${filename} --name=${filename} ${uploadFlags} --overwrite"
-
-        // `az storage file upload` doesn't support file uploaded in a remote directory that doesn't exist but upload-batch yes. Unfortunatly the cli syntax is a bit different and require filename and directory name to be set differently.
-
         def directory = filename.split("/")
         def basename = directory[directory.size() - 1]
         def dirname = Arrays.copyOfRange(directory, 0, directory.size()-1 ).join("/")
 
-        sh "az storage file upload-batch \
-                    --account-name prodjenkinsreports \
-                    --destination reports \
-                    --source ${dirname ?: '.'} \
-                    --destination-path ${dirname ?: '/'} \
-                    --pattern ${ basename ?: '*' } \
-                    ${uploadFlags}"
+        withEnv([
+          "TIMEOUT=${timeout}",
+          "FILENAME=${filename}",
+          "UPLOADFLAGS=${uploadFlags}",
+          "SOURCE_DIRNAME=${dirname ?: '.'}",
+          "DESTINATION_PATH=${dirname ?: '/'}",
+          "PATTERN=${ basename ?: '*' }",
+        ]) {
+          // Blob container can be removed once files are uploaded on the azure file storage
+          sh 'az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${TIMEOUT} --file=${FILENAME} --name=${FILENAME} ${UPLOADFLAGS} --overwrite'
+
+          // `az storage file upload` doesn't support file uploaded in a remote directory that doesn't exist but upload-batch yes. Unfortunatly the cli syntax is a bit different and require filename and directory name to be set differently.
+          sh 'az storage file upload-batch --account-name prodjenkinsreports --destination reports --source ${SOURCE_DIRNAME} --destination-path ${DESTINATION_PATH} --pattern ${PATTERN} ${UPLOADFLAGS}'
+        }
       }
     }
   }
