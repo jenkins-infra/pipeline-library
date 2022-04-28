@@ -55,11 +55,12 @@ def call(String imageName, Map userConfig=[:]) {
           echo 'Before OS specific build'
           if (operatingSystem == 'windows') {
             powershell 'Get-Variable'
+            powershell 'dir env:'
             // Logging in on the Dockerhub helps to avoid request limit from DockerHub
-            powershell 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
+            powershell 'echo "$env:DOCKER_REGISTRY_PSW" | docker login -u "$env:DOCKER_REGISTRY_USR" --password-stdin'
 
             // Custom tools might be installed in the .bin directory in the workspace
-            powershell 'mkdir -p "${WORKSPACE}/.bin"'
+            powershell 'mkdir -p "$env:WORKSPACE/.bin"'
           } else {
             // Logging in on the Dockerhub helps to avoid request limit from DockerHub
             sh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
