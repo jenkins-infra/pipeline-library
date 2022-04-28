@@ -55,11 +55,11 @@ def call(String imageName, Map userConfig=[:]) {
           echo 'Before OS specific build'
           if (operatingSystem == 'windows') {
             pwsh 'Get-Variable'
-            // Logging in on the Dockerhub helps to avoid request limit from DockerHub
-            pwsh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
+            // // Logging in on the Dockerhub helps to avoid request limit from DockerHub
+            // pwsh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
 
-            // Custom tools might be installed in the .bin directory in the workspace
-            pwsh 'mkdir -p "${WORKSPACE}/.bin"'
+            // // Custom tools might be installed in the .bin directory in the workspace
+            // pwsh 'mkdir -p "${WORKSPACE}/.bin"'
           } else {
             // Logging in on the Dockerhub helps to avoid request limit from DockerHub
             sh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
