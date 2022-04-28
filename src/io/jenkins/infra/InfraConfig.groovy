@@ -66,13 +66,15 @@ class InfraConfig implements Serializable {
   Map getDockerPushOrgAndCredentialsId() {
     switch(jenkinsHostname){
       case "ci.jenkins.io":
-        return [error: false, organisation: "cijenkinsio", credentialId: "cijenkinsio-dockerhub-push"]
+        return [error: false, organisation: "jenkins4eval", credentialId: "cijenkinsio-dockerhub-push"]
         break
       case "trusted.ci.jenkins.io":
-        return [error: false, organisation: "jenkinsciinfra", credentialId: "jenkinsciinfra-dockerhub-push"]
+      //TODO check with @dduportal config.json.zip (docker/config.json for publishing to DockerHub)
+      // create a new token ? with user : jenkinsinfraadmin
+        return [error: false, organisation: "jenkins", credentialId: "jenkinsciinfra-dockerhub-push"]
         break
       case "infra.ci.jenkins.io":
-        return [error: false, organisation: "jenkinsinfraadmin", credentialId: "jenkinsinfraadmin-dockerhub-push"]
+        return [error: false, organisation: "jenkinsciinfra", credentialId: "jenkinsinfraadmin-dockerhub-push"]
         break
       default:
         return [error: true, msg: "Cannot use Docker credentials outside of jenkins infra environments"]
