@@ -54,7 +54,7 @@ def call(String imageName, Map userConfig=[:]) {
 
           echo 'Before OS specific build'
           if (operatingSystem == 'windows') {
-            pwsh 'Get-Variable'
+            powershell 'Get-Variable'
             // // Logging in on the Dockerhub helps to avoid request limit from DockerHub
             // pwsh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
 
