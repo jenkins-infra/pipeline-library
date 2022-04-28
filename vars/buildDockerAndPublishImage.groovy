@@ -33,6 +33,7 @@ def call(String imageName, Map userConfig=[:]) {
   final String operatingSystem = finalConfig.platform.split('/')[0]
   if (finalConfig.agentLabels.contains('windows')) {
     operatingSystem = 'windows'
+    cpuArch = 'amd64' // hardcoded for Windows, we can't use `platform`as this docker parameter concerns only linux architectures
   }
   final String cpuArch = finalConfig.platform.split('/')[1]
 
@@ -81,23 +82,43 @@ def call(String imageName, Map userConfig=[:]) {
       // Automatic tagging on principal branch is not enabled by default
       if (semVerEnabled) {
         stage("Get Next Version of ${imageName}") {
-          if (finalConfig.nextVersionCommand.contains('jx-release-version')) {
-            withEnv([
-              "jxrv_url=https://github.com/jenkins-x-plugins/jx-release-version/releases/download/v2.5.1/jx-release-version-${operatingSystem}-${cpuArch}.tar.gz", // TODO: track with updatecli
-            ]) {
-              sh '''
-              if ! command -v jx-release-version 2>/dev/null >/dev/null
-              then
-                echo "INFO: No jx-release-version binary found: Installing it from ${jxrv_url}."
-                curl --silent --location "${jxrv_url}" | tar xzv
-                mv ./jx-release-version "${WORKSPACE}/.bin/jx-release-version"
-              fi
-              '''
+          if (operatingSystem == 'windows') {
+            if (finalConfig.nextVersionCommand.contains('jx-release-version')) {
+              withEnv([
+                "jxrv_url=https://github.com/jenkins-x-plugins/jx-release-version/releases/download/v2.5.1/jx-release-version-${operatingSystem}-${cpuArch}.tar.gz", // TODO: track with updatecli
+              ]) {
+                powershell '''
+                if ! command -v jx-release-version 2>/dev/null >/dev/null
+                then
+                  echo "INFO: No jx-release-version binary found: Installing it from ${jxrv_url}."
+                  curl --silent --location "${jxrv_url}" | tar xzv
+                  mv ./jx-release-version "${WORKSPACE}/.bin/jx-release-version"
+                fi
+                '''
+              }
             }
+            powershell 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
+            nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+            echo "Next Release Version = $nextVersion"
+          } else {
+            if (finalConfig.nextVersionCommand.contains('jx-release-version')) {
+              withEnv([
+                "jxrv_url=https://github.com/jenkins-x-plugins/jx-release-version/releases/download/v2.5.1/jx-release-version-${operatingSystem}-${cpuArch}.tar.gz", // TODO: track with updatecli
+              ]) {
+                sh '''
+                if ! command -v jx-release-version 2>/dev/null >/dev/null
+                then
+                  echo "INFO: No jx-release-version binary found: Installing it from ${jxrv_url}."
+                  curl --silent --location "${jxrv_url}" | tar xzv
+                  mv ./jx-release-version "${WORKSPACE}/.bin/jx-release-version"
+                fi
+                '''
+              }
+            }
+            sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
+            nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+            echo "Next Release Version = $nextVersion"
           }
-          sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
-          nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
-          echo "Next Release Version = $nextVersion"
         } // stage
       } // if
 
@@ -107,19 +128,46 @@ def call(String imageName, Map userConfig=[:]) {
         def hadoLintReportFile = "${hadolintReportId}.json"
         withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
           try {
-            sh 'make lint'
+            if (operatingSystem == 'windows') {
+              powershell 'hadolint --format=json - < $env:IMAGE_DOCKERFILE > $env:HADOLINT_REPORT'
+            } else {
+              sh 'make lint'
+            }
           } finally {
             recordIssues(
-                enabledForFailure: true,
-                aggregatingResults: false,
-                tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
-                )
+              enabledForFailure: true,
+              aggregatingResults: false,
+              tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
+            )
           }
         }
       } // stage
 
       stage("Build ${imageName}") {
-        sh 'make build'
+        if (operatingSystem == 'windows') {
+          powershell '''
+          	echo "== Building $env:IMAGE_NAME from $env:IMAGE_DOCKERFILE..."
+            docker build \
+              --tag $env:IMAGE_NAME \
+              --build-arg "GIT_COMMIT_REV=$env:GIT_COMMIT_REV" \
+              --build-arg "GIT_SCM_URL=$env:GIT_SCM_URL" \
+              --build-arg "BUILD_DATE=$env:BUILD_DATE" \
+              --label "org.opencontainers.image.source=$env:GIT_SCM_URL" \
+              --label "org.label-schema.vcs-url=$env:GIT_SCM_URL" \
+              --label "org.opencontainers.image.url=$env:SCM_URI" \
+              --label "org.label-schema.url=$env:SCM_URI" \
+              --label "org.opencontainers.image.revision=$env:GIT_COMMIT_REV" \
+              --label "org.label-schema.vcs-ref=$env:GIT_COMMIT_REV" \
+              --label "org.opencontainers.image.created=$env:BUILD_DATE" \
+              --label "org.label-schema.build-date=$env:BUILD_DATE" \
+              --platform $env:IMAGE_PLATFORM \
+              --file $env:IMAGE_DOCKERFILE \
+              $env:IMAGE_DIR
+            echo "== Build ✅ Succeeded, image $env:IMAGE_NAME exported to $env:IMAGE_ARCHIVE."
+          '''
+        } else {
+          sh 'make build'
+        } // if
       } //stage
 
       // There can be 2 kind of tests: per image and per repository
@@ -133,16 +181,20 @@ def call(String imageName, Map userConfig=[:]) {
               "TEST_HARNESS=${testHarness}",
               "cst_url=https://github.com/GoogleContainerTools/container-structure-test/releases/download/v1.11.0/container-structure-test-${operatingSystem}-${cpuArch}", // TODO: track with updatecli
             ]) {
-              sh '''
-              if ! command -v container-structure-test 2>/dev/null >/dev/null
-              then
-                echo "INFO: No container-structure-test binary found: Installing it from ${cst_url}."
-                curl --silent --location --output "${WORKSPACE}/.bin/container-structure-test" "${cst_url}"
-                chmod a+x "${WORKSPACE}/.bin/container-structure-test"
-              fi
+              if (operatingSystem == 'windows') {
+                echo "TODO: Test Harness not yet supported on Windows"
+              } else {
+                sh '''
+                if ! command -v container-structure-test 2>/dev/null >/dev/null
+                then
+                  echo "INFO: No container-structure-test binary found: Installing it from ${cst_url}."
+                  curl --silent --location --output "${WORKSPACE}/.bin/container-structure-test" "${cst_url}"
+                  chmod a+x "${WORKSPACE}/.bin/container-structure-test"
+                fi
 
-              make test
-              '''
+                make test
+                '''
+              } // if
             } // withEnv
           } //stage
         } // if
@@ -158,14 +210,18 @@ def call(String imageName, Map userConfig=[:]) {
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
           ]) {
             withEnv(["NEXT_VERSION=${nextVersion}"]) {
-              echo "Tagging and pushing the new version: $nextVersion"
-              sh '''
-              git config user.name "${GIT_USERNAME}"
-              git config user.email "jenkins-infra@googlegroups.com"
+              if (operatingSystem == 'windows') {
+                echo 'TODO: Semantic Release not yet supported on Windows'
+              } else {
+                echo "Tagging and pushing the new version: $nextVersion"
+                sh '''
+                git config user.name "${GIT_USERNAME}"
+                git config user.email "jenkins-infra@googlegroups.com"
 
-              git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
-              git push origin --tags
-              '''
+                git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
+                git push origin --tags
+                '''
+              } // if
             } // withEnv
           } // withCredentials
         } // stage
@@ -185,8 +241,12 @@ def call(String imageName, Map userConfig=[:]) {
             }
           }
           withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
-            // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
-            sh 'make deploy'
+            if (operatingSystem == 'windows') {
+              echo 'TODO: Deployment not yet supported on Windows'
+            } else {
+              // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
+              sh 'make deploy'
+            } // if
           } // withEnv
         } //stage
       } // if
@@ -207,23 +267,27 @@ def call(String imageName, Map userConfig=[:]) {
               "GH_URL=${ghUrl}",
               "GH_RELEASES_API_URI=${ghReleasesApiUri}",
             ]) {
-              sh '''
-              if ! command -v gh 2>/dev/null >/dev/null
-              then
-                echo "INFO: No gh binary found: Installing it from ${ghUrl}."
-                temp_dir="$(mktemp -d)"
-                curl --silent --show-error --location --output "${temp_dir}/gh.tgz" "${GH_URL}"
-                tar xvfz "${temp_dir}/gh.tgz" -C "${temp_dir}"
-                mv "$(find "${temp_dir}"/*/bin -type f -name gh)" "${WORKSPACE}/.bin/gh"
-                rm -rf "${temp_dir}"
-                gh --version
-              fi
-              '''
+              if (operatingSystem == 'windows') {
+                echo 'TODO: GitHub Release not yet supported on Windows'
+              } else {
+                sh '''
+                if ! command -v gh 2>/dev/null >/dev/null
+                then
+                  echo "INFO: No gh binary found: Installing it from ${ghUrl}."
+                  temp_dir="$(mktemp -d)"
+                  curl --silent --show-error --location --output "${temp_dir}/gh.tgz" "${GH_URL}"
+                  tar xvfz "${temp_dir}/gh.tgz" -C "${temp_dir}"
+                  mv "$(find "${temp_dir}"/*/bin -type f -name gh)" "${WORKSPACE}/.bin/gh"
+                  rm -rf "${temp_dir}"
+                  gh --version
+                fi
+                '''
 
-              final String release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'.[] | select(.draft == true and .name == "next") | .id\'').trim()
-              withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${release}"]) {
-                sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
-              } // withEnv
+                final String release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'.[] | select(.draft == true and .name == "next") | .id\'').trim()
+                withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${release}"]) {
+                  sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
+                } // withEnv
+              } // if
             } // withEnv
           } // withCredentials
         } // stage
