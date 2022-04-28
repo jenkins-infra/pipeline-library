@@ -39,7 +39,7 @@ def call(String imageName, Map userConfig=[:]) {
       "IMAGE_PLATFORM=${finalConfig.platform}",
       "PATH+BINS=${env.WORKSPACE}/.bin", // Add to the path the directory with the custom binaries that could be installed during the build
     ]) {
-      withDockerPullCredentials{
+      infra.withDockerPullCredentials{
         stage("Prepare ${imageName}") {
           checkout scm
 
@@ -144,7 +144,7 @@ def call(String imageName, Map userConfig=[:]) {
           } // stage
         } // if
       }// withDockerPullCredentials
-      withDockerPushCredentials{
+      infra.withDockerPushCredentials{
         if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
           stage("Deploy ${imageName}") {
             final InfraConfig infraConfig = new InfraConfig(env)
