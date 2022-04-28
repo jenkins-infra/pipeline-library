@@ -20,7 +20,7 @@ def call(String imageName, Map userConfig=[:]) {
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
   final Map finalConfig = defaultConfig << userConfig
 
-  echo finalConfig.toString()
+  echo 'Final config: ' + finalConfig.toString()
 
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
@@ -51,20 +51,20 @@ def call(String imageName, Map userConfig=[:]) {
         ]) {
           checkout scm
 
-          stage("(Linux) Prepare ${imageName}") {
+          //stage("(Linux) Prepare ${imageName}") {
             // Logging in on the Dockerhub helps to avoid request limit from DockerHub
             sh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
 
             // Custom tools might be installed in the .bin directory in the workspace
             sh 'mkdir -p "${WORKSPACE}/.bin"'
-          }
-          stage("(Windows) Prepare ${imageName}") {
-            // Logging in on the Dockerhub helps to avoid request limit from DockerHub
-            pwsh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
+          // }
+          // stage("(Windows) Prepare ${imageName}") {
+          //   // Logging in on the Dockerhub helps to avoid request limit from DockerHub
+          //   pwsh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
 
-            // Custom tools might be installed in the .bin directory in the workspace
-            pwsh 'mkdir -p "${WORKSPACE}/.bin"'
-          }
+          //   // Custom tools might be installed in the .bin directory in the workspace
+          //   pwsh 'mkdir -p "${WORKSPACE}/.bin"'
+          // }
 
           // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
           // Even though we have mitigation through the multibranch job config allowing to build PRs only from the repository contributors
