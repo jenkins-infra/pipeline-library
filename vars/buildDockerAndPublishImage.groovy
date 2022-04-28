@@ -14,7 +14,7 @@ def call(String imageName, Map userConfig=[:]) {
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: '', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
-    credentials: 'jenkins-dockerhub',
+    credentials: 'jenkinsinfraadmin-dockerhub-push',
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
