@@ -56,6 +56,8 @@ def call(String imageName, Map userConfig=[:]) {
           if (operatingSystem == 'windows') {
             powershell 'Get-Variable'
             powershell 'dir env:'
+            powershell 'echo "$env:DOCKER_REGISTRY_PSW"'
+            powershell 'echo "SUITE"'
             // Logging in on the Dockerhub helps to avoid request limit from DockerHub
             powershell 'echo "$env:DOCKER_REGISTRY_PSW" | docker login -u "$env:DOCKER_REGISTRY_USR" --password-stdin'
 
