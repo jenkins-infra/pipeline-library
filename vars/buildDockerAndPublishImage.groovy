@@ -14,7 +14,7 @@ def call(String imageName, Map userConfig=[:]) {
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: '', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
-    credentials: 'jenkinsinfraadmin-dockerhub-push',
+    credentials: 'jenkins-dockerhub',
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -59,7 +59,7 @@ def call(String imageName, Map userConfig=[:]) {
             powershell 'echo "$env:DOCKER_REGISTRY_USR"'
             powershell 'echo "SUITE"'
             // Logging in on the Dockerhub helps to avoid request limit from DockerHub
-            powershell 'echo "$env:DOCKER_REGISTRY_PSW" | docker login -u "$env:DOCKER_REGISTRY_USR" --password-stdin'
+            powershell 'echo "$env:DOCKER_REGISTRY_PSW" | docker login -u "$env:DOCKER_REGISTRY_USR" -p "$env:DOCKER_REGISTRY_PSW"'// --password-stdin'
 
             // Custom tools might be installed in the .bin directory in the workspace
             powershell 'mkdir -p "$env:WORKSPACE/.bin"'
