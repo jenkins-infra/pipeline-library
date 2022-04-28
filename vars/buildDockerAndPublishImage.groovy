@@ -31,7 +31,7 @@ def call(String imageName, Map userConfig=[:]) {
   final String buildDate = dateFormat.format(now)
 
   final String operatingSystem = finalConfig.platform.split('/')[0]
-  if finalConfig.agentLabels.contains('windows') {
+  if (finalConfig.agentLabels.contains('windows')) {
     operatingSystem = 'windows'
   }
   final String cpuArch = finalConfig.platform.split('/')[1]
