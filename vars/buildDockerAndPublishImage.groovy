@@ -41,16 +41,14 @@ def call(String imageName, Map userConfig=[:]) {
     ]) {
       withDockerPullCredentials{
         stage("Prepare ${imageName}") {
-            checkout scm
-            // Logging in on the Dockerhub helps to avoid request limit from DockerHub
-            sh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
+          checkout scm
 
-            // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
-            // Even though we have mitigation through the multibranch job config allowing to build PRs only from the repository contributors
-            writeFile file: 'Makefile', text: makefileContent
+          // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
+          // Even though we have mitigation through the multibranch job config allowing to build PRs only from the repository contributors
+          writeFile file: 'Makefile', text: makefileContent
 
-            // Custom tools might be installed in the .bin directory in the workspace
-            sh 'mkdir -p "${WORKSPACE}/.bin"'
+          // Custom tools might be installed in the .bin directory in the workspace
+          sh 'mkdir -p "${WORKSPACE}/.bin"'
         } // stage
 
         // Automatic tagging on principal branch is not enabled by default
