@@ -49,8 +49,10 @@ def call(String imageName, Map userConfig=[:]) {
         withCredentials([
           usernamePassword(credentialsId: finalConfig.credentials, passwordVariable: 'DOCKER_REGISTRY_PSW', usernameVariable: 'DOCKER_REGISTRY_USR')
         ]) {
+          echo 'Before checkout scm'
           checkout scm
 
+          echo 'Before OS specific build'
           if (operatingSystem == 'windows') {
             // Logging in on the Dockerhub helps to avoid request limit from DockerHub
             pwsh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
