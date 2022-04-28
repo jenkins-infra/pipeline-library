@@ -29,8 +29,10 @@ Object withDockerCredentials(Map orgAndCredentialsId, Closure body) {
     env.DOCKERHUB_ORGANISATION = orgAndCredentialsId.organisation
     withEnv(["CONTAINER_BIN=${env.CONTAINER_BIN ?: 'docker'}"]){
       withCredentials([
-        [$class: 'ZipFileBinding', credentialsId: orgAndCredentialsId.credentialId, variable: 'DOCKER_CONFIG']
+        usernamePassword(credentialsId: orgAndCredentialsId.credentialId, passwordVariable: 'DOCKER_CONFIG_PSW', usernameVariable: 'DOCKER_CONFIG_USR')
       ]) {
+        // Logging in on the Dockerhub helps to avoid request limit from DockerHub
+        sh 'echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_CONFIG_USR}" --password-stdin'
         body.call()
         // Logging out to ensure credentials are cleaned up if the current agent is reused
         sh '"${CONTAINER_BIN}" logout'
