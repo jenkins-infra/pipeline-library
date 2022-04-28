@@ -21,7 +21,7 @@ class InfraConfigTest {
     assertEquals('jenkins4eval', infraConfig.getDockerRegistry())
     assertEquals('cijenkinsio', infraConfig.getDockerPullOrgAndCredentialsId().organisation)
     assertEquals('cijenkinsio-dockerhub-pull', infraConfig.getDockerPullOrgAndCredentialsId().credentialId)
-    assertEquals('cijenkinsio', infraConfig.getDockerPushOrgAndCredentialsId().organisation)
+    assertEquals('jenkins4eval', infraConfig.getDockerPushOrgAndCredentialsId().organisation)
     assertEquals('cijenkinsio-dockerhub-push', infraConfig.getDockerPushOrgAndCredentialsId().credentialId)
   }
 
@@ -36,7 +36,7 @@ class InfraConfigTest {
     assertEquals('jenkinsciinfra', infraConfig.getDockerRegistry())
     assertEquals('trustedcijenkinsio', infraConfig.getDockerPullOrgAndCredentialsId().organisation)
     assertEquals('trustedcijenkinsio-dockerhub-pull', infraConfig.getDockerPullOrgAndCredentialsId().credentialId)
-    assertEquals('jenkinsciinfra', infraConfig.getDockerPushOrgAndCredentialsId().organisation)
+    assertEquals('jenkins', infraConfig.getDockerPushOrgAndCredentialsId().organisation)
     assertEquals('jenkinsciinfra-dockerhub-push', infraConfig.getDockerPushOrgAndCredentialsId().credentialId)
   }
 
@@ -51,7 +51,7 @@ class InfraConfigTest {
     assertEquals('jenkinsciinfra', infraConfig.getDockerRegistry())
     assertEquals('infracijenkinsio', infraConfig.getDockerPullOrgAndCredentialsId().organisation)
     assertEquals('infracijenkinsio-dockerhub-pull', infraConfig.getDockerPullOrgAndCredentialsId().credentialId)
-    assertEquals('jenkinsinfraadmin', infraConfig.getDockerPushOrgAndCredentialsId().organisation)
+    assertEquals('jenkinsciinfra', infraConfig.getDockerPushOrgAndCredentialsId().organisation)
     assertEquals('jenkinsinfraadmin-dockerhub-push', infraConfig.getDockerPushOrgAndCredentialsId().credentialId)
   }
 
