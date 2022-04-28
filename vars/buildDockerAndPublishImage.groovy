@@ -51,20 +51,19 @@ def call(String imageName, Map userConfig=[:]) {
         ]) {
           checkout scm
 
-          //stage("(Linux) Prepare ${imageName}") {
+          if (operatingSystem == 'windows') {
+            // Logging in on the Dockerhub helps to avoid request limit from DockerHub
+            pwsh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
+
+            // Custom tools might be installed in the .bin directory in the workspace
+            pwsh 'mkdir -p "${WORKSPACE}/.bin"'
+          } else {
             // Logging in on the Dockerhub helps to avoid request limit from DockerHub
             sh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
 
             // Custom tools might be installed in the .bin directory in the workspace
             sh 'mkdir -p "${WORKSPACE}/.bin"'
-          // }
-          // stage("(Windows) Prepare ${imageName}") {
-          //   // Logging in on the Dockerhub helps to avoid request limit from DockerHub
-          //   pwsh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
-
-          //   // Custom tools might be installed in the .bin directory in the workspace
-          //   pwsh 'mkdir -p "${WORKSPACE}/.bin"'
-          // }
+          }
 
           // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
           // Even though we have mitigation through the multibranch job config allowing to build PRs only from the repository contributors
