@@ -43,7 +43,7 @@ class InfraConfig implements Serializable {
   }
 
   // Returns the Docker Informations for pulling images
-  def getDockerPullOrgAndCredentialsId() {
+  Map getDockerPullOrgAndCredentialsId() {
     switch(jenkinsHostname){
       case "ci.jenkins.io":
         return [error: false, organisation: "cijenkinsio", credentialId: "cijenkinsio-dockerhub-pull"]
@@ -63,7 +63,7 @@ class InfraConfig implements Serializable {
   }
 
   // Returns the Docker Informations for pushing images
-  def getDockerPushOrgAndCredentialsId() {
+  Map getDockerPushOrgAndCredentialsId() {
     switch(jenkinsHostname){
       case "ci.jenkins.io":
         return [error: false, organisation: "cijenkinsio", credentialId: "cijenkinsio-dockerhub-push"]

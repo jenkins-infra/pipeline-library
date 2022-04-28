@@ -17,36 +17,37 @@ Boolean isInfra() {
   return new InfraConfig(env).isInfra()
 }
 
+//withDockerCredentials deprecated method present for backward compatibility
 Object withDockerCredentials(Closure body) {
   return withDockerPushCredentials(body)
 }
 
-Object withDockerPushCredentials(Closure body) {
-  orgAndCredentialsId = new InfraConfig(env).getDockerPushOrgAndCredentialsId()
+Object withDockerCredentials(Map orgAndCredentialsId, Closure body) {
   if (orgAndCredentialsId.error) {
     echo orgAndCredentialsId.msg
   } else {
     env.DOCKERHUB_ORGANISATION = orgAndCredentialsId.organisation
-    withCredentials([
-      [$class: 'ZipFileBinding', credentialsId: orgAndCredentialsId.credentialId, variable: 'DOCKER_CONFIG']
-    ]) {
-      return body.call()
-    }
+    withEnv(["CONTAINER_BIN=${env.CONTAINER_BIN ?: 'docker'}"]){
+      withCredentials([
+        [$class: 'ZipFileBinding', credentialsId: orgAndCredentialsId.credentialId, variable: 'DOCKER_CONFIG']
+      ]) {
+        body.call()
+        // Logging out to ensure credentials are cleaned up if the current agent is reused
+        sh '"${CONTAINER_BIN}" logout'
+        return
+      } // withCredentials
+    }// withEnv
   }
+}
+
+Object withDockerPushCredentials(Closure body) {
+  orgAndCredentialsId = new InfraConfig(env).getDockerPushOrgAndCredentialsId()
+  return withDockerCredentials(orgAndCredentialsId, body)
 }
 
 Object withDockerPullCredentials(Closure body) {
   orgAndCredentialsId = new InfraConfig(env).getDockerPullOrgAndCredentialsId()
-  if (orgAndCredentialsId.error) {
-    echo orgAndCredentialsId.msg
-  } else {
-    env.DOCKERHUB_ORGANISATION = orgAndCredentialsId.organisation
-    withCredentials([
-      [$class: 'ZipFileBinding', credentialsId: orgAndCredentialsId.credentialId, variable: 'DOCKER_CONFIG']
-    ]) {
-      return body.call()
-    }
-  }
+  return withDockerCredentials(orgAndCredentialsId, body)
 }
 
 Object checkoutSCM(String repo = null) {
