@@ -14,7 +14,6 @@ def call(String imageName, Map userConfig=[:]) {
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: '', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
-    credentials: 'jenkins-dockerhub',
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -40,32 +39,28 @@ def call(String imageName, Map userConfig=[:]) {
       "IMAGE_PLATFORM=${finalConfig.platform}",
       "PATH+BINS=${env.WORKSPACE}/.bin", // Add to the path the directory with the custom binaries that could be installed during the build
     ]) {
-      stage("Prepare ${imageName}") {
-        withCredentials([
-          usernamePassword(credentialsId: finalConfig.credentials, passwordVariable: 'DOCKER_REGISTRY_PSW', usernameVariable: 'DOCKER_REGISTRY_USR')
-        ]) {
-          checkout scm
+      withDockerPullCredentials{
+        stage("Prepare ${imageName}") {
+            checkout scm
+            // Logging in on the Dockerhub helps to avoid request limit from DockerHub
+            sh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
 
-          // Logging in on the Dockerhub helps to avoid request limit from DockerHub
-          sh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
+            // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
+            // Even though we have mitigation through the multibranch job config allowing to build PRs only from the repository contributors
+            writeFile file: 'Makefile', text: makefileContent
 
-          // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
-          // Even though we have mitigation through the multibranch job config allowing to build PRs only from the repository contributors
-          writeFile file: 'Makefile', text: makefileContent
+            // Custom tools might be installed in the .bin directory in the workspace
+            sh 'mkdir -p "${WORKSPACE}/.bin"'
+        } // stage
 
-          // Custom tools might be installed in the .bin directory in the workspace
-          sh 'mkdir -p "${WORKSPACE}/.bin"'
-        } // withCredentials
-      } // stage
-
-      // Automatic tagging on principal branch is not enabled by default
-      if (semVerEnabled) {
-        stage("Get Next Version of ${imageName}") {
-          if (finalConfig.nextVersionCommand.contains('jx-release-version')) {
-            withEnv([
-              "jxrv_url=https://github.com/jenkins-x-plugins/jx-release-version/releases/download/v2.5.1/jx-release-version-${operatingSystem}-${cpuArch}.tar.gz", // TODO: track with updatecli
-            ]) {
-              sh '''
+        // Automatic tagging on principal branch is not enabled by default
+        if (semVerEnabled) {
+          stage("Get Next Version of ${imageName}") {
+            if (finalConfig.nextVersionCommand.contains('jx-release-version')) {
+              withEnv([
+                "jxrv_url=https://github.com/jenkins-x-plugins/jx-release-version/releases/download/v2.5.1/jx-release-version-${operatingSystem}-${cpuArch}.tar.gz", // TODO: track with updatecli
+              ]) {
+                sh '''
               if ! command -v jx-release-version 2>/dev/null >/dev/null
               then
                 echo "INFO: No jx-release-version binary found: Installing it from ${jxrv_url}."
@@ -73,47 +68,47 @@ def call(String imageName, Map userConfig=[:]) {
                 mv ./jx-release-version "${WORKSPACE}/.bin/jx-release-version"
               fi
               '''
+              }
+            }
+            sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
+            nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+            echo "Next Release Version = $nextVersion"
+          } // stage
+        } // if
+
+        stage("Lint ${imageName}") {
+          // Define the image name as prefix to support multi images per pipeline
+          def hadolintReportId = "${imageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
+          def hadoLintReportFile = "${hadolintReportId}.json"
+          withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
+            try {
+              sh 'make lint'
+            } finally {
+              recordIssues(
+                  enabledForFailure: true,
+                  aggregatingResults: false,
+                  tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
+                  )
             }
           }
-          sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
-          nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
-          echo "Next Release Version = $nextVersion"
         } // stage
-      } // if
 
-      stage("Lint ${imageName}") {
-        // Define the image name as prefix to support multi images per pipeline
-        def hadolintReportId = "${imageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
-        def hadoLintReportFile = "${hadolintReportId}.json"
-        withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
-          try {
-            sh 'make lint'
-          } finally {
-            recordIssues(
-                enabledForFailure: true,
-                aggregatingResults: false,
-                tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
-                )
-          }
-        }
-      } // stage
+        stage("Build ${imageName}") {
+          sh 'make build'
+        } //stage
 
-      stage("Build ${imageName}") {
-        sh 'make build'
-      } //stage
-
-      // There can be 2 kind of tests: per image and per repository
-      [
-        'Image Test Harness': "${finalConfig.imageDir}/cst.yml",
-        'Common Test Harness': "${env.WORKSPACE}/common-cst.yml"
-      ].each { testName, testHarness ->
-        if (fileExists(testHarness)) {
-          stage("Test ${testName} for ${imageName}") {
-            withEnv([
-              "TEST_HARNESS=${testHarness}",
-              "cst_url=https://github.com/GoogleContainerTools/container-structure-test/releases/download/v1.11.0/container-structure-test-${operatingSystem}-${cpuArch}", // TODO: track with updatecli
-            ]) {
-              sh '''
+        // There can be 2 kind of tests: per image and per repository
+        [
+          'Image Test Harness': "${finalConfig.imageDir}/cst.yml",
+          'Common Test Harness': "${env.WORKSPACE}/common-cst.yml"
+        ].each { testName, testHarness ->
+          if (fileExists(testHarness)) {
+            stage("Test ${testName} for ${imageName}") {
+              withEnv([
+                "TEST_HARNESS=${testHarness}",
+                "cst_url=https://github.com/GoogleContainerTools/container-structure-test/releases/download/v1.11.0/container-structure-test-${operatingSystem}-${cpuArch}", // TODO: track with updatecli
+              ]) {
+                sh '''
               if ! command -v container-structure-test 2>/dev/null >/dev/null
               then
                 echo "INFO: No container-structure-test binary found: Installing it from ${cst_url}."
@@ -123,53 +118,56 @@ def call(String imageName, Map userConfig=[:]) {
 
               make test
               '''
-            } // withEnv
-          } //stage
-        } // if
-      }
+              } // withEnv
+            } //stage
+          } // if
+        }
 
-      // Automatic tagging on principal branch is not enabled by default
-      if (semVerEnabled) {
-        stage("Semantic Release of ${imageName}") {
-          echo "Configuring credential.helper"
-          sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
+        // Automatic tagging on principal branch is not enabled by default
+        if (semVerEnabled) {
+          stage("Semantic Release of ${imageName}") {
+            echo "Configuring credential.helper"
+            sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
 
-          withCredentials([
-            usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
-          ]) {
-            withEnv(["NEXT_VERSION=${nextVersion}"]) {
-              echo "Tagging and pushing the new version: $nextVersion"
-              sh '''
+            withCredentials([
+              usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
+            ]) {
+              withEnv(["NEXT_VERSION=${nextVersion}"]) {
+                echo "Tagging and pushing the new version: $nextVersion"
+                sh '''
               git config user.name "${GIT_USERNAME}"
               git config user.email "jenkins-infra@googlegroups.com"
 
               git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
               git push origin --tags
               '''
-            } // withEnv
-          } // withCredentials
-        } // stage
-      } // if
+              } // withEnv
+            } // withCredentials
+          } // stage
+        } // if
+      }// withDockerPullCredentials
+      withDockerPushCredentials{
+        if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
+          stage("Deploy ${imageName}") {
+            final InfraConfig infraConfig = new InfraConfig(env)
+            String imageDeployName = infraConfig.dockerRegistry + '/' + imageName
 
-      if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
-        stage("Deploy ${imageName}") {
-          final InfraConfig infraConfig = new InfraConfig(env)
-          String imageDeployName = infraConfig.dockerRegistry + '/' + imageName
-
-          if (env.TAG_NAME) {
-            // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
-            if (imageDeployName.contains(':')) {
-              imageDeployName += "-${env.TAG_NAME}"
-            } else {
-              imageDeployName += ":${env.TAG_NAME}"
+            if (env.TAG_NAME) {
+              // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
+              if (imageDeployName.contains(':')) {
+                imageDeployName += "-${env.TAG_NAME}"
+              } else {
+                imageDeployName += ":${env.TAG_NAME}"
+              }
             }
-          }
-          withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
-            // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
-            sh 'make deploy'
-          } // withEnv
-        } //stage
-      } // if
+            withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
+              // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
+              sh 'make deploy'
+            } // withEnv
+          } //stage
+        } // if
+      } // withDockerPushCredentials
+
 
       if (env.TAG_NAME && finalConfig.automaticSemanticVersioning) {
         stage('GitHub Release') {
@@ -208,9 +206,6 @@ def call(String imageName, Map userConfig=[:]) {
           } // withCredentials
         } // stage
       } // if
-
-      // Logging out to ensure credentials are cleaned up if the current agent is reused
-      sh '"${CONTAINER_BIN}" logout'
     } // withEnv
   }) // withContainerEngineAgent
 } // call
