@@ -222,7 +222,8 @@ def call(String imageName, Map userConfig=[:]) {
         stage("Semantic Release of ${imageName}") {
           echo "Configuring credential.helper"
           if (operatingSystem == 'Windows') {
-            powershell 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
+            echo "TODO: credential.helper not yet supported on Windows"
+            //powershell 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
           } else {
             sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
           }
