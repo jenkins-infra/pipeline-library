@@ -129,7 +129,7 @@ def call(String imageName, Map userConfig=[:]) {
         withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
           try {
             if (operatingSystem == 'windows') {
-              powershell 'hadolint --format=json - < $env:IMAGE_DOCKERFILE > $env:HADOLINT_REPORT'
+              powershell 'hadolint --format=json $env:IMAGE_DOCKERFILE > $env:HADOLINT_REPORT'
             } else {
               sh 'make lint'
             }
