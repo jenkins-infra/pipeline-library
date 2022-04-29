@@ -198,7 +198,7 @@ def call(String imageName, Map userConfig=[:]) {
               "cst_url=https://github.com/GoogleContainerTools/container-structure-test/releases/download/v1.11.0/container-structure-test-${operatingSystem}-${cpuArch}", // TODO: track with updatecli
             ]) {
               if (operatingSystem == 'Windows') {
-                echo "TODO: Test Harness not yet supported on Windows"
+                echo "TODO: Test Harness $env:TEST_HARNESS not yet supported on Windows"
               } else {
                 sh '''
                 if ! command -v container-structure-test 2>/dev/null >/dev/null
