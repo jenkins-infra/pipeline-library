@@ -130,11 +130,13 @@ def call(String imageName, Map userConfig=[:]) {
               {
                 echo "INFO: No hadolint binary found: Installing it from $env:hadolint_url"
                 Invoke-WebRequest "$env:hadolint_url" -OutFile "$env:WORKSPACE\\.bin\\hadolint.exe"
+                // Add .bin folder to $PATH
                 $env:Path += "$env:WORKSPACE\\.bin"
               }
               echo "IMAGE_DOCKERFILE:"
               $dockerfile = ($env:WORKSPACE + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\'))
               echo $dockerfile
+              // Convert EOL
               Get-Content -Path $dockerfile | Out-File -FilePath ($dockerfile + '.win')
               $dockerfile += '.win'
               type $dockerfile
