@@ -55,6 +55,7 @@ def call(String imageName, Map userConfig=[:]) {
             powershell 'echo "$env:DOCKER_REGISTRY_PSW" | docker login -u "$env:DOCKER_REGISTRY_USR" -p "$env:DOCKER_REGISTRY_PSW"'// --password-stdin'
 
             // Custom tools might be installed in the .bin directory in the workspace
+            powershell 'Remove-Item "$env:WORKSPACE/.bin" -Recurse'
             powershell 'mkdir -p "$env:WORKSPACE/.bin"'
           } else {
             // Logging in on the Dockerhub helps to avoid request limit from DockerHub
@@ -128,9 +129,9 @@ def call(String imageName, Map userConfig=[:]) {
               if (-Not (Get-Command 'hadolint' -errorAction SilentlyContinue))
               {
                 echo "INFO: No hadolint binary found: Installing it from $env:hadolint_url"
-                Invoke-WebRequest $env:hadolint_url -OutFile $env:WORKSPACE\\.bin\\hadolint.exe
+                Invoke-WebRequest $env:hadolint_url -OutFile $env:WORKSPACE/.bin/hadolint.exe
               }
-              $env:WORKSPACE\\.bin\\hadolint --format=json $env:IMAGE_DOCKERFILE > $env:HADOLINT_REPORT
+              $env:WORKSPACE/.bin/hadolint --format=json $env:IMAGE_DOCKERFILE > $env:HADOLINT_REPORT
               '''
             } else {
               sh 'make lint'
