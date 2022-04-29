@@ -263,7 +263,7 @@ def call(String imageName, Map userConfig=[:]) {
         } // stage
       } // if
 
-      if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
+      // if (env.TAG_NAME || env.BRANCH_IS_PRIMARY || debugDeploy) {
         stage("Deploy ${imageName}") {
           final InfraConfig infraConfig = new InfraConfig(env)
           String imageDeployName = infraConfig.dockerRegistry + '/' + imageName
@@ -290,7 +290,7 @@ def call(String imageName, Map userConfig=[:]) {
             } // if
           } // withEnv
         } //stage
-      } // if
+      // } // if
 
       if (env.TAG_NAME && finalConfig.automaticSemanticVersioning) {
         stage('GitHub Release') {
