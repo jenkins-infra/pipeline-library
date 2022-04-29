@@ -121,6 +121,7 @@ def call(String imageName, Map userConfig=[:]) {
         def hadoLintReportFile = "${hadolintReportId}.json"
         withEnv([
           "HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}",
+          "HADOLINT_REPORT_WINDOWS=${env.WORKSPACE}\\${hadoLintReportFile}",
           "hadolint_url=https://github.com/hadolint/hadolint/releases/download/v2.10.0/hadolint-${operatingSystem}-${cpuArch}.exe", // TODO: track with updatecli
         ]) {
           try {
