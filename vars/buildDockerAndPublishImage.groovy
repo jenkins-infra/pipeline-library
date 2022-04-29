@@ -183,14 +183,19 @@ def call(String imageName, Map userConfig=[:]) {
           // '''
           powershell '''
           	echo "== Building $env:IMAGE_NAME from $env:IMAGE_DOCKERFILE..."
+            dir $env:
             echo "IMAGE_NAME: $env:IMAGE_NAME"
             echo "IMAGE_PLATFORM: $env:IMAGE_PLATFORM"
-            echo "IMAGE_DIR: $env:IMAGE_DIR.replace('/', '\\')"
             echo "dockerfile: $dockerfile"
-            docker build --tag $env:IMAGE_NAME \
-              --file $dockerfile \
-              $env:IMAGE_DIR.replace('/', '\\')
-            echo "== Build Succeeded, image $env:IMAGE_NAME exported to $env:IMAGE_ARCHIVE."
+            $folder = (Split-Path -Path $dockerfile)
+            $archive = "$folder\\image.tar"
+            echo "folder: $folder"
+            echo "archive: $archive"
+            docker build --tag $env:IMAGE_NAME --file $dockerfile $folder
+            echo "== Build Succeeded, image $env:IMAGE_NAME exported to $archive"
+            dir
+            echo "next..."
+            dir $folder
           '''
         } else {
           sh 'make build'
