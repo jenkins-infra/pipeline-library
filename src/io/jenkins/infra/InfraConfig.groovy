@@ -69,8 +69,6 @@ class InfraConfig implements Serializable {
         return [error: false, organisation: "jenkins4eval", credentialId: "cijenkinsio-dockerhub-push"]
         break
       case "trusted.ci.jenkins.io":
-      //TODO check with @dduportal config.json.zip (docker/config.json for publishing to DockerHub)
-      // create a new token ? with user : jenkinsinfraadmin
         return [error: false, organisation: "jenkins", credentialId: "jenkinsciinfra-dockerhub-push"]
         break
       case "infra.ci.jenkins.io":
