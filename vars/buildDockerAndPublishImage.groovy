@@ -159,7 +159,7 @@ def call(String imageName, Map userConfig=[:]) {
           }
         }
       } // stage
-
+/*
       stage("Build ${imageName}") {
         if (operatingSystem == 'Windows') {
           echo "TO DO: Build ${imageName} on Windows"
@@ -216,7 +216,7 @@ def call(String imageName, Map userConfig=[:]) {
             } // withEnv
           } //stage
         } // if
-      }
+      } // each
 
       // Automatic tagging on principal branch is not enabled by default
       if (semVerEnabled) {
@@ -273,7 +273,7 @@ def call(String imageName, Map userConfig=[:]) {
           } // withEnv
         } //stage
       } // if
-
+*/
       if (env.TAG_NAME && finalConfig.automaticSemanticVersioning) {
         stage('GitHub Release') {
           withCredentials([
@@ -317,7 +317,11 @@ def call(String imageName, Map userConfig=[:]) {
       } // if
 
       // Logging out to ensure credentials are cleaned up if the current agent is reused
-      sh '"${CONTAINER_BIN}" logout'
+      if (operatingSystem == 'Windows') {
+        powershell 'docker logout'
+      } else {
+        sh '"${CONTAINER_BIN}" logout'
+      } // if
     } // withEnv
   }) // withContainerEngineAgent
 } // call
