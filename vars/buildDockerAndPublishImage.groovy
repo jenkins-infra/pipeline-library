@@ -130,7 +130,7 @@ def call(String imageName, Map userConfig=[:]) {
           try {
             if (operatingSystem == 'windows') {
               powershell '''
-              if (-Not Get-Command 'hadolint' -errorAction SilentlyContinue)
+              if (-Not (Get-Command 'hadolint' -errorAction SilentlyContinue))
               {
                 echo "'hadolint' doesn't exists"
               } else {
