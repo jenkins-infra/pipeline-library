@@ -278,14 +278,12 @@ def call(String imageName, Map userConfig=[:]) {
           }
           withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
             if (operatingSystem == 'Windows') {
-              echo 'TODO: Deployment not yet supported on Windows'
-                powershell '''
-                $imageDeployName = 'jenkinsciinfra/' + $env:IMAGE_NAME
-                echo "== Deploying $env:IMAGE_NAME to $imageDeployName"
-                docker tag $env:IMAGE_NAME $imageDeployName
-                docker push $imageDeployName
-                @echo "== Deploy Succeeded"
-                '''
+              powershell '''
+              echo "== Deploying $env:IMAGE_NAME to $imageDeployName"
+              docker tag $env:IMAGE_NAME $imageDeployName
+              docker push $imageDeployName
+              @echo "== Deploy Succeeded"
+              '''
             } else {
               // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
               sh 'make deploy'
