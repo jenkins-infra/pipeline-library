@@ -191,25 +191,24 @@ def call(String imageName, Map userConfig=[:]) {
             echo "folder: $folder"
             echo "archive: $archive"
             echo "== Building $env:IMAGE_NAME from $env:IMAGE_DOCKERFILE..."
-            type $dockerfile
-            echo '----------------------------------------------------'
 
-            docker build --tag $env:IMAGE_NAME --file $dockerfile $folder
-              # --build-arg "GIT_COMMIT_REV=$env:GIT_COMMIT_REV" \
-              # --build-arg "GIT_SCM_URL=$env:GIT_SCM_URL" \
-              # --build-arg "BUILD_DATE=$env:BUILD_DATE" \
-              # --label "org.opencontainers.image.source=$env:GIT_SCM_URL" \
-              # --label "org.label-schema.vcs-url=$env:GIT_SCM_URL" \
-              # --label "org.opencontainers.image.url=$env:SCM_URI" \
-              # --label "org.label-schema.url=$env:SCM_URI" \
-              # --label "org.opencontainers.image.revision=$env:GIT_COMMIT_REV" \
-              # --label "org.label-schema.vcs-ref=$env:GIT_COMMIT_REV" \
-              # --label "org.opencontainers.image.created=$env:BUILD_DATE" \
-              # --label "org.label-schema.build-date=$env:BUILD_DATE" \
-
+            docker build \
+              --tag $env:IMAGE_NAME \
+              --build-arg "GIT_COMMIT_REV=$env:GIT_COMMIT_REV" \
+              --build-arg "GIT_SCM_URL=$env:GIT_SCM_URL" \
+              --build-arg "BUILD_DATE=$env:BUILD_DATE" \
+              --label "org.opencontainers.image.source=$env:GIT_SCM_URL" \
+              --label "org.label-schema.vcs-url=$env:GIT_SCM_URL" \
+              --label "org.opencontainers.image.url=$env:SCM_URI" \
+              --label "org.label-schema.url=$env:SCM_URI" \
+              --label "org.opencontainers.image.revision=$env:GIT_COMMIT_REV" \
+              --label "org.label-schema.vcs-ref=$env:GIT_COMMIT_REV" \
+              --label "org.opencontainers.image.created=$env:BUILD_DATE" \
+              --label "org.label-schema.build-date=$env:BUILD_DATE" \
+              --file $dockerfile \
+              $folder
             echo "== Build Succeeded, image $env:IMAGE_NAME exported to $archive"
             dir
-            echo "next..."
             dir $folder
           '''
         } else {
