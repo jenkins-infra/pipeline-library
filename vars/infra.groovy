@@ -35,7 +35,7 @@ Object withDockerCredentials(Map orgAndCredentialsId, Closure body) {
         if (isUnix()) {
           sh 'echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin'
         } else {
-          powershell 'echo "${env:DOCKER_CONFIG_PSW}" | "${env:CONTAINER_BIN}" login --username "${env:DOCKER_CONFIG_USR}" --password-stdin'
+          powershell 'Invoke-Expression "${Env:CONTAINER_BIN} login --username ${Env:DOCKER_CONFIG_USR} --password ${Env:DOCKER_CONFIG_PSW}"'
         }
 
         body.call()
@@ -43,7 +43,7 @@ Object withDockerCredentials(Map orgAndCredentialsId, Closure body) {
         if (isUnix()) {
           sh '"${CONTAINER_BIN}" logout'
         } else {
-          powershell '"${env:CONTAINER_BIN}" logout'
+          powershell 'Invoke-Expression "${Env:CONTAINER_BIN} logout"'
         }
         return
       } // withCredentials
