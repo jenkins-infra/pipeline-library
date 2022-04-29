@@ -182,7 +182,8 @@ def call(String imageName, Map userConfig=[:]) {
           //   echo "== Build Succeeded, image $env:IMAGE_NAME exported to $env:IMAGE_ARCHIVE."
           // '''
           powershell '''
-          	echo "== Building $env:IMAGE_NAME from $env:IMAGE_DOCKERFILE..."
+          	$dockerfile = ($env:WORKSPACE + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\'))
+            echo "== Building $env:IMAGE_NAME from $env:IMAGE_DOCKERFILE..."
             dir env:
             echo "IMAGE_NAME: $env:IMAGE_NAME"
             echo "IMAGE_PLATFORM: $env:IMAGE_PLATFORM"
