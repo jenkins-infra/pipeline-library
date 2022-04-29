@@ -129,8 +129,8 @@ def call(String imageName, Map userConfig=[:]) {
               if (-Not (Get-Command 'hadolint' -errorAction SilentlyContinue))
               {
                 echo "INFO: No hadolint binary found: Installing it from $env:hadolint_url"
-                Invoke-WebRequest "$env:hadolint_url" -OutFile "$env:WORKSPACE/.bin/hadolint.exe"
-                $env:Path += "$env:WORKSPACE/.bin"
+                Invoke-WebRequest "$env:hadolint_url" -OutFile "$env:WORKSPACE\\.bin\\hadolint.exe"
+                $env:Path += "$env:WORKSPACE\\.bin"
               }
               echo "hadoling_report_file: $env:HADOLINT_REPORT"
               echo $env:HADOLINT_REPORT
