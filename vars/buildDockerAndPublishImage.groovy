@@ -20,8 +20,6 @@ def call(String imageName, Map userConfig=[:]) {
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
   final Map finalConfig = defaultConfig << userConfig
 
-  echo 'Final config: ' + finalConfig.toString()
-
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
   final boolean semVerEnabled = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
@@ -32,8 +30,8 @@ def call(String imageName, Map userConfig=[:]) {
 
   final String operatingSystem = finalConfig.platform.split('/')[0]
   if (finalConfig.agentLabels.contains('windows')) {
-    operatingSystem = 'windows'
-    cpuArch = 'amd64' // hardcoded for Windows, we can't use `platform`as this docker parameter concerns only linux architectures
+    operatingSystem = 'Windows'
+    cpuArch = 'x86_64' // hardcoded for Windows, we can't use `platform`as this docker parameter concerns only linux architectures
   }
   final String cpuArch = finalConfig.platform.split('/')[1]
 
@@ -50,15 +48,9 @@ def call(String imageName, Map userConfig=[:]) {
         withCredentials([
           usernamePassword(credentialsId: finalConfig.credentials, passwordVariable: 'DOCKER_REGISTRY_PSW', usernameVariable: 'DOCKER_REGISTRY_USR')
         ]) {
-          echo 'Before checkout scm'
           checkout scm
 
-          echo 'Before OS specific build'
-          if (operatingSystem == 'windows') {
-            powershell 'Get-Variable'
-            powershell 'dir env:'
-            powershell 'echo "$env:DOCKER_REGISTRY_USR"'
-            powershell 'echo "SUITE"'
+          if (operatingSystem == 'Windows') {
             // Logging in on the Dockerhub helps to avoid request limit from DockerHub
             powershell 'echo "$env:DOCKER_REGISTRY_PSW" | docker login -u "$env:DOCKER_REGISTRY_USR" -p "$env:DOCKER_REGISTRY_PSW"'// --password-stdin'
 
@@ -82,7 +74,7 @@ def call(String imageName, Map userConfig=[:]) {
       // Automatic tagging on principal branch is not enabled by default
       if (semVerEnabled) {
         stage("Get Next Version of ${imageName}") {
-          if (operatingSystem == 'windows') {
+          if (operatingSystem == 'Windows') {
             if (finalConfig.nextVersionCommand.contains('jx-release-version')) {
               withEnv([
                 "jxrv_url=https://github.com/jenkins-x-plugins/jx-release-version/releases/download/v2.5.1/jx-release-version-${operatingSystem}-${cpuArch}.tar.gz", // TODO: track with updatecli
@@ -126,20 +118,20 @@ def call(String imageName, Map userConfig=[:]) {
         // Define the image name as prefix to support multi images per pipeline
         def hadolintReportId = "${imageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
         def hadoLintReportFile = "${hadolintReportId}.json"
-        withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
+        withEnv([
+          "HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}",
+          "hadolint_url=https://github.com/hadolint/hadolint/releases/download/v2.10.0/hadolint-${operatingSystem}-${cpuArch}.exe", // TODO: track with updatecli
+        ]) {
           try {
-            if (operatingSystem == 'windows') {
+            if (operatingSystem == 'Windows') {
               powershell '''
               if (-Not (Get-Command 'hadolint' -errorAction SilentlyContinue))
               {
-                echo "'hadolint' doesn't exists"
-              } else {
-                echo "'hadolint' exists"
+                echo "INFO: No hadolint binary found: Installing it from $env:hadolint_url"
+                Invoke-WebRequest $env:hadolint_url -OutFile $env:WORKSPACE\.bin\hadolint.exe
               }
+              $env:WORKSPACE\.bin\hadolint --format=json $env:IMAGE_DOCKERFILE > $env:HADOLINT_REPORT
               '''
-              //Invoke-WebRequest $url -OutFile $path_to_file
-
-              // powershell 'hadolint --format=json $env:IMAGE_DOCKERFILE > $env:HADOLINT_REPORT'
             } else {
               sh 'make lint'
             }
