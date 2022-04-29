@@ -279,10 +279,10 @@ def call(String imageName, Map userConfig=[:]) {
           withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
             if (operatingSystem == 'Windows') {
               powershell '''
-              echo "== Deploying $env:IMAGE_NAME to $imageDeployName"
-              docker tag $env:IMAGE_NAME $imageDeployName
-              docker push $imageDeployName
-              @echo "== Deploy Succeeded"
+              echo "== Deploying $env:IMAGE_NAME to $env:IMAGE_DEPLOY_NAME"
+              docker tag $env:IMAGE_NAME $env:IMAGE_DEPLOY_NAME
+              docker push $env:IMAGE_DEPLOY_NAME
+              echo "== Deploy Succeeded"
               '''
             } else {
               // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
