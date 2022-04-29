@@ -130,9 +130,15 @@ def call(String imageName, Map userConfig=[:]) {
               {
                 echo "INFO: No hadolint binary found: Installing it from $env:hadolint_url"
                 Invoke-WebRequest "$env:hadolint_url" -OutFile "$env:WORKSPACE/.bin/hadolint.exe"
+                echo "before: $env:Path"
+                echo $env:Path
+                $env:Path += "$env:WORKSPACE/.bin"
+                echo "after:"
+                echo $env:Path
               }
-              cd "$env:WORKSPACE/.bin/"
-              hadolint --format=json ../$env:IMAGE_DOCKERFILE > ../$env:HADOLINT_REPORT
+              dir .bin
+              hadolint --version
+              hadolint --format=json $env:IMAGE_DOCKERFILE > $env:HADOLINT_REPORT
               '''
             } else {
               sh 'make lint'
