@@ -141,7 +141,7 @@ def call(String imageName, Map userConfig=[:]) {
               echo "dockerfileOrig: $dockerfileOrig"
               # Convert EOL
               $dockerfile = $dockerfileOrig + '.win'
-              Get-Content -Path $dockerfileOrig | Out-File -FilePath $dockerfile)
+              Get-Content -Path $dockerfileOrig | Out-File -FilePath $dockerfile
               echo "dockerfile: $dockerfile"
               type $dockerfile
               dir
