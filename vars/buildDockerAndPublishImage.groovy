@@ -160,7 +160,7 @@ def call(String imageName, Map userConfig=[:]) {
       } // stage
 
       stage("Build ${imageName}") {
-        if (operatingSystem == 'windows') {
+        if (operatingSystem == 'Windows') {
           echo "TO DO: Build ${imageName} on Windows"
           // powershell '''
           // 	echo "== Building $env:IMAGE_NAME from $env:IMAGE_DOCKERFILE..."
@@ -198,7 +198,7 @@ def call(String imageName, Map userConfig=[:]) {
               "TEST_HARNESS=${testHarness}",
               "cst_url=https://github.com/GoogleContainerTools/container-structure-test/releases/download/v1.11.0/container-structure-test-${operatingSystem}-${cpuArch}", // TODO: track with updatecli
             ]) {
-              if (operatingSystem == 'windows') {
+              if (operatingSystem == 'Windows') {
                 echo "TODO: Test Harness not yet supported on Windows"
               } else {
                 sh '''
@@ -227,7 +227,7 @@ def call(String imageName, Map userConfig=[:]) {
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
           ]) {
             withEnv(["NEXT_VERSION=${nextVersion}"]) {
-              if (operatingSystem == 'windows') {
+              if (operatingSystem == 'Windows') {
                 echo 'TODO: Semantic Release not yet supported on Windows'
               } else {
                 echo "Tagging and pushing the new version: $nextVersion"
@@ -258,7 +258,7 @@ def call(String imageName, Map userConfig=[:]) {
             }
           }
           withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
-            if (operatingSystem == 'windows') {
+            if (operatingSystem == 'Windows') {
               echo 'TODO: Deployment not yet supported on Windows'
             } else {
               // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
@@ -284,7 +284,7 @@ def call(String imageName, Map userConfig=[:]) {
               "GH_URL=${ghUrl}",
               "GH_RELEASES_API_URI=${ghReleasesApiUri}",
             ]) {
-              if (operatingSystem == 'windows') {
+              if (operatingSystem == 'Windows') {
                 echo 'TODO: GitHub Release not yet supported on Windows'
               } else {
                 sh '''
