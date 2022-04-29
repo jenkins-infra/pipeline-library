@@ -185,6 +185,9 @@ def call(String imageName, Map userConfig=[:]) {
           	$dockerfile = ($env:WORKSPACE + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\'))
             $folder = (Split-Path -Path $dockerfile)
             $archive = "$folder\\image.tar"
+            echo "dockerfile: $dockerfile"
+            echo "folder: $folder"
+            echo "archive: $archive"
             echo "== Building $env:IMAGE_NAME from $env:IMAGE_DOCKERFILE..."
 
             docker build \
