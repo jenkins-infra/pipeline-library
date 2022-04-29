@@ -183,7 +183,7 @@ def call(String imageName, Map userConfig=[:]) {
           // '''
           powershell '''
           	echo "== Building $env:IMAGE_NAME from $env:IMAGE_DOCKERFILE..."
-            dir $env:
+            dir env:
             echo "IMAGE_NAME: $env:IMAGE_NAME"
             echo "IMAGE_PLATFORM: $env:IMAGE_PLATFORM"
             echo "dockerfile: $dockerfile"
