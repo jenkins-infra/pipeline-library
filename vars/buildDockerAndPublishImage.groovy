@@ -191,6 +191,8 @@ def call(String imageName, Map userConfig=[:]) {
             echo "folder: $folder"
             echo "archive: $archive"
             echo "== Building $env:IMAGE_NAME from $env:IMAGE_DOCKERFILE..."
+            type $dockerfile
+            echo '----------------------------------------------------'
 
             docker build --tag $env:IMAGE_NAME --file $dockerfile $folder
               # --build-arg "GIT_COMMIT_REV=$env:GIT_COMMIT_REV" \
