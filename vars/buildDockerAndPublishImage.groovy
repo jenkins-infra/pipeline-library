@@ -132,9 +132,10 @@ def call(String imageName, Map userConfig=[:]) {
                 Invoke-WebRequest "$env:hadolint_url" -OutFile "$env:WORKSPACE\\.bin\\hadolint.exe"
                 $env:Path += "$env:WORKSPACE\\.bin"
               }
-              echo "IMAGE_DOCKERFILE=$env:IMAGE_DOCKERFILE"
+              echo "IMAGE_DOCKERFILE:"
+              echo $env:IMAGE_DOCKERFILE.replace('/', '\\')
               hadolint --version
-              hadolint --format=json $env:IMAGE_DOCKERFILE > $env:HADOLINT_REPORT.replace('/', '\\')
+              hadolint --format=json $env:IMAGE_DOCKERFILE.replace('/', '\\') > $env:HADOLINT_REPORT.replace('/', '\\')
               '''
             } else {
               sh 'make lint'
