@@ -132,16 +132,25 @@ def call(String imageName, Map userConfig=[:]) {
           try {
             if (operatingSystem == 'Windows') {
               powershell '''
+              # Check if hadolint is installed
               if (-Not (Get-Command 'hadolint' -errorAction SilentlyContinue))
               {
                 echo "INFO: No hadolint binary found: Installing it from $env:hadolint_url"
                 Invoke-WebRequest "$env:hadolint_url" -OutFile "$env:WORKSPACE\\.bin\\hadolint.exe"
               }
-              $dockerfileOrig = ($env:WORKSPACE + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\'))
+
               # Convert EOL
+              $dockerfileOrig = ($env:WORKSPACE + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\'))
               $dockerfile = $dockerfileOrig + '.win'
               Get-Content -Path $dockerfileOrig | Out-File -FilePath $dockerfile -Encoding utf8
-              hadolint --format=json $dockerfile > $env:HADOLINT_REPORT.replace('/', '\\')
+
+              # Run hadolint
+              $hadolintReport = $env:HADOLINT_REPORT.replace('/', '\\')
+              $folder = (Split-Path -Path $hadolintReport)
+              dir $folder
+              hadolint --format=json $dockerfile > $hadolintReport
+              dir $folder
+              type $hadolintReport
               '''
             } else {
               sh 'make lint'
