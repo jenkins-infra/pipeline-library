@@ -124,8 +124,6 @@ def call(String imageName, Map userConfig=[:]) {
           "hadolint_url=https://github.com/hadolint/hadolint/releases/download/v2.10.0/hadolint-${operatingSystem}-${cpuArch}.exe", // TODO: track with updatecli
         ]) {
           try {
-            echo "CPU arch = $cpuArch"
-            echo "hadolint_url = $hadolint_url"
             if (operatingSystem == 'Windows') {
               powershell '''
               if (-Not (Get-Command 'hadolint' -errorAction SilentlyContinue))
@@ -134,7 +132,7 @@ def call(String imageName, Map userConfig=[:]) {
                 Invoke-WebRequest "$env:hadolint_url" -OutFile "$env:WORKSPACE/.bin/hadolint.exe"
               }
               cd "$env:WORKSPACE/.bin/"
-              hadolint --format=json $env:IMAGE_DOCKERFILE > $env:HADOLINT_REPORT
+              hadolint --format=json ../$env:IMAGE_DOCKERFILE > ../$env:HADOLINT_REPORT
               '''
             } else {
               sh 'make lint'
