@@ -124,6 +124,8 @@ def call(String imageName, Map userConfig=[:]) {
           "hadolint_url=https://github.com/hadolint/hadolint/releases/download/v2.10.0/hadolint-${operatingSystem}-${cpuArch}.exe", // TODO: track with updatecli
         ]) {
           try {
+            echo "CPU arch = $cpuArch"
+            echo "hadolint_url = $hadolint_url"
             if (operatingSystem == 'Windows') {
               powershell '''
               if (-Not (Get-Command 'hadolint' -errorAction SilentlyContinue))
