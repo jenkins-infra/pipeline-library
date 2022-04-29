@@ -161,25 +161,36 @@ def call(String imageName, Map userConfig=[:]) {
 
       stage("Build ${imageName}") {
         if (operatingSystem == 'Windows') {
+          // powershell '''
+          // 	echo "== Building $env:IMAGE_NAME from $env:IMAGE_DOCKERFILE..."
+          //   docker build \
+          //     --tag $env:IMAGE_NAME \
+          //     --build-arg "GIT_COMMIT_REV=$env:GIT_COMMIT_REV" \
+          //     --build-arg "GIT_SCM_URL=$env:GIT_SCM_URL" \
+          //     --build-arg "BUILD_DATE=$env:BUILD_DATE" \
+          //     --label "org.opencontainers.image.source=$env:GIT_SCM_URL" \
+          //     --label "org.label-schema.vcs-url=$env:GIT_SCM_URL" \
+          //     --label "org.opencontainers.image.url=$env:SCM_URI" \
+          //     --label "org.label-schema.url=$env:SCM_URI" \
+          //     --label "org.opencontainers.image.revision=$env:GIT_COMMIT_REV" \
+          //     --label "org.label-schema.vcs-ref=$env:GIT_COMMIT_REV" \
+          //     --label "org.opencontainers.image.created=$env:BUILD_DATE" \
+          //     --label "org.label-schema.build-date=$env:BUILD_DATE" \
+          //     # --platform $env:IMAGE_PLATFORM \
+          //     --file $dockerfile \
+          //     $env:IMAGE_DIR.replace('/', '\\')
+          //   echo "== Build Succeeded, image $env:IMAGE_NAME exported to $env:IMAGE_ARCHIVE."
+          // '''
           powershell '''
           	echo "== Building $env:IMAGE_NAME from $env:IMAGE_DOCKERFILE..."
-            docker build \
-              --tag $env:IMAGE_NAME \
-              --build-arg "GIT_COMMIT_REV=$env:GIT_COMMIT_REV" \
-              --build-arg "GIT_SCM_URL=$env:GIT_SCM_URL" \
-              --build-arg "BUILD_DATE=$env:BUILD_DATE" \
-              --label "org.opencontainers.image.source=$env:GIT_SCM_URL" \
-              --label "org.label-schema.vcs-url=$env:GIT_SCM_URL" \
-              --label "org.opencontainers.image.url=$env:SCM_URI" \
-              --label "org.label-schema.url=$env:SCM_URI" \
-              --label "org.opencontainers.image.revision=$env:GIT_COMMIT_REV" \
-              --label "org.label-schema.vcs-ref=$env:GIT_COMMIT_REV" \
-              --label "org.opencontainers.image.created=$env:BUILD_DATE" \
-              --label "org.label-schema.build-date=$env:BUILD_DATE" \
-              # --platform $env:IMAGE_PLATFORM \
+            echo "IMAGE_NAME: $env:IMAGE_NAME"
+            echo "IMAGE_PLATFORM: $env:IMAGE_PLATFORM"
+            echo "IMAGE_DIR: $env:IMAGE_DIR.replace('/', '\\')"
+            echo "dockerfile: $dockerfile"
+            docker build --tag $env:IMAGE_NAME \
               --file $dockerfile \
               $env:IMAGE_DIR.replace('/', '\\')
-            echo "== Build ✅ Succeeded, image $env:IMAGE_NAME exported to $env:IMAGE_ARCHIVE."
+            echo "== Build Succeeded, image $env:IMAGE_NAME exported to $env:IMAGE_ARCHIVE."
           '''
         } else {
           sh 'make build'
