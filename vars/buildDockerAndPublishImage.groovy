@@ -213,6 +213,7 @@ def call(String imageName, Map userConfig=[:]) {
               --label "org.label-schema.build-date=$env:BUILD_DATE" \
               --file $dockerfile \
               $folder
+            docker save --output=$archive $env:IMAGE_NAME
             echo "== Build Succeeded, image $env:IMAGE_NAME exported to $archive"
             dir
             dir $folder
