@@ -29,11 +29,11 @@ def call(String imageName, Map userConfig=[:]) {
   final String buildDate = dateFormat.format(now)
 
   final String operatingSystem = finalConfig.platform.split('/')[0]
+  final String cpuArch = finalConfig.platform.split('/')[1]
   if (finalConfig.agentLabels.contains('windows')) {
     operatingSystem = 'Windows'
     cpuArch = 'x86_64' // hardcoded for Windows, we can't use `platform`as this docker parameter concerns only linux architectures
   }
-  final String cpuArch = finalConfig.platform.split('/')[1]
 
   withContainerEngineAgent(finalConfig, {
     withEnv([
