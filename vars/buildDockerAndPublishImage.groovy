@@ -121,7 +121,6 @@ def call(String imageName, Map userConfig=[:]) {
         def hadoLintReportFile = "${hadolintReportId}.json"
         withEnv([
           "HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}",
-          "HADOLINT_REPORT_WINDOWS=${env.WORKSPACE}\\${hadoLintReportFile}",
           "hadolint_url=https://github.com/hadolint/hadolint/releases/download/v2.10.0/hadolint-${operatingSystem}-${cpuArch}.exe", // TODO: track with updatecli
         ]) {
           try {
@@ -133,11 +132,9 @@ def call(String imageName, Map userConfig=[:]) {
                 Invoke-WebRequest "$env:hadolint_url" -OutFile "$env:WORKSPACE\\.bin\\hadolint.exe"
                 $env:Path += "$env:WORKSPACE\\.bin"
               }
-              echo "HADOLINT_REPORT: $env:HADOLINT_REPORT"
-              echo "HADOLINT_REPORT_WINDOWS: $env:HADOLINT_REPORT_WINDOWS"
-              echo $env:HADOLINT_REPORT.replace('/', '\\')
+              echo "IMAGE_DOCKERFILE=$env:IMAGE_DOCKERFILE"
               hadolint --version
-              hadolint --format=json $env:IMAGE_DOCKERFILE > $env:HADOLINT_REPORT_WINDOWS
+              hadolint --format=json $env:IMAGE_DOCKERFILE > $env:HADOLINT_REPORT.replace('/', '\\')
               '''
             } else {
               sh 'make lint'
