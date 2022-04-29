@@ -128,9 +128,9 @@ def call(String imageName, Map userConfig=[:]) {
               if (-Not (Get-Command 'hadolint' -errorAction SilentlyContinue))
               {
                 echo "INFO: No hadolint binary found: Installing it from $env:hadolint_url"
-                Invoke-WebRequest $env:hadolint_url -OutFile $env:WORKSPACE\.bin\hadolint.exe
+                Invoke-WebRequest $env:hadolint_url -OutFile $env:WORKSPACE\\.bin\\hadolint.exe
               }
-              $env:WORKSPACE\.bin\hadolint --format=json $env:IMAGE_DOCKERFILE > $env:HADOLINT_REPORT
+              $env:WORKSPACE\\.bin\\hadolint --format=json $env:IMAGE_DOCKERFILE > $env:HADOLINT_REPORT
               '''
             } else {
               sh 'make lint'
