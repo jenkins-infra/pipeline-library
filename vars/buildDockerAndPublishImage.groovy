@@ -175,6 +175,8 @@ def call(String imageName, Map userConfig=[:]) {
             echo "archive: $archive"
             echo "== Building $env:IMAGE_NAME from $env:IMAGE_DOCKERFILE..."
 
+            # TODO: missing env vars
+
             docker build \
               --tag $env:IMAGE_NAME \
               --build-arg "GIT_COMMIT_REV=$env:GIT_COMMIT_REV" \
