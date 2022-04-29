@@ -110,7 +110,7 @@ class InfraStepTests extends BaseTest {
     printCallStack()
     assertTrue(isOK)
     assertJobStatusSuccess()
-    assertTrue(assertMethodCallContainsPattern('powershell', 'echo "${env:DOCKER_CONFIG_PSW}" | "${env:CONTAINER_BIN}" login --username "${env:DOCKER_CONFIG_USR}" --password-stdin'))
+    assertTrue(assertMethodCallContainsPattern('powershell', 'Invoke-Expression "${Env:CONTAINER_BIN} login --username ${Env:DOCKER_CONFIG_USR} --password ${Env:DOCKER_CONFIG_PSW}"'))
   }
 
   @Test
