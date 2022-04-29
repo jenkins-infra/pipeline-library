@@ -205,7 +205,6 @@ def call(String imageName, Map userConfig=[:]) {
               --label "org.label-schema.vcs-ref=$env:GIT_COMMIT_REV" \
               --label "org.opencontainers.image.created=$env:BUILD_DATE" \
               --label "org.label-schema.build-date=$env:BUILD_DATE" \
-              # --platform $env:IMAGE_PLATFORM \
               --file $dockerfile \
               $folder
 
