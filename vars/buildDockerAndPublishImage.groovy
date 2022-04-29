@@ -85,14 +85,15 @@ def call(String imageName, Map userConfig=[:]) {
               withEnv([
                 "jxrv_url=https://github.com/jenkins-x-plugins/jx-release-version/releases/download/v2.5.1/jx-release-version-${operatingSystem}-${cpuArch}.tar.gz", // TODO: track with updatecli
               ]) {
-                powershell '''
-                if ! command -v jx-release-version 2>/dev/null >/dev/null
-                then
-                  echo "INFO: No jx-release-version binary found: Installing it from ${jxrv_url}."
-                  curl --silent --location "${jxrv_url}" | tar xzv
-                  mv ./jx-release-version "${WORKSPACE}/.bin/jx-release-version"
-                fi
-                '''
+                echo "TODO: download jx-release-version"
+                // powershell '''
+                // if ! command -v jx-release-version 2>/dev/null >/dev/null
+                // then
+                //   echo "INFO: No jx-release-version binary found: Installing it from ${jxrv_url}."
+                //   curl --silent --location "${jxrv_url}" | tar xzv
+                //   mv ./jx-release-version "${WORKSPACE}/.bin/jx-release-version"
+                // fi
+                // '''
               }
             }
             powershell 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
@@ -136,13 +137,14 @@ def call(String imageName, Map userConfig=[:]) {
                 echo "INFO: No hadolint binary found: Installing it from $env:hadolint_url"
                 Invoke-WebRequest "$env:hadolint_url" -OutFile "$env:WORKSPACE\\.bin\\hadolint.exe"
               }
-              echo "IMAGE_DOCKERFILE:"
-              $dockerfile = ($env:WORKSPACE + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\'))
-              echo $dockerfile
+              $dockerfileOrig = ($env:WORKSPACE + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\'))
+              echo "dockerfileOrig: $dockerfileOrig"
               # Convert EOL
-              Get-Content -Path $dockerfile | Out-File -FilePath ($dockerfile + '.win')
-              $dockerfile += '.win'
+              $dockerfile = $dockerfileOrig + '.win'
+              Get-Content -Path $dockerfileOrig | Out-File -FilePath $dockerfile)
+              echo "dockerfile: $dockerfile"
               type $dockerfile
+              dir
               hadolint --version
               # hadolint --format=json $dockerfile > $env:HADOLINT_REPORT.replace('/', '\\')
               '''
@@ -182,7 +184,7 @@ def call(String imageName, Map userConfig=[:]) {
           //   echo "== Build Succeeded, image $env:IMAGE_NAME exported to $env:IMAGE_ARCHIVE."
           // '''
           powershell '''
-          	$dockerfile = ($env:WORKSPACE + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\'))
+          	$dockerfile = ($env:WORKSPACE + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\') + '.win')
             $folder = (Split-Path -Path $dockerfile)
             $archive = "$folder\\image.tar"
             echo "dockerfile: $dockerfile"
