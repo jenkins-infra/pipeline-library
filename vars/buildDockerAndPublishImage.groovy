@@ -55,8 +55,13 @@ def call(String imageName, Map userConfig=[:]) {
             powershell 'echo "$env:DOCKER_REGISTRY_PSW" | docker login -u "$env:DOCKER_REGISTRY_USR" -p "$env:DOCKER_REGISTRY_PSW"'// --password-stdin'
 
             // Custom tools might be installed in the .bin directory in the workspace
-            powershell 'Remove-Item "$env:WORKSPACE/.bin" -Recurse'
-            powershell 'mkdir -p "$env:WORKSPACE/.bin"'
+            powershell '''
+              Remove-Item "$env:WORKSPACE/.bin" -Recurse
+              mkdir -p "$env:WORKSPACE/.bin"'
+              # Add folder to $PATH
+              $env:Path += "$env:WORKSPACE\\.bin"
+            '''
+
           } else {
             // Logging in on the Dockerhub helps to avoid request limit from DockerHub
             sh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
@@ -130,8 +135,6 @@ def call(String imageName, Map userConfig=[:]) {
               {
                 echo "INFO: No hadolint binary found: Installing it from $env:hadolint_url"
                 Invoke-WebRequest "$env:hadolint_url" -OutFile "$env:WORKSPACE\\.bin\\hadolint.exe"
-                # Add .bin folder to $PATH
-                $env:Path += "$env:WORKSPACE\\.bin"
               }
               echo "IMAGE_DOCKERFILE:"
               $dockerfile = ($env:WORKSPACE + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\'))
