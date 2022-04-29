@@ -130,13 +130,10 @@ def call(String imageName, Map userConfig=[:]) {
               {
                 echo "INFO: No hadolint binary found: Installing it from $env:hadolint_url"
                 Invoke-WebRequest "$env:hadolint_url" -OutFile "$env:WORKSPACE/.bin/hadolint.exe"
-                echo "before: $env:Path"
-                echo $env:Path
                 $env:Path += "$env:WORKSPACE/.bin"
-                echo "after:"
-                echo $env:Path
               }
-              dir .bin
+              echo "hadoling_report_file: $env:HADOLINT_REPORT"
+              echo $env:HADOLINT_REPORT
               hadolint --version
               hadolint --format=json $env:IMAGE_DOCKERFILE > $env:HADOLINT_REPORT
               '''
