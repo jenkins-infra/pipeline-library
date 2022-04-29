@@ -149,12 +149,12 @@ def call(String imageName, Map userConfig=[:]) {
             } else {
               sh 'make lint'
             }
-          } finally {
-            recordIssues(
-              enabledForFailure: true,
-              aggregatingResults: false,
-              tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
-            )
+          // } finally {
+          //   recordIssues(
+          //     enabledForFailure: true,
+          //     aggregatingResults: false,
+          //     tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
+          //   )
           }
         }
       } // stage
