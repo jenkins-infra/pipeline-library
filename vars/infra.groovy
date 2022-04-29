@@ -32,10 +32,19 @@ Object withDockerCredentials(Map orgAndCredentialsId, Closure body) {
         usernamePassword(credentialsId: orgAndCredentialsId.credentialId, passwordVariable: 'DOCKER_CONFIG_PSW', usernameVariable: 'DOCKER_CONFIG_USR')
       ]) {
         // Logging in on the Dockerhub helps to avoid request limit from DockerHub
-        sh 'echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_CONFIG_USR}" --password-stdin'
+        if (isUnix()) {
+          sh 'echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin'
+        } else {
+          powershell 'echo "${env:DOCKER_CONFIG_PSW}" | "${env:CONTAINER_BIN}" login --username "${env:DOCKER_CONFIG_USR}" --password-stdin'
+        }
+
         body.call()
         // Logging out to ensure credentials are cleaned up if the current agent is reused
-        sh '"${CONTAINER_BIN}" logout'
+        if (isUnix()) {
+          sh '"${CONTAINER_BIN}" logout'
+        } else {
+          powershell '"${env:CONTAINER_BIN}" logout'
+        }
         return
       } // withCredentials
     }// withEnv

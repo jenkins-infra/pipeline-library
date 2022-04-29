@@ -95,6 +95,22 @@ class InfraStepTests extends BaseTest {
     printCallStack()
     assertTrue(isOK)
     assertJobStatusSuccess()
+    assertTrue(assertMethodCallContainsPattern('sh', 'echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin'))
+  }
+
+  @Test
+  void testWithDockerPullCredentialsWindows() throws Exception {
+    helper.registerAllowedMethod('isUnix', [], { false })
+    def script = loadScript(scriptName)
+    env.JENKINS_URL = 'https://ci.jenkins.io/'
+    def isOK = false
+    script.withDockerPullCredentials() {
+      isOK = true
+    }
+    printCallStack()
+    assertTrue(isOK)
+    assertJobStatusSuccess()
+    assertTrue(assertMethodCallContainsPattern('powershell', 'echo "${env:DOCKER_CONFIG_PSW}" | "${env:CONTAINER_BIN}" login --username "${env:DOCKER_CONFIG_USR}" --password-stdin'))
   }
 
   @Test
