@@ -144,7 +144,7 @@ def call(String imageName, Map userConfig=[:]) {
               $dockerfile += '.win'
               type $dockerfile
               hadolint --version
-              hadolint --format=json $dockerfile > $env:HADOLINT_REPORT.replace('/', '\\')
+              # hadolint --format=json $dockerfile > $env:HADOLINT_REPORT.replace('/', '\\')
               '''
             } else {
               sh 'make lint'
@@ -176,9 +176,9 @@ def call(String imageName, Map userConfig=[:]) {
               --label "org.label-schema.vcs-ref=$env:GIT_COMMIT_REV" \
               --label "org.opencontainers.image.created=$env:BUILD_DATE" \
               --label "org.label-schema.build-date=$env:BUILD_DATE" \
-              --platform $env:IMAGE_PLATFORM \
-              --file $env:IMAGE_DOCKERFILE \
-              $env:IMAGE_DIR
+              # --platform $env:IMAGE_PLATFORM \
+              --file $dockerfile \
+              $env:IMAGE_DIR.replace('/', '\\')
             echo "== Build ✅ Succeeded, image $env:IMAGE_NAME exported to $env:IMAGE_ARCHIVE."
           '''
         } else {
