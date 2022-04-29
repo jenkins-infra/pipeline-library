@@ -133,7 +133,7 @@ def call(String imageName, Map userConfig=[:]) {
                 $env:Path += "$env:WORKSPACE\\.bin"
               }
               echo "IMAGE_DOCKERFILE:"
-              echo Get-Location + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\')
+              echo ($env:WORKSPACE + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\'))
               echo $env:IMAGE_DOCKERFILE.replace('/', '\\')
               hadolint --version
               hadolint --format=json $env:IMAGE_DOCKERFILE.replace('/', '\\') > $env:HADOLINT_REPORT.replace('/', '\\')
