@@ -159,7 +159,7 @@ def call(String imageName, Map userConfig=[:]) {
           }
         }
       } // stage
-/*
+
       stage("Build ${imageName}") {
         if (operatingSystem == 'Windows') {
           echo "TO DO: Build ${imageName} on Windows"
@@ -273,7 +273,7 @@ def call(String imageName, Map userConfig=[:]) {
           } // withEnv
         } //stage
       } // if
-*/
+
       if (env.TAG_NAME && finalConfig.automaticSemanticVersioning) {
         stage('GitHub Release') {
           withCredentials([
