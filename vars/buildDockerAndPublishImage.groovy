@@ -135,6 +135,9 @@ def call(String imageName, Map userConfig=[:]) {
               echo "IMAGE_DOCKERFILE:"
               $dockerfile = ($env:WORKSPACE + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\'))
               echo $dockerfile
+              Get-Content -Path $dockerfile | Out-File -FilePath ($dockerfile + '.win')
+              $dockerfile += '.win'
+              type $dockerfile
               hadolint --version
               hadolint --format=json $dockerfile > $env:HADOLINT_REPORT.replace('/', '\\')
               '''
