@@ -135,17 +135,17 @@ def call(String imageName, Map userConfig=[:]) {
               if (-Not (Get-Command 'hadolint' -errorAction SilentlyContinue))
               {
                 echo "INFO: No hadolint binary found: Installing it from $env:hadolint_url"
-                Invoke-WebRequest "$env:hadolint_url" -OutFile "$env:WORKSPACE\\.bin\\hadolint.exe"
+                # Invoke-WebRequest "$env:hadolint_url" -OutFile "$env:WORKSPACE\\.bin\\hadolint.exe"
               }
               $dockerfileOrig = ($env:WORKSPACE + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\'))
               echo "dockerfileOrig: $dockerfileOrig"
               # Convert EOL
               $dockerfile = $dockerfileOrig + '.win'
-              Get-Content -Path $dockerfileOrig | Out-File -FilePath $dockerfile
+              Get-Content -Path $dockerfileOrig | Out-File -FilePath $dockerfile -Encoding utf8
               echo "dockerfile: $dockerfile"
               type $dockerfile
               dir
-              hadolint --version
+              # hadolint --version
               # hadolint --format=json $dockerfile > $env:HADOLINT_REPORT.replace('/', '\\')
               '''
             } else {
