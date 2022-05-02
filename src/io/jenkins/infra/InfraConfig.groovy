@@ -45,37 +45,37 @@ class InfraConfig implements Serializable {
   // Returns the Docker Informations for pulling images
   Map getDockerPullOrgAndCredentialsId() {
     switch(jenkinsHostname){
-      case "ci.jenkins.io":
-        return [error: false, organisation: "cijenkinsio", credentialId: "cijenkinsio-dockerhub-pull"]
+      case 'ci.jenkins.io':
+        return [error: false, organisation: 'cijenkinsio', credentialId: 'cijenkinsio-dockerhub-pull']
         break
-      case "trusted.ci.jenkins.io":
-        return [error: false, organisation: "trustedcijenkinsio", credentialId: "trustedcijenkinsio-dockerhub-pull"]
+      case 'trusted.ci.jenkins.io':
+        return [error: false, organisation: 'trustedcijenkinsio', credentialId: 'trustedcijenkinsio-dockerhub-pull']
         break
-      case "infra.ci.jenkins.io":
-        return [error: false, organisation: "infracijenkinsio", credentialId: "infracijenkinsio-dockerhub-pull"]
+      case 'infra.ci.jenkins.io':
+        return [error: false, organisation: 'infracijenkinsio', credentialId: 'infracijenkinsio-dockerhub-pull']
         break
-      case "release.ci.jenkins.io":
-        return [error: false, organisation: "releasecijenkinsio", credentialId: "releasecijenkinsio-dockerhub-pull"]
+      case 'release.ci.jenkins.io':
+        return [error: false, organisation: 'releasecijenkinsio', credentialId: 'releasecijenkinsio-dockerhub-pull']
         break
       default:
-        return [error: true, msg: "Cannot use Docker credentials outside of jenkins infra environments"]
+        return [error: true, msg: 'Cannot use Docker credentials outside of jenkins infra environments']
     }
   }
 
   // Returns the Docker Informations for pushing images
   Map getDockerPushOrgAndCredentialsId() {
     switch(jenkinsHostname){
-      case "ci.jenkins.io":
-        return [error: false, organisation: "jenkins4eval", credentialId: "cijenkinsio-dockerhub-push"]
+      case 'ci.jenkins.io':
+        return [error: false, organisation: 'jenkins4eval', credentialId: 'cijenkinsio-dockerhub-push']
         break
-      case "trusted.ci.jenkins.io":
-        return [error: false, organisation: "jenkins", credentialId: "jenkinsciinfra-dockerhub-push"]
+      case 'trusted.ci.jenkins.io':
+        return [error: false, organisation: 'jenkins', credentialId: 'jenkinsciinfra-dockerhub-push']
         break
-      case "infra.ci.jenkins.io":
-        return [error: false, organisation: "jenkinsciinfra", credentialId: "jenkinsinfraadmin-dockerhub-push"]
+      case 'infra.ci.jenkins.io':
+        return [error: false, organisation: 'jenkinsciinfra', credentialId: 'jenkinsinfraadmin-dockerhub-push']
         break
       default:
-        return [error: true, msg: "Cannot use Docker credentials outside of jenkins infra environments"]
+        return [error: true, msg: 'Cannot use Docker credentials outside of jenkins infra environments']
     }
   }
 }
