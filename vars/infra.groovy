@@ -17,15 +17,48 @@ Boolean isInfra() {
   return new InfraConfig(env).isInfra()
 }
 
+//withDockerCredentials deprecated method present for backward compatibility
 Object withDockerCredentials(Closure body) {
-  if (new InfraConfig(env).isRunningOnJenkinsInfra()) {
-    env.DOCKERHUB_ORGANISATION = isTrusted() ? 'jenkins' : 'jenkins4eval'
-    withCredentials([[$class: 'ZipFileBinding', credentialsId: 'jenkins-dockerhub', variable: 'DOCKER_CONFIG']]) {
-      return body.call()
-    }
+  return withDockerPushCredentials(body)
+}
+
+Object withDockerCredentials(Map orgAndCredentialsId, Closure body) {
+  if (orgAndCredentialsId.error) {
+    echo orgAndCredentialsId.msg
   } else {
-    echo 'Cannot use Docker credentials outside of jenkins infra environment'
+    env.DOCKERHUB_ORGANISATION = orgAndCredentialsId.organisation
+    withEnv(["CONTAINER_BIN=${env.CONTAINER_BIN ?: 'docker'}"]){
+      withCredentials([
+        usernamePassword(credentialsId: orgAndCredentialsId.credentialId, passwordVariable: 'DOCKER_CONFIG_PSW', usernameVariable: 'DOCKER_CONFIG_USR')
+      ]) {
+        // Logging in on the Dockerhub helps to avoid request limit from DockerHub
+        if (isUnix()) {
+          sh 'echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin'
+        } else {
+          powershell 'Invoke-Expression "${Env:CONTAINER_BIN} login --username ${Env:DOCKER_CONFIG_USR} --password ${Env:DOCKER_CONFIG_PSW}"'
+        }
+
+        body.call()
+        // Logging out to ensure credentials are cleaned up if the current agent is reused
+        if (isUnix()) {
+          sh '"${CONTAINER_BIN}" logout'
+        } else {
+          powershell 'Invoke-Expression "${Env:CONTAINER_BIN} logout"'
+        }
+        return
+      } // withCredentials
+    }// withEnv
   }
+}
+
+Object withDockerPushCredentials(Closure body) {
+  orgAndCredentialsId = new InfraConfig(env).getDockerPushOrgAndCredentialsId()
+  return withDockerCredentials(orgAndCredentialsId, body)
+}
+
+Object withDockerPullCredentials(Closure body) {
+  orgAndCredentialsId = new InfraConfig(env).getDockerPullOrgAndCredentialsId()
+  return withDockerCredentials(orgAndCredentialsId, body)
 }
 
 Object checkoutSCM(String repo = null) {

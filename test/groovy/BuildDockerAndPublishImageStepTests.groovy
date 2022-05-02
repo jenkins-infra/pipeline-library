@@ -40,6 +40,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Mock Pipeline methods which are not already declared in the parent class
     helper.registerAllowedMethod('hadoLint', [Map.class], { m -> m })
     helper.registerAllowedMethod('fileExists', [String.class], { true })
+    binding.setVariable('infra', ['withDockerPullCredentials': {body -> body()}, 'withDockerPushCredentials': {body ->body()}])
     helper.addShMock('jx-release-version', defaultGitTag , 0)
     helper.addShMock('git remote -v | grep origin | grep push | sed \'s/^origin\\s//\' | sed \'s/\\s(push)//\'', 'https://github.com/org/repository.git', 0)
     helper.addShMock('gh api /repos/org/repository/releases | jq -e -r \'.[] | select(.draft == true and .name == "next") | .id\'', '12345', 0)
@@ -47,7 +48,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // Define mocks/stubs for the data objects
     infraConfigMock = new StubFor(InfraConfig.class)
-
 
     dateMock = new StubFor(Date.class)
     dateMock.demand.with {
@@ -58,6 +58,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     simpleDateMock.demand.with {
       format{ mockedSimpleDate }
     }
+
   }
 
   void withMocks(Closure body) {
@@ -97,8 +98,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     return assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile') \
       && assertMethodCallContainsPattern('sh','make lint') \
       && assertMethodCallContainsPattern('sh','make build') \
-      && assertMethodCallContainsPattern('sh','"${CONTAINER_BIN}" login') \
-      && assertMethodCallContainsPattern('sh','"${CONTAINER_BIN}" logout') \
       && assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}")
   }
 
@@ -186,40 +185,29 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     def script = loadScript(scriptName)
     def customImageNameWithTag = testImageName + ':3.141'
     def fullCustomImageName = 'jenkinsciinfra/' + customImageNameWithTag
-
     mockPrincipalBranch()
-
     withMocks{
       script.call(customImageNameWithTag)
     }
     printCallStack()
-
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
-
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
     assertTrue(assertContainerAgent())
-
     // And generated reports are recorded with named without ':' but '-' instead
     assertTrue(assertRecordIssues(customImageNameWithTag.replaceAll(':','-')))
-
     // With the deploy step called with the correct image name
     assertTrue(assertMakeDeploy(fullCustomImageName))
-
     // But no tag pushed
     assertFalse(assertTagPushed(defaultGitTag))
-
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
-
   @Test
   void itBuildsAndDeploysWithAutomaticSemanticTagAndReleaseOnPrincipalBranch() throws Exception {
     def script = loadScript(scriptName)
-
     mockPrincipalBranch()
-
     withMocks{
       script.call(testImageName, [
         automaticSemanticVersioning: true,
@@ -227,36 +215,26 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       ])
     }
     printCallStack()
-
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
-
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
     assertTrue(assertContainerAgent())
-
     // And generated reports are recorded
     assertTrue(assertRecordIssues())
-
     // And the deploy step called
     assertTrue(assertMakeDeploy())
-
     // And the tag pushed
     assertTrue(assertTagPushed(defaultGitTag))
-
     // But no release created (no tag triggering the build)
     assertFalse(assertReleaseCreated())
-
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
-
   @Test
   void itBuildsAndDeploysImageWithCustomConfigOnPrincipalBranch() throws Exception {
     def script = loadScript(scriptName)
-
     mockPrincipalBranch()
-
     withMocks{
       script.call(testImageName, [
         dockerfile: 'build.Dockerfile',
@@ -267,31 +245,24 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       ])
     }
     printCallStack()
-
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
-
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
     assertTrue(assertContainerAgent())
-
     // And the environement variables set with the custom configuration values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=docker/'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=build.Dockerfile'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/s390x'))
-
     // But no tag and no deploy called (branch or PR)
     assertTrue(assertMakeDeploy())
     assertTrue(assertTagPushed(defaultGitTag))
-
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
-
   @Test
   void itDoesNotDeployNorReleaseWhenNotOnPrincipalBranch() throws Exception {
     def script = loadScript(scriptName)
-
     withMocks{
       script.call(testImageName, [
         automaticSemanticVersioning: true,
@@ -299,30 +270,22 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       ])
     }
     printCallStack()
-
     // Then we expect a successful build
     assertJobStatusSuccess()
-
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
     assertTrue(assertContainerAgent())
-
     // But no deploy step called for latest
     assertFalse(assertMakeDeploy())
-
     // And no release (no tag)
     assertFalse(assertTagPushed(defaultGitTag))
-
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
-
   @Test
   void itBuildsAndDeploysAndReleasesWhenTriggeredByTagAndSemVerEnabled() throws Exception {
     def script = loadScript(scriptName)
-
     mockTag()
-
     withMocks{
       script.call(testImageName, [
         automaticSemanticVersioning: true,
@@ -330,168 +293,124 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       ])
     }
     printCallStack()
-
     // Then we expect a successful build
     assertJobStatusSuccess()
-
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
     assertTrue(assertContainerAgent())
-
     // And the deploy step called for latest
     assertTrue(assertMakeDeploy("${fullTestImageName}:${defaultGitTag}"))
-
     // And the release is created (tag triggering the build)
     assertTrue(assertReleaseCreated())
-
     // But no tag  pushed
     assertFalse(assertTagPushed(defaultGitTag))
-
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
-
   @Test
   void itDeploysWithCorrectNameWhenTriggeredByTagAndImagenameHasTag() throws Exception {
     def script = loadScript(scriptName)
     def customImageNameWithTag = testImageName + ':3.141'
     def fullCustomImageName = 'jenkinsciinfra/' + customImageNameWithTag
     def customGitTag = 'rc1-1.0.0'
-
     mockTag(customGitTag)
-
     withMocks{
       script.call(customImageNameWithTag)
     }
     printCallStack()
-
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
-
     // With the deploy step called with the correct image name
     assertTrue(assertMakeDeploy("${fullCustomImageName}-${customGitTag}"))
-
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
-
   @Test
   void itSkipTestStageIfNoSpecificCSTFile() throws Exception {
     def script = loadScript(scriptName)
-
     // when building a Docker Image with a default configuration and no cst.yml file found
     helper.registerAllowedMethod('fileExists', [String.class], { s -> return !s.contains('/cst.yml') })
-
     withMocks{
       script.call(testImageName)
     }
     printCallStack()
-
     // Then we expect a successful build
     assertJobStatusSuccess()
-
     // With only a common test stage
     assertFalse(assertMethodCallContainsPattern('withEnv','TEST_HARNESS=./cst.yml'))
     assertTrue(assertMethodCallContainsPattern('withEnv','TEST_HARNESS=/tmp/common-cst.yml'))
-
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
-
   @Test
   void itSkipTestStageIfNoCommonCSTFile() throws Exception {
     def script = loadScript(scriptName)
-
     // when building a Docker Image with a default configuration and no cst.yml file found
     helper.registerAllowedMethod('fileExists', [String.class], { s -> return !s.contains('/common-cst.yml') })
-
     withMocks{
       script.call(testImageName)
     }
     printCallStack()
-
     // Then we expect a successful build
     assertJobStatusSuccess()
-
     // With only a specific tests stage
     assertTrue(assertMethodCallContainsPattern('withEnv','TEST_HARNESS=./cst.yml'))
     assertFalse(assertMethodCallContainsPattern('withEnv','TEST_HARNESS=/tmp/common-cst.yml'))
-
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
-
   @Test
   void itFailFastButRecordReportWhenLintFails() throws Exception {
     def script = loadScript(scriptName)
-
     helper.addShMock('make lint', '', 1)
-
     // Job is expected to fail with an exception during the lint stage
     thrown.expect(Exception)
     thrown.expectMessage(containsString('Lint Failed'))
-
     withMocks{
       script.call(testImageName)
     }
     printCallStack()
-
     // Then we expect a failed build
     assertJobStatusFailure()
-
     // With a lint stage but no build stage
     assertTrue(assertMethodCallContainsPattern('sh','make lint'))
     assertFalse(assertMethodCallContainsPattern('sh','make build'))
-
     // And a lint report recorded
     assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, aggregatingResults=false, tool={id=hadolint-bitcoinMinerImage, pattern=/tmp/bitcoinMinerImage-hadolint.json}}'))
-
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
-
   @Test
   void itBuildsAndDeploysWithDockerEngineOnPrincipalBranch() throws Exception {
     def script = loadScript(scriptName)
-
     mockPrincipalBranch()
-
     withMocks {
       script.call(testImageName, [
         useContainer: false,
       ])
     }
     printCallStack()
-
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
-
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
     assertTrue(assertContainerVM())
-
     // And the expected environment variables set to their default values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/amd64'))
-
     // And generated reports recorded
     assertTrue(assertRecordIssues())
-
     // And the deploy step called
     assertTrue(assertMakeDeploy())
-
     // But no release created automatically
     assertFalse(assertTagPushed(defaultGitTag))
-
     // And all mocked/stubbed methods been called
     verifyMocks()
   }
-
   @Test
   void itBuildsOnlyOnChangeRequestWithWindowsContainers() throws Exception {
     def script = loadScript(scriptName)
-
     withMocks {
       script.call(testImageName, [
         useContainer: false,
@@ -499,29 +418,23 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       ])
     }
     printCallStack()
-
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
-
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
     assertTrue(assertContainerVM('docker-windows'))
-
     // And the expected environment variables set to their default values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/amd64'))
-
     // And generated reports recorded
     assertTrue(assertRecordIssues())
-
     // But no deploy step called (not on principal branch)
     assertFalse(assertMakeDeploy())
-
     // But no release created automatically
     assertFalse(assertTagPushed(defaultGitTag))
-
     // And all mocked/stubbed methods been called
     verifyMocks()
   }
+
 }
