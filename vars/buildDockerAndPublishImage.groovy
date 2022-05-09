@@ -145,7 +145,7 @@ def call(String imageName, Map userConfig=[:]) {
               # Run hadolint
               $hadolintReport = $env:HADOLINT_REPORT.replace('/', '\\')
               $folder = (Split-Path -Path $hadolintReport)
-              hadolint.exe --format=json $dockerfile > $hadolintReport
+              "C:\\tools\\hadolint.exe" --format=json $dockerfile > $hadolintReport
               dir $folder
               type $hadolintReport
               '''
