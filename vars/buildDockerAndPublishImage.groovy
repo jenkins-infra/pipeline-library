@@ -60,6 +60,11 @@ def call(String imageName, Map userConfig=[:]) {
               mkdir -p "$env:WORKSPACE/.bin"
               # Add folder to $PATH
               $env:Path += "$env:WORKSPACE\\.bin"
+              # Add "tools" folder to $PATH
+              $env:Path += "C:\\tools"
+
+              # debug
+              dir env:
             '''
 
           } else {
