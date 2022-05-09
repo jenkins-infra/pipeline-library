@@ -62,7 +62,7 @@ def call(String imageName, Map userConfig=[:]) {
               # Add folder to $PATH
               $env:Path += "$env:WORKSPACE\\.bin"
               # Add "tools" folder to $PATH
-              $env:Path += "C:\\tools"
+              $env:Path += ";C:\\tools"
 
               # debug
               dir env:
