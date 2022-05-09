@@ -69,7 +69,7 @@ def call(String imageName, Map userConfig=[:]) {
               # Get-ChildItem -Recurse "C:\\tools"
 
               # debug
-              dir env:
+              # dir env:
             '''
 
           } else {
