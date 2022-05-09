@@ -137,7 +137,7 @@ def call(String imageName, Map userConfig=[:]) {
               # Run hadolint
               $hadolintReport = $env:HADOLINT_REPORT.replace('/', '\\')
               $folder = (Split-Path -Path $hadolintReport)
-              $test = (C:\\tools\\hadolint.exe --format=json $dockerfile) | Out-File -FilePath $hadolintReport -Encoding utf8
+              $test = (hadolint.exe --format=json $dockerfile) | Out-File -FilePath $hadolintReport -Encoding utf8
               echo "----------- DIR FOLDER --------------"
               dir $folder
               echo "----------- TYPE HADOLINTREPORT --------------"
@@ -267,6 +267,7 @@ def call(String imageName, Map userConfig=[:]) {
               echo "== Deploying $env:IMAGE_NAME to $env:IMAGE_DEPLOY_NAME"
               docker tag $env:IMAGE_NAME $env:IMAGE_DEPLOY_NAME
               docker push $env:IMAGE_DEPLOY_NAME
+              # TODO: check command result
               echo "== Deploy Succeeded"
               '''
             } else {
