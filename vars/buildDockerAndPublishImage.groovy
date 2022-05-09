@@ -64,6 +64,10 @@ def call(String imageName, Map userConfig=[:]) {
               # Add "tools" folder to $PATH
               $env:Path += ";C:\\tools"
 
+              # debug tools folder
+              echo "----------- TOOLS ----------------"
+              Get-ChildItem -Recurse "C:\\tools"
+
               # debug
               dir env:
             '''
