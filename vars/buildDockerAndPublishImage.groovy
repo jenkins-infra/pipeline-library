@@ -50,6 +50,8 @@ def call(String imageName, Map userConfig=[:]) {
         ]) {
           checkout scm
 
+          cleanWs
+
           if (operatingSystem == 'Windows') {
             // Logging in on the Dockerhub helps to avoid request limit from DockerHub
             powershell 'echo "$env:DOCKER_REGISTRY_PSW" | docker login -u "$env:DOCKER_REGISTRY_USR" -p "$env:DOCKER_REGISTRY_PSW"'// --password-stdin'
@@ -349,7 +351,6 @@ def withContainerEngineAgent(finalConfig, body) {
       withEnv([
         'CONTAINER_BIN=docker',
         'CST_DRIVER=docker',
-        'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint', // Do not put the command (right part of the assignation) between quotes to ensure that bash treat it as an array of strings
       ]) {
         body.call()
       }
