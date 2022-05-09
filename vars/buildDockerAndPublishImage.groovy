@@ -124,21 +124,11 @@ def call(String imageName, Map userConfig=[:]) {
         withEnv([
           "PATH+TOOLS=C:/tools",
           "HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}",
-          "hadolint_url=https://github.com/hadolint/hadolint/releases/download/v2.10.0/hadolint-${operatingSystem}-${cpuArch}.exe", // TODO: track with updatecli
         ]) {
           try {
             if (operatingSystem == 'Windows') {
               powershell 'echo $env:Path'
               powershell '''
-              # Check if hadolint is installed
-              if (-Not (Get-Command 'hadolint.exe' -errorAction SilentlyContinue))
-              {
-                echo "INFO: No hadolint binary found: Installing it from $env:hadolint_url"
-                # Invoke-WebRequest "$env:hadolint_url" -OutFile "$env:WORKSPACE\\.bin\\hadolint.exe"
-              } else {
-                echo "INFO: hadolint binary found"
-              }
-
               # Convert EOL
               $dockerfileOrig = ($env:WORKSPACE + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\'))
               $dockerfile = $dockerfileOrig + '.win'
@@ -147,8 +137,10 @@ def call(String imageName, Map userConfig=[:]) {
               # Run hadolint
               $hadolintReport = $env:HADOLINT_REPORT.replace('/', '\\')
               $folder = (Split-Path -Path $hadolintReport)
-              "C:\\tools\\hadolint.exe --format=json $dockerfile" | Out-File -FilePath $hadolintReport
+              "C:\\tools\\hadolint.exe --format=json $dockerfile" | Out-File -FilePath $hadolintReport -Encoding utf8
+              echo "----------- DIR FOLDER --------------"
               dir $folder
+              echo "----------- TYPE HADOLINTREPORT --------------"
               type $hadolintReport
               '''
             } else {
