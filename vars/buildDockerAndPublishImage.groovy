@@ -240,7 +240,6 @@ def withContainerEngineAgent(finalConfig, body) {
       withEnv([
         'CONTAINER_BIN=docker',
         'CST_DRIVER=docker',
-        'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint', // Do not put the command (right part of the assignation) between quotes to ensure that bash treat it as an array of strings
       ]) {
         body.call()
       }
