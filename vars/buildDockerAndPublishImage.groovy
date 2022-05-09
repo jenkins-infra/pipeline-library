@@ -62,11 +62,11 @@ def call(String imageName, Map userConfig=[:]) {
               # Add folder to $PATH
               $env:Path += "$env:WORKSPACE\\.bin"
               # Add "tools" folder to $PATH
-              $env:Path += ";C:\\tools"
+              $env:Path += ";C:\\tools\\"
 
               # debug tools folder
               echo "----------- TOOLS ----------------"
-              Get-ChildItem -Recurse "C:\\tools"
+              # Get-ChildItem -Recurse "C:\\tools"
 
               # debug
               dir env:
@@ -129,7 +129,7 @@ def call(String imageName, Map userConfig=[:]) {
             if (operatingSystem == 'Windows') {
               powershell '''
               # Check if hadolint is installed
-              if (-Not (Get-Command 'hadolint' -errorAction SilentlyContinue))
+              if (-Not (Get-Command 'hadolint.exe' -errorAction SilentlyContinue))
               {
                 echo "INFO: No hadolint binary found: Installing it from $env:hadolint_url"
                 # Invoke-WebRequest "$env:hadolint_url" -OutFile "$env:WORKSPACE\\.bin\\hadolint.exe"
@@ -145,7 +145,7 @@ def call(String imageName, Map userConfig=[:]) {
               # Run hadolint
               $hadolintReport = $env:HADOLINT_REPORT.replace('/', '\\')
               $folder = (Split-Path -Path $hadolintReport)
-              hadolint --format=json $dockerfile > $hadolintReport
+              hadolint.exe --format=json $dockerfile > $hadolintReport
               dir $folder
               type $hadolintReport
               '''
