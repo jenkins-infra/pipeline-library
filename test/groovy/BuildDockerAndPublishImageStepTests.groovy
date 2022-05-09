@@ -106,7 +106,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     return assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/builder:') \
       && assertMethodCallContainsPattern('withEnv', 'CONTAINER_BIN=img') \
       && assertMethodCallContainsPattern('withEnv', 'CST_DRIVER=tar') \
-      && !assertMethodCallContainsPattern('withEnv', 'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint')
   }
 
   // Return if the mocked pipeline ran in a VM agent with the Docker Engine
@@ -114,7 +113,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     return assertMethodCallContainsPattern('node', expectedNodeLabelPattern) \
       && assertMethodCallContainsPattern('withEnv', 'CONTAINER_BIN=docker') \
       && assertMethodCallContainsPattern('withEnv', 'CST_DRIVER=docker') \
-      && assertMethodCallContainsPattern('withEnv', 'HADOLINT_BIN=docker run --rm hadolint/hadolint:latest hadolint')
   }
 
   // Return if the usual static checks had been recorded with the usual pattern
