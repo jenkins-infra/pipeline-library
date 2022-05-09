@@ -62,7 +62,7 @@ def call(String imageName, Map userConfig=[:]) {
               # Add folder to $PATH
               $env:Path += "$env:WORKSPACE\\.bin"
               # Add "tools" folder to $PATH
-              $env:Path += ";C:\\tools\\"
+              # $env:Path += ";C:\\tools\\"
 
               # debug tools folder
               echo "----------- TOOLS ----------------"
@@ -122,11 +122,13 @@ def call(String imageName, Map userConfig=[:]) {
         def hadolintReportId = "${imageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
         def hadoLintReportFile = "${hadolintReportId}.json"
         withEnv([
+          "PATH+TOOLS=C:/tools",
           "HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}",
           "hadolint_url=https://github.com/hadolint/hadolint/releases/download/v2.10.0/hadolint-${operatingSystem}-${cpuArch}.exe", // TODO: track with updatecli
         ]) {
           try {
             if (operatingSystem == 'Windows') {
+              powershell 'echo $env:Path'
               powershell '''
               # Check if hadolint is installed
               if (-Not (Get-Command 'hadolint.exe' -errorAction SilentlyContinue))
