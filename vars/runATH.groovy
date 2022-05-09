@@ -14,7 +14,6 @@ def call(Map params = [:]) {
   def configFile = params.get('configFile', null)
   def defaultJavaOptions = params.get('javaOptions', [])
 
-  def mirror = "http://mirrors.jenkins.io/"
   def defaultCategory = "org.jenkinsci.test.acceptance.junit.SmokeTest"
   def metadata
   def athContainerImage

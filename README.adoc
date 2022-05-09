@@ -145,7 +145,7 @@ infra.ensureInNode('docker,java') {
 
 === infra.stashJenkinsWar(jenkins, stashName)
 
-Given a version of jenkins downloads it if neccesary and stashes it under the given name (which defaults to "jenkinsWar",
+Given a version of jenkins downloads it if necessary and stashes it under the given name (which defaults to "jenkinsWar",
 see the step doc for more documentation about he allowed versions
 
 .Jenkinsfile
@@ -175,7 +175,7 @@ The docker image used for the environment where to run the ATH. Defaults to "jen
 `metadataFile`::
  A String indicating the file path (relative to where this step is executed) to use as metadata file for the build, more details about the metadata file are provided belows. *Defaults to `essentials.yml` at the location where this step is invoked*
 `jenkins`::
- URI to the jenkins.war, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol in the URI. *Can be overriden from the metadata file*
+ URI to the jenkins.war, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol in the URI. *Can be overridden from the metadata file*
  `jdks`::
  Java versions to use when running ATH. Defaults to 8. Only 8 and 11 are supported. *Can be overridden from the metadata file*
 `configFile`::
@@ -319,7 +319,7 @@ The PCT revision to use in case that pctUrl points to a github destination, can 
 `metadataFile`::
  A String indicating the file path (relative to where this step is executed) to use as metadata file for the build, more details about the metadata file are provided belows. *Defaults to `essentials.yml` at the location where this step is invoked*
 `jenkins`::
- URI to the jenkins.war, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol in the URI. *Can be overriden from the metadata file*
+ URI to the jenkins.war, Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol in the URI. *Can be overridden from the metadata file*
 `pctExtraOptions`::
  List of extra PCT options to be passed to the PCT executable. Defaults to empty list.
 `javaOptions`::
@@ -332,7 +332,7 @@ The PCT revision to use in case that pctUrl points to a github destination, can 
 .Step call example
 [source,groovy]
 ----
-runPCT(metadataFile:"metadata.yml", pctUrl:"docker://mynamspace/pct", jenkins: "2.110")
+runPCT(metadataFile:"metadata.yml", pctUrl:"docker://mynamespace/pct", jenkins: "2.110")
 ----
 
 
