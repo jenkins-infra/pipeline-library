@@ -100,20 +100,6 @@ def call(String imageName, Map userConfig=[:]) {
             nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
             echo "Next Release Version = $nextVersion"
           } else {
-            if (finalConfig.nextVersionCommand.contains('jx-release-version')) {
-              withEnv([
-                "jxrv_url=https://github.com/jenkins-x-plugins/jx-release-version/releases/download/v2.5.1/jx-release-version-${operatingSystem}-${cpuArch}.tar.gz", // TODO: track with updatecli
-              ]) {
-                sh '''
-                if ! command -v jx-release-version 2>/dev/null >/dev/null
-                then
-                  echo "INFO: No jx-release-version binary found: Installing it from ${jxrv_url}."
-                  curl --silent --location "${jxrv_url}" | tar xzv
-                  mv ./jx-release-version "${WORKSPACE}/.bin/jx-release-version"
-                fi
-                '''
-              }
-            }
             sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
             nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
             echo "Next Release Version = $nextVersion"
@@ -137,6 +123,8 @@ def call(String imageName, Map userConfig=[:]) {
               {
                 echo "INFO: No hadolint binary found: Installing it from $env:hadolint_url"
                 Invoke-WebRequest "$env:hadolint_url" -OutFile "$env:WORKSPACE\\.bin\\hadolint.exe"
+              } else {
+                echo "INFO: hadolint binary found"
               }
 
               # Convert EOL
@@ -217,16 +205,7 @@ def call(String imageName, Map userConfig=[:]) {
                 echo "TODO: Test Harness $env:TEST_HARNESS not yet supported on Windows"
                 // $(CST_BIN) test --driver=$(CST_DRIVER) --image=$(CST_SUT) --config=$(TEST_HARNESS)
               } else {
-                sh '''
-                if ! command -v container-structure-test 2>/dev/null >/dev/null
-                then
-                  echo "INFO: No container-structure-test binary found: Installing it from ${cst_url}."
-                  curl --silent --location --output "${WORKSPACE}/.bin/container-structure-test" "${cst_url}"
-                  chmod a+x "${WORKSPACE}/.bin/container-structure-test"
-                fi
-
-                make test
-                '''
+                sh 'make test'
               } // if
             } // withEnv
           } //stage
@@ -313,19 +292,6 @@ def call(String imageName, Map userConfig=[:]) {
               if (operatingSystem == 'Windows') {
                 echo 'TODO: GitHub Release not yet supported on Windows'
               } else {
-                sh '''
-                if ! command -v gh 2>/dev/null >/dev/null
-                then
-                  echo "INFO: No gh binary found: Installing it from ${ghUrl}."
-                  temp_dir="$(mktemp -d)"
-                  curl --silent --show-error --location --output "${temp_dir}/gh.tgz" "${GH_URL}"
-                  tar xvfz "${temp_dir}/gh.tgz" -C "${temp_dir}"
-                  mv "$(find "${temp_dir}"/*/bin -type f -name gh)" "${WORKSPACE}/.bin/gh"
-                  rm -rf "${temp_dir}"
-                  gh --version
-                fi
-                '''
-
                 final String release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'.[] | select(.draft == true and .name == "next") | .id\'').trim()
                 withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${release}"]) {
                   sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
