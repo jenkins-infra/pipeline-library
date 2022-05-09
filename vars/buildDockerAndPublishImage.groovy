@@ -56,6 +56,7 @@ def call(String imageName, Map userConfig=[:]) {
 
             // Custom tools might be installed in the .bin directory in the workspace
             powershell '''
+              echo "------------ INIT ----------------"
               Remove-Item "$env:WORKSPACE/.bin" -Recurse
               mkdir -p "$env:WORKSPACE/.bin"
               # Add folder to $PATH
