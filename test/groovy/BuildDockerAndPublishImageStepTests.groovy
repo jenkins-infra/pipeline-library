@@ -105,14 +105,14 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   Boolean assertContainerAgent() {
     return assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/builder:') \
       && assertMethodCallContainsPattern('withEnv', 'CONTAINER_BIN=img') \
-      && assertMethodCallContainsPattern('withEnv', 'CST_DRIVER=tar') \
+      && assertMethodCallContainsPattern('withEnv', 'CST_DRIVER=tar')
   }
 
   // Return if the mocked pipeline ran in a VM agent with the Docker Engine
   Boolean assertContainerVM(expectedNodeLabelPattern = 'docker') {
     return assertMethodCallContainsPattern('node', expectedNodeLabelPattern) \
       && assertMethodCallContainsPattern('withEnv', 'CONTAINER_BIN=docker') \
-      && assertMethodCallContainsPattern('withEnv', 'CST_DRIVER=docker') \
+      && assertMethodCallContainsPattern('withEnv', 'CST_DRIVER=docker')
   }
 
   // Return if the usual static checks had been recorded with the usual pattern
