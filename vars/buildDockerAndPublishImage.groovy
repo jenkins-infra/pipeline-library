@@ -319,6 +319,7 @@ def call(String imageName, Map userConfig=[:]) {
   }) // withContainerEngineAgent
 } // call
 
+// TODO: create withNativeShell with test on OS to call 'sh' or 'powershell'
 def withContainerEngineAgent(finalConfig, body) {
   if (finalConfig.useContainer) {
     // The podTemplate must define only a single container, named `jnlp`
