@@ -237,10 +237,7 @@ def withContainerEngineAgent(finalConfig, body) {
         }
   } else {
     node(finalConfig.agentLabels) {
-      withEnv([
-        'CONTAINER_BIN=docker',
-        'CST_DRIVER=docker',
-      ]) {
+      withEnv(['CONTAINER_BIN=docker', 'CST_DRIVER=docker',]) {
         body.call()
       }
     }
