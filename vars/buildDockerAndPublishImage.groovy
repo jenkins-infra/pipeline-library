@@ -196,7 +196,7 @@ def call(String imageName, Map userConfig=[:]) {
               fi
               '''
 
-              final String release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'.[] | select(.draft == true and .name == "next") | .id\'').trim()
+              final String release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'.[] | select(.draft == true and .name == "next") | .id | sort_by(id) | reverse | first\'').trim()
               withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${release}"]) {
                 sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
               } // withEnv
