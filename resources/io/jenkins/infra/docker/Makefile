@@ -3,14 +3,17 @@ ifeq '$(findstring ;,$(PATH))' ';'
 	FixPath = $(subst /,\,$1)
 	IMAGE_DIR = $(WORKSPACE)
 	IMAGE_PLATFORM_ARG = --platform "windows/amd64"
+	DOCKERFILE_FULL_PATH = $(IMAGE_DIR)\$(IMAGE_DOCKERFILE)
 else
 	FixPath = $1
 	IMAGE_DIR ?= $(PWD)
 	IMAGE_PLATFORM_ARG ?= --platform "linux/amd64"
+	DOCKERFILE_FULL_PATH = $(IMAGE_DIR)/$(IMAGE_DOCKERFILE)
 endif
 
 IMAGE_NAME ?= helloworld
 IMAGE_DEPLOY_NAME ?= example/$(IMAGE_NAME)
+# Paths
 IMAGE_DOCKERFILE ?= $(IMAGE_DIR)/Dockerfile
 IMAGE_ARCHIVE ?= $(IMAGE_DIR)/image.tar
 HADOLINT_REPORT ?= $(IMAGE_DIR)/hadolint.json
@@ -42,12 +45,12 @@ help: ## Show this Makefile's help
 all: clean lint build test ## Execute the complete process except the "deploy" step
 
 lint: ## Lint the $(IMAGE_DOCKERFILE) content
-	@echo "== Linting $(call FixPath,$(IMAGE_DOCKERFILE)) with $(HADOLINT_BIN):"
+	@echo "== Linting $(DOCKERFILE_FULL_PATH) with $(HADOLINT_BIN):"
 	@echo "Writing Lint results to $(call FixPath,$(HADOLINT_REPORT))"
-	@echo "Workspace: $(WORKSPACE)"
+	@echo "WORKSPACE: $(WORKSPACE)"
 	@echo "IMAGE_DIR: $(IMAGE_DIR)"
-	@echo "pwd: $(pwd)"
-	$(HADOLINT_BIN) --format=json $(call FixPath,$(IMAGE_DOCKERFILE)) > $(call FixPath,$(HADOLINT_REPORT))
+	@echo "DOCKERFILE_FULL_PATH: $(DOCKERFILE_FULL_PATH)"
+	$(HADOLINT_BIN) --format=json $(DOCKERFILE_FULL_PATH) > $(call FixPath,$(HADOLINT_REPORT))
 	@echo "== Lint succeeded"
 
 build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
