@@ -3,7 +3,7 @@ ifeq '$(findstring ;,$(PATH))' ';'
 	FixPath = $(subst /,\,$1)
 	IMAGE_DIR = $(WORKSPACE)
 	IMAGE_PLATFORM_ARG = --platform "windows/amd64"
-	DOCKERFILE_FULL_PATH = $(IMAGE_DIR)\$(IMAGE_DOCKERFILE)
+	DOCKERFILE_FULL_PATH = $(IMAGE_DIR)\$(call FixPath,$(IMAGE_DOCKERFILE))
 else
 	FixPath = $1
 	IMAGE_DIR ?= $(PWD)
