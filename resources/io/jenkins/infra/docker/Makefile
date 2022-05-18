@@ -67,7 +67,7 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 		--file "$(call FixPath,$(IMAGE_DOCKERFILE))" \
 		"$(IMAGE_DIR)"
 	@echo "== Build succeeded"
-	@$(CONTAINER_BIN)docker images
+	@$(CONTAINER_BIN) images
 	@echo "== end of images list"
 
 clean: ## Delete any file generated during the build steps
