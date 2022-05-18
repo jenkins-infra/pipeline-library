@@ -58,8 +58,8 @@ def call(String imageName, Map userConfig=[:]) {
             Set-PSDebug -Trace 1
             echo "DOCKER_REGISTRY_USR=${env.DOCKER_REGISTRY_USR}"
             $username = $env:DOCKER_REGISTRY_USR.trim()
-            echo $username
-            echo "$env:DOCKER_REGISTRY_PSW" | docker login -u $username --password-stdin
+            $pwd = $env:DOCKER_REGISTRY_PSW.trim()
+            echo $pwd | docker login -u $username --password-stdin
             '''
             // powershell 'docker login -u "$env:DOCKER_REGISTRY_USR" -p "$env:DOCKER_REGISTRY_PSW"'// --password-stdin didn't worked on Windows
             // powershell "Set-PSDebug -Trace 1; ${env:CONTAINER_BIN} login -u \"${env:DOCKER_REGISTRY_USR}\" -p \"${env:DOCKER_REGISTRY_PSW}\""// --password-stdin didn't worked on Windows
