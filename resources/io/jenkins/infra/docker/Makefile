@@ -44,6 +44,9 @@ all: clean lint build test ## Execute the complete process except the "deploy" s
 lint: ## Lint the $(IMAGE_DOCKERFILE) content
 	@echo "== Linting $(call FixPath,$(IMAGE_DOCKERFILE)) with $(HADOLINT_BIN):"
 	@echo "Writing Lint results to $(call FixPath,$(HADOLINT_REPORT))"
+	@echo "Workspace: $(WORKSPACE)"
+	@echo "IMAGE_DIR: $(IMAGE_DIR)"
+	@echo "pwd: $(pwd)"
 	$(HADOLINT_BIN) --format=json $(call FixPath,$(IMAGE_DOCKERFILE)) > $(call FixPath,$(HADOLINT_REPORT))
 	@echo "== Lint succeeded"
 
