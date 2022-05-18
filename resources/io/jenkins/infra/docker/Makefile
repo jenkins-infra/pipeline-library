@@ -1,10 +1,17 @@
+# Windows detection
+ifeq '$(findstring ;,$(PATH))' ';'
+	# FixPath = $(subst /,\,$1)
+	IMAGE_DIR = .
+	IMAGE_PLATFORM_ARG = --platform "windows/amd64"
+else
+	IMAGE_DIR ?= $(PWD)
+	IMAGE_PLATFORM_ARG ?= --platform "linux/amd64"
+endif
 
 IMAGE_NAME ?= helloworld
 IMAGE_DEPLOY_NAME ?= example/$(IMAGE_NAME)
-IMAGE_DIR ?= $(PWD)
 IMAGE_DOCKERFILE ?= $(IMAGE_DIR)/Dockerfile
 IMAGE_ARCHIVE ?= $(IMAGE_DIR)/image.tar
-IMAGE_PLATFORM ?= linux/amd64
 HADOLINT_REPORT ?= $(IMAGE_DIR)/hadolint.json
 TEST_HARNESS ?= $(IMAGE_DIR)/cst.yml
 
@@ -28,18 +35,19 @@ CST_SUT = $(IMAGE_NAME)
 endif
 
 help: ## Show this Makefile's help
+	@echo "Help:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 all: clean lint build test ## Execute the complete process except the "deploy" step
 
 lint: ## Lint the $(IMAGE_DOCKERFILE) content
-	@echo "== Linting $(IMAGE_DOCKERFILE)..."
+	@echo "== Linting $(IMAGE_DOCKERFILE) with $(HADOLINT_BIN):"
 	@echo "Writing Lint results to $(HADOLINT_REPORT)"
-	@$(HADOLINT_BIN) --format=json - < $(IMAGE_DOCKERFILE) > $(HADOLINT_REPORT)
-	@echo "== Lint ✅ Succeeded"
+	@$(HADOLINT_BIN) --format=json $(IMAGE_DOCKERFILE) > $(HADOLINT_REPORT)
+	@echo "== Lint succeeded"
 
-build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE) and export it to $(IMAGE_ARCHIVE)
-	@echo "== Building $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)..."
+build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
+	@echo "== Building $(IMAGE_NAME) from '$(IMAGE_DOCKERFILE)' with $(CONTAINER_BIN):"
 	@$(CONTAINER_BIN) build \
 		--tag $(IMAGE_NAME) \
 		--build-arg "GIT_COMMIT_REV=$(GIT_COMMIT_REV)" \
@@ -53,29 +61,34 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE) and expo
 		--label "org.label-schema.vcs-ref=$(GIT_COMMIT_REV)" \
 		--label "org.opencontainers.image.created=$(BUILD_DATE)" \
 		--label "org.label-schema.build-date=$(BUILD_DATE)" \
-		--platform $(IMAGE_PLATFORM) \
+		$(IMAGE_PLATFORM_ARG) \
 		--file $(IMAGE_DOCKERFILE) \
 		$(IMAGE_DIR)
-	@echo "== Build ✅ Succeeded, image $(IMAGE_NAME) exported to $(IMAGE_ARCHIVE)."
+	@echo "== Build succeeded"
 
 clean: ## Delete any file generated during the build steps
-	@echo "== Cleaning working directory from generated artefacts..."
+	@echo "== Cleaning working directory $(IMAGE_DIR) from generated artefacts:"
 	@rm -f $(IMAGE_DIR)/*.tar $(HADOLINT_REPORT)
-	@echo "== Cleanup ✅ Succeeded"
+	@echo "== Cleanup succeeded"
 
-test: ## Execute the test harness on the Docker Image archive at $(IMAGE_ARCHIVE)
-	@echo "== Test $(IMAGE_NAME) with $(TEST_HARNESS) from $(IMAGE_ARCHIVE)..."
+test: ## Execute the test harness on the Docker Image (archived as $(IMAGE_ARCHIVE) if using tar CST driver)
+	@echo "== Test $(IMAGE_NAME) with $(TEST_HARNESS) from $(CST_SUT) with $(CST_BIN):"
 ifeq ($(CST_DRIVER),tar)
+	@echo "== Image $(IMAGE_NAME) exported to $(IMAGE_ARCHIVE) for test."
 	$(CONTAINER_BIN) save --output=$(IMAGE_ARCHIVE) $(IMAGE_NAME)
 endif
+ifeq ($(test -f $(TEST_HARNESS) && echo "OK"), "OK")
 	$(CST_BIN) test --driver=$(CST_DRIVER) --image=$(CST_SUT) --config=$(TEST_HARNESS)
-	@echo "== Test ✅ Succeeded"
+	@echo "== Test succeeded"
+else
+	@echo "== WARNING: $(TEST_HARNESS) not found, test skipped."
+endif
 
 ## This steps expects that you are logged to the Docker registry to push image into
 deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
-	@echo "== Deploying $(IMAGE_NAME) to $(IMAGE_DEPLOY_NAME)..."
+	@echo "== Deploying $(IMAGE_NAME) to $(IMAGE_DEPLOY_NAME) with $(CONTAINER_BIN):"
 	$(CONTAINER_BIN) tag $(IMAGE_NAME) $(IMAGE_DEPLOY_NAME)
 	$(CONTAINER_BIN) push $(IMAGE_DEPLOY_NAME)
-	@echo "== Deploy ✅ Succeeded"
+	@echo "== Deploy succeeded"
 
 .PHONY: all clean lint build test deploy
