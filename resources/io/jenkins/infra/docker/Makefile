@@ -1,7 +1,7 @@
 # Windows detection
 ifeq '$(findstring ;,$(PATH))' ';'
 	FixPath = $(subst /,\,$1)
-	IMAGE_DIR = .
+	IMAGE_DIR = $(WORKSPACE)
 	IMAGE_PLATFORM_ARG = --platform "windows/amd64"
 else
 	FixPath = $1
