@@ -51,7 +51,7 @@ lint: ## Lint the $(IMAGE_DOCKERFILE) content
 	@echo "IMAGE_DIR: $(IMAGE_DIR)"
 	@echo "DOCKERFILE_FULL_PATH: $(DOCKERFILE_FULL_PATH)"
 	ls -R $(call FixPath,$(IMAGE_DIR))
-	$(HADOLINT_BIN) --format=json $(DOCKERFILE_FULL_PATH) > $(call FixPath,$(HADOLINT_REPORT))
+	$(HADOLINT_BIN) --format=json "$(DOCKERFILE_FULL_PATH)" > $(call FixPath,$(HADOLINT_REPORT))
 	@echo "== Lint succeeded"
 
 build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
