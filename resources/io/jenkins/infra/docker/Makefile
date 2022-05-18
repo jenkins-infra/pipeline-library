@@ -77,12 +77,8 @@ ifeq ($(CST_DRIVER),tar)
 	@echo "== Image $(IMAGE_NAME) exported to $(IMAGE_ARCHIVE) for test."
 	$(CONTAINER_BIN) save --output=$(IMAGE_ARCHIVE) $(IMAGE_NAME)
 endif
-ifeq ($(test -f $(TEST_HARNESS) && echo "OK"), "OK")
 	$(CST_BIN) test --driver=$(CST_DRIVER) --image=$(CST_SUT) --config=$(TEST_HARNESS)
 	@echo "== Test succeeded"
-else
-	@echo "== WARNING: $(TEST_HARNESS) not found, test skipped."
-endif
 
 ## This steps expects that you are logged to the Docker registry to push image into
 deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
