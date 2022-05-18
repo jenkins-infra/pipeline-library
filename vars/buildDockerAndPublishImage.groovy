@@ -54,7 +54,7 @@ def call(String imageName, Map userConfig=[:]) {
 
           // Logging in on the Dockerhub helps to avoid request limit from DockerHub
           if (operatingSystem == 'Windows') {
-            powershell "Set-PSDebug -Trace 1 && ${env:CONTAINER_BIN} login -u \"${env:DOCKER_REGISTRY_USR}\" -p \"${env:DOCKER_REGISTRY_PSW}\""// --password-stdin didn't worked on Windows
+            powershell "Set-PSDebug -Trace 1; ${env:CONTAINER_BIN} login -u \"${env:DOCKER_REGISTRY_USR}\" -p \"${env:DOCKER_REGISTRY_PSW}\""// --password-stdin didn't worked on Windows
           } else {
             sh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
           }
@@ -186,9 +186,9 @@ def call(String imageName, Map userConfig=[:]) {
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
           ]) {
             if (operatingSystem == 'Windows') {
-              final String origin = sh(returnStdout: true, script: 'git remote -v | grep origin | grep push | sed \'s/^origin\\s//\' | sed \'s/\\s(push)//\'').trim() - '.git'
-            } else {
               final String origin = powershell(returnStdout: true, script: 'git remote get-url origin') - '.git'
+            } else {
+              final String origin = sh(returnStdout: true, script: 'git remote -v | grep origin | grep push | sed \'s/^origin\\s//\' | sed \'s/\\s(push)//\'').trim() - '.git'
             }
             final String org = origin.split('/')[3]
             final String repository = origin.split('/')[4]
