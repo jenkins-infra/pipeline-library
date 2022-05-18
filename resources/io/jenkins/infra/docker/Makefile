@@ -59,16 +59,15 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 		--label "org.label-schema.vcs-url=$(GIT_SCM_URL)" \
 		--label "org.opencontainers.image.url=$(SCM_URI)" \
 		--label "org.label-schema.url=$(SCM_URI)" \
-		--label "org.opencontainers.image.revision=$\GIT_COMMIT_REV" \
+		--label "org.opencontainers.image.revision=$(GIT_COMMIT_REV)" \
 		--label "org.label-schema.vcs-ref=$(GIT_COMMIT_REV)" \
 		--label "org.opencontainers.image.created=$(BUILD_DATE)" \
 		--label "org.label-schema.build-date=$(BUILD_DATE)" \
 		$(IMAGE_PLATFORM_ARG) \
 		--file "$(call FixPath,$(IMAGE_DOCKERFILE))" \
 		"$(IMAGE_DIR)"
-	@echo "== Build succeeded"
 	@$(CONTAINER_BIN) images
-	@echo "== end of images list"
+	@echo "== Build succeeded"
 
 clean: ## Delete any file generated during the build steps
 	@echo "== Cleaning working directory $(IMAGE_DIR) from generated artefacts:"
@@ -81,7 +80,7 @@ ifeq ($(CST_DRIVER),tar)
 	@echo "== Image $(IMAGE_NAME) exported to $(call FixPath,$(IMAGE_ARCHIVE)) for test."
 	$(CONTAINER_BIN) save --output="$(call FixPath,$(IMAGE_ARCHIVE))" $(IMAGE_NAME)
 endif
-	$(CST_BIN) test --driver=$(CST_DRIVER) --image=$(CST_SUT) --config="$(call FixPath,$(TEST_HARNESS))"
+	$(CST_BIN) test --driver=$(CST_DRIVER) --image="$(call FixPath,$(CST_SUT))" --config="$(call FixPath,$(TEST_HARNESS))"
 	@echo "== Test succeeded"
 
 ## This steps expects that you are logged to the Docker registry to push image into
