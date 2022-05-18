@@ -87,6 +87,7 @@ endif
 ## This steps expects that you are logged to the Docker registry to push image into
 deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 	@echo "== Deploying $(IMAGE_NAME) to $(IMAGE_DEPLOY_NAME) with $(CONTAINER_BIN):"
+	$(CONTAINER_BIN) login
 	$(CONTAINER_BIN) tag $(IMAGE_NAME) $(IMAGE_DEPLOY_NAME)
 	$(CONTAINER_BIN) push $(IMAGE_DEPLOY_NAME)
 	@echo "== Deploy succeeded"
