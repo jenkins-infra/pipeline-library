@@ -52,8 +52,6 @@ def call(String imageName, Map userConfig=[:]) {
         ]) {
           checkout scm
 
-          cleanWs
-
           // Logging in on the Dockerhub helps to avoid request limit from DockerHub
           if (operatingSystem == 'Windows') {
             powershell 'docker login -u "$env:DOCKER_REGISTRY_USR" -p "$env:DOCKER_REGISTRY_PSW"'// --password-stdin didn't worked on Windows
