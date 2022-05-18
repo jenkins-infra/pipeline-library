@@ -54,9 +54,10 @@ def call(String imageName, Map userConfig=[:]) {
 
           // Logging in on the Dockerhub helps to avoid request limit from DockerHub
           if (operatingSystem == 'Windows') {
-            powershell "Set-PSDebug -Trace 1; ${env:CONTAINER_BIN} login -u \"${env:DOCKER_REGISTRY_USR}\" -p \"${env:DOCKER_REGISTRY_PSW}\""// --password-stdin didn't worked on Windows
+            powershell 'docker login -u "$env:DOCKER_REGISTRY_USR" -p "$env:DOCKER_REGISTRY_PSW"'// --password-stdin didn't worked on Windows
+            // powershell "Set-PSDebug -Trace 1; ${env:CONTAINER_BIN} login -u \"${env:DOCKER_REGISTRY_USR}\" -p \"${env:DOCKER_REGISTRY_PSW}\""// --password-stdin didn't worked on Windows
             // Check login, should display the docker username
-            powershell "${env:CONTAINER_BIN} login"
+            //powershell "${env:CONTAINER_BIN} login"
           } else {
             sh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
           }
