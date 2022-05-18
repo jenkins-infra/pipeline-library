@@ -50,7 +50,7 @@ lint: ## Lint the $(IMAGE_DOCKERFILE) content
 	@echo "WORKSPACE: $(WORKSPACE)"
 	@echo "IMAGE_DIR: $(IMAGE_DIR)"
 	@echo "DOCKERFILE_FULL_PATH: $(DOCKERFILE_FULL_PATH)"
-	$(HADOLINT_BIN) --format=json "$(DOCKERFILE_FULL_PATH)" > $(call FixPath,$(HADOLINT_REPORT))
+	$(HADOLINT_BIN) --format=json "$(IMAGE_DOCKERFILE)" > "$(call FixPath,$(HADOLINT_REPORT))"
 	ls -R $(call FixPath,$(IMAGE_DIR))
 	@echo "== Lint succeeded"
 
@@ -70,22 +70,22 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 		--label "org.opencontainers.image.created=$(BUILD_DATE)" \
 		--label "org.label-schema.build-date=$(BUILD_DATE)" \
 		$(IMAGE_PLATFORM_ARG) \
-		--file $(call FixPath,$(IMAGE_DOCKERFILE)) \
-		$(IMAGE_DIR)
+		--file "$(call FixPath,$(IMAGE_DOCKERFILE))" \
+		"$(IMAGE_DIR)"
 	@echo "== Build succeeded"
 
 clean: ## Delete any file generated during the build steps
 	@echo "== Cleaning working directory $(IMAGE_DIR) from generated artefacts:"
-	@rm -f $(call FixPath,$(IMAGE_DIR)/*.tar) $(HADOLINT_REPORT)
+	@rm -f "$(call FixPath,$(IMAGE_DIR)/*.tar)" "$(HADOLINT_REPORT)"
 	@echo "== Cleanup succeeded"
 
 test: ## Execute the test harness on the Docker Image (archived as $(IMAGE_ARCHIVE) if using tar CST driver)
 	@echo "== Test $(IMAGE_NAME) with $(call FixPath,$(TEST_HARNESS)) from $(CST_SUT) with $(CST_BIN):"
 ifeq ($(CST_DRIVER),tar)
 	@echo "== Image $(IMAGE_NAME) exported to $(call FixPath,$(IMAGE_ARCHIVE)) for test."
-	$(CONTAINER_BIN) save --output=$(call FixPath,$(IMAGE_ARCHIVE)) $(IMAGE_NAME)
+	$(CONTAINER_BIN) save --output="$(call FixPath,$(IMAGE_ARCHIVE))" $(IMAGE_NAME)
 endif
-	$(CST_BIN) test --driver=$(CST_DRIVER) --image=$(CST_SUT) --config=$(call FixPath,$(TEST_HARNESS))
+	$(CST_BIN) test --driver=$(CST_DRIVER) --image=$(CST_SUT) --config="$(call FixPath,$(TEST_HARNESS))"
 	@echo "== Test succeeded"
 
 ## This steps expects that you are logged to the Docker registry to push image into
