@@ -50,8 +50,7 @@ lint: ## Lint the $(IMAGE_DOCKERFILE) content
 	@echo "WORKSPACE: $(WORKSPACE)"
 	@echo "IMAGE_DIR: $(IMAGE_DIR)"
 	@echo "DOCKERFILE_FULL_PATH: $(DOCKERFILE_FULL_PATH)"
-	ls -r $(call FixPath,$(IMAGE_DIR))
-	ls -r $(call FixPath,$(IMAGE_DIR)/maven/jdk8)
+	ls -R $(call FixPath,$(IMAGE_DIR))
 	$(HADOLINT_BIN) --format=json $(DOCKERFILE_FULL_PATH) > $(call FixPath,$(HADOLINT_REPORT))
 	@echo "== Lint succeeded"
 
