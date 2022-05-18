@@ -51,7 +51,7 @@ lint: ## Lint the $(IMAGE_DOCKERFILE) content
 build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 	@echo "== Building $(IMAGE_NAME) from $(call FixPath,$(IMAGE_DOCKERFILE)) with $(CONTAINER_BIN):"
 	$(CONTAINER_BIN) build \
-		--quiet \
+		# --quiet \
 		--tag $(IMAGE_NAME) \
 		--build-arg "GIT_COMMIT_REV=$(GIT_COMMIT_REV)" \
 		--build-arg "GIT_SCM_URL=$(GIT_SCM_URL)" \
