@@ -3,12 +3,10 @@ ifeq '$(findstring ;,$(PATH))' ';'
 	FixPath = $(subst /,\,$1)
 	IMAGE_DIR = $(WORKSPACE)
 	IMAGE_PLATFORM_ARG = --platform "windows/amd64"
-	DOCKERFILE_FULL_PATH = $(IMAGE_DIR)\$(call FixPath,$(IMAGE_DOCKERFILE))
 else
 	FixPath = $1
 	IMAGE_DIR ?= $(PWD)
 	IMAGE_PLATFORM_ARG ?= --platform "linux/amd64"
-	DOCKERFILE_FULL_PATH = $(IMAGE_DIR)/$(IMAGE_DOCKERFILE)
 endif
 
 IMAGE_NAME ?= helloworld
@@ -47,11 +45,7 @@ all: clean lint build test ## Execute the complete process except the "deploy" s
 lint: ## Lint the $(IMAGE_DOCKERFILE) content
 	@echo "== Linting $(DOCKERFILE_FULL_PATH) with $(HADOLINT_BIN):"
 	@echo "Writing Lint results to $(call FixPath,$(HADOLINT_REPORT))"
-	@echo "WORKSPACE: $(WORKSPACE)"
-	@echo "IMAGE_DIR: $(IMAGE_DIR)"
-	@echo "DOCKERFILE_FULL_PATH: $(DOCKERFILE_FULL_PATH)"
 	$(HADOLINT_BIN) --format=json "$(IMAGE_DOCKERFILE)" > "$(call FixPath,$(HADOLINT_REPORT))"
-	ls -R $(call FixPath,$(IMAGE_DIR))
 	@echo "== Lint succeeded"
 
 build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
@@ -74,10 +68,11 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 		--file "$(call FixPath,$(IMAGE_DOCKERFILE))" \
 		"$(IMAGE_DIR)"
 	@echo "== Build succeeded"
+	@$(CONTAINER_BIN)docker images
 
 clean: ## Delete any file generated during the build steps
 	@echo "== Cleaning working directory $(IMAGE_DIR) from generated artefacts:"
-	@rm -f "$(call FixPath,$(IMAGE_DIR)/*.tar)" "$(HADOLINT_REPORT)"
+	rm -f "$(call FixPath,$(IMAGE_DIR)/*.tar)" "$(HADOLINT_REPORT)"
 	@echo "== Cleanup succeeded"
 
 test: ## Execute the test harness on the Docker Image (archived as $(IMAGE_ARCHIVE) if using tar CST driver)
