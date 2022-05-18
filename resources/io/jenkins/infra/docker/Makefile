@@ -50,13 +50,13 @@ lint: ## Lint the $(IMAGE_DOCKERFILE) content
 	@echo "WORKSPACE: $(WORKSPACE)"
 	@echo "IMAGE_DIR: $(IMAGE_DIR)"
 	@echo "DOCKERFILE_FULL_PATH: $(DOCKERFILE_FULL_PATH)"
-	ls -R $(call FixPath,$(IMAGE_DIR))
 	$(HADOLINT_BIN) --format=json "$(DOCKERFILE_FULL_PATH)" > $(call FixPath,$(HADOLINT_REPORT))
+	ls -R $(call FixPath,$(IMAGE_DIR))
 	@echo "== Lint succeeded"
 
 build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 	@echo "== Building $(IMAGE_NAME) from $(call FixPath,$(IMAGE_DOCKERFILE)) with $(CONTAINER_BIN):"
-	@$(CONTAINER_BIN) build \
+	$(CONTAINER_BIN) build \
 		--tag $(IMAGE_NAME) \
 		--build-arg "GIT_COMMIT_REV=$(GIT_COMMIT_REV)" \
 		--build-arg "GIT_SCM_URL=$(GIT_SCM_URL)" \
