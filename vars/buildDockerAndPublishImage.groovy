@@ -28,10 +28,12 @@ def call(String imageName, Map userConfig=[:]) {
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
   final String buildDate = dateFormat.format(now)
 
-  final String operatingSystem = finalConfig.platform.split('/')[0]
-  final String cpuArch = finalConfig.platform.split('/')[1]
+  def operatingSystem = finalConfig.platform.split('/')[0]
+  def cpuArch = finalConfig.platform.split('/')[1]
+  def cstConfigSuffix = ''
   if (finalConfig.agentLabels.contains('windows')) {
     operatingSystem = 'Windows'
+    cstConfigSuffix = '-windows'
     cpuArch = 'x86_64' // hardcoded for Windows, we can't use `platform`as this docker parameter concerns only linux architectures
   }
 
@@ -52,34 +54,11 @@ def call(String imageName, Map userConfig=[:]) {
 
           cleanWs
 
+          // Logging in on the Dockerhub helps to avoid request limit from DockerHub
           if (operatingSystem == 'Windows') {
-            // Logging in on the Dockerhub helps to avoid request limit from DockerHub
-            powershell 'echo "$env:DOCKER_REGISTRY_PSW" | docker login -u "$env:DOCKER_REGISTRY_USR" -p "$env:DOCKER_REGISTRY_PSW"'// --password-stdin'
-
-            // Custom tools might be installed in the .bin directory in the workspace
-            powershell '''
-              echo "------------ INIT ----------------"
-              Remove-Item "$env:WORKSPACE/.bin" -Recurse
-              mkdir -p "$env:WORKSPACE/.bin"
-              # Add folder to $PATH
-              $env:Path += "$env:WORKSPACE\\.bin"
-              # Add "tools" folder to $PATH
-              # $env:Path += ";C:\\tools\\"
-
-              # debug tools folder
-              echo "----------- TOOLS ----------------"
-              # Get-ChildItem -Recurse "C:\\tools"
-
-              # debug
-              # dir env:
-            '''
-
+            powershell 'docker login -u "$env:DOCKER_REGISTRY_USR" -p "$env:DOCKER_REGISTRY_PSW"'// --password-stdin didn't worked on Windows
           } else {
-            // Logging in on the Dockerhub helps to avoid request limit from DockerHub
             sh 'echo "${DOCKER_REGISTRY_PSW}" | "${CONTAINER_BIN}" login -u "${DOCKER_REGISTRY_USR}" --password-stdin'
-
-            // Custom tools might be installed in the .bin directory in the workspace
-            sh 'mkdir -p "${WORKSPACE}/.bin"'
           }
 
           // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
@@ -93,21 +72,6 @@ def call(String imageName, Map userConfig=[:]) {
       if (semVerEnabled) {
         stage("Get Next Version of ${imageName}") {
           if (operatingSystem == 'Windows') {
-            if (finalConfig.nextVersionCommand.contains('jx-release-version')) {
-              withEnv([
-                "jxrv_url=https://github.com/jenkins-x-plugins/jx-release-version/releases/download/v2.5.1/jx-release-version-${operatingSystem}-${cpuArch}.tar.gz", // TODO: track with updatecli
-              ]) {
-                echo "TODO: download jx-release-version"
-                // powershell '''
-                // if ! command -v jx-release-version 2>/dev/null >/dev/null
-                // then
-                //   echo "INFO: No jx-release-version binary found: Installing it from ${jxrv_url}."
-                //   curl --silent --location "${jxrv_url}" | tar xzv
-                //   mv ./jx-release-version "${WORKSPACE}/.bin/jx-release-version"
-                // fi
-                // '''
-              }
-            }
             powershell 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
             nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
             echo "Next Release Version = $nextVersion"
@@ -124,30 +88,10 @@ def call(String imageName, Map userConfig=[:]) {
         def hadolintReportId = "${imageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
         def hadoLintReportFile = "${hadolintReportId}.json"
         withEnv([
-          "PATH+TOOLS=C:/tools",
           "HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}",
         ]) {
           try {
-            if (operatingSystem == 'Windows') {
-              powershell 'echo $env:Path'
-              powershell '''
-              # Convert EOL
-              $dockerfileOrig = ($env:WORKSPACE + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\'))
-              $dockerfile = $dockerfileOrig + '.win'
-              Get-Content -Path $dockerfileOrig | Out-File -FilePath $dockerfile -Encoding utf8
-
-              # Run hadolint
-              $hadolintReport = $env:HADOLINT_REPORT.replace('/', '\\')
-              $folder = (Split-Path -Path $hadolintReport)
-              $test = (hadolint.exe --format=json $dockerfile) | Out-File -FilePath $hadolintReport -Encoding utf8
-              echo "----------- DIR FOLDER --------------"
-              dir $folder
-              echo "----------- TYPE HADOLINTREPORT --------------"
-              type $hadolintReport
-              '''
-            } else {
-              sh 'make lint'
-            }
+            sh 'make lint'
           } finally {
             recordIssues(
               enabledForFailure: true,
@@ -159,63 +103,26 @@ def call(String imageName, Map userConfig=[:]) {
       } // stage
 
       stage("Build ${imageName}") {
-        if (operatingSystem == 'Windows') {
-          powershell '''
-          	$dockerfile = ($env:WORKSPACE + "\\" + $env:IMAGE_DOCKERFILE.replace('/', '\\') + '.win')
-            $folder = (Split-Path -Path $dockerfile)
-            $archive = "$folder\\image.tar"
-            echo "dockerfile: $dockerfile"
-            echo "folder: $folder"
-            echo "archive: $archive"
-            echo "== Building $env:IMAGE_NAME from $env:IMAGE_DOCKERFILE..."
-
-            # TODO: missing env vars
-
-            docker build \
-              --tag $env:IMAGE_NAME \
-              --build-arg "GIT_COMMIT_REV=$env:GIT_COMMIT_REV" \
-              --build-arg "GIT_SCM_URL=$env:GIT_SCM_URL" \
-              --build-arg "BUILD_DATE=$env:BUILD_DATE" \
-              --label "org.opencontainers.image.source=$env:GIT_SCM_URL" \
-              --label "org.label-schema.vcs-url=$env:GIT_SCM_URL" \
-              --label "org.opencontainers.image.url=$env:SCM_URI" \
-              --label "org.label-schema.url=$env:SCM_URI" \
-              --label "org.opencontainers.image.revision=$env:GIT_COMMIT_REV" \
-              --label "org.label-schema.vcs-ref=$env:GIT_COMMIT_REV" \
-              --label "org.opencontainers.image.created=$env:BUILD_DATE" \
-              --label "org.label-schema.build-date=$env:BUILD_DATE" \
-              --file $dockerfile \
-              $folder
-            docker save --output=$archive $env:IMAGE_NAME
-            echo "== Build Succeeded, image $env:IMAGE_NAME exported to $archive"
-            dir
-            dir $folder
-          '''
-        } else {
-          sh 'make build'
-        } // if
+        sh 'make build'
       } //stage
 
-      // There can be 2 kind of tests: per image and per repository
+      // There can be 2 kind of tests: per image and per repository.
+      // Assuming Windows versions of cst configuration files finishing by "-windows" (e.g. "common-cst-windows.yml")
       [
-        'Image Test Harness': "${finalConfig.imageDir}/cst.yml",
-        'Common Test Harness': "${env.WORKSPACE}/common-cst.yml"
+        'Image Test Harness': "${finalConfig.imageDir}/cst${cstConfigSuffix}.yml",
+        'Common Test Harness': "${env.WORKSPACE}/common-cst${cstConfigSuffix}.yml"
       ].each { testName, testHarness ->
         if (fileExists(testHarness)) {
           stage("Test ${testName} for ${imageName}") {
             withEnv([
               "TEST_HARNESS=${testHarness}",
-              "cst_url=https://github.com/GoogleContainerTools/container-structure-test/releases/download/v1.11.0/container-structure-test-${operatingSystem}-${cpuArch}", // TODO: track with updatecli
             ]) {
-              if (operatingSystem == 'Windows') {
-                echo "TODO: Test Harness $env:TEST_HARNESS not yet supported on Windows"
-                // $(CST_BIN) test --driver=$(CST_DRIVER) --image=$(CST_SUT) --config=$(TEST_HARNESS)
-              } else {
-                sh 'make test'
-              } // if
+              sh 'make test'
             } // withEnv
           } //stage
-        } // if
+        } else {
+          echo "Skipping test ${testName} for ${imageName} as ${testHarness} does not exist"
+        }
       } // each
 
       // Automatic tagging on principal branch is not enabled by default
@@ -223,8 +130,7 @@ def call(String imageName, Map userConfig=[:]) {
         stage("Semantic Release of ${imageName}") {
           echo "Configuring credential.helper"
           if (operatingSystem == 'Windows') {
-            echo "TODO: credential.helper not yet supported on Windows"
-            //powershell 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
+            powershell 'git config --local credential.helper "!f() { echo username=%GIT_USERNAME%; echo password=%GIT_PASSWORD% }; f"'
           } else {
             sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
           }
@@ -233,10 +139,16 @@ def call(String imageName, Map userConfig=[:]) {
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
           ]) {
             withEnv(["NEXT_VERSION=${nextVersion}"]) {
+              echo "Tagging and pushing the new version: $nextVersion"
               if (operatingSystem == 'Windows') {
-                echo 'TODO: Semantic Release not yet supported on Windows'
+                powershell '''
+                git config user.name "$env:GIT_USERNAME"
+                git config user.email "jenkins-infra@googlegroups.com"
+
+                git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"
+                git push origin --tags
+                '''
               } else {
-                echo "Tagging and pushing the new version: $nextVersion"
                 sh '''
                 git config user.name "${GIT_USERNAME}"
                 git config user.email "jenkins-infra@googlegroups.com"
@@ -264,18 +176,8 @@ def call(String imageName, Map userConfig=[:]) {
             }
           }
           withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
-            if (operatingSystem == 'Windows') {
-              powershell '''
-              echo "== Deploying $env:IMAGE_NAME to $env:IMAGE_DEPLOY_NAME"
-              docker tag $env:IMAGE_NAME $env:IMAGE_DEPLOY_NAME
-              docker push $env:IMAGE_DEPLOY_NAME
-              # TODO: check command result
-              echo "== Deploy Succeeded"
-              '''
-            } else {
-              // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
-              sh 'make deploy'
-            } // if
+            // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
+            sh 'make deploy'
           } // withEnv
         } //stage
       // } // if
@@ -285,21 +187,24 @@ def call(String imageName, Map userConfig=[:]) {
           withCredentials([
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
           ]) {
-            final String origin = sh(returnStdout: true, script: 'git remote -v | grep origin | grep push | sed \'s/^origin\\s//\' | sed \'s/\\s(push)//\'').trim() - '.git'
+            if (operatingSystem == 'Windows') {
+              final String origin = sh(returnStdout: true, script: 'git remote -v | grep origin | grep push | sed \'s/^origin\\s//\' | sed \'s/\\s(push)//\'').trim() - '.git'
+            } else {
+              final String origin = powershell(returnStdout: true, script: 'git remote get-url origin') - '.git'
+            }
             final String org = origin.split('/')[3]
             final String repository = origin.split('/')[4]
-            final String ghVersion = '2.5.2' // TODO: track with updatecli
-            final String platformId = "${operatingSystem}_${cpuArch}"
-            final String ghUrl = "https://github.com/cli/cli/releases/download/v${ghVersion}/gh_${ghVersion}_${platformId}.tar.gz"
             final String ghReleasesApiUri = "/repos/${org}/${repository}/releases"
             withEnv([
-              "GH_URL=${ghUrl}",
               "GH_RELEASES_API_URI=${ghReleasesApiUri}",
             ]) {
               if (operatingSystem == 'Windows') {
-                echo 'TODO: GitHub Release not yet supported on Windows'
+                final String release = powershell(returnStdout: true, script: 'gh api $env:GH_RELEASES_API_URI | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'').trim()
+                withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${release}"]) {
+                  sh 'gh api -X PATCH -F draft=false -F name="$env:TAG_NAME" -F tag_name="$env:TAG_NAME" "$env:GH_NEXT_RELEASE_URI"'
+                } // withEnv
               } else {
-                final String release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'.[] | select(.draft == true and .name == "next") | .id\'').trim()
+                final String release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'').trim()
                 withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${release}"]) {
                   sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
                 } // withEnv
