@@ -59,7 +59,7 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 		--label "org.label-schema.vcs-url=$(GIT_SCM_URL)" \
 		--label "org.opencontainers.image.url=$(SCM_URI)" \
 		--label "org.label-schema.url=$(SCM_URI)" \
-		--label "org.opencontainers.image.revision=\$GIT_COMMIT_REV" \
+		--label "org.opencontainers.image.revision=$\GIT_COMMIT_REV" \
 		--label "org.label-schema.vcs-ref=$(GIT_COMMIT_REV)" \
 		--label "org.opencontainers.image.created=$(BUILD_DATE)" \
 		--label "org.label-schema.build-date=$(BUILD_DATE)" \
