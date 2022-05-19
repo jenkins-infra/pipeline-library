@@ -1,13 +1,14 @@
 # Windows detection
 ifeq '$(findstring ;,$(PATH))' ';'
 	FixPath = $(subst /,\,$1)
+	IMAGE_DIR = $(WORKSPACE)
 else
 	FixPath = $1
+	IMAGE_DIR = $(PWD)
 endif
 
 IMAGE_NAME ?= helloworld
 IMAGE_DEPLOY_NAME ?= $(IMAGE_NAME)
-IMAGE_DIR = $(WORKSPACE)
 IMAGE_PLATFORM ?= linux/amd64
 # Paths
 IMAGE_DOCKERFILE ?= $(IMAGE_DIR)/Dockerfile
