@@ -60,7 +60,6 @@ def call(String imageName, Map userConfig=[:]) {
           // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
           // Even though we have mitigation through the multibranch job config allowing to build PRs only from the repository contributors
           writeFile file: 'Makefile', text: makefileContent
-
         } // stage
 
         // Automatic tagging on principal branch is not enabled by default
