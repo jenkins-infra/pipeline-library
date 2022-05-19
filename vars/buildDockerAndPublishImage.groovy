@@ -27,13 +27,16 @@ def call(String imageName, Map userConfig=[:]) {
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
   final String buildDate = dateFormat.format(now)
 
-  def operatingSystem = finalConfig.platform.split('/')[0]
-  def cpuArch = finalConfig.platform.split('/')[1]
   def cstConfigSuffix = ''
   if (finalConfig.agentLabels.contains('windows')) {
-    operatingSystem = 'Windows'
+    if (finalConfig.platform.contains('linux')) {
+      echo "WARNING: a 'Windows' agent is requested, but the 'platform' is set to '${finalConfig.platform}'"
+      echo "Setting 'platform' to 'windows/amd64'"
+      finalConfig.platform = 'windows/amd64'
+    }
     cstConfigSuffix = '-windows'
   }
+  def operatingSystem = finalConfig.platform.split('/')[0]
 
   withContainerEngineAgent(finalConfig, {
     withEnv([
@@ -105,7 +108,7 @@ def call(String imageName, Map userConfig=[:]) {
         if (semVerEnabled) {
           stage("Semantic Release of ${imageName}") {
             echo "Configuring credential.helper"
-            if (operatingSystem == 'Windows') {
+            if (operatingSystem == 'windows') {
               powershell 'git config --local credential.helper "!f() { echo username=%GIT_USERNAME%; echo password=%GIT_PASSWORD% }; f"'
             } else {
               sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
