@@ -27,12 +27,18 @@ def call(String imageName, Map userConfig=[:]) {
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
   final String buildDate = dateFormat.format(now)
 
+  // Fix potential Linux/Windows contradictions between platform & agentLabels, and set the Windows config suffix for CST files
   def cstConfigSuffix = ''
-  if (finalConfig.agentLabels.contains('windows')) {
-    if (finalConfig.platform.contains('linux')) {
-      echo "WARNING: a 'Windows' agent is requested, but the 'platform' is set to '${finalConfig.platform}'"
+  if (finalConfig.agentLabels.contains('windows') || finalConfig.platform.contains('windows')) {
+    if (finalConfig.agentLabels.contains('windows') && !finalConfig.platform.contains('windows')) {
+      echo "WARNING: A 'windows' agent is requested, but the 'platform' is set to '${finalConfig.platform}'."
       echo "Setting 'platform' to 'windows/amd64'"
       finalConfig.platform = 'windows/amd64'
+    }
+    if (!finalConfig.agentLabels.contains('windows') && finalConfig.platform.contains('windows')) {
+      echo "WARNING: The 'platform' is set to '${finalConfig.platform}', but there isn't any 'windows' agent requested."
+      echo "Adding 'windows' to the agent labels"
+      finalConfig.agentLabels += ' || windows'
     }
     cstConfigSuffix = '-windows'
   }
