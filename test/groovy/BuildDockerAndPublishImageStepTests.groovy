@@ -42,8 +42,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     helper.registerAllowedMethod('fileExists', [String.class], { true })
     binding.setVariable('infra', ['withDockerPullCredentials': {body -> body()}, 'withDockerPushCredentials': {body ->body()}])
     helper.addShMock('jx-release-version', defaultGitTag , 0)
-    helper.addShMock('git remote -v | grep origin | grep push | sed \'s/^origin\\s//\' | sed \'s/\\s(push)//\'', 'https://github.com/org/repository.git', 0)
-    helper.addShMock('gh api /repos/org/repository/releases | jq -e -r \'.[] | select(.draft == true and .name == "next") | .id\'', '12345', 0)
+    helper.addShMock('git remote get-url origin', 'https://github.com/org/repository.git', 0)
+    helper.addShMock('gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'', '12345', 0)
     addEnvVar('WORKSPACE', '/tmp')
 
     // Define mocks/stubs for the data objects
