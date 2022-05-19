@@ -1,16 +1,14 @@
 # Windows detection
 ifeq '$(findstring ;,$(PATH))' ';'
 	FixPath = $(subst /,\,$1)
-	IMAGE_DIR = $(WORKSPACE)
-	IMAGE_PLATFORM_ARG = --platform "windows/amd64"
 else
 	FixPath = $1
-	IMAGE_DIR ?= $(PWD)
-	IMAGE_PLATFORM_ARG ?= --platform "linux/amd64"
 endif
 
 IMAGE_NAME ?= helloworld
-IMAGE_DEPLOY_NAME ?= example/$(IMAGE_NAME)
+IMAGE_DEPLOY_NAME ?= $(IMAGE_NAME)
+IMAGE_DIR = $(WORKSPACE)
+IMAGE_PLATFORM ?= linux/amd64
 # Paths
 IMAGE_DOCKERFILE ?= $(IMAGE_DIR)/Dockerfile
 IMAGE_ARCHIVE ?= $(IMAGE_DIR)/image.tar
@@ -62,7 +60,7 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 		--label "org.label-schema.vcs-ref=$(GIT_COMMIT_REV)" \
 		--label "org.opencontainers.image.created=$(BUILD_DATE)" \
 		--label "org.label-schema.build-date=$(BUILD_DATE)" \
-		$(IMAGE_PLATFORM_ARG) \
+		-- platform $(IMAGE_PLATFORM) \
 		--file "$(call FixPath,$(IMAGE_DOCKERFILE))" \
 		"$(IMAGE_DIR)"
 	@echo "== Build succeeded"
