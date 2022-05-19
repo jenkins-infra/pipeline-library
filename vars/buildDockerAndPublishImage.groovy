@@ -36,7 +36,7 @@ def call(String imageName, Map userConfig=[:]) {
     if (!finalConfig.agentLabels.contains('windows') && finalConfig.platform.contains('windows')) {
       echo "WARNING: The 'platform' is set to '${finalConfig.platform}', but there isn't any 'windows' agent requested."
     }
-    if (useContainer) {
+    if (finalConfig.useContainer) {
       echo "WARNING: You're building a Windows image in a container, you should set 'useContainer' to 'false'."
     }
     cstConfigSuffix = '-windows'
