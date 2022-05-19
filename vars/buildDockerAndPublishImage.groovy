@@ -61,6 +61,9 @@ def call(String imageName, Map userConfig=[:]) {
             // $pwd = $env:DOCKER_REGISTRY_PSW.trim()
             // echo $pwd | docker login -u $username --password-stdin
             // '''
+            sh 'echo "CONTAINER_BIN"'
+            sh 'echo ${CONTAINER_BIN}'
+            sh 'echo "end CONTAINER_BIN"'
             powershell 'docker login -u "$env:DOCKER_REGISTRY_USR" -p "$env:DOCKER_REGISTRY_PSW"'// --password-stdin didn't worked on Windows
             // powershell "Set-PSDebug -Trace 1; ${env:CONTAINER_BIN} login -u \"${env:DOCKER_REGISTRY_USR}\" -p \"${env:DOCKER_REGISTRY_PSW}\""// --password-stdin didn't worked on Windows
             // Check login, should display the docker username
