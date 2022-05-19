@@ -27,8 +27,13 @@ def call(String imageName, Map userConfig=[:]) {
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
   final String buildDate = dateFormat.format(now)
 
-  final String operatingSystem = finalConfig.platform.split('/')[0]
-  final String cpuArch = finalConfig.platform.split('/')[1]
+  def operatingSystem = finalConfig.platform.split('/')[0]
+  def cpuArch = finalConfig.platform.split('/')[1]
+  def cstConfigSuffix = ''
+  if (finalConfig.agentLabels.contains('windows')) {
+    operatingSystem = 'Windows'
+    cstConfigSuffix = '-windows'
+  }
 
   withContainerEngineAgent(finalConfig, {
     withEnv([
@@ -47,27 +52,11 @@ def call(String imageName, Map userConfig=[:]) {
           // Even though we have mitigation through the multibranch job config allowing to build PRs only from the repository contributors
           writeFile file: 'Makefile', text: makefileContent
 
-          // Custom tools might be installed in the .bin directory in the workspace
-          sh 'mkdir -p "${WORKSPACE}/.bin"'
         } // stage
 
         // Automatic tagging on principal branch is not enabled by default
         if (semVerEnabled) {
           stage("Get Next Version of ${imageName}") {
-            if (finalConfig.nextVersionCommand.contains('jx-release-version')) {
-              withEnv([
-                "jxrv_url=https://github.com/jenkins-x-plugins/jx-release-version/releases/download/v2.5.1/jx-release-version-${operatingSystem}-${cpuArch}.tar.gz", // TODO: track with updatecli
-              ]) {
-                sh '''
-              if ! command -v jx-release-version 2>/dev/null >/dev/null
-              then
-                echo "INFO: No jx-release-version binary found: Installing it from ${jxrv_url}."
-                curl --silent --location "${jxrv_url}" | tar xzv
-                mv ./jx-release-version "${WORKSPACE}/.bin/jx-release-version"
-              fi
-              '''
-              }
-            }
             sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
             nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
             echo "Next Release Version = $nextVersion"
@@ -96,36 +85,31 @@ def call(String imageName, Map userConfig=[:]) {
         } //stage
 
         // There can be 2 kind of tests: per image and per repository
+        // Assuming Windows versions of cst configuration files finishing by "-windows" (e.g. "common-cst-windows.yml")
         [
-          'Image Test Harness': "${finalConfig.imageDir}/cst.yml",
-          'Common Test Harness': "${env.WORKSPACE}/common-cst.yml"
+          'Image Test Harness': "${finalConfig.imageDir}/cst${cstConfigSuffix}.yml",
+          'Common Test Harness': "${env.WORKSPACE}/common-cst${cstConfigSuffix}.yml"
         ].each { testName, testHarness ->
           if (fileExists(testHarness)) {
             stage("Test ${testName} for ${imageName}") {
-              withEnv([
-                "TEST_HARNESS=${testHarness}",
-                "cst_url=https://github.com/GoogleContainerTools/container-structure-test/releases/download/v1.11.0/container-structure-test-${operatingSystem}-${cpuArch}", // TODO: track with updatecli
-              ]) {
-                sh '''
-              if ! command -v container-structure-test 2>/dev/null >/dev/null
-              then
-                echo "INFO: No container-structure-test binary found: Installing it from ${cst_url}."
-                curl --silent --location --output "${WORKSPACE}/.bin/container-structure-test" "${cst_url}"
-                chmod a+x "${WORKSPACE}/.bin/container-structure-test"
-              fi
-
-              make test
-              '''
+              withEnv(["TEST_HARNESS=${testHarness}"]) {
+                sh 'make test'
               } // withEnv
             } //stage
-          } // if
-        }
+          } else {
+            echo "Skipping test ${testName} for ${imageName} as ${testHarness} does not exist"
+          } // if else
+        } // each
 
         // Automatic tagging on principal branch is not enabled by default
         if (semVerEnabled) {
           stage("Semantic Release of ${imageName}") {
             echo "Configuring credential.helper"
-            sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
+            if (operatingSystem == 'Windows') {
+              powershell 'git config --local credential.helper "!f() { echo username=%GIT_USERNAME%; echo password=%GIT_PASSWORD% }; f"'
+            } else {
+              sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
+            }
 
             withCredentials([
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
@@ -133,12 +117,12 @@ def call(String imageName, Map userConfig=[:]) {
               withEnv(["NEXT_VERSION=${nextVersion}"]) {
                 echo "Tagging and pushing the new version: $nextVersion"
                 sh '''
-              git config user.name "${GIT_USERNAME}"
-              git config user.email "jenkins-infra@googlegroups.com"
+                git config user.name "${GIT_USERNAME}"
+                git config user.email "jenkins-infra@googlegroups.com"
 
-              git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
-              git push origin --tags
-              '''
+                git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
+                git push origin --tags
+                '''
               } // withEnv
             } // withCredentials
           } // stage
@@ -172,30 +156,11 @@ def call(String imageName, Map userConfig=[:]) {
           withCredentials([
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
           ]) {
-            final String origin = sh(returnStdout: true, script: 'git remote -v | grep origin | grep push | sed \'s/^origin\\s//\' | sed \'s/\\s(push)//\'').trim() - '.git'
+            final String origin = sh(returnStdout: true, script: 'git remote get-url origin').trim() - '.git'
             final String org = origin.split('/')[3]
             final String repository = origin.split('/')[4]
-            final String ghVersion = '2.5.2' // TODO: track with updatecli
-            final String platformId = "${operatingSystem}_${cpuArch}"
-            final String ghUrl = "https://github.com/cli/cli/releases/download/v${ghVersion}/gh_${ghVersion}_${platformId}.tar.gz"
             final String ghReleasesApiUri = "/repos/${org}/${repository}/releases"
-            withEnv([
-              "GH_URL=${ghUrl}",
-              "GH_RELEASES_API_URI=${ghReleasesApiUri}",
-            ]) {
-              sh '''
-              if ! command -v gh 2>/dev/null >/dev/null
-              then
-                echo "INFO: No gh binary found: Installing it from ${ghUrl}."
-                temp_dir="$(mktemp -d)"
-                curl --silent --show-error --location --output "${temp_dir}/gh.tgz" "${GH_URL}"
-                tar xvfz "${temp_dir}/gh.tgz" -C "${temp_dir}"
-                mv "$(find "${temp_dir}"/*/bin -type f -name gh)" "${WORKSPACE}/.bin/gh"
-                rm -rf "${temp_dir}"
-                gh --version
-              fi
-              '''
-
+            withEnv(["GH_RELEASES_API_URI=${ghReleasesApiUri}"]) {
               final String release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'').trim()
               withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${release}"]) {
                 sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
