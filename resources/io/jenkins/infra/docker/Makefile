@@ -1,14 +1,14 @@
 # Detect Windows (only OS separating paths in $PATH with ";") to set specific variable and function to get compatible paths
 ifeq '$(findstring ;,$(PATH))' ';'
 	FixPath = $(subst /,\,$1)
-	PWD=$(shell @echo %cd%)
+	IMAGE_DIR ?= .
 else
 	FixPath = $1
+	IMAGE_DIR ?= $(PWD)
 endif
 
 IMAGE_NAME ?= helloworld
 IMAGE_DEPLOY_NAME ?= $(IMAGE_NAME)
-IMAGE_DIR ?= $(PWD)
 IMAGE_PLATFORM ?= linux/amd64
 # Paths
 IMAGE_DOCKERFILE ?= $(IMAGE_DIR)/Dockerfile
@@ -42,8 +42,8 @@ help: ## Show this Makefile's help
 all: clean lint build test ## Execute the complete process except the "deploy" step
 
 lint: ## Lint the $(IMAGE_DOCKERFILE) content
-	@echo "== Linting $(DOCKERFILE_FULL_PATH) with $(HADOLINT_BIN):"
-	$(HADOLINT_BIN) --format=json "$(IMAGE_DOCKERFILE)" > "$(call FixPath,$(HADOLINT_REPORT))"
+	@echo "== Linting $(call FixPath,$(IMAGE_DOCKERFILE)) with $(HADOLINT_BIN):"
+	$(HADOLINT_BIN) --format=json "$(call FixPath,$(IMAGE_DOCKERFILE))" > "$(call FixPath,$(HADOLINT_REPORT))"
 	@echo "== Lint succeeded"
 
 build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
