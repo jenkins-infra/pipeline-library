@@ -28,7 +28,7 @@ def call(String imageName, Map userConfig=[:]) {
   final String buildDate = dateFormat.format(now)
 
   // Warn about potential Linux/Windows contradictions between platform & agentLabels, and set the Windows config suffix for CST files
-  def cstConfigSuffix = ''
+  String cstConfigSuffix = ''
   if (finalConfig.agentLabels.contains('windows') || finalConfig.platform.contains('windows')) {
     if (finalConfig.agentLabels.contains('windows') && !finalConfig.platform.contains('windows')) {
       echo "WARNING: A 'windows' agent is requested, but the 'platform' is set to '${finalConfig.platform}'."
@@ -41,7 +41,7 @@ def call(String imageName, Map userConfig=[:]) {
     }
     cstConfigSuffix = '-windows'
   }
-  def operatingSystem = finalConfig.platform.split('/')[0]
+  String operatingSystem = finalConfig.platform.split('/')[0]
 
   withContainerEngineAgent(finalConfig, {
     withEnv([

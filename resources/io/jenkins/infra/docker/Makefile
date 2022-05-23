@@ -1,13 +1,14 @@
-# Windows detection
+# Detect Windows (only OS separating paths in $PATH with ";") to set specific variable and function to get compatible paths
 ifeq '$(findstring ;,$(PATH))' ';'
 	FixPath = $(subst /,\,$1)
+	PWD=$(shell @echo %cd%)
 else
 	FixPath = $1
 endif
 
 IMAGE_NAME ?= helloworld
 IMAGE_DEPLOY_NAME ?= $(IMAGE_NAME)
-IMAGE_DIR = $(WORKSPACE)
+IMAGE_DIR = $(PWD)
 IMAGE_PLATFORM ?= linux/amd64
 # Paths
 IMAGE_DOCKERFILE ?= $(IMAGE_DIR)/Dockerfile
