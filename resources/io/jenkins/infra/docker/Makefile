@@ -8,7 +8,7 @@ endif
 
 IMAGE_NAME ?= helloworld
 IMAGE_DEPLOY_NAME ?= $(IMAGE_NAME)
-IMAGE_DIR = $(PWD)
+IMAGE_DIR ?= $(PWD)
 IMAGE_PLATFORM ?= linux/amd64
 # Paths
 IMAGE_DOCKERFILE ?= $(IMAGE_DIR)/Dockerfile
