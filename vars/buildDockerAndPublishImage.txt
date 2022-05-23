@@ -6,15 +6,15 @@ The following arguments are available for this function:
 
 - String **imageName**: (Mandatory) name of the image to build, usually referenced as the "Repository" part of a Docker image name without any tag (Example: "builder" or "terraform").
 - Map **config**: (Optional) custom configuration for the image build and deploy process. This map can hold any of the following keys:
-  * Boolean **useContainer** (Optional, defaults to false) Execute the phases inside a container, using a container-less and root-less tool. If set to false, then the phases are run with Docker CE running in a VM.
-  * String **dockerfile**: (Optional, defaults to "Dockerfile") Relative path to the Dockerfile to use within the repository (Example: "build.dockerfile", "docker/Dockerfile").
-  * String **imageDir**: (Optional, defaults to the parent directory of "Dockerfile") Path to a directory to use as build context (Example: "docker/", "python/2.7").
-  * String **credentials**: (Optional, defaults to "jenkins-dockerhub") Name of the Jenkins' credentials used to authenticate on the Docker remote registry during the full build process. (Example: "internal-registry-credential").
+  * Boolean **useContainer** (Optional, defaults to true) Execute the phases inside a container, using a container-less and root-less tool. If set to false, then the phases are run with Docker CE running in a VM.
+  * String **agentLabels** (Optional, defaults to "docker || linux-amd64-docker") String expression for the labels the agent must match.
   * String **builderImage**: (Optional, defaults to "jenkinsciinfra/builder:2.0.2") Docker Image to be used for the container "builder" of the CI pod template.
-  * String **platform**: (Optional, defaults to "linux/amd64") Name of the docker platform to use when building this image. For multiple platforms use a comma separated list (Example: "linux/amd64,linux/arm64").
   * Boolean **automaticSemanticVersioning**: (Optional, defaults to "false") Should a release be created for every merge to the mainBranch. This uses "jx-release-version" to determine the version number based on the commit history.
-  * String **gitCredentials**: (Optional, defaults to "") If "automaticSemanticVersioning" is set, name of the credential to use when tagging the git repository. Support user/password or GitHub App credential types.
+  * String **dockerfile**: (Optional, defaults to "Dockerfile") Relative path to the Dockerfile to use within the repository (Example: "build.dockerfile", "docker/Dockerfile").
+  * String **platform**: (Optional, defaults to "linux/amd64") Name of the docker platform to use when building this image. For multiple platforms use a comma separated list (Example: "linux/amd64,linux/arm64").
   * String **nextVersionCommand** (Optional, defaults to "jx-release-version") If "automaticSemanticVersioning" is set, this is the command to retrieve the next version (to use for tagging and releasing)
+  * String **gitCredentials**: (Optional, defaults to "") If "automaticSemanticVersioning" is set, name of the credential to use when tagging the git repository. Support user/password or GitHub App credential types.
+  * String **imageDir**: (Optional, defaults to ".", the parent directory of the Dockerfile) Path to a directory to use as build context (Example: "docker/", "python/2.7").
 
 The lint phase generates a report when it fails, recorded by the hadolint tool in your Jenkins instance.
 
@@ -24,7 +24,8 @@ The build phase adds build arguments you can use in your Dockerfile:
 - **GIT_SCM_URL** - Url to repo
 - **BUILD_DATE** - Date of the image build (now)
 
-The test phase is only executed if a file `cst.yml` is found at the root of the repository with the "TAR" driver for security concerns.
+The test phase is only executed if a file `common-cst.yml` or `<imageDir>/cst.yml` is found at the root of the repository with the "TAR" driver for security concerns.
+If the build concerns a Windows image, a prefix `-windows` is expected (`common-cst-windows.yml` or `<imageDir>/cst-windows.yml`)
 Please reference to https://github.com/GoogleContainerTools/container-structure-test.
 
 Publication of the Docker image only happens when the build is triggered by:
@@ -36,28 +37,22 @@ Publication of the Docker image only happens when the build is triggered by:
 Example Usages
 
 <pre><code>
-buildDockerAndPublishImage('terraform', [
-  dockerfile: 'docker/Dockerfile',
-  registry: 'docker4eval'
-])
+buildDockerAndPublishImage('terraform')
 </code></pre>
 
 <pre><code>
 parallel(
   failFast: true,
-  'docker': {
-    buildDockerAndPublishImage('docker', [
-      dockerfile: 'docker/Dockerfile',
-    ])
+  'maven-jdk8': {
+    buildDockerAndPublishImage('maven-jdk8', [imageDir: 'maven/jdk8'])
   },
-  'golang': {
-    buildDockerAndPublishImage('golang', [
-      dockerfile: 'golang/Dockerfile',
-    ])
-  },
-  'coreruntime-2.2': {
-    buildDockerAndPublishImage('coreruntime-2.2', [
-      dockerfile: 'coreruntime/22/Dockerfile',
+  'maven-jdk8-nanoserver': {
+    buildDockerAndPublishImage('maven-jdk8-nanoserver', [
+      imageDir: 'maven/jdk8',
+      dockerfile: 'Dockerfile.nanoserver',
+      platform: 'windows/amd64',
+      agentLabels: 'windows',
+      useContainer: false,
     ])
   },
 )
