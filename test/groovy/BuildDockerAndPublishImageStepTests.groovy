@@ -408,6 +408,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
   @Test
   void itBuildsOnlyOnChangeRequestWithWindowsContainers() throws Exception {
+    helper.registerAllowedMethod('isUnix', [], { false })
     def script = loadScript(scriptName)
     withMocks {
       script.call(testImageName, [
