@@ -112,7 +112,7 @@ def call(String imageName, Map userConfig=[:]) {
         if (semVerEnabled) {
           stage("Semantic Release of ${imageName}") {
             echo "Configuring credential.helper"
-            if (infra.isUnix) {
+            if (isUnix()) {
               sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
             } else {
               powershell 'git config --local credential.helper "!f() { echo username=%GIT_USERNAME%; echo password=%GIT_PASSWORD% }; f"'
