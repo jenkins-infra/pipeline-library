@@ -21,7 +21,7 @@ def call(String imageName, Map userConfig=[:]) {
 
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
-  final boolean semVerEnabled = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
+  final boolean semVerOnPrimaryBranchEnabled = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
 
   final Date now = new Date()
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
@@ -62,7 +62,7 @@ def call(String imageName, Map userConfig=[:]) {
         } // stage
 
         // Automatic tagging on principal branch is not enabled by default
-        if (semVerEnabled) {
+        if (finalConfig.automaticSemanticVersioning) {
           stage("Get Next Version of ${imageName}") {
             sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
             nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
@@ -109,7 +109,7 @@ def call(String imageName, Map userConfig=[:]) {
         } // each
 
         // Automatic tagging on principal branch is not enabled by default
-        if (semVerEnabled) {
+        if (semVerOnPrimaryBranchEnabled) {
           stage("Semantic Release of ${imageName}") {
             echo "Configuring credential.helper"
             if (isUnix()) {
