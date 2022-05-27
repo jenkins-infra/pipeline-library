@@ -111,7 +111,6 @@ def call(String imageName, Map userConfig=[:]) {
         // Automatic tagging on principal branch is not enabled by default
         if (semVerEnabled) {
           stage("Semantic Release of ${imageName}") {
-            echo "Configuring credential.helper"
 
             withCredentials([
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
