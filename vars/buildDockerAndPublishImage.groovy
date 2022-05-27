@@ -111,7 +111,7 @@ def call(String imageName, Map userConfig=[:]) {
         // Automatic tagging on principal branch is not enabled by default
         if (semVerEnabled) {
           stage("Semantic Release of ${imageName}") {
-            withCredentials([gitUsernamePassword(credentialsId: "${finalConfig.gitCredentials}"]) {
+            withCredentials([gitUsernamePassword(credentialsId: "${finalConfig.gitCredentials}")]) {
               withEnv(["NEXT_VERSION=${nextVersion}"]) {
                 echo "Tagging and pushing the new version: $nextVersion"
                 sh '''
