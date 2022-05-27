@@ -12,7 +12,7 @@ def call(String imageName, Map userConfig=[:]) {
     dockerfile: 'Dockerfile', // Obvious default
     platform: 'linux/amd64', // Intel/AMD 64 Bits, following Docker platform identifiers
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
-    gitCredentials: '', // Credential ID for tagging and creating release
+    gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
   ]
 
