@@ -111,17 +111,7 @@ def call(String imageName, Map userConfig=[:]) {
         // Automatic tagging on principal branch is not enabled by default
         if (semVerEnabled) {
           stage("Semantic Release of ${imageName}") {
-
-        echo "Configuring credential.helper"
-        //if (isUnix()) {
-          sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
-        //} else {
-          //powershell 'git config --local credential.helper "!f() { echo username=%GIT_USERNAME%; echo password=%GIT_PASSWORD% }; f"'
-        //}
-
-            withCredentials([
-              usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
-            ]) {
+            withCredentials([gitUsernamePassword(credentialsId: "${finalConfig.gitCredentials}"]) {
               withEnv(["NEXT_VERSION=${nextVersion}"]) {
                 echo "Tagging and pushing the new version: $nextVersion"
                 sh '''
