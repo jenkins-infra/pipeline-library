@@ -21,7 +21,14 @@ def call(String imageName, Map userConfig=[:]) {
 
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
-  final boolean semVerEnabled = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
+  final boolean semVerEnabledOnPrimaryBranch = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
+
+  if (env.BRANCH_IS_PRIMARY) {
+    properties([
+        // Only run 1 build at a time on the primary branch, to ensure builds won't use the same tag in case the semantic versionning is activated
+        disableConcurrentBuilds()
+    ])
+  }
 
   final Date now = new Date()
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
