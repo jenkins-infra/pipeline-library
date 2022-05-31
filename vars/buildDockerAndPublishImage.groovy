@@ -114,7 +114,7 @@ def call(String imageName, Map userConfig=[:]) {
             echo "Configuring credential.helper"
             if (!isUnix()) {
               //sh 'git credential-manager-core unconfigure'
-              sh 'git config --global credential.credentialStore cache'
+              sh 'git config --global credential.credentialStore plaintext'
               sh 'git config --list --show-origin'
             }
             sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
