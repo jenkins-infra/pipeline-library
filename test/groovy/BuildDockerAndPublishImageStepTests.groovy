@@ -127,7 +127,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   Boolean assertTagPushed(String newVersion) {
-    return assertMethodCallContainsPattern('echo',"Tagging and pushing the new version: ${newVersion}") \
+    return assertMethodCallContainsPattern('echo','Configuring credential.helper') \
+      && assertMethodCallContainsPattern('echo',"Tagging and pushing the new version: ${newVersion}") \
       && assertMethodCallContainsPattern('sh','git config user.name "${GIT_USERNAME}"') \
       && assertMethodCallContainsPattern('sh','git config user.email "jenkins-infra@googlegroups.com"') \
       && assertMethodCallContainsPattern('sh','git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"') \
@@ -136,6 +137,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
   Boolean assertReleaseCreated() {
     return assertMethodCallContainsPattern('stage','GitHub Release') \
+      && assertMethodCallContainsPattern('withCredentials', 'GITHUB_TOKEN') \
+      && assertMethodCallContainsPattern('withCredentials', 'GITHUB_USERNAME') \
       && assertMethodCallContainsPattern('sh', 'gh api ${GH_RELEASES_API_URI}')
   }
 

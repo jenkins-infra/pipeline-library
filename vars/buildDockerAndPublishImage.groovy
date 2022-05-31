@@ -112,17 +112,19 @@ def call(String imageName, Map userConfig=[:]) {
         if (semVerEnabled) {
           stage("Semantic Release of ${imageName}") {
             echo "Configuring credential.helper"
-            if (!isUnix()) {
-              //sh 'git credential-manager-core unconfigure'
-              sh 'git config --global credential.credentialStore plaintext'
-              sh 'git config --list --show-origin'
-            }
+            // if (!isUnix()) {
+            //   withEnv(["NEXT_VERSION=${nextVersion}"]) {
+            //     //sh 'git credential-manager-core unconfigure'
+            //     sh 'git config --global credential.credentialStore plaintext'
+            //     sh 'git config --list --show-origin'
+            //   }
+            // }
             sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
 
             withCredentials([
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
             ]) {
-              withEnv(["NEXT_VERSION=${nextVersion}"]) {
+              withEnv(["NEXT_VERSION=${nextVersion}", 'GCM_CREDENTIAL_STORE=plaintext']) {
                 echo "Tagging and pushing the new version: $nextVersion"
                 sh '''
                 git config user.name "${GIT_USERNAME}"
