@@ -6,7 +6,7 @@ The following arguments are available for this function:
 
 - String **imageName**: (Mandatory) name of the image to build, usually referenced as the "Repository" part of a Docker image name without any tag (Example: "builder" or "terraform").
 - Map **config**: (Optional) custom configuration for the image build and deploy process. This map can hold any of the following keys:
-  * Boolean **useContainer** (Optional, defaults to true) Execute the phases inside a container, using a container-less and root-less tool. If set to false, then the phases are run with Docker CE running in a VM.
+  * Boolean **useContainer** (Optional, defaults to false) Execute the phases inside a container, using a container-less and root-less tool. If set to false, then the phases are run with Docker CE running in a VM.
   * String **agentLabels** (Optional, defaults to "docker || linux-amd64-docker") String expression for the labels the agent must match.
   * String **builderImage**: (Optional, defaults to "jenkinsciinfra/builder:2.0.2") Docker Image to be used for the container "builder" of the CI pod template.
   * Boolean **automaticSemanticVersioning**: (Optional, defaults to "false") Should a release be created for every merge to the mainBranch. This uses "jx-release-version" to determine the version number based on the commit history.
