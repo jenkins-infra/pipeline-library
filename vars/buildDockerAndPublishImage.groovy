@@ -119,13 +119,6 @@ def call(String imageName, Map userConfig=[:]) {
         if (semVerEnabledOnPrimaryBranch) {
           stage("Semantic Release of ${imageName}") {
             echo "Configuring credential.helper"
-            // if (!isUnix()) {
-            //   withEnv(["NEXT_VERSION=${nextVersion}"]) {
-            //     //sh 'git credential-manager-core unconfigure'
-            //     sh 'git config --global credential.credentialStore plaintext'
-            //     sh 'git config --list --show-origin'
-            //   }
-            // }
             sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
 
             withCredentials([
@@ -133,6 +126,7 @@ def call(String imageName, Map userConfig=[:]) {
             ]) {
               withEnv([
                 "NEXT_VERSION=${nextVersion}",
+                // use plaintext to avoid 'wincredman' git credential store error on Windows, with no interaction expected
                 'GCM_CREDENTIAL_STORE=plaintext',
                 'GCM_INTERACTIVE=0',
               ]) {
