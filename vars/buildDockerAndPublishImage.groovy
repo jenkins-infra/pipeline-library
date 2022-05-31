@@ -131,7 +131,11 @@ def call(String imageName, Map userConfig=[:]) {
             withCredentials([
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
             ]) {
-              withEnv(["NEXT_VERSION=${nextVersion}", 'GCM_CREDENTIAL_STORE=plaintext']) {
+              withEnv([
+                "NEXT_VERSION=${nextVersion}",
+                'GCM_CREDENTIAL_STORE=plaintext',
+                'GCM_INTERACTIVE=0',
+              ]) {
                 echo "Tagging and pushing the new version: $nextVersion"
                 sh '''
                 git config user.name "${GIT_USERNAME}"
