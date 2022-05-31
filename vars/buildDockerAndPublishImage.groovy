@@ -50,7 +50,6 @@ def call(String imageName, Map userConfig=[:]) {
       "IMAGE_DIR=${finalConfig.imageDir}",
       "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
       "IMAGE_PLATFORM=${finalConfig.platform}",
-      "PATH+BINS=${env.WORKSPACE}/.bin", // Add to the path the directory with the custom binaries that could be installed during the build
     ]) {
       infra.withDockerPullCredentials{
         stage("Prepare ${imageName}") {
