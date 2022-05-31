@@ -158,7 +158,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
-    assertTrue(assertContainerAgent())
+    assertTrue(assertContainerVM())
 
     // And the expected environment variable defined to their defaults
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
@@ -192,7 +192,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
-    assertTrue(assertContainerAgent())
+    assertTrue(assertContainerVM())
     // And generated reports are recorded with named without ':' but '-' instead
     assertTrue(assertRecordIssues(customImageNameWithTag.replaceAll(':','-')))
     // With the deploy step called with the correct image name
@@ -217,7 +217,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
-    assertTrue(assertContainerAgent())
+    assertTrue(assertContainerVM())
     // And generated reports are recorded
     assertTrue(assertRecordIssues())
     // And the deploy step called
@@ -247,7 +247,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
-    assertTrue(assertContainerAgent())
+    assertTrue(assertContainerVM())
     // And the environement variables set with the custom configuration values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=docker/'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=build.Dockerfile'))
@@ -272,7 +272,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
-    assertTrue(assertContainerAgent())
+    assertTrue(assertContainerVM())
     // But no deploy step called for latest
     assertFalse(assertMakeDeploy())
     // And no release (no tag)
@@ -295,7 +295,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
-    assertTrue(assertContainerAgent())
+    assertTrue(assertContainerVM())
     // And the deploy step called for latest
     assertTrue(assertMakeDeploy("${fullTestImageName}:${defaultGitTag}"))
     // And the release is created (tag triggering the build)
