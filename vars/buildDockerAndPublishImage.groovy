@@ -14,6 +14,7 @@ def call(String imageName, Map userConfig=[:]) {
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
+    multipleSemverImagesBuild: false, // Set to true for multiple semversioned images build, will include image name in tag to avoid conflict
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -70,6 +71,10 @@ def call(String imageName, Map userConfig=[:]) {
           stage("Get Next Version of ${imageName}") {
             sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
             nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+            if (finalConfig.multipleSemverImagesBuild) {
+              echo 'Multiple semversioned images build, including the image name in the next version'
+              nextVersion = imageName.replace('-','') + '-' + nextVersion
+            }
             echo "Next Release Version = $nextVersion"
           } // stage
         } // if
