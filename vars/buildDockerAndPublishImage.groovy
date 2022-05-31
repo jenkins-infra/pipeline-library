@@ -69,7 +69,7 @@ def call(String imageName, Map userConfig=[:]) {
         } // stage
 
         // Automatic tagging on principal branch is not enabled by default
-        if (semVerEnabled) {
+        if (finalConfig.automaticSemanticVersioning) {
           stage("Get Next Version of ${imageName}") {
             sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
             nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
@@ -116,7 +116,7 @@ def call(String imageName, Map userConfig=[:]) {
         } // each
 
         // Automatic tagging on principal branch is not enabled by default
-        if (semVerEnabled) {
+        if (semVerEnabledOnPrimaryBranch) {
           stage("Semantic Release of ${imageName}") {
             echo "Configuring credential.helper"
             // if (!isUnix()) {
