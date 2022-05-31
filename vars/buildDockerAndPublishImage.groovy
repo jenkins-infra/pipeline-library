@@ -112,11 +112,12 @@ def call(String imageName, Map userConfig=[:]) {
         if (semVerEnabled) {
           stage("Semantic Release of ${imageName}") {
             echo "Configuring credential.helper"
-            if (isUnix()) {
+            // if (isUnix()) {
+              sh 'git config --list --show-origin'
               sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
-            } else {
-              powershell 'git config --local credential.helper "!f() { echo username=%GIT_USERNAME%; echo password=%GIT_PASSWORD% }; f"'
-            }
+            // } else {
+            //   powershell 'git config --local credential.helper "!f() { echo username=%GIT_USERNAME%; echo password=%GIT_PASSWORD% }; f"'
+            // }
 
             withCredentials([
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
