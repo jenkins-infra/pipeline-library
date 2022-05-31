@@ -25,9 +25,7 @@ def call(String imageName, Map userConfig=[:]) {
 
   // Only run 1 build at a time on primary branch to ensure builds won't use the same tag when semantic versionning is activated
   if (env.BRANCH_IS_PRIMARY) {
-    properties([
-      disableConcurrentBuilds()
-    ])
+    properties([disableConcurrentBuilds()])
   }
 
   final Date now = new Date()
