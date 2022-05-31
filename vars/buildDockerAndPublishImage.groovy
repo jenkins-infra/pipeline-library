@@ -23,9 +23,9 @@ def call(String imageName, Map userConfig=[:]) {
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
   final boolean semVerEnabledOnPrimaryBranch = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
 
+  // Only run 1 build at a time on primary branch to ensure builds won't use the same tag when semantic versionning is activated
   if (env.BRANCH_IS_PRIMARY) {
     properties([
-      // Only run 1 build at a time on the primary branch, to ensure builds won't use the same tag in case the semantic versionning is activated
       disableConcurrentBuilds()
     ])
   }
@@ -68,7 +68,7 @@ def call(String imageName, Map userConfig=[:]) {
           writeFile file: 'Makefile', text: makefileContent
         } // stage
 
-        // Automatic tagging on principal branch is not enabled by default
+        // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
         if (finalConfig.automaticSemanticVersioning) {
           stage("Get Next Version of ${imageName}") {
             sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
@@ -127,6 +127,7 @@ def call(String imageName, Map userConfig=[:]) {
               withEnv([
                 "NEXT_VERSION=${nextVersion}",
                 // use plaintext to avoid 'wincredman' git credential store error on Windows, with no interaction expected
+                // Ref: https://github.com/GitCredentialManager/git-credential-manager/blob/5277ecce4149678f483b31affcc86ab65d00425f/docs/environment.md
                 'GCM_CREDENTIAL_STORE=plaintext',
                 'GCM_INTERACTIVE=0',
               ]) {
