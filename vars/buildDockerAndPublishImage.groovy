@@ -12,7 +12,7 @@ def call(String imageName, Map userConfig=[:]) {
     dockerfile: 'Dockerfile', // Obvious default
     platform: 'linux/amd64', // Intel/AMD 64 Bits, following Docker platform identifiers
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
-    gitCredentials: '', // Credential ID for tagging and creating release
+    gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
   ]
 
@@ -21,7 +21,12 @@ def call(String imageName, Map userConfig=[:]) {
 
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
-  final boolean semVerEnabled = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
+  final boolean semVerEnabledOnPrimaryBranch = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
+
+  // Only run 1 build at a time on primary branch to ensure builds won't use the same tag when semantic versionning is activated
+  if (env.BRANCH_IS_PRIMARY) {
+    properties([disableConcurrentBuilds()])
+  }
 
   final Date now = new Date()
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
@@ -60,8 +65,8 @@ def call(String imageName, Map userConfig=[:]) {
           writeFile file: 'Makefile', text: makefileContent
         } // stage
 
-        // Automatic tagging on principal branch is not enabled by default
-        if (semVerEnabled) {
+        // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
+        if (finalConfig.automaticSemanticVersioning) {
           stage("Get Next Version of ${imageName}") {
             sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
             nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
@@ -108,19 +113,21 @@ def call(String imageName, Map userConfig=[:]) {
         } // each
 
         // Automatic tagging on principal branch is not enabled by default
-        if (semVerEnabled) {
+        if (semVerEnabledOnPrimaryBranch) {
           stage("Semantic Release of ${imageName}") {
             echo "Configuring credential.helper"
-            if (isUnix()) {
-              sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
-            } else {
-              powershell 'git config --local credential.helper "!f() { echo username=%GIT_USERNAME%; echo password=%GIT_PASSWORD% }; f"'
-            }
+            sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
 
             withCredentials([
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
             ]) {
-              withEnv(["NEXT_VERSION=${nextVersion}"]) {
+              withEnv([
+                "NEXT_VERSION=${nextVersion}",
+                // use plaintext to avoid 'wincredman' git credential store error on Windows, with no interaction expected
+                // Ref: https://github.com/GitCredentialManager/git-credential-manager/blob/5277ecce4149678f483b31affcc86ab65d00425f/docs/environment.md
+                'GCM_CREDENTIAL_STORE=plaintext',
+                'GCM_INTERACTIVE=0',
+              ]) {
                 echo "Tagging and pushing the new version: $nextVersion"
                 sh '''
                 git config user.name "${GIT_USERNAME}"
