@@ -184,7 +184,14 @@ def agentTemplate(containerImage, body) {
       kind: Pod
       spec:
         automountServiceAccountToken: false
-    ''',
+      resources:
+        limits:
+          cpu: 2
+          memory: 2Gi
+        requests:
+          cpu: 2
+          memory: 2Gi
+      ''',
       // The Docker image here is aimed at "1 container per pod" and is embedding Jenkins agent tooling
       containers: [containerTemplate(name: 'jnlp', image: containerImage)]) {
         node(POD_LABEL) {
