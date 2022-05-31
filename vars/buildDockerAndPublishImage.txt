@@ -15,6 +15,7 @@ The following arguments are available for this function:
   * String **nextVersionCommand** (Optional, defaults to "jx-release-version") If "automaticSemanticVersioning" is set, this is the command to retrieve the next version (to use for tagging and releasing)
   * String **gitCredentials**: (Optional, defaults to "") If "automaticSemanticVersioning" is set, name of the credential to use when tagging the git repository. Support user/password or GitHub App credential types.
   * String **imageDir**: (Optional, defaults to ".", the parent directory of the Dockerfile) Path to a directory to use as build context (Example: "docker/", "python/2.7").
+  * Boolean **multipleSemverImagesBuild**: (Optional, defaults to "false") Set to true for multiple semversioned images build, will include image name in tag to avoid conflict
 
 The lint phase generates a report when it fails, recorded by the hadolint tool in your Jenkins instance.
 
@@ -40,11 +41,16 @@ Example Usages
 buildDockerAndPublishImage('terraform')
 </code></pre>
 
+Build of two images in parallel
 <pre><code>
 parallel(
   failFast: true,
   'maven-jdk8': {
-    buildDockerAndPublishImage('maven-jdk8', [imageDir: 'maven/jdk8'])
+    buildDockerAndPublishImage('maven-jdk8', [
+      imageDir: 'maven/jdk8',
+      automaticSemanticVersioning: true,
+      multipleSemverImagesBuild: true,
+    ])
   },
   'maven-jdk8-nanoserver': {
     buildDockerAndPublishImage('maven-jdk8-nanoserver', [
@@ -53,6 +59,8 @@ parallel(
       platform: 'windows/amd64',
       agentLabels: 'windows',
       useContainer: false,
+      automaticSemanticVersioning: true,
+      multipleSemverImagesBuild: true,
     ])
   },
 )
