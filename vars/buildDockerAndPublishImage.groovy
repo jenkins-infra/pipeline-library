@@ -9,7 +9,7 @@ def call(String imageName, Map userConfig=[:]) {
     agentLabels: 'docker || linux-amd64-docker', // String expression for the labels the agent must match
     builderImage: 'jenkinsciinfra/builder:2.0.2', // Version managed by updatecli
     automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
-    includeStageNameInTag: false, // Set to true for multiple semversioned images built in parallel, will include the stage name in tag to avoid conflict
+    includeImageNameInTag: false, // Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
     dockerfile: 'Dockerfile', // Obvious default
     platform: 'linux/amd64', // Intel/AMD 64 Bits, following Docker platform identifiers
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
@@ -70,10 +70,14 @@ def call(String imageName, Map userConfig=[:]) {
         if (finalConfig.automaticSemanticVersioning) {
           stage("Get Next Version of ${imageName}") {
             sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
-            nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
-            if (finalConfig.includeStageNameInTag) {
-              echo "Including the stage name '${env.STAGE_NAME}' in the next version"
-              nextVersion = env.STAGE_NAME.replace('-','') + '-' + nextVersion
+            if (isUnix()) {
+              nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+            } else {
+              nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+            }
+            if (finalConfig.includeImageNameInTag) {
+              echo "Including the image name '${imageName}' in the next version"
+              nextVersion = imageName.replace('-','').replace(':','') + '-' + nextVersion
             }
             echo "Next Release Version = $nextVersion"
           } // stage

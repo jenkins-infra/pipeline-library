@@ -10,12 +10,12 @@ The following arguments are available for this function:
   * String **agentLabels** (Optional, defaults to "docker || linux-amd64-docker") String expression for the labels the agent must match.
   * String **builderImage**: (Optional, defaults to "jenkinsciinfra/builder:2.0.2") Docker Image to be used for the container "builder" of the CI pod template.
   * Boolean **automaticSemanticVersioning**: (Optional, defaults to "false") Should a release be created for every merge to the mainBranch. This uses "jx-release-version" to determine the version number based on the commit history.
+  * Boolean **includeImageNameInTag**: (Optional, defaults to "false") Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
   * String **dockerfile**: (Optional, defaults to "Dockerfile") Relative path to the Dockerfile to use within the repository (Example: "build.dockerfile", "docker/Dockerfile").
   * String **platform**: (Optional, defaults to "linux/amd64") Name of the docker platform to use when building this image. For multiple platforms use a comma separated list (Example: "linux/amd64,linux/arm64").
   * String **nextVersionCommand** (Optional, defaults to "jx-release-version") If "automaticSemanticVersioning" is set, this is the command to retrieve the next version (to use for tagging and releasing)
   * String **gitCredentials**: (Optional, defaults to "") If "automaticSemanticVersioning" is set, name of the credential to use when tagging the git repository. Support user/password or GitHub App credential types.
   * String **imageDir**: (Optional, defaults to ".", the parent directory of the Dockerfile) Path to a directory to use as build context (Example: "docker/", "python/2.7").
-  * Boolean **includeStageNameInTag**: (Optional, defaults to "false") Set to true for multiple semversioned images built in parallel, will include the stage name in tag to avoid conflict
 
 The lint phase generates a report when it fails, recorded by the hadolint tool in your Jenkins instance.
 
@@ -49,7 +49,7 @@ parallel(
     buildDockerAndPublishImage('maven-jdk8', [
       imageDir: 'maven/jdk8',
       automaticSemanticVersioning: true,
-      includeStageNameInTag: true,
+      includeImageNameInTag: true,
     ])
   },
   'maven-jdk8-nanoserver': {
@@ -60,7 +60,7 @@ parallel(
       agentLabels: 'windows',
       useContainer: false,
       automaticSemanticVersioning: true,
-      includeStageNameInTag: true,
+      includeImageNameInTag: true,
     ])
   },
 )
