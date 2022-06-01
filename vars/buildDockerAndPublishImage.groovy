@@ -69,10 +69,11 @@ def call(String imageName, Map userConfig=[:]) {
         // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
         if (finalConfig.automaticSemanticVersioning) {
           stage("Get Next Version of ${imageName}") {
-            sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
             if (isUnix()) {
+              sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
               nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
             } else {
+              powershell 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
               nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
             }
             if (finalConfig.includeImageNameInTag) {
