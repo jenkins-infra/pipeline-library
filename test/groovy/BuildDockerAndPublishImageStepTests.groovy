@@ -20,6 +20,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   static final String defaultDockerRegistry = 'jenkinsciinfra'
   static final String fullTestImageName = defaultDockerRegistry + '/' + testImageName
   static final String defaultGitTag = '1.0.0'
+  static final String defaultStageName = 'my-stage-name'
+  static final String defaultGitTagIncludingStageName = 'mystagename-1.0.0'
 
 
   def infraConfigMock
@@ -202,6 +204,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
   @Test
   void itBuildsAndDeploysWithAutomaticSemanticTagAndReleaseOnPrincipalBranch() throws Exception {
     def script = loadScript(scriptName)
@@ -229,6 +232,37 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
+  @Test
+  void itBuildsAndDeploysWithAutomaticSemanticTagAndIncludeStageNameInTagAndReleaseOnPrincipalBranch() throws Exception {
+    addEnvVar('STAGE_NAME', defaultStageName)
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+    withMocks{
+      script.call(testImageName, [
+        automaticSemanticVersioning: true,
+        includeStageNameInTag: true,
+        gitCredentials: 'git-itbuildsanddeployswithautomaticsemantictagandreleaseonprincipalbranch',
+      ])
+    }
+    printCallStack()
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+    // With the common workflow run as expected
+    assertTrue(assertBaseWorkflow())
+    assertTrue(assertContainerVM())
+    // And generated reports are recorded
+    assertTrue(assertRecordIssues())
+    // And the deploy step called
+    assertTrue(assertMakeDeploy())
+    // And the tag pushed
+    assertTrue(assertTagPushed(defaultGitTagIncludingStageName))
+    // But no release created (no tag triggering the build)
+    assertFalse(assertReleaseCreated())
+    // And all mocked/stubbed methods have to be called
+    verifyMocks()
+  }
+
   @Test
   void itBuildsAndDeploysImageWithCustomConfigOnPrincipalBranch() throws Exception {
     def script = loadScript(scriptName)
@@ -258,6 +292,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
   @Test
   void itDoesNotDeployNorReleaseWhenNotOnPrincipalBranch() throws Exception {
     def script = loadScript(scriptName)
@@ -280,6 +315,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
   @Test
   void itBuildsAndDeploysAndReleasesWhenTriggeredByTagAndSemVerEnabled() throws Exception {
     def script = loadScript(scriptName)
@@ -305,6 +341,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
   @Test
   void itDeploysWithCorrectNameWhenTriggeredByTagAndImagenameHasTag() throws Exception {
     def script = loadScript(scriptName)
@@ -323,6 +360,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
   @Test
   void itSkipTestStageIfNoSpecificCSTFile() throws Exception {
     def script = loadScript(scriptName)
@@ -340,6 +378,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
   @Test
   void itSkipTestStageIfNoCommonCSTFile() throws Exception {
     def script = loadScript(scriptName)
@@ -357,6 +396,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
   @Test
   void itFailFastButRecordReportWhenLintFails() throws Exception {
     def script = loadScript(scriptName)
@@ -378,6 +418,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
   @Test
   void itBuildsAndDeploysWithDockerEngineOnPrincipalBranch() throws Exception {
     def script = loadScript(scriptName)
@@ -406,6 +447,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods been called
     verifyMocks()
   }
+
   @Test
   void itBuildsOnlyOnChangeRequestWithWindowsContainers() throws Exception {
     helper.registerAllowedMethod('isUnix', [], { false })
@@ -435,5 +477,4 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods been called
     verifyMocks()
   }
-
 }
