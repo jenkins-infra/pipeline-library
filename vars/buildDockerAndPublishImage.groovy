@@ -90,7 +90,11 @@ def call(String imageName, Map userConfig=[:]) {
           def hadoLintReportFile = "${hadolintReportId}.json"
           withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
             try {
-              sh 'make lint'
+              if (isUnix()) {
+                sh 'make lint'
+              } else {
+                powershell 'make lint'
+              }
             } finally {
               recordIssues(
                   enabledForFailure: true,
@@ -102,7 +106,11 @@ def call(String imageName, Map userConfig=[:]) {
         } // stage
 
         stage("Build ${imageName}") {
-          sh 'make build'
+          if (isUnix()) {
+            sh 'make build'
+          } else {
+            powershell 'make build'
+          }
         } //stage
 
         // There can be 2 kind of tests: per image and per repository
@@ -114,7 +122,11 @@ def call(String imageName, Map userConfig=[:]) {
           if (fileExists(testHarness)) {
             stage("Test ${testName} for ${imageName}") {
               withEnv(["TEST_HARNESS=${testHarness}"]) {
-                sh 'make test'
+                if (isUnix()) {
+                  sh 'make test'
+                } else {
+                  powershell 'make test'
+                }
               } // withEnv
             } //stage
           } else {
@@ -126,7 +138,11 @@ def call(String imageName, Map userConfig=[:]) {
         if (semVerEnabledOnPrimaryBranch) {
           stage("Semantic Release of ${imageName}") {
             echo "Configuring credential.helper"
-            sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
+            if (isUnix()) {
+              sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
+            } else {
+              powershell 'git config --local credential.helper "!f() { echo username=\\%GIT_USERNAME% & echo password=\\%GIT_PASSWORD% }; f"'
+            }
 
             withCredentials([
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
@@ -139,13 +155,23 @@ def call(String imageName, Map userConfig=[:]) {
                 'GCM_INTERACTIVE=0',
               ]) {
                 echo "Tagging and pushing the new version: $nextVersion"
-                sh '''
-                git config user.name "${GIT_USERNAME}"
-                git config user.email "jenkins-infra@googlegroups.com"
+                if (isUnix()) {
+                  sh '''
+                  git config user.name "${GIT_USERNAME}"
+                  git config user.email "jenkins-infra@googlegroups.com"
 
-                git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
-                git push origin --tags
-                '''
+                  git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
+                  git push origin --tags
+                  '''
+                } else {
+                  powershell '''
+                  git config user.name "${GIT_USERNAME}"
+                  git config user.email "jenkins-infra@googlegroups.com"
+
+                  git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
+                  git push origin --tags
+                  '''
+                }
               } // withEnv
             } // withCredentials
           } // stage
@@ -167,7 +193,11 @@ def call(String imageName, Map userConfig=[:]) {
             }
             withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
               // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
-              sh 'make deploy'
+              if (isUnix()) {
+                sh 'make deploy'
+              } else {
+                powershell 'make deploy'
+              }
             } // withEnv
           } //stage
         } // if
@@ -186,7 +216,11 @@ def call(String imageName, Map userConfig=[:]) {
             withEnv(["GH_RELEASES_API_URI=${ghReleasesApiUri}"]) {
               final String release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'').trim()
               withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${release}"]) {
-                sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
+                if (isUnix()) {
+                  sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
+                } else {
+                  powershell 'gh api -X PATCH -F draft=false -F name="%TAG_NAME%" -F tag_name="%TAG_NAME%" "%GH_NEXT_RELEASE_URI%"'
+                }
               } // withEnv
             } // withEnv
           } // withCredentials
