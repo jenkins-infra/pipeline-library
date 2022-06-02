@@ -140,10 +140,9 @@ def call(String imageName, Map userConfig=[:]) {
             echo "Configuring credential.helper"
             if (isUnix()) {
               sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
-            } else {
-              powershell 'git config --local credential.helper "!f() { echo username=\\%GIT_USERNAME% & echo password=\\%GIT_PASSWORD% }; f"'
             }
-
+            // For Winddows, we'll configure directly the password below as I didn't managed to get an equivalent credential.helper function for Windows
+            
             withCredentials([
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
             ]) {
@@ -165,10 +164,11 @@ def call(String imageName, Map userConfig=[:]) {
                   '''
                 } else {
                   powershell '''
-                  git config user.name "${GIT_USERNAME}"
+                  git config user.name "$env:GIT_USERNAME"
                   git config user.email "jenkins-infra@googlegroups.com"
+                  git config user.password $env:GIT_PASSWORD
 
-                  git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
+                  git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"
                   git push origin --tags
                   '''
                 }
@@ -219,7 +219,7 @@ def call(String imageName, Map userConfig=[:]) {
                 if (isUnix()) {
                   sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
                 } else {
-                  powershell 'gh api -X PATCH -F draft=false -F name="%TAG_NAME%" -F tag_name="%TAG_NAME%" "%GH_NEXT_RELEASE_URI%"'
+                  powershell 'gh api -X PATCH -F draft=false -F name="$env:TAG_NAME" -F tag_name="$env:TAG_NAME" "$env:GH_NEXT_RELEASE_URI"'
                 }
               } // withEnv
             } // withEnv
