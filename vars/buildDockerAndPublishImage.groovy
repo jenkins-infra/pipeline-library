@@ -139,9 +139,10 @@ def call(String imageName, Map userConfig=[:]) {
           stage("Semantic Release of ${imageName}") {
             echo "Configuring credential.helper"
             if (isUnix()) {
-              sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
+              sh 'git config --local credential.helper "!set -u; echo username=\\$GIT_USERNAME && echo password=\\$GIT_PASSWORD && echo"'
+            } else {
+              bat 'git config --local credential.helper "!sh.exe -c \'set -u; echo username=$GIT_USERNAME && echo password=$GIT_PASSWORD && echo"\''
             }
-            // For Winddows, we'll configure directly the password below as I didn't managed to get an equivalent credential.helper function for Windows
             
             withCredentials([
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
@@ -156,6 +157,7 @@ def call(String imageName, Map userConfig=[:]) {
                 echo "Tagging and pushing the new version: $nextVersion"
                 if (isUnix()) {
                   sh '''
+                  git config --list --show-origin
                   git config user.name "${GIT_USERNAME}"
                   git config user.email "jenkins-infra@googlegroups.com"
 
@@ -164,7 +166,7 @@ def call(String imageName, Map userConfig=[:]) {
                   '''
                 } else {
                   powershell '''
-                  git config user.name "$env:GIT_USERNAME"
+                  git config --list --show-origin
                   git config user.email "jenkins-infra@googlegroups.com"
                   git config user.password $env:GIT_PASSWORD
 
