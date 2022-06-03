@@ -138,26 +138,21 @@ def call(String imageName, Map userConfig=[:]) {
         if (semVerEnabledOnPrimaryBranch) {
           stage("Semantic Release of ${imageName}") {
             echo "Configuring credential.helper"
+            // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
             if (isUnix()) {
               sh 'git config --local credential.helper "!set -u; echo username=\\$GIT_USERNAME && echo password=\\$GIT_PASSWORD && echo"'
             } else {
+              // Using 'bat' here instead of 'powershell' to avoid variable interpolation problem with $
               bat 'git config --local credential.helper "!sh.exe -c \'set -u; echo username=$GIT_USERNAME && echo password=$GIT_PASSWORD && echo"\''
             }
-            
+
             withCredentials([
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
             ]) {
-              withEnv([
-                "NEXT_VERSION=${nextVersion}",
-                // use plaintext to avoid 'wincredman' git credential store error on Windows, with no interaction expected
-                // Ref: https://github.com/GitCredentialManager/git-credential-manager/blob/5277ecce4149678f483b31affcc86ab65d00425f/docs/environment.md
-                'GCM_CREDENTIAL_STORE=plaintext',
-                'GCM_INTERACTIVE=0',
-              ]) {
+              withEnv(["NEXT_VERSION=${nextVersion}"]) {
                 echo "Tagging and pushing the new version: $nextVersion"
                 if (isUnix()) {
                   sh '''
-                  git config --list --show-origin
                   git config user.name "${GIT_USERNAME}"
                   git config user.email "jenkins-infra@googlegroups.com"
 
@@ -166,7 +161,6 @@ def call(String imageName, Map userConfig=[:]) {
                   '''
                 } else {
                   powershell '''
-                  git config --list --show-origin
                   git config user.email "jenkins-infra@googlegroups.com"
                   git config user.password $env:GIT_PASSWORD
 
