@@ -78,7 +78,7 @@ def call(String imageName, Map userConfig=[:]) {
             }
             if (finalConfig.includeImageNameInTag) {
               echo "Including the image name '${imageName}' in the next version"
-              nextVersion = imageName.replace('-','').replace(':','') + '-' + nextVersion
+              nextVersion =  nextVersion + '-' + imageName.replace('-','').replace(':','')
             }
             echo "Next Release Version = $nextVersion"
           } // stage
