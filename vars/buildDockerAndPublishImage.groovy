@@ -69,18 +69,21 @@ def call(String imageName, Map userConfig=[:]) {
         // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
         if (finalConfig.automaticSemanticVersioning) {
           stage("Get Next Version of ${imageName}") {
-            imageInTag = '-' + imageName.replace('-','').replace(':','')
+            imageInTag = '-' + imageName.replace('-','').replace(':','').toLowerCase()
+            nextVersion = '1.2.3'
             if (isUnix()) {
               sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
               if (!finalConfig.includeImageNameInTag) {
-                nextVersionPart = sh(script: ${finalConfig.nextVersionCommand}, returnStdout: true).trim()
+                nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
               } else {
                 echo "Including the image name '${imageName}' in the next version"
                 // Retrieving the semver part from the last tag including the image name
                 currentSemVerVersionPart = sh(script: "git tag --list \"*${imageInTag}\" --sort=-v:refname | head -1", returnStdout: true).trim().replace(imageInTag, '')
+                echo "Current semver version part is '${currentSemVerVersionPart}'"
                 // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
                 currentSemVerVersionPart = currentSemVerVersionPart ?: '0.0.0'
                 nextVersionSemVerPart = sh(script: "${finalConfig.nextVersionCommand} --previous-version=${currentSemVerVersionPart}", returnStdout: true).trim()
+                echo "Next semver version part is '${nextVersionSemVerPart}'"
                 nextVersion =  nextVersionSemVerPart + imageInTag
               }
             } else {
@@ -91,9 +94,11 @@ def call(String imageName, Map userConfig=[:]) {
                 echo "Including the image name '${imageName}' in the next version"
                 // Retrieving the semver part from the last tag including the image name
                 currentSemVerVersionPart = powershell(script: "git tag --list \"*${imageInTag}\" --sort=-v:refname | head -1", returnStdout: true).trim().replace(imageInTag, '')
+                echo "Current semver version part is '${currentSemVerVersionPart}'"
                 // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
                 currentSemVerVersionPart = currentSemVerVersionPart ?: '0.0.0'
                 nextVersionSemVerPart = powershell(script: "${finalConfig.nextVersionCommand} --previous-version=${currentSemVerVersionPart}", returnStdout: true).trim()
+                echo "Next semver version part is '${nextVersionSemVerPart}'"
                 nextVersion =  nextVersionSemVerPart + imageInTag
               }
             }
@@ -227,10 +232,11 @@ def call(String imageName, Map userConfig=[:]) {
             final String repository = origin.split('/')[4]
             final String ghReleasesApiUri = "/repos/${org}/${repository}/releases"
             withEnv(["GH_RELEASES_API_URI=${ghReleasesApiUri}"]) {
+              String release = ''
               if (isUnix()) {
-                final String release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'').trim()
+                release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'').trim()
               } else {
-                final String release = powershell(returnStdout: true, script: 'gh api $env:GH_RELEASES_API_URI | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'').trim()
+                release = powershell(returnStdout: true, script: 'gh api $env:GH_RELEASES_API_URI | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'').trim()
               }
               withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${release}"]) {
                 if (isUnix()) {
