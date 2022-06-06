@@ -69,16 +69,33 @@ def call(String imageName, Map userConfig=[:]) {
         // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
         if (finalConfig.automaticSemanticVersioning) {
           stage("Get Next Version of ${imageName}") {
+            imageInTag = '-' + imageName.replace('-','').replace(':','')
             if (isUnix()) {
               sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
-              nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+              if (!finalConfig.includeImageNameInTag) {
+                nextVersionPart = sh(script: "${finalConfig.nextVersionCommand} --previous-version=${currentVersion}", returnStdout: true).trim()
+              } else {
+                echo "Including the image name '${imageName}' in the next version"
+                // Retrieving the semver part from the last tag of the current image
+                currentSemVerVersionPart = sh(script: "git tag | grep '${imageInTag}' | sort -r | head -1", returnStdout: true).trim().replace(imageTag, '')
+                // Set a default value if there isn't yet any tag for the current image (https://groovy-lang.org/operators.html#_elvis_operator)
+                currentSemVerVersionPart = currentSemVerVersionPart ?: '0.0.0'
+                nextVersionSemVerPart = sh(script: "${finalConfig.nextVersionCommand} --previous-version=${currentVersion}", returnStdout: true).trim()
+                nextVersion =  nextVersionSemVerPart + imageInTag
+              }
             } else {
               powershell 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
-              nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
-            }
-            if (finalConfig.includeImageNameInTag) {
-              echo "Including the image name '${imageName}' in the next version"
-              nextVersion =  nextVersion + '-' + imageName.replace('-','').replace(':','')
+              if (!finalConfig.includeImageNameInTag) {
+                nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+              } else
+                echo "Including the image name '${imageName}' in the next version"
+                // Retrieving the semver part from the last tag of the current image
+                currentSemVerVersionPart = powershell(script: "git tag | grep '${imageInTag}' | sort -r | head -1", returnStdout: true).trim().replace(imageTag, '')
+                // Set a default value if there isn't yet any tag for the current image (https://groovy-lang.org/operators.html#_elvis_operator)
+                currentSemVerVersionPart = currentSemVerVersionPart ?: '0.0.0'
+                nextVersionSemVerPart = sh(script: "${finalConfig.nextVersionCommand} --previous-version=${currentSemVerVersionPart}", returnStdout: true).trim()
+                nextVersion =  nextVersionSemVerPart + imageInTag
+              }
             }
             echo "Next Release Version = $nextVersion"
           } // stage
