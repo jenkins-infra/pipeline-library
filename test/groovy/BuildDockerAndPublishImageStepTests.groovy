@@ -49,13 +49,13 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     //     return [stdout: defaultGitTag, exitValue: 0]
     // }
     helper.registerAllowedMethod('sh', [String, boolean], { String script, boolean returnStdout ->
-        if (script.toString().contains(defaultNextVersionCommand)) {
+        if (script.contains(defaultNextVersionCommand)) {
             return [stdout: defaultGitTag, exitValue: 0]
         }
         return [stdout: 'stdout', exitValue: 0]
     })
     helper.registerAllowedMethod('powershell', [String, boolean], { String script, boolean returnStdout ->
-        if (script.toString().contains(defaultNextVersionCommand)) {
+        if (script.contains(defaultNextVersionCommand)) {
             return [stdout: defaultGitTag, exitValue: 0]
         }
         return [stdout: 'stdout', exitValue: 0]
