@@ -73,7 +73,7 @@ def call(String imageName, Map userConfig=[:]) {
             if (isUnix()) {
               sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
               if (!finalConfig.includeImageNameInTag) {
-                nextVersionPart = sh(script: "${finalConfig.nextVersionCommand} --previous-version=${currentVersion}", returnStdout: true).trim()
+                nextVersionPart = sh(script: ${finalConfig.nextVersionCommand}, returnStdout: true).trim()
               } else {
                 echo "Including the image name '${imageName}' in the next version"
                 // Retrieving the semver part from the last tag of the current image
@@ -81,7 +81,7 @@ def call(String imageName, Map userConfig=[:]) {
                 // Set a default value if there isn't yet any tag for the current image (https://groovy-lang.org/operators.html#_elvis_operator)
                 currentSemVerVersionPart = currentSemVerVersionPart ?: '0.0.0'
                 echo "Current semver version part is '${currentSemVerVersionPart}'"
-                nextVersionSemVerPart = sh(script: "${finalConfig.nextVersionCommand} --previous-version=${currentVersion}", returnStdout: true).trim()
+                nextVersionSemVerPart = sh(script: "${finalConfig.nextVersionCommand} --previous-version=${currentSemVerVersionPart}", returnStdout: true).trim()
                 echo "Next semver version part is '${nextVersionSemVerPart}'"
                 nextVersion =  nextVersionSemVerPart + imageInTag
               }
