@@ -80,7 +80,9 @@ def call(String imageName, Map userConfig=[:]) {
                 currentSemVerVersionPart = sh(script: "git tag --list \"*${imageInTag}\" --sort=-v:refname | head -1", returnStdout: true).trim().replace(imageInTag, '')
                 // Set a default value if there isn't yet any tag for the current image (https://groovy-lang.org/operators.html#_elvis_operator)
                 currentSemVerVersionPart = currentSemVerVersionPart ?: '0.0.0'
+                echo "Current semver version part is '${currentSemVerVersionPart}'"
                 nextVersionSemVerPart = sh(script: "${finalConfig.nextVersionCommand} --previous-version=${currentVersion}", returnStdout: true).trim()
+                echo "Next semver version part is '${nextVersionSemVerPart}'"
                 nextVersion =  nextVersionSemVerPart + imageInTag
               }
             } else {
@@ -93,7 +95,9 @@ def call(String imageName, Map userConfig=[:]) {
                 currentSemVerVersionPart = powershell(script: "git tag --list \"*${imageInTag}\" --sort=-v:refname | head -1", returnStdout: true).trim().replace(imageInTag, '')
                 // Set a default value if there isn't yet any tag for the current image (https://groovy-lang.org/operators.html#_elvis_operator)
                 currentSemVerVersionPart = currentSemVerVersionPart ?: '0.0.0'
+                echo "Current semver version part is '${currentSemVerVersionPart}'"
                 nextVersionSemVerPart = sh(script: "${finalConfig.nextVersionCommand} --previous-version=${currentSemVerVersionPart}", returnStdout: true).trim()
+                echo "Next semver version part is '${nextVersionSemVerPart}'"
                 nextVersion =  nextVersionSemVerPart + imageInTag
               }
             }
