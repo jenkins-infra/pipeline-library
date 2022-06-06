@@ -48,16 +48,14 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // helper.addShMock(~/jx-release-version\s--previous-version=(.*)/) { String script, String arg ->
     //     return [stdout: defaultGitTag, exitValue: 0]
     // }
-    helper.registerAllowedMethod('sh', [java.util.regex.Pattern, boolean], { java.util.regex.Pattern regexp, boolean returnStdout ->
-        println "executing sh mock closure with arguments (arguments: '${regexp}', '${returnStdout}')"
-        if (regexp.toString().contains(defaultNextVersionCommand)) {
+    helper.registerAllowedMethod('sh', [String, boolean], { String script, boolean returnStdout ->
+        if (script.toString().contains(defaultNextVersionCommand)) {
             return [stdout: defaultGitTag, exitValue: 0]
         }
         return [stdout: 'stdout', exitValue: 0]
     })
-    helper.registerAllowedMethod('powershell', [java.util.regex.Pattern, boolean], { java.util.regex.Pattern regexp, boolean returnStdout ->
-        println "executing powershell mock closure with arguments (arguments: '${regexp}', '${returnStdout}')"
-        if (regexp.toString().contains(defaultNextVersionCommand)) {
+    helper.registerAllowedMethod('powershell', [String, boolean], { String script, boolean returnStdout ->
+        if (script.toString().contains(defaultNextVersionCommand)) {
             return [stdout: defaultGitTag, exitValue: 0]
         }
         return [stdout: 'stdout', exitValue: 0]
