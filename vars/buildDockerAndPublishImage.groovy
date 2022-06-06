@@ -76,13 +76,11 @@ def call(String imageName, Map userConfig=[:]) {
                 nextVersionPart = sh(script: ${finalConfig.nextVersionCommand}, returnStdout: true).trim()
               } else {
                 echo "Including the image name '${imageName}' in the next version"
-                // Retrieving the semver part from the last tag of the current image
+                // Retrieving the semver part from the last tag including the image name
                 currentSemVerVersionPart = sh(script: "git tag --list \"*${imageInTag}\" --sort=-v:refname | head -1", returnStdout: true).trim().replace(imageInTag, '')
-                // Set a default value if there isn't yet any tag for the current image (https://groovy-lang.org/operators.html#_elvis_operator)
+                // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
                 currentSemVerVersionPart = currentSemVerVersionPart ?: '0.0.0'
-                echo "Current semver version part is '${currentSemVerVersionPart}'"
                 nextVersionSemVerPart = sh(script: "${finalConfig.nextVersionCommand} --previous-version=${currentSemVerVersionPart}", returnStdout: true).trim()
-                echo "Next semver version part is '${nextVersionSemVerPart}'"
                 nextVersion =  nextVersionSemVerPart + imageInTag
               }
             } else {
@@ -91,13 +89,11 @@ def call(String imageName, Map userConfig=[:]) {
                 nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
               } else {
                 echo "Including the image name '${imageName}' in the next version"
-                // Retrieving the semver part from the last tag of the current image
+                // Retrieving the semver part from the last tag including the image name
                 currentSemVerVersionPart = powershell(script: "git tag --list \"*${imageInTag}\" --sort=-v:refname | head -1", returnStdout: true).trim().replace(imageInTag, '')
-                // Set a default value if there isn't yet any tag for the current image (https://groovy-lang.org/operators.html#_elvis_operator)
+                // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
                 currentSemVerVersionPart = currentSemVerVersionPart ?: '0.0.0'
-                echo "Current semver version part is '${currentSemVerVersionPart}'"
                 nextVersionSemVerPart = powershell(script: "${finalConfig.nextVersionCommand} --previous-version=${currentSemVerVersionPart}", returnStdout: true).trim()
-                echo "Next semver version part is '${nextVersionSemVerPart}'"
                 nextVersion =  nextVersionSemVerPart + imageInTag
               }
             }
