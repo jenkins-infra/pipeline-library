@@ -96,7 +96,7 @@ def call(String imageName, Map userConfig=[:]) {
                 // Set a default value if there isn't yet any tag for the current image (https://groovy-lang.org/operators.html#_elvis_operator)
                 currentSemVerVersionPart = currentSemVerVersionPart ?: '0.0.0'
                 echo "Current semver version part is '${currentSemVerVersionPart}'"
-                nextVersionSemVerPart = sh(script: "${finalConfig.nextVersionCommand} --previous-version=${currentSemVerVersionPart}", returnStdout: true).trim()
+                nextVersionSemVerPart = powershell(script: "${finalConfig.nextVersionCommand} --previous-version=${currentSemVerVersionPart}", returnStdout: true).trim()
                 echo "Next semver version part is '${nextVersionSemVerPart}'"
                 nextVersion =  nextVersionSemVerPart + imageInTag
               }
