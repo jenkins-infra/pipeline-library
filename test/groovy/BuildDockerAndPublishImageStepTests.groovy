@@ -22,6 +22,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   static final String defaultGitTag = '1.0.0'
   static final String defaultStageName = 'my-stage-name'
   static final String defaultGitTagIncludingStageName = 'mystagename-1.0.0'
+  static final String defaultNextVersionCommand = 'jx-release-version'
 
 
   def infraConfigMock
@@ -43,7 +44,25 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     helper.registerAllowedMethod('hadoLint', [Map.class], { m -> m })
     helper.registerAllowedMethod('fileExists', [String.class], { true })
     binding.setVariable('infra', ['withDockerPullCredentials': {body -> body()}, 'withDockerPushCredentials': {body ->body()}])
-    helper.addShMock('jx-release-version', defaultGitTag , 0)
+    helper.addShMock(defaultNextVersionCommand, defaultGitTag , 0)
+    // helper.addShMock(~/jx-release-version\s--previous-version=(.*)/) { String script, String arg ->
+    //     return [stdout: defaultGitTag, exitValue: 0]
+    // }
+    helper.registerAllowedMethod('sh', [java.util.regex.Pattern, boolean], { java.util.regex.Pattern regexp, boolean returnStdout ->
+        println "executing sh mock closure with arguments (arguments: '${regexp}', '${returnStdout}')"
+        if (regexp.toString().contains(defaultNextVersionCommand)) {
+            return [stdout: defaultGitTag, exitValue: 0]
+        }
+        return [stdout: 'stdout', exitValue: 0]
+    })
+    helper.registerAllowedMethod('powershell', [java.util.regex.Pattern, boolean], { java.util.regex.Pattern regexp, boolean returnStdout ->
+        println "executing powershell mock closure with arguments (arguments: '${regexp}', '${returnStdout}')"
+        if (regexp.toString().contains(defaultNextVersionCommand)) {
+            return [stdout: defaultGitTag, exitValue: 0]
+        }
+        return [stdout: 'stdout', exitValue: 0]
+    })
+
     helper.addShMock('git remote get-url origin', 'https://github.com/org/repository.git', 0)
     helper.addShMock('gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'', '12345', 0)
     addEnvVar('WORKSPACE', '/tmp')
