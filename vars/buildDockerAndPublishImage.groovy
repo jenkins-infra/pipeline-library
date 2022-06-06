@@ -87,7 +87,7 @@ def call(String imageName, Map userConfig=[:]) {
               powershell 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
               if (!finalConfig.includeImageNameInTag) {
                 nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
-              } else
+              } else {
                 echo "Including the image name '${imageName}' in the next version"
                 // Retrieving the semver part from the last tag of the current image
                 currentSemVerVersionPart = powershell(script: "git tag | grep '${imageInTag}' | sort -r | head -1", returnStdout: true).trim().replace(imageTag, '')
