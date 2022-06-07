@@ -41,6 +41,9 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('isUnix', [], { true })
     helper.registerAllowedMethod('lock', [String.class, Closure.class], { s, body -> body() })
     helper.registerAllowedMethod('node', [String.class, Closure.class], { s, body -> body() })
+    helper.registerAllowedMethod('retry', [Map.class, Closure.class], { m, body ->body() })
+    helper.registerAllowedMethod('agent', [], { 'agent' })
+    helper.registerAllowedMethod('nonresumable', [], { 'nonresumable' })
 
     helper.registerAllowedMethod('parallel', [Map.class, Closure.class], { l, body -> body() })
     helper.registerAllowedMethod('pwd', [], { '/foo' })
