@@ -101,20 +101,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       && assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}")
   }
 
-  // Return if the mocked pipeline ran in a container agent with the `img` containerless engine
-  Boolean assertContainerAgent() {
-    return assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/builder:') \
-      && assertMethodCallContainsPattern('withEnv', 'CONTAINER_BIN=img') \
-      && assertMethodCallContainsPattern('withEnv', 'CST_DRIVER=tar')
-  }
-
-  // Return if the mocked pipeline ran in a VM agent with the Docker Engine
-  Boolean assertContainerVM(expectedNodeLabelPattern = 'docker') {
-    return assertMethodCallContainsPattern('node', expectedNodeLabelPattern) \
-      && assertMethodCallContainsPattern('withEnv', 'CONTAINER_BIN=docker') \
-      && assertMethodCallContainsPattern('withEnv', 'CST_DRIVER=docker')
-  }
-
   // Return if the usual static checks had been recorded with the usual pattern
   Boolean assertRecordIssues(String imageName = testImageName) {
     return assertMethodCallContainsPattern('recordIssues', "{enabledForFailure=true, aggregatingResults=false, tool={id=${imageName}-hadolint-${mockedTimestamp}, pattern=${imageName}-hadolint-${mockedTimestamp}.json}}")
@@ -158,7 +144,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
-    assertTrue(assertContainerVM())
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
 
     // And the expected environment variable defined to their defaults
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
@@ -192,7 +178,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
-    assertTrue(assertContainerVM())
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And generated reports are recorded with named without ':' but '-' instead
     assertTrue(assertRecordIssues(customImageNameWithTag.replaceAll(':','-')))
     // With the deploy step called with the correct image name
@@ -217,7 +203,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
-    assertTrue(assertContainerVM())
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And generated reports are recorded
     assertTrue(assertRecordIssues())
     // And the deploy step called
@@ -247,7 +233,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
-    assertTrue(assertContainerVM())
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And the environement variables set with the custom configuration values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=docker/'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=build.Dockerfile'))
@@ -272,7 +258,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
-    assertTrue(assertContainerVM())
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // But no deploy step called for latest
     assertFalse(assertMakeDeploy())
     // And no release (no tag)
@@ -295,7 +281,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
-    assertTrue(assertContainerVM())
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And the deploy step called for latest
     assertTrue(assertMakeDeploy("${fullTestImageName}:${defaultGitTag}"))
     // And the release is created (tag triggering the build)
@@ -392,7 +378,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
-    assertTrue(assertContainerVM())
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And the expected environment variables set to their default values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
@@ -421,7 +407,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
-    assertTrue(assertContainerVM('docker-windows'))
+    assertTrue(assertMethodCallContainsPattern('node', 'docker-windows'))
     // And the expected environment variables set to their default values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))

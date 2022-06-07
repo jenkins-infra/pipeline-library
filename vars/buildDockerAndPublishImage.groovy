@@ -49,7 +49,7 @@ def call(String imageName, Map userConfig=[:]) {
   }
   String operatingSystem = finalConfig.platform.split('/')[0]
 
-  withContainerEngineAgent(finalConfig, {
+  node(finalConfig.agentLabels) {
     withEnv([
       "BUILD_DATE=${buildDate}",
       "IMAGE_NAME=${imageName}",
@@ -188,41 +188,5 @@ def call(String imageName, Map userConfig=[:]) {
         } // stage
       } // if
     } // withEnv
-  }) // withContainerEngineAgent
+  } // node
 } // call
-
-def withContainerEngineAgent(finalConfig, body) {
-  if (finalConfig.useContainer) {
-    // The podTemplate must define only a single container, named `jnlp`
-    // Ref - https://support.cloudbees.com/hc/en-us/articles/360054642231-Considerations-for-Kubernetes-Clients-Connections-when-using-Kubernetes-Plugin
-    podTemplate(
-        annotations: [
-          podAnnotation(key: 'container.apparmor.security.beta.kubernetes.io/jnlp', value: 'unconfined'),
-          podAnnotation(key: 'container.seccomp.security.alpha.kubernetes.io/jnlp', value: 'unconfined'),
-        ],
-        containers: [
-          // This container must be named `jnlp` and should use the default entrypoint/cmd (command/args) inherited from inbound-agent parent image
-          containerTemplate(
-          name: 'jnlp',
-          image: finalConfig.builderImage,
-          resourceRequestCpu: '2',
-          resourceLimitCpu: '2',
-          resourceRequestMemory: '2Gi',
-          resourceLimitMemory: '2Gi',
-          ),
-        ]
-        ) {
-          node(POD_LABEL) {
-            withEnv(['CONTAINER_BIN=img', 'CST_DRIVER=tar']) {
-              body.call()
-            }
-          }
-        }
-  } else {
-    node(finalConfig.agentLabels) {
-      withEnv(['CONTAINER_BIN=docker', 'CST_DRIVER=docker',]) {
-        body.call()
-      }
-    }
-  }
-}
