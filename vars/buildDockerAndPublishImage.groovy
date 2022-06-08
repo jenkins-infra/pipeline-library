@@ -70,7 +70,8 @@ def call(String imageName, Map userConfig=[:]) {
         if (finalConfig.automaticSemanticVersioning) {
           stage("Get Next Version of ${imageName}") {
             imageInTag = '-' + imageName.replace('-','').replace(':','').toLowerCase()
-            nextVersion = '0.0.1'
+            // Default value here for passing tests
+            nextVersion = ''
             if (isUnix()) {
               sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
               if (!finalConfig.includeImageNameInTag) {
