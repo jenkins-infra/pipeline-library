@@ -20,7 +20,10 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   static final String defaultDockerRegistry = 'jenkinsciinfra'
   static final String fullTestImageName = defaultDockerRegistry + '/' + testImageName
   static final String defaultGitTag = '1.0.0'
-
+  static final String defaultGitTagIncludingImageName = '1.0.0-bitcoinminerimage'
+  static final String defaultNextVersionCommand = 'jx-release-version'
+  static final String defaultOrigin = 'https://github.com/org/repository.git'
+  static final Integer defaultReleaseId = 12345
 
   def infraConfigMock
   def dateMock
@@ -32,6 +35,28 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   @Rule
   public ExpectedException thrown = ExpectedException.none()
 
+  String shellMock(String command) {
+    switch (command) {
+      case {command.contains('git tag --list')}:
+        return defaultGitTag
+        break
+      case 'git remote get-url origin':
+        return defaultOrigin
+        break
+      case {command.contains(defaultNextVersionCommand + ' --previous-version')}:
+        return defaultGitTagIncludingImageName
+        break
+      case defaultNextVersionCommand:
+        return defaultGitTag
+        break
+      case {command.contains('gh api ${GH_RELEASES_API_URI}')}:
+        return defaultReleaseId
+        break
+      default:
+        return command
+    }
+  }
+
   @Override
   @Before
   void setUp() throws Exception {
@@ -41,9 +66,13 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     helper.registerAllowedMethod('hadoLint', [Map.class], { m -> m })
     helper.registerAllowedMethod('fileExists', [String.class], { true })
     binding.setVariable('infra', ['withDockerPullCredentials': {body -> body()}, 'withDockerPushCredentials': {body ->body()}])
-    helper.addShMock('jx-release-version', defaultGitTag , 0)
-    helper.addShMock('git remote get-url origin', 'https://github.com/org/repository.git', 0)
-    helper.addShMock('gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'', '12345', 0)
+    helper.registerAllowedMethod('sh', [Map.class], { m ->
+      return shellMock(m.script)
+    })
+    helper.registerAllowedMethod('powershell', [Map.class], { m ->
+      return shellMock(m.script)
+    })
+
     addEnvVar('WORKSPACE', '/tmp')
 
     // Define mocks/stubs for the data objects
@@ -96,8 +125,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   // Return if the set of methods expected for ALL pipeline run have been detected in the callstack
   Boolean assertBaseWorkflow() {
     return assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile') \
-      && assertMethodCallContainsPattern('sh','make lint') \
-      && assertMethodCallContainsPattern('sh','make build') \
+      && (assertMethodCallContainsPattern('sh','make lint') || assertMethodCallContainsPattern('powershell','make lint')) \
+      && (assertMethodCallContainsPattern('sh','make build') || assertMethodCallContainsPattern('powershell','make build')) \
       && assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}")
   }
 
@@ -122,17 +151,17 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
   // return if the "make deploy" was detected with the provided argument as image name
   Boolean assertMakeDeploy(String expectedImageName = fullTestImageName) {
-    return assertMethodCallContainsPattern('sh','make deploy') \
+    return (assertMethodCallContainsPattern('sh','make deploy') || assertMethodCallContainsPattern('powershell','make deploy')) \
       && assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=${expectedImageName}")
   }
 
   Boolean assertTagPushed(String newVersion) {
     return assertMethodCallContainsPattern('echo','Configuring credential.helper') \
       && assertMethodCallContainsPattern('echo',"Tagging and pushing the new version: ${newVersion}") \
-      && assertMethodCallContainsPattern('sh','git config user.name "${GIT_USERNAME}"') \
-      && assertMethodCallContainsPattern('sh','git config user.email "jenkins-infra@googlegroups.com"') \
-      && assertMethodCallContainsPattern('sh','git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"') \
-      && assertMethodCallContainsPattern('sh','git push origin --tags')
+      && (assertMethodCallContainsPattern('sh','git config user.name "${GIT_USERNAME}"') || assertMethodCallContainsPattern('powershell','git config user.name "$env:GIT_USERNAME"')) \
+      && (assertMethodCallContainsPattern('sh','git config user.email "jenkins-infra@googlegroups.com"') || assertMethodCallContainsPattern('powershell','git config user.email "jenkins-infra@googlegroups.com"')) \
+      && (assertMethodCallContainsPattern('sh','git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"') || assertMethodCallContainsPattern('powershell','git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"')) \
+      && (assertMethodCallContainsPattern('sh','git push origin --tags') || assertMethodCallContainsPattern('powershell','git push origin --tags'))
   }
 
   Boolean assertReleaseCreated() {
@@ -202,6 +231,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
   @Test
   void itBuildsAndDeploysWithAutomaticSemanticTagAndReleaseOnPrincipalBranch() throws Exception {
     def script = loadScript(scriptName)
@@ -229,6 +259,36 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
+  @Test
+  void itBuildsAndDeploysWithAutomaticSemanticTagAndincludeImageNameInTagAndReleaseOnPrincipalBranch() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+    withMocks{
+      script.call(testImageName, [
+        automaticSemanticVersioning: true,
+        includeImageNameInTag: true,
+        gitCredentials: 'git-itbuildsanddeployswithautomaticsemantictagandreleaseonprincipalbranch',
+      ])
+    }
+    printCallStack()
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+    // With the common workflow run as expected
+    assertTrue(assertBaseWorkflow())
+    assertTrue(assertContainerVM())
+    // And generated reports are recorded
+    assertTrue(assertRecordIssues())
+    // And the deploy step called
+    assertTrue(assertMakeDeploy())
+    // And the tag pushed
+    assertTrue(assertTagPushed(defaultGitTagIncludingImageName))
+    // But no release created (no tag triggering the build)
+    assertFalse(assertReleaseCreated())
+    // And all mocked/stubbed methods have to be called
+    verifyMocks()
+  }
+
   @Test
   void itBuildsAndDeploysImageWithCustomConfigOnPrincipalBranch() throws Exception {
     def script = loadScript(scriptName)
@@ -258,6 +318,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
   @Test
   void itDoesNotDeployNorReleaseWhenNotOnPrincipalBranch() throws Exception {
     def script = loadScript(scriptName)
@@ -280,6 +341,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
   @Test
   void itBuildsAndDeploysAndReleasesWhenTriggeredByTagAndSemVerEnabled() throws Exception {
     def script = loadScript(scriptName)
@@ -305,6 +367,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
   @Test
   void itDeploysWithCorrectNameWhenTriggeredByTagAndImagenameHasTag() throws Exception {
     def script = loadScript(scriptName)
@@ -323,6 +386,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
   @Test
   void itSkipTestStageIfNoSpecificCSTFile() throws Exception {
     def script = loadScript(scriptName)
@@ -340,6 +404,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
   @Test
   void itSkipTestStageIfNoCommonCSTFile() throws Exception {
     def script = loadScript(scriptName)
@@ -357,6 +422,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
   @Test
   void itFailFastButRecordReportWhenLintFails() throws Exception {
     def script = loadScript(scriptName)
@@ -378,6 +444,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
   @Test
   void itBuildsAndDeploysWithDockerEngineOnPrincipalBranch() throws Exception {
     def script = loadScript(scriptName)
@@ -406,6 +473,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods been called
     verifyMocks()
   }
+
   @Test
   void itBuildsOnlyOnChangeRequestWithWindowsContainers() throws Exception {
     helper.registerAllowedMethod('isUnix', [], { false })
@@ -435,5 +503,4 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods been called
     verifyMocks()
   }
-
 }
