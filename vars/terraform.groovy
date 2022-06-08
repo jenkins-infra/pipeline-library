@@ -9,7 +9,7 @@ def call(userConfig = [:]) {
     stagingCredentials: [], // No custom secrets for staging by default
     productionCredentials: [], // No custom secrets for production by default
     productionBranch: 'main', // Defaults to the principal branch
-    agentContainerImage: 'jenkinsciinfra/hashicorp-tools:0.5.27', // Version managed by updatecli
+    agentContainerImage: 'jenkinsciinfra/hashicorp-tools:0.5.29', // Version managed by updatecli
     runTests: false, // Executes the tests provided by the "calling" project, which should provide a tests/Makefile
     runCommonTests: true, // Executes the default test suite from the shared tools repository (terratest)
   ]
@@ -184,7 +184,14 @@ def agentTemplate(containerImage, body) {
       kind: Pod
       spec:
         automountServiceAccountToken: false
-    ''',
+      resources:
+        limits:
+          cpu: 2
+          memory: 2Gi
+        requests:
+          cpu: 2
+          memory: 2Gi
+      ''',
       // The Docker image here is aimed at "1 container per pod" and is embedding Jenkins agent tooling
       containers: [containerTemplate(name: 'jnlp', image: containerImage)]) {
         node(POD_LABEL) {
