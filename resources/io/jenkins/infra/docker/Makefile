@@ -15,10 +15,6 @@ IMAGE_DOCKERFILE ?= $(IMAGE_DIR)/Dockerfile
 HADOLINT_REPORT ?= $(IMAGE_DIR)/hadolint.json
 TEST_HARNESS ?= $(IMAGE_DIR)/cst.yml
 
-## Locate command line tools. Defaults to rely on PATH
-HADOLINT_BIN ?= hadolint
-CST_BIN ?= container-structure-test
-
 ## Image metadatas
 GIT_COMMIT_REV ?= $(shell git log -n 1 --pretty=format:'%h')
 GIT_SCM_URL ?= $(shell git config --get remote.origin.url)
@@ -32,8 +28,8 @@ help: ## Show this Makefile's help
 all: clean lint build test ## Execute the complete process except the "deploy" step
 
 lint: ## Lint the $(IMAGE_DOCKERFILE) content
-	@echo "== Linting $(call FixPath,$(IMAGE_DOCKERFILE)) with $(HADOLINT_BIN):"
-	$(HADOLINT_BIN) --format=json "$(call FixPath,$(IMAGE_DOCKERFILE))" > "$(call FixPath,$(HADOLINT_REPORT))"
+	@echo "== Linting $(call FixPath,$(IMAGE_DOCKERFILE)) with hadolint:"
+	hadolint --format=json "$(call FixPath,$(IMAGE_DOCKERFILE))" > "$(call FixPath,$(HADOLINT_REPORT))"
 	@echo "== Lint succeeded"
 
 build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
@@ -62,8 +58,8 @@ clean: ## Delete any file generated during the build steps
 	@echo "== Cleanup succeeded"
 
 test: ## Execute the test harness on the Docker Image
-	@echo "== Test $(IMAGE_NAME) with $(call FixPath,$(TEST_HARNESS)) from $(IMAGE_NAME) with $(CST_BIN):"
-	$(CST_BIN) test --driver=docker --image="$(IMAGE_NAME)" --config="$(call FixPath,$(TEST_HARNESS))"
+	@echo "== Test $(IMAGE_NAME) with $(call FixPath,$(TEST_HARNESS)) from $(IMAGE_NAME) with container-structure-test:"
+	container-structure-test test --driver=docker --image="$(IMAGE_NAME)" --config="$(call FixPath,$(TEST_HARNESS))"
 	@echo "== Test succeeded"
 
 ## This steps expects that you are logged to the Docker registry to push image into
