@@ -38,20 +38,20 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   String shellCommand(String command) {
     switch (command) {
       case {command.contains('git tag --list')}:
-          return defaultGitTag
-          break
+        return defaultGitTag
+        break
       case 'git remote get-url origin':
-          return defaultOrigin
-          break
+        return defaultOrigin
+        break
       case {command.contains(defaultNextVersionCommand + ' --previous-version')}:
-          return defaultGitTagIncludingImageName
-          break
+        return defaultGitTagIncludingImageName
+        break
       case defaultNextVersionCommand:
-          return defaultGitTag
-          break
+        return defaultGitTag
+        break
       case {command.contains('gh api ${GH_RELEASES_API_URI}')}:
-          return defaultReleaseId
-          break
+        return defaultReleaseId
+        break
       default:
         return command
     }
@@ -68,10 +68,10 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     binding.setVariable('infra', ['withDockerPullCredentials': {body -> body()}, 'withDockerPushCredentials': {body ->body()}])
     helper.addShMock(defaultNextVersionCommand, defaultGitTag , 0)
     helper.registerAllowedMethod('sh', [Map.class], { m ->
-        return shellCommand(m.script)
+      return shellCommand(m.script)
     })
     helper.registerAllowedMethod('powershell', [Map.class], { m ->
-        return shellCommand(m.script)
+      return shellCommand(m.script)
     })
 
     addEnvVar('WORKSPACE', '/tmp')
