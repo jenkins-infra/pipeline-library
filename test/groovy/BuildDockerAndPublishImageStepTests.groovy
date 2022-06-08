@@ -35,7 +35,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   @Rule
   public ExpectedException thrown = ExpectedException.none()
 
-  String shellCommand(String command) {
+  String shellMock(String command) {
     switch (command) {
       case {command.contains('git tag --list')}:
         return defaultGitTag
@@ -66,12 +66,11 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     helper.registerAllowedMethod('hadoLint', [Map.class], { m -> m })
     helper.registerAllowedMethod('fileExists', [String.class], { true })
     binding.setVariable('infra', ['withDockerPullCredentials': {body -> body()}, 'withDockerPushCredentials': {body ->body()}])
-    helper.addShMock(defaultNextVersionCommand, defaultGitTag , 0)
     helper.registerAllowedMethod('sh', [Map.class], { m ->
-      return shellCommand(m.script)
+      return shellMock(m.script)
     })
     helper.registerAllowedMethod('powershell', [Map.class], { m ->
-      return shellCommand(m.script)
+      return shellMock(m.script)
     })
 
     addEnvVar('WORKSPACE', '/tmp')
