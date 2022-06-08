@@ -50,6 +50,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
         return defaultGitTag
         break
       case {command.contains('gh api ${GH_RELEASES_API_URI}')}:
+      case {command.contains('gh api $env:GH_RELEASES_API_URI')}:
         return defaultReleaseId
         break
       default:
@@ -154,7 +155,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     return assertMethodCallContainsPattern('stage','GitHub Release') \
       && assertMethodCallContainsPattern('withCredentials', 'GITHUB_TOKEN') \
       && assertMethodCallContainsPattern('withCredentials', 'GITHUB_USERNAME') \
-      && assertMethodCallContainsPattern('sh', 'gh api ${GH_RELEASES_API_URI}')
+      && (assertMethodCallContainsPattern('sh', 'gh api ${GH_RELEASES_API_URI}') || assertMethodCallContainsPattern('powershell', 'gh api $env:GH_RELEASES_API_URI'))
   }
 
   @Test
@@ -262,7 +263,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
-    assertTrue(assertContainerVM())
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And generated reports are recorded
     assertTrue(assertRecordIssues())
     // And the deploy step called
