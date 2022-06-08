@@ -9,12 +9,12 @@ def call(String imageName, Map userConfig=[:]) {
     agentLabels: 'docker || linux-amd64-docker', // String expression for the labels the agent must match
     builderImage: 'jenkinsciinfra/builder:2.0.2', // Version managed by updatecli
     automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
+    includeImageNameInTag: false, // Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
     dockerfile: 'Dockerfile', // Obvious default
     platform: 'linux/amd64', // Intel/AMD 64 Bits, following Docker platform identifiers
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
-    multipleSemverImagesBuild: false, // Set to true for multiple semversioned images build, will include image name in tag to avoid conflict
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -69,11 +69,39 @@ def call(String imageName, Map userConfig=[:]) {
         // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
         if (finalConfig.automaticSemanticVersioning) {
           stage("Get Next Version of ${imageName}") {
-            sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
-            nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
-            if (finalConfig.multipleSemverImagesBuild) {
-              echo 'Multiple semversioned images build, including the image name in the next version'
-              nextVersion = imageName.replace('-','') + '-' + nextVersion
+            imageInTag = '-' + imageName.replace('-','').replace(':','').toLowerCase()
+            // Default value here for passing tests
+            nextVersion = ''
+            if (isUnix()) {
+              sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
+              if (!finalConfig.includeImageNameInTag) {
+                nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+              } else {
+                echo "Including the image name '${imageName}' in the next version"
+                // Retrieving the semver part from the last tag including the image name
+                currentSemVerVersionPart = sh(script: "git tag --list \"*${imageInTag}\" --sort=-v:refname | head -1", returnStdout: true).trim().replace(imageInTag, '')
+                echo "Current semver version part is '${currentSemVerVersionPart}'"
+                // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
+                currentSemVerVersionPart = currentSemVerVersionPart ?: '0.0.0'
+                nextVersionSemVerPart = sh(script: "${finalConfig.nextVersionCommand} --previous-version=${currentSemVerVersionPart}", returnStdout: true).trim()
+                echo "Next semver version part is '${nextVersionSemVerPart}'"
+                nextVersion =  nextVersionSemVerPart + imageInTag
+              }
+            } else {
+              powershell 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
+              if (!finalConfig.includeImageNameInTag) {
+                nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+              } else {
+                echo "Including the image name '${imageName}' in the next version"
+                // Retrieving the semver part from the last tag including the image name
+                currentSemVerVersionPart = powershell(script: "git tag --list \"*${imageInTag}\" --sort=-v:refname | head -1", returnStdout: true).trim().replace(imageInTag, '')
+                echo "Current semver version part is '${currentSemVerVersionPart}'"
+                // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
+                currentSemVerVersionPart = currentSemVerVersionPart ?: '0.0.0'
+                nextVersionSemVerPart = powershell(script: "${finalConfig.nextVersionCommand} --previous-version=${currentSemVerVersionPart}", returnStdout: true).trim()
+                echo "Next semver version part is '${nextVersionSemVerPart}'"
+                nextVersion =  nextVersionSemVerPart + imageInTag
+              }
             }
             echo "Next Release Version = $nextVersion"
           } // stage
@@ -85,7 +113,11 @@ def call(String imageName, Map userConfig=[:]) {
           def hadoLintReportFile = "${hadolintReportId}.json"
           withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
             try {
-              sh 'make lint'
+              if (isUnix()) {
+                sh 'make lint'
+              } else {
+                powershell 'make lint'
+              }
             } finally {
               recordIssues(
                   enabledForFailure: true,
@@ -97,7 +129,11 @@ def call(String imageName, Map userConfig=[:]) {
         } // stage
 
         stage("Build ${imageName}") {
-          sh 'make build'
+          if (isUnix()) {
+            sh 'make build'
+          } else {
+            powershell 'make build'
+          }
         } //stage
 
         // There can be 2 kind of tests: per image and per repository
@@ -109,7 +145,11 @@ def call(String imageName, Map userConfig=[:]) {
           if (fileExists(testHarness)) {
             stage("Test ${testName} for ${imageName}") {
               withEnv(["TEST_HARNESS=${testHarness}"]) {
-                sh 'make test'
+                if (isUnix()) {
+                  sh 'make test'
+                } else {
+                  powershell 'make test'
+                }
               } // withEnv
             } //stage
           } else {
@@ -121,26 +161,36 @@ def call(String imageName, Map userConfig=[:]) {
         if (semVerEnabledOnPrimaryBranch) {
           stage("Semantic Release of ${imageName}") {
             echo "Configuring credential.helper"
-            sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
+            // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
+            if (isUnix()) {
+              sh 'git config --local credential.helper "!set -u; echo username=\\$GIT_USERNAME && echo password=\\$GIT_PASSWORD && echo"'
+            } else {
+              // Using 'bat' here instead of 'powershell' to avoid variable interpolation problem with $
+              bat 'git config --local credential.helper "!sh.exe -c \'set -u; echo username=$GIT_USERNAME && echo password=$GIT_PASSWORD && echo"\''
+            }
 
             withCredentials([
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
             ]) {
-              withEnv([
-                "NEXT_VERSION=${nextVersion}",
-                // use plaintext to avoid 'wincredman' git credential store error on Windows, with no interaction expected
-                // Ref: https://github.com/GitCredentialManager/git-credential-manager/blob/5277ecce4149678f483b31affcc86ab65d00425f/docs/environment.md
-                'GCM_CREDENTIAL_STORE=plaintext',
-                'GCM_INTERACTIVE=0',
-              ]) {
+              withEnv(["NEXT_VERSION=${nextVersion}"]) {
                 echo "Tagging and pushing the new version: $nextVersion"
-                sh '''
-                git config user.name "${GIT_USERNAME}"
-                git config user.email "jenkins-infra@googlegroups.com"
+                if (isUnix()) {
+                  sh '''
+                  git config user.name "${GIT_USERNAME}"
+                  git config user.email "jenkins-infra@googlegroups.com"
 
-                git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
-                git push origin --tags
-                '''
+                  git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
+                  git push origin --tags
+                  '''
+                } else {
+                  powershell '''
+                  git config user.email "jenkins-infra@googlegroups.com"
+                  git config user.password $env:GIT_PASSWORD
+
+                  git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"
+                  git push origin --tags
+                  '''
+                }
               } // withEnv
             } // withCredentials
           } // stage
@@ -162,7 +212,11 @@ def call(String imageName, Map userConfig=[:]) {
             }
             withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
               // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
-              sh 'make deploy'
+              if (isUnix()) {
+                sh 'make deploy'
+              } else {
+                powershell 'make deploy'
+              }
             } // withEnv
           } //stage
         } // if
@@ -179,9 +233,18 @@ def call(String imageName, Map userConfig=[:]) {
             final String repository = origin.split('/')[4]
             final String ghReleasesApiUri = "/repos/${org}/${repository}/releases"
             withEnv(["GH_RELEASES_API_URI=${ghReleasesApiUri}"]) {
-              final String release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'').trim()
+              String release = ''
+              if (isUnix()) {
+                release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'').trim()
+              } else {
+                release = powershell(returnStdout: true, script: 'gh api $env:GH_RELEASES_API_URI | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'').trim()
+              }
               withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${release}"]) {
-                sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
+                if (isUnix()) {
+                  sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
+                } else {
+                  powershell 'gh api -X PATCH -F draft=false -F name="$env:TAG_NAME" -F tag_name="$env:TAG_NAME" "$env:GH_NEXT_RELEASE_URI"'
+                }
               } // withEnv
             } // withEnv
           } // withCredentials
