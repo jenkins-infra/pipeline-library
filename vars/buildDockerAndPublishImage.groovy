@@ -92,7 +92,7 @@ def call(String imageName, Map userConfig=[:]) {
                 echo "Including the image name '${imageName}' in the next version"
                 // Retrieving the semver part from the last tag including the image name
                 String currentTagScript = 'git tag --list \"*' + imageInTag + '\" --sort=-v:refname | head -1'
-                String currentSemVerVersion = powershell(script: currentTagScript, returnStdout: true).trim().replace(imageInTag, '')
+                String currentSemVerVersion = powershell(script: currentTagScript, returnStdout: true).trim()
                 echo "Current semver version is '${currentSemVerVersion}'"
                 // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
                 currentSemVerVersion = currentSemVerVersion ?: '0.0.0-' + imageInTag
