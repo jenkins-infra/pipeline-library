@@ -106,7 +106,7 @@ def call(String imageName, Map userConfig=[:]) {
                 nextVersion =  nextVersionSemVerPart + imageInTag
               }
             }
-            echo "Next Release Version = $nextVersion"
+            echo "Next Release Version = ${nextVersion}"
           } // stage
         } // if
 
@@ -176,7 +176,7 @@ def call(String imageName, Map userConfig=[:]) {
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
             ]) {
               withEnv(["NEXT_VERSION=${nextVersion}"]) {
-                echo "Tagging and pushing the new version: $nextVersion"
+                echo "Tagging and pushing the new version: ${nextVersion}"
                 if (isUnix()) {
                   sh '''
                   git config user.name "${GIT_USERNAME}"
