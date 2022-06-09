@@ -437,9 +437,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     def script = loadScript(scriptName)
     mockPrincipalBranch()
     withMocks {
-      script.call(testImageName, [
-        useContainer: false,
-      ])
+      script.call(testImageName)
     }
     printCallStack()
     // Then we expect a successful build with the code cloned
@@ -467,7 +465,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     def script = loadScript(scriptName)
     withMocks {
       script.call(testImageName, [
-        useContainer: false,
         agentLabels: 'docker-windows',
       ])
     }
