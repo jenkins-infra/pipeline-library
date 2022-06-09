@@ -5,7 +5,6 @@ import java.text.DateFormat
 
 def call(String imageName, Map userConfig=[:]) {
   def defaultConfig = [
-    useContainer: false, // Wether to use a container (with a container-less and root-less tool) or a VM (with a full-fledged Docker Engine) for executing the steps
     agentLabels: 'docker || linux-amd64-docker', // String expression for the labels the agent must match
     builderImage: 'jenkinsciinfra/builder:2.0.2', // Version managed by updatecli
     automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
@@ -41,9 +40,6 @@ def call(String imageName, Map userConfig=[:]) {
     }
     if (!finalConfig.agentLabels.contains('windows') && finalConfig.platform.contains('windows')) {
       echo "WARNING: The 'platform' is set to '${finalConfig.platform}', but there isn't any 'windows' agent requested."
-    }
-    if (finalConfig.useContainer) {
-      echo "WARNING: You're building a Windows image in a container, you should set 'useContainer' to 'false'."
     }
     cstConfigSuffix = '-windows'
   }
