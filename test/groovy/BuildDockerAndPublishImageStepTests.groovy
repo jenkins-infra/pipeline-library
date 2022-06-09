@@ -43,7 +43,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       case 'git remote get-url origin':
         return defaultOrigin
         break
-      case {command.contains(defaultNextVersionCommand + ' --previous-version')}:
+      case {command.contains(defaultNextVersionCommand + ' -debug --previous-version')}:
         return defaultGitTagIncludingImageName
         break
       case defaultNextVersionCommand:
