@@ -108,8 +108,8 @@ def call(String imageName, Map userConfig=[:]) {
 
         stage("Lint ${imageName}") {
           // Define the image name as prefix to support multi images per pipeline
-          String  hadolintReportId = "${imageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
-          String  hadoLintReportFile = "${hadolintReportId}.json"
+          String hadolintReportId = "${imageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
+          String hadoLintReportFile = "${hadolintReportId}.json"
           withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
             try {
               if (isUnix()) {
