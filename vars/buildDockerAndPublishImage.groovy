@@ -54,6 +54,7 @@ def call(String imageName, Map userConfig=[:]) {
       "IMAGE_PLATFORM=${finalConfig.platform}",
     ]) {
       infra.withDockerPullCredentials{
+        String nextVersion = ''
         stage("Prepare ${imageName}") {
           checkout scm
 
@@ -65,9 +66,7 @@ def call(String imageName, Map userConfig=[:]) {
         // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
         if (finalConfig.automaticSemanticVersioning) {
           stage("Get Next Version of ${imageName}") {
-            imageInTag = '-' + imageName.replace('-','').replace(':','').toLowerCase()
-            // Default value here for passing tests
-            nextVersion = ''
+            String imageInTag = '-' + imageName.replace('-','').replace(':','').toLowerCase()
             if (isUnix()) {
               sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
               if (!finalConfig.includeImageNameInTag) {
@@ -75,11 +74,13 @@ def call(String imageName, Map userConfig=[:]) {
               } else {
                 echo "Including the image name '${imageName}' in the next version"
                 // Retrieving the semver part from the last tag including the image name
-                currentSemVerVersionPart = sh(script: "git tag --list \"*${imageInTag}\" --sort=-v:refname | head -1", returnStdout: true).trim().replace(imageInTag, '')
+                String currentTagScript = 'git tag --list \"*' + imageInTag + '\" --sort=-v:refname | head -1'
+                String currentSemVerVersionPart = sh(script: currentTagScript, returnStdout: true).trim().replace(imageInTag, '')
                 echo "Current semver version part is '${currentSemVerVersionPart}'"
                 // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
                 currentSemVerVersionPart = currentSemVerVersionPart ?: '0.0.0'
-                nextVersionSemVerPart = sh(script: "${finalConfig.nextVersionCommand} --previous-version=${currentSemVerVersionPart}", returnStdout: true).trim()
+                String nextVersionScript = finalConfig.nextVersionCommand + ' -debug --previous-version=' + currentSemVerVersionPart
+                String nextVersionSemVerPart = sh(script: nextVersionScript, returnStdout: true).trim()
                 echo "Next semver version part is '${nextVersionSemVerPart}'"
                 nextVersion =  nextVersionSemVerPart + imageInTag
               }
@@ -90,23 +91,25 @@ def call(String imageName, Map userConfig=[:]) {
               } else {
                 echo "Including the image name '${imageName}' in the next version"
                 // Retrieving the semver part from the last tag including the image name
-                currentSemVerVersionPart = powershell(script: "git tag --list \"*${imageInTag}\" --sort=-v:refname | head -1", returnStdout: true).trim().replace(imageInTag, '')
+                String currentTagScript = 'git tag --list \"*' + imageInTag + '\" --sort=-v:refname | head -1'
+                String currentSemVerVersionPart = powershell(script: currentTagScript, returnStdout: true).trim().replace(imageInTag, '')
                 echo "Current semver version part is '${currentSemVerVersionPart}'"
                 // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
                 currentSemVerVersionPart = currentSemVerVersionPart ?: '0.0.0'
-                nextVersionSemVerPart = powershell(script: "${finalConfig.nextVersionCommand} --previous-version=${currentSemVerVersionPart}", returnStdout: true).trim()
+                String nextVersionScript = finalConfig.nextVersionCommand + ' -debug --previous-version=' + currentSemVerVersionPart
+                String nextVersionSemVerPart = powershell(script: nextVersionScript, returnStdout: true).trim()
                 echo "Next semver version part is '${nextVersionSemVerPart}'"
                 nextVersion =  nextVersionSemVerPart + imageInTag
               }
             }
-            echo "Next Release Version = $nextVersion"
+            echo "Next Release Version = ${nextVersion}"
           } // stage
         } // if
 
         stage("Lint ${imageName}") {
           // Define the image name as prefix to support multi images per pipeline
-          def hadolintReportId = "${imageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
-          def hadoLintReportFile = "${hadolintReportId}.json"
+          String hadolintReportId = "${imageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
+          String hadoLintReportFile = "${hadolintReportId}.json"
           withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
             try {
               if (isUnix()) {
@@ -169,7 +172,7 @@ def call(String imageName, Map userConfig=[:]) {
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
             ]) {
               withEnv(["NEXT_VERSION=${nextVersion}"]) {
-                echo "Tagging and pushing the new version: $nextVersion"
+                echo "Tagging and pushing the new version: ${nextVersion}"
                 if (isUnix()) {
                   sh '''
                   git config user.name "${GIT_USERNAME}"
