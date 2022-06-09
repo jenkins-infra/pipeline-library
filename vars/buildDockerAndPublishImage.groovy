@@ -58,6 +58,7 @@ def call(String imageName, Map userConfig=[:]) {
       "IMAGE_PLATFORM=${finalConfig.platform}",
     ]) {
       infra.withDockerPullCredentials{
+        String nextVersion = ''
         stage("Prepare ${imageName}") {
           checkout scm
 
@@ -70,8 +71,6 @@ def call(String imageName, Map userConfig=[:]) {
         if (finalConfig.automaticSemanticVersioning) {
           stage("Get Next Version of ${imageName}") {
             String imageInTag = '-' + imageName.replace('-','').replace(':','').toLowerCase()
-            // Default value here for passing tests
-            String nextVersion = ''
             if (isUnix()) {
               sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
               if (!finalConfig.includeImageNameInTag) {
