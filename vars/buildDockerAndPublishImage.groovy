@@ -83,7 +83,7 @@ def call(String imageName, Map userConfig=[:]) {
                 echo "Current semver version part is '${currentSemVerVersionPart}'"
                 // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
                 currentSemVerVersionPart = currentSemVerVersionPart ?: '0.0.0'
-                String nextVersionScript = finalConfig.nextVersionCommand + ' --previous-version=' + currentSemVerVersionPart
+                String nextVersionScript = finalConfig.nextVersionCommand + ' -debug --previous-version=' + currentSemVerVersionPart
                 String nextVersionSemVerPart = sh(script: nextVersionScript, returnStdout: true).trim()
                 echo "Next semver version part is '${nextVersionSemVerPart}'"
                 nextVersion =  nextVersionSemVerPart + imageInTag
@@ -100,7 +100,7 @@ def call(String imageName, Map userConfig=[:]) {
                 echo "Current semver version part is '${currentSemVerVersionPart}'"
                 // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
                 currentSemVerVersionPart = currentSemVerVersionPart ?: '0.0.0'
-                String nextVersionScript = finalConfig.nextVersionCommand + ' --previous-version=' + currentSemVerVersionPart
+                String nextVersionScript = finalConfig.nextVersionCommand + ' -debug --previous-version=' + currentSemVerVersionPart
                 String nextVersionSemVerPart = powershell(script: nextVersionScript, returnStdout: true).trim()
                 echo "Next semver version part is '${nextVersionSemVerPart}'"
                 nextVersion =  nextVersionSemVerPart + imageInTag
