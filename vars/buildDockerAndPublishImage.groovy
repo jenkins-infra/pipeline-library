@@ -227,7 +227,12 @@ def call(String imageName, Map userConfig=[:]) {
           withCredentials([
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
           ]) {
-            final String origin = sh(returnStdout: true, script: 'git remote get-url origin').trim() - '.git'
+            String origin = ''
+            if (isUnix()) {
+              origin = sh(returnStdout: true, script: 'git remote get-url origin').trim() - '.git'
+            } else {
+              origin = powershell(returnStdout: true, script: 'git remote get-url origin').trim() - '.git'
+            }
             final String org = origin.split('/')[3]
             final String repository = origin.split('/')[4]
             final String ghReleasesApiUri = "/repos/${org}/${repository}/releases"
