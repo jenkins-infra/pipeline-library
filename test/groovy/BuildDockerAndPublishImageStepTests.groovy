@@ -52,7 +52,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       case {command.contains('gh api ${GH_RELEASES_API_URI}')}:
       case {command.contains('gh api $env:GH_RELEASES_API_URI')}:
         if (failing) {
-          throw new Exception('[Warn] No release found in GitHub')
+          // No draft release found
+          return ''
         }
         return defaultReleaseId
         break
