@@ -254,7 +254,7 @@ def call(String imageName, Map userConfig=[:]) {
               } catch (e) {
                 echo 'Warning: an error occurred during Github Release: ' + e.toString()
                 echo 'It could be due to the absence of release-drafter on the repository.'
-              }
+              } // try
             } // withEnv
           } // withCredentials
         } // stage

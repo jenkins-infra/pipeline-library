@@ -356,6 +356,32 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   @Test
+  void itBuildsAndDeploysButNoReleaseWhenTriggeredByTagAndSemVerEnabledButNoReleaseDrafter() throws Exception {
+    def script = loadScript(scriptName)
+    mockTag()
+    withMocks{
+      script.call(testImageName, [
+        automaticSemanticVersioning: true,
+        gitCredentials: 'git-itbuildsanddeploysandreleaseswhentriggeredbytagandsemverenabled',
+      ])
+    }
+    printCallStack()
+    // Then we expect a successful build
+    assertJobStatusSuccess()
+    // With the common workflow run as expected
+    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
+    // And the deploy step called for latest
+    assertTrue(assertMakeDeploy("${fullTestImageName}:${defaultGitTag}"))
+    // And the release is created (tag triggering the build)
+    assertFalse(assertReleaseCreated())
+    // But no tag  pushed
+    assertFalse(assertTagPushed(defaultGitTag))
+    // And all mocked/stubbed methods have to be called
+    verifyMocks()
+  }
+
+  @Test
   void itDeploysWithCorrectNameWhenTriggeredByTagAndImagenameHasTag() throws Exception {
     def script = loadScript(scriptName)
     def customImageNameWithTag = testImageName + ':3.141'
