@@ -236,15 +236,20 @@ def call(String imageName, Map userConfig=[:]) {
             final String repository = origin.split('/')[4]
             final String ghReleasesApiUri = "/repos/${org}/${repository}/releases"
             withEnv(["GH_RELEASES_API_URI=${ghReleasesApiUri}"]) {
-              int releaseId = 0
-              // Retrieve the release id from the GitHub API
-              //  -e: set the exit status code based on the output
-              //  -r: output raw strings, not JSON texts
-              //  select( . != null ): retrieve only non-null values
               if (isUnix()) {
-                releaseId = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)\'')
+                sh '''
+                  GH_NEXT_RELEASE_ID=gh api ${GH_RELEASES_API_URI} | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)'
+                  if [[ $GH_NEXT_RELEASE_ID && $GH_NEXT_RELEASE_ID -gt 0 ]]; then
+                  then
+                    gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_RELEASES_API_URI}/${GH_NEXT_RELEASE_ID}"
+                  else
+                    echo "No draft release found"
+                  fi
+                '''
               } else {
-                releaseId = powershell(returnStdout: true, script: 'gh api $env:GH_RELEASES_API_URI | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)\'')
+                powershell '''
+                  # TODO
+                '''
               }
               if (releaseId > 0) {
                 withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${releaseId}"]) {
