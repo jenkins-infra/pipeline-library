@@ -106,6 +106,22 @@ In order to work with that repository you will need:
 
 An IDE or text editor of your choice, like [Vim](https://www.vim.org/), [Emacs](https://www.gnu.org/software/emacs/) or [VS Code](https://code.visualstudio.com/) for example.
 
+### Add a `pre-push` git hook to check the lint before pushing
+
+By adding the following file `pre-push` (without extension) into your local git repository `.git/hooks` folder, the command `mvn spotless:chek` will run before every push you'll make to check if your code is still correctly linted, and will prevent pushing malformatted code which would fail your build anyway.
+
+```bash
+#!/bin/sh
+
+mvn spotless:check
+```
+If your push has been aborted, you can manually fix the reported errors, or use the following command to automatically fix them: `mvn spotless:apply`
+
+Notes:
+- this would works for Linux and MacOS, you'll need to adapt it for Windows.
+- if you don't mind spending several seconds on every commit, you can put this as a `pre-commit` hook.
+- you can make this script automatically fix the errors by changing `:check` by `:apply` in the hook.
+
 ## Tips and Tricks: Discovering the Project
 
 Here are some useful tips and tricks allowing you to discover a bit more about the project and get to know some handy commands.
