@@ -236,14 +236,14 @@ def call(String imageName, Map userConfig=[:]) {
             final String repository = origin.split('/')[4]
             final String ghReleasesApiUri = "/repos/${org}/${repository}/releases"
             withEnv(["GH_RELEASES_API_URI=${ghReleasesApiUri}"]) {
-              String release = ''
+              int releaseId = 0
               if (isUnix()) {
-                release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\' || echo \'\'').trim()
+                releaseId = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\' || echo 0').trim()
               } else {
-                release = powershell(returnStdout: true, script: 'gh api $env:GH_RELEASES_API_URI | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\' || echo \'\'').trim()
+                releaseId = powershell(returnStdout: true, script: 'gh api $env:GH_RELEASES_API_URI | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\' || echo 0').trim()
               }
-              if (release) {
-                withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${release}"]) {
+              if (releaseId > 0) {
+                withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${releaseId}"]) {
                   if (isUnix()) {
                     sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
                   } else {
