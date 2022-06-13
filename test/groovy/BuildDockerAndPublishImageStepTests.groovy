@@ -35,7 +35,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   @Rule
   public ExpectedException thrown = ExpectedException.none()
 
-  String shellMock(String command, Boolean failing = false) {
+  def shellMock(String command, Boolean failing = false) {
     switch (command) {
       case {command.contains('git tag --list')}:
         return defaultGitTag
@@ -53,7 +53,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       case {command.contains('gh api $env:GH_RELEASES_API_URI')}:
         if (failing) {
           // No draft release found
-          return ''
+          return 0
         }
         return defaultReleaseId
         break

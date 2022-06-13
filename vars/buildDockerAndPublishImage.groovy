@@ -237,10 +237,14 @@ def call(String imageName, Map userConfig=[:]) {
             final String ghReleasesApiUri = "/repos/${org}/${repository}/releases"
             withEnv(["GH_RELEASES_API_URI=${ghReleasesApiUri}"]) {
               int releaseId = 0
+              // Retrieve the release id from the GitHub API
+              //  -e: set the exit status code based on the output
+              //  -r: output raw strings, not JSON texts
+              //  select( . != null ): retrieve only non-null values
               if (isUnix()) {
-                releaseId = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\' || echo 0').trim()
+                releaseId = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)\'')
               } else {
-                releaseId = pwsh(returnStdout: true, script: 'gh api $env:GH_RELEASES_API_URI | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\' || echo 0').trim()
+                releaseId = powershell(returnStdout: true, script: 'gh api $env:GH_RELEASES_API_URI | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)\'')
               }
               if (releaseId > 0) {
                 withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${releaseId}"]) {
