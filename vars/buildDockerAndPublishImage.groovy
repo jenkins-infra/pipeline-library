@@ -227,24 +227,33 @@ def call(String imageName, Map userConfig=[:]) {
           withCredentials([
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
           ]) {
-            final String origin = sh(returnStdout: true, script: 'git remote get-url origin').trim() - '.git'
+            String origin = ''
+            if (isUnix()) {
+              origin = sh(returnStdout: true, script: 'git remote get-url origin').trim() - '.git'
+            } else {
+              origin = powershell(returnStdout: true, script: 'git remote get-url origin').trim() - '.git'
+            }
             final String org = origin.split('/')[3]
             final String repository = origin.split('/')[4]
             final String ghReleasesApiUri = "/repos/${org}/${repository}/releases"
             withEnv(["GH_RELEASES_API_URI=${ghReleasesApiUri}"]) {
               String release = ''
               if (isUnix()) {
-                release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'').trim()
+                release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\' || echo \'\'').trim()
               } else {
-                release = powershell(returnStdout: true, script: 'gh api $env:GH_RELEASES_API_URI | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'').trim()
+                release = powershell(returnStdout: true, script: 'gh api $env:GH_RELEASES_API_URI | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\' || echo \'\'').trim()
               }
-              withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${release}"]) {
-                if (isUnix()) {
-                  sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
-                } else {
-                  powershell 'gh api -X PATCH -F draft=false -F name="$env:TAG_NAME" -F tag_name="$env:TAG_NAME" "$env:GH_NEXT_RELEASE_URI"'
-                }
-              } // withEnv
+              if (release) {
+                withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${release}"]) {
+                  if (isUnix()) {
+                    sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
+                  } else {
+                    powershell 'gh api -X PATCH -F draft=false -F name="$env:TAG_NAME" -F tag_name="$env:TAG_NAME" "$env:GH_NEXT_RELEASE_URI"'
+                  }
+                } // withEnv
+              } else {
+                echo "No draft release found for ${org}/${repository}"
+              } // if
             } // withEnv
           } // withCredentials
         } // stage
