@@ -240,7 +240,7 @@ def call(String imageName, Map userConfig=[:]) {
               if (isUnix()) {
                 releaseId = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\' || echo 0').trim()
               } else {
-                releaseId = powershell(returnStdout: true, script: 'gh api $env:GH_RELEASES_API_URI | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\' || echo 0').trim()
+                releaseId = pwsh(returnStdout: true, script: 'gh api $env:GH_RELEASES_API_URI | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\' || echo 0').trim()
               }
               if (releaseId > 0) {
                 withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${releaseId}"]) {
