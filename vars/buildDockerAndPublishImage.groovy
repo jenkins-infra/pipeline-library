@@ -6,7 +6,6 @@ import java.text.DateFormat
 def call(String imageName, Map userConfig=[:]) {
   def defaultConfig = [
     agentLabels: 'docker || linux-amd64-docker', // String expression for the labels the agent must match
-    builderImage: 'jenkinsciinfra/builder:2.0.2', // Version managed by updatecli
     automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
     includeImageNameInTag: false, // Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
     dockerfile: 'Dockerfile', // Obvious default
