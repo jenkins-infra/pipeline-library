@@ -119,7 +119,7 @@ If your push has been aborted, you can manually fix the reported errors, or use 
 
 Notes:
 - this hook is totally optional.
-- this hook works for Linux and MacOS, you'll need to adapt it for Windows.
+- this hook works for Linux and macOS, you'll need to adapt it for Windows.
 - if you don't mind spending several seconds on every commit, you can put this as a `pre-commit` hook.
 - you can make this script automatically fix the errors by changing `:check` by `:apply` in the hook.
 
