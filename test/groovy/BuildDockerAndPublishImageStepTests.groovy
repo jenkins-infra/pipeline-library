@@ -35,7 +35,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   @Rule
   public ExpectedException thrown = ExpectedException.none()
 
-  String shellMock(String command) {
+  String shellMock(String command, Boolean failing = false) {
     switch (command) {
       case {command.contains('git tag --list')}:
         return defaultGitTag
@@ -51,6 +51,10 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
         break
       case {command.contains('gh api ${GH_RELEASES_API_URI}')}:
       case {command.contains('gh api $env:GH_RELEASES_API_URI')}:
+        if (failing) {
+          // No draft release found
+          return ''
+        }
         return defaultReleaseId
         break
       default:
@@ -155,7 +159,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     return assertMethodCallContainsPattern('stage','GitHub Release') \
       && assertMethodCallContainsPattern('withCredentials', 'GITHUB_TOKEN') \
       && assertMethodCallContainsPattern('withCredentials', 'GITHUB_USERNAME') \
-      && (assertMethodCallContainsPattern('sh', 'gh api ${GH_RELEASES_API_URI}') || assertMethodCallContainsPattern('powershell', 'gh api $env:GH_RELEASES_API_URI'))
+      && (assertMethodCallContainsPattern('sh', 'gh api -X PATCH') || assertMethodCallContainsPattern('powershell', 'gh api -X PATCH'))
   }
 
   @Test
@@ -349,6 +353,39 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMakeDeploy("${fullTestImageName}:${defaultGitTag}"))
     // And the release is created (tag triggering the build)
     assertTrue(assertReleaseCreated())
+    // But no tag  pushed
+    assertFalse(assertTagPushed(defaultGitTag))
+    // And all mocked/stubbed methods have to be called
+    verifyMocks()
+  }
+
+  @Test
+  void itBuildsAndDeploysButNoReleaseWhenTriggeredByTagAndSemVerEnabledButNoReleaseDrafter() throws Exception {
+    helper.registerAllowedMethod('sh', [Map.class], { m ->
+      return shellMock(m.script, true)
+    })
+    helper.registerAllowedMethod('powershell', [Map.class], { m ->
+      return shellMock(m.script, true)
+    })
+
+    def script = loadScript(scriptName)
+    mockTag()
+    withMocks{
+      script.call(testImageName, [
+        automaticSemanticVersioning: true,
+        gitCredentials: 'git-itbuildsanddeploysandreleaseswhentriggeredbytagandsemverenabled',
+      ])
+    }
+    printCallStack()
+    // Then we expect a successful build
+    assertJobStatusSuccess()
+    // With the common workflow run as expected
+    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
+    // And the deploy step called for latest
+    assertTrue(assertMakeDeploy("${fullTestImageName}:${defaultGitTag}"))
+    // And the release is created (tag triggering the build)
+    assertFalse(assertReleaseCreated())
     // But no tag  pushed
     assertFalse(assertTagPushed(defaultGitTag))
     // And all mocked/stubbed methods have to be called
