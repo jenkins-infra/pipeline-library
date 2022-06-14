@@ -226,7 +226,7 @@ def call(String imageName, Map userConfig=[:]) {
           withCredentials([
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
           ]) {
-            int releaseId = 0
+            String release = ''
             if (isUnix()) {
               final String releaseScript = '''
                 originUrlWithGit="$(git remote get-url origin)"
@@ -238,12 +238,10 @@ def call(String imageName, Map userConfig=[:]) {
                 if [[ ${releaseId} -gt 0 ]]
                 then
                   gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${releasesUrl}/${releaseId}" > /dev/null
-                  echo ${releaseId}
-                else
-                  echo 0
                 fi
+                echo ${releaseId}
               '''
-              releaseId = sh(script: releaseScript, returnStdout: true)
+              release = sh(script: releaseScript, returnStdout: true)
             } else {
               final String releaseScript = '''
                 $originUrl = (git remote get-url origin) -replace '\\.git', ''
@@ -251,20 +249,19 @@ def call(String imageName, Map userConfig=[:]) {
                 $repository = $originUrl.split('/')[4]
                 $releasesUrl = "/repos/$org/$repository/releases"
                 $releaseId = (gh api $releasesUrl | jq -e -r '[ .[] | select(.draft == true and .name == \"next\").id] | max | select(. != null)')
+                $output = ''
                 if ($releaseId -gt 0)
                 {
-                  Invoke-Expression -Command "gh api -X PATCH -F draft=false -F name=$env:TAG_NAME -F tag_name=$env:TAG_NAME $releasesUrl/$releaseId"
-                  Write-Output $releaseId
-                } else {
-                  Write-Output 0
+                  Invoke-Expression -Command "gh api -X PATCH -F draft=false -F name=$env:TAG_NAME -F tag_name=$env:TAG_NAME $releasesUrl/$releaseId" > $null
+                  $output = $releaseId
                 }
+                Write-Output $output
               '''
-              releaseId = powershell(script: releaseScript, returnStdout: true)
+              release = powershell(script: releaseScript, returnStdout: true)
             }
-            echo "releaseId: ${releaseId}"
-            if (releaseId == 0) {
-              echo "No 'next' release draft found."
-            }
+            if (release == '') {
+              echo "No next release draft found."
+            } // if
           } // withCredentials
         } // stage
       } // if
