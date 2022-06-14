@@ -151,7 +151,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     return assertMethodCallContainsPattern('stage','GitHub Release') \
       && assertMethodCallContainsPattern('withCredentials', 'GITHUB_TOKEN') \
       && assertMethodCallContainsPattern('withCredentials', 'GITHUB_USERNAME') \
-      && (assertMethodCallContainsPattern('echo', 'No next release draft found.') == false)
+      && !assertMethodCallContainsPattern('echo', 'No next release draft found.')
   }
 
   @Test
