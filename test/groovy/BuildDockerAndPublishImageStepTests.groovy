@@ -23,7 +23,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   static final String defaultGitTagIncludingImageName = '1.0.0-bitcoinminerimage'
   static final String defaultNextVersionCommand = 'jx-release-version'
   static final String defaultOrigin = 'https://github.com/org/repository.git'
-  static final Integer defaultReleaseId = 12345
+  static final String defaultReleaseId = '12345'
 
   def infraConfigMock
   def dateMock
@@ -35,27 +35,19 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   @Rule
   public ExpectedException thrown = ExpectedException.none()
 
-  String shellMock(String command, Boolean failing = false) {
+  String shellMock(String command, Boolean noReleaseDraft = false) {
     switch (command) {
       case {command.contains('git tag --list')}:
         return defaultGitTag
         break
-      case 'git remote get-url origin':
-        return defaultOrigin
+      case {command.contains('gh api -X PATCH')}:
+        return (noReleaseDraft ? '' : defaultReleaseId)
         break
       case {command.contains(defaultNextVersionCommand + ' -debug --previous-version')}:
         return defaultGitTagIncludingImageName
         break
       case defaultNextVersionCommand:
         return defaultGitTag
-        break
-      case {command.contains('gh api ${GH_RELEASES_API_URI}')}:
-      case {command.contains('gh api $env:GH_RELEASES_API_URI')}:
-        if (failing) {
-          // No draft release found
-          return ''
-        }
-        return defaultReleaseId
         break
       default:
         return command
@@ -159,7 +151,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     return assertMethodCallContainsPattern('stage','GitHub Release') \
       && assertMethodCallContainsPattern('withCredentials', 'GITHUB_TOKEN') \
       && assertMethodCallContainsPattern('withCredentials', 'GITHUB_USERNAME') \
-      && (assertMethodCallContainsPattern('sh', 'gh api -X PATCH') || assertMethodCallContainsPattern('powershell', 'gh api -X PATCH'))
+      && !assertMethodCallContainsPattern('echo', 'No next release draft found.')
   }
 
   @Test
@@ -353,7 +345,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMakeDeploy("${fullTestImageName}:${defaultGitTag}"))
     // And the release is created (tag triggering the build)
     assertTrue(assertReleaseCreated())
-    // But no tag  pushed
+    // But no tag pushed
     assertFalse(assertTagPushed(defaultGitTag))
     // And all mocked/stubbed methods have to be called
     verifyMocks()
@@ -384,9 +376,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And the deploy step called for latest
     assertTrue(assertMakeDeploy("${fullTestImageName}:${defaultGitTag}"))
-    // And the release is created (tag triggering the build)
+    // And the release is not created as no next release draft exists
     assertFalse(assertReleaseCreated())
-    // But no tag  pushed
+    // But no tag pushed
     assertFalse(assertTagPushed(defaultGitTag))
     // And all mocked/stubbed methods have to be called
     verifyMocks()
