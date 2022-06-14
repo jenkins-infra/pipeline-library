@@ -226,22 +226,26 @@ def call(String imageName, Map userConfig=[:]) {
           withCredentials([
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
           ]) {
+            int releaseId = 0
             if (isUnix()) {
-              sh '''
+              final String releaseScript = '''
                 originUrlWithGit="$(git remote get-url origin)"
                 originUrl=${originUrlWithGit%.git}
                 org=$(echo ${originUrl} | cut -d'/' -f4)
                 repository=$(echo ${originUrl} | cut -d'/' -f5)
                 releasesUrl="/repos/${org}/${repository}/releases"
                 releaseId=$(gh api ${releasesUrl} | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')
-                if [[ $releaseId -gt 0 ]]
+                if [[ ${releaseId} -gt 0 ]]
                 then
-                  echo ${releaseId} > "tag-${TAG_NAME}.txt"
-                  gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${releasesUrl}/${releaseId}"
+                  gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${releasesUrl}/${releaseId}" > /dev/null
+                  echo ${releaseId}
+                else
+                  echo 0
                 fi
               '''
+              releaseId = sh(script: releaseScript, returnStdout: true)
             } else {
-              powershell '''
+              final String releaseScript = '''
                 $originUrl = (git remote get-url origin) -replace '\\.git', ''
                 $org = $originUrl.split('/')[3]
                 $repository = $originUrl.split('/')[4]
@@ -249,14 +253,16 @@ def call(String imageName, Map userConfig=[:]) {
                 $releaseId = (gh api $releasesUrl | jq -e -r '[ .[] | select(.draft == true and .name == \"next\").id] | max | select(. != null)')
                 if ($releaseId -gt 0)
                 {
-                  Write-Host "Found the 'next' release draft, publishing it"
-                  $flagFilename = "tag-${TAG_NAME}.txt"
-                  New-Item -Path $flagFilename -ItemType File -Value $releaseId
                   Invoke-Expression -Command "gh api -X PATCH -F draft=false -F name=$env:TAG_NAME -F tag_name=$env:TAG_NAME $releasesUrl/$releaseId"
+                  Write-Output $releaseId
+                } else {
+                  Write-Output 0
                 }
               '''
+              releaseId = powershell(script: releaseScript, returnStdout: true)
             }
-            if (!fileExists("tag-${env.TAG_NAME}.txt")) {
+            echo "releaseId: ${releaseId}"
+            if (releaseId == 0) {
               echo "No 'next' release draft found."
             }
           } // withCredentials
