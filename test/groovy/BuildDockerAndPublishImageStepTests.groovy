@@ -40,7 +40,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       case {command.contains('git tag --list')}:
         return defaultGitTag
         break
-      case 'gh api -X PATCH':
+      case {command.contains('gh api -X PATCH')}:
         return (noReleaseDraft ? '' : defaultReleaseId)
         break
       case {command.contains(defaultNextVersionCommand + ' -debug --previous-version')}:
