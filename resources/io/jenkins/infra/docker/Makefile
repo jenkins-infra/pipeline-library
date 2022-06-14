@@ -62,11 +62,32 @@ test: ## Execute the test harness on the Docker Image
 	container-structure-test test --driver=docker --image="$(IMAGE_NAME)" --config="$(call FixPath,$(TEST_HARNESS))"
 	@echo "== Test succeeded"
 
-## This steps expects that you are logged to the Docker registry to push image into
+## This step expects that you are logged to the Docker registry to push image into
 deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 	@echo "== Deploying $(IMAGE_NAME) to $(IMAGE_DEPLOY_NAME) with docker:"
 	docker tag $(IMAGE_NAME) $(IMAGE_DEPLOY_NAME)
 	docker push $(IMAGE_DEPLOY_NAME)
 	@echo "== Deploy succeeded"
 
+## This step isn't expected to be run locally
+release: ## Publish the GitHub release if there is a 'next' draft one
+
 .PHONY: all clean lint build test deploy
+	@echo "== Publish the GitHub release:"
+
+originUrlWithGit="$(git remote get-url origin)"
+echo "originUrlWithGit: $originUrlWithGit"
+originUrl=${originUrlWithGit%.git}
+echo ${originUrl}
+org=$(echo ${originUrl} | cut -d'/' -f4)
+repository=$(echo ${originUrl} | cut -d'/' -f5)
+GH_RELEASES_API_URI="/repos/${org}/${repository}/releases"
+echo $GH_RELEASES_API_URI
+GH_NEXT_RELEASE_ID=$(gh api ${GH_RELEASES_API_URI} | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')
+if [[ $GH_NEXT_RELEASE_ID -gt 0 ]]
+then
+  echo "OK: ${GH_NEXT_RELEASE_ID} is the next release"
+  # gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_RELEASES_API_URI}/${GH_NEXT_RELEASE_ID}"
+else
+  echo "No draft release found for ${org}/${repository}"
+fi

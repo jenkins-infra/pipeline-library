@@ -226,43 +226,39 @@ def call(String imageName, Map userConfig=[:]) {
           withCredentials([
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
           ]) {
-            String origin = ''
             if (isUnix()) {
-              origin = sh(returnStdout: true, script: 'git remote get-url origin').trim() - '.git'
+              sh '''
+                originUrlWithGit="$(git remote get-url origin)"
+                originUrl=${originUrlWithGit%.git}
+                org=$(echo ${originUrl} | cut -d'/' -f4)
+                repository=$(echo ${originUrl} | cut -d'/' -f5)
+                releasesUrl="/repos/${org}/${repository}/releases"
+                releaseId=$(gh api ${releasesUrl} | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')
+                if [[ $releaseId -gt 0 ]]
+                then
+                  echo ${releaseId} > "tag-${TAG_NAME}.txt"
+                  gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${releasesUrl}/${releaseId}"
+                fi
+              '''
             } else {
-              origin = powershell(returnStdout: true, script: 'git remote get-url origin').trim() - '.git'
+              powershell '''
+                $originUrl = (git remote get-url origin) -replace '\\.git', ''
+                $org = $originUrl.split('/')[3]
+                $repository = $originUrl.split('/')[4]
+                $releasesUrl = "/repos/$org/$repository/releases"
+                $releaseId = (gh api $releasesUrl | jq -e -r '[ .[] | select(.draft == true and .name == \"next\").id] | max | select(. != null)')
+                if ($releaseId -gt 0)
+                {
+                  Write-Host "Found the 'next' release draft, publishing it"
+                  $flagFilename = "tag-${TAG_NAME}.txt"
+                  New-Item -Path $flagFilename -ItemType File -Value $releaseId
+                  Invoke-Expression -Command "gh api -X PATCH -F draft=false -F name=$env:TAG_NAME -F tag_name=$env:TAG_NAME $releasesUrl/$releaseId"
+                }
+              '''
             }
-            final String org = origin.split('/')[3]
-            final String repository = origin.split('/')[4]
-            final String ghReleasesApiUri = "/repos/${org}/${repository}/releases"
-            withEnv(["GH_RELEASES_API_URI=${ghReleasesApiUri}"]) {
-              if (isUnix()) {
-                sh '''
-                  GH_NEXT_RELEASE_ID=gh api ${GH_RELEASES_API_URI} | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)'
-                  if [[ $GH_NEXT_RELEASE_ID && $GH_NEXT_RELEASE_ID -gt 0 ]]; then
-                  then
-                    gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_RELEASES_API_URI}/${GH_NEXT_RELEASE_ID}"
-                  else
-                    echo "No draft release found"
-                  fi
-                '''
-              } else {
-                powershell '''
-                  # TODO
-                '''
-              }
-              if (releaseId > 0) {
-                withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${releaseId}"]) {
-                  if (isUnix()) {
-                    sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
-                  } else {
-                    powershell 'gh api -X PATCH -F draft=false -F name="$env:TAG_NAME" -F tag_name="$env:TAG_NAME" "$env:GH_NEXT_RELEASE_URI"'
-                  }
-                } // withEnv
-              } else {
-                echo "No draft release found for ${org}/${repository}"
-              } // if
-            } // withEnv
+            if (!fileExists("tag-${env.TAG_NAME}.txt")) {
+              echo "No 'next' release draft found."
+            }
           } // withCredentials
         } // stage
       } // if

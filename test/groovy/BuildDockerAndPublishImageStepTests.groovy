@@ -23,7 +23,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   static final String defaultGitTagIncludingImageName = '1.0.0-bitcoinminerimage'
   static final String defaultNextVersionCommand = 'jx-release-version'
   static final String defaultOrigin = 'https://github.com/org/repository.git'
-  static final Integer defaultReleaseId = 12345
 
   def infraConfigMock
   def dateMock
@@ -48,14 +47,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
         break
       case defaultNextVersionCommand:
         return defaultGitTag
-        break
-      case {command.contains('gh api ${GH_RELEASES_API_URI}')}:
-      case {command.contains('gh api $env:GH_RELEASES_API_URI')}:
-        if (failing) {
-          // No draft release found
-          return 0
-        }
-        return defaultReleaseId
         break
       default:
         return command
