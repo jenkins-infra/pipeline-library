@@ -248,7 +248,7 @@ def call(String imageName, Map userConfig=[:]) {
                 $org = $originUrl.split('/')[3]
                 $repository = $originUrl.split('/')[4]
                 $releasesUrl = "/repos/$org/$repository/releases"
-                $releaseId = (gh api $releasesUrl | jq -e -r '[ .[] | select(.draft == true and .name == \"next\").id] | max | select(. != null)')
+                $releaseId = (gh api $releasesUrl | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')
                 $output = ''
                 if ($releaseId -gt 0)
                 {
