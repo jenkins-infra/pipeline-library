@@ -230,16 +230,16 @@ def call(String imageName, Map userConfig=[:]) {
             if (isUnix()) {
               final String releaseScript = '''
                 originUrlWithGit="$(git remote get-url origin)"
-                originUrl=${originUrlWithGit%.git}
-                org=$(echo ${originUrl} | cut -d'/' -f4)
-                repository=$(echo ${originUrl} | cut -d'/' -f5)
+                originUrl="${originUrlWithGit%.git}"
+                org="$(echo "${originUrl}" | cut -d'/' -f4)"
+                repository="$(echo "${originUrl}" | cut -d'/' -f5)"
                 releasesUrl="/repos/${org}/${repository}/releases"
-                releaseId=$(gh api ${releasesUrl} | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')
-                if [[ ${releaseId} -gt 0 ]]
+                releaseId="$(gh api "${releasesUrl}" | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')"
+                if test "${releaseId}" -gt 0
                 then
                   gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${releasesUrl}/${releaseId}" > /dev/null
                 fi
-                echo ${releaseId}
+                echo "${releaseId}"
               '''
               release = sh(script: releaseScript, returnStdout: true)
             } else {
