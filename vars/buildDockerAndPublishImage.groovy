@@ -5,16 +5,14 @@ import java.text.DateFormat
 
 def call(String imageName, Map userConfig=[:]) {
   def defaultConfig = [
-    useContainer: false, // Wether to use a container (with a container-less and root-less tool) or a VM (with a full-fledged Docker Engine) for executing the steps
     agentLabels: 'docker || linux-amd64-docker', // String expression for the labels the agent must match
-    builderImage: 'jenkinsciinfra/builder:2.0.2', // Version managed by updatecli
     automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
+    includeImageNameInTag: false, // Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
     dockerfile: 'Dockerfile', // Obvious default
     platform: 'linux/amd64', // Intel/AMD 64 Bits, following Docker platform identifiers
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
-    multipleSemverImagesBuild: false, // Set to true for multiple semversioned images build, will include image name in tag to avoid conflict
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -42,14 +40,11 @@ def call(String imageName, Map userConfig=[:]) {
     if (!finalConfig.agentLabels.contains('windows') && finalConfig.platform.contains('windows')) {
       echo "WARNING: The 'platform' is set to '${finalConfig.platform}', but there isn't any 'windows' agent requested."
     }
-    if (finalConfig.useContainer) {
-      echo "WARNING: You're building a Windows image in a container, you should set 'useContainer' to 'false'."
-    }
     cstConfigSuffix = '-windows'
   }
   String operatingSystem = finalConfig.platform.split('/')[0]
 
-  withContainerEngineAgent(finalConfig, {
+  node(finalConfig.agentLabels) {
     withEnv([
       "BUILD_DATE=${buildDate}",
       "IMAGE_NAME=${imageName}",
@@ -58,6 +53,7 @@ def call(String imageName, Map userConfig=[:]) {
       "IMAGE_PLATFORM=${finalConfig.platform}",
     ]) {
       infra.withDockerPullCredentials{
+        String nextVersion = ''
         stage("Prepare ${imageName}") {
           checkout scm
 
@@ -69,23 +65,57 @@ def call(String imageName, Map userConfig=[:]) {
         // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
         if (finalConfig.automaticSemanticVersioning) {
           stage("Get Next Version of ${imageName}") {
-            sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
-            nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
-            if (finalConfig.multipleSemverImagesBuild) {
-              echo 'Multiple semversioned images build, including the image name in the next version'
-              nextVersion = imageName.replace('-','') + '-' + nextVersion
+            String imageInTag = '-' + imageName.replace('-','').replace(':','').toLowerCase()
+            if (isUnix()) {
+              sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
+              if (!finalConfig.includeImageNameInTag) {
+                nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+              } else {
+                echo "Including the image name '${imageName}' in the next version"
+                // Retrieving the semver part from the last tag including the image name
+                String currentTagScript = 'git tag --list \"*' + imageInTag + '\" --sort=-v:refname | head -1'
+                String currentSemVerVersion = sh(script: currentTagScript, returnStdout: true).trim()
+                echo "Current semver version is '${currentSemVerVersion}'"
+                // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
+                currentSemVerVersion = currentSemVerVersion ?: '0.0.0-' + imageInTag
+                String nextVersionScript = finalConfig.nextVersionCommand + ' -debug --previous-version=' + currentSemVerVersion
+                String nextVersionSemVerPart = sh(script: nextVersionScript, returnStdout: true).trim()
+                echo "Next semver version part is '${nextVersionSemVerPart}'"
+                nextVersion =  nextVersionSemVerPart + imageInTag
+              }
+            } else {
+              powershell 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
+              if (!finalConfig.includeImageNameInTag) {
+                nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+              } else {
+                echo "Including the image name '${imageName}' in the next version"
+                // Retrieving the semver part from the last tag including the image name
+                String currentTagScript = 'git tag --list \"*' + imageInTag + '\" --sort=-v:refname | head -1'
+                String currentSemVerVersion = powershell(script: currentTagScript, returnStdout: true).trim()
+                echo "Current semver version is '${currentSemVerVersion}'"
+                // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
+                currentSemVerVersion = currentSemVerVersion ?: '0.0.0-' + imageInTag
+                String nextVersionScript = finalConfig.nextVersionCommand + ' -debug --previous-version=' + currentSemVerVersion
+                String nextVersionSemVerPart = powershell(script: nextVersionScript, returnStdout: true).trim()
+                echo "Next semver version part is '${nextVersionSemVerPart}'"
+                nextVersion =  nextVersionSemVerPart + imageInTag
+              }
             }
-            echo "Next Release Version = $nextVersion"
+            echo "Next Release Version = ${nextVersion}"
           } // stage
         } // if
 
         stage("Lint ${imageName}") {
           // Define the image name as prefix to support multi images per pipeline
-          def hadolintReportId = "${imageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
-          def hadoLintReportFile = "${hadolintReportId}.json"
+          String hadolintReportId = "${imageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
+          String hadoLintReportFile = "${hadolintReportId}.json"
           withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
             try {
-              sh 'make lint'
+              if (isUnix()) {
+                sh 'make lint'
+              } else {
+                powershell 'make lint'
+              }
             } finally {
               recordIssues(
                   enabledForFailure: true,
@@ -97,7 +127,11 @@ def call(String imageName, Map userConfig=[:]) {
         } // stage
 
         stage("Build ${imageName}") {
-          sh 'make build'
+          if (isUnix()) {
+            sh 'make build'
+          } else {
+            powershell 'make build'
+          }
         } //stage
 
         // There can be 2 kind of tests: per image and per repository
@@ -109,7 +143,11 @@ def call(String imageName, Map userConfig=[:]) {
           if (fileExists(testHarness)) {
             stage("Test ${testName} for ${imageName}") {
               withEnv(["TEST_HARNESS=${testHarness}"]) {
-                sh 'make test'
+                if (isUnix()) {
+                  sh 'make test'
+                } else {
+                  powershell 'make test'
+                }
               } // withEnv
             } //stage
           } else {
@@ -121,26 +159,36 @@ def call(String imageName, Map userConfig=[:]) {
         if (semVerEnabledOnPrimaryBranch) {
           stage("Semantic Release of ${imageName}") {
             echo "Configuring credential.helper"
-            sh 'git config --local credential.helper "!f() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; f"'
+            // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
+            if (isUnix()) {
+              sh 'git config --local credential.helper "!set -u; echo username=\\$GIT_USERNAME && echo password=\\$GIT_PASSWORD && echo"'
+            } else {
+              // Using 'bat' here instead of 'powershell' to avoid variable interpolation problem with $
+              bat 'git config --local credential.helper "!sh.exe -c \'set -u; echo username=$GIT_USERNAME && echo password=$GIT_PASSWORD && echo"\''
+            }
 
             withCredentials([
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
             ]) {
-              withEnv([
-                "NEXT_VERSION=${nextVersion}",
-                // use plaintext to avoid 'wincredman' git credential store error on Windows, with no interaction expected
-                // Ref: https://github.com/GitCredentialManager/git-credential-manager/blob/5277ecce4149678f483b31affcc86ab65d00425f/docs/environment.md
-                'GCM_CREDENTIAL_STORE=plaintext',
-                'GCM_INTERACTIVE=0',
-              ]) {
-                echo "Tagging and pushing the new version: $nextVersion"
-                sh '''
-                git config user.name "${GIT_USERNAME}"
-                git config user.email "jenkins-infra@googlegroups.com"
+              withEnv(["NEXT_VERSION=${nextVersion}"]) {
+                echo "Tagging and pushing the new version: ${nextVersion}"
+                if (isUnix()) {
+                  sh '''
+                  git config user.name "${GIT_USERNAME}"
+                  git config user.email "jenkins-infra@googlegroups.com"
 
-                git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
-                git push origin --tags
-                '''
+                  git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
+                  git push origin --tags
+                  '''
+                } else {
+                  powershell '''
+                  git config user.email "jenkins-infra@googlegroups.com"
+                  git config user.password $env:GIT_PASSWORD
+
+                  git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"
+                  git push origin --tags
+                  '''
+                }
               } // withEnv
             } // withCredentials
           } // stage
@@ -162,7 +210,11 @@ def call(String imageName, Map userConfig=[:]) {
             }
             withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
               // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
-              sh 'make deploy'
+              if (isUnix()) {
+                sh 'make deploy'
+              } else {
+                powershell 'make deploy'
+              }
             } // withEnv
           } //stage
         } // if
@@ -174,55 +226,45 @@ def call(String imageName, Map userConfig=[:]) {
           withCredentials([
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
           ]) {
-            final String origin = sh(returnStdout: true, script: 'git remote get-url origin').trim() - '.git'
-            final String org = origin.split('/')[3]
-            final String repository = origin.split('/')[4]
-            final String ghReleasesApiUri = "/repos/${org}/${repository}/releases"
-            withEnv(["GH_RELEASES_API_URI=${ghReleasesApiUri}"]) {
-              final String release = sh(returnStdout: true, script: 'gh api ${GH_RELEASES_API_URI} | jq -e -r \'[ .[] | select(.draft == true and .name == "next").id] | max\'').trim()
-              withEnv(["GH_NEXT_RELEASE_URI=${ghReleasesApiUri}/${release}"]) {
-                sh 'gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${GH_NEXT_RELEASE_URI}"'
-              } // withEnv
-            } // withEnv
+            String release = ''
+            if (isUnix()) {
+              final String releaseScript = '''
+                originUrlWithGit="$(git remote get-url origin)"
+                originUrl="${originUrlWithGit%.git}"
+                org="$(echo "${originUrl}" | cut -d'/' -f4)"
+                repository="$(echo "${originUrl}" | cut -d'/' -f5)"
+                releasesUrl="/repos/${org}/${repository}/releases"
+                releaseId="$(gh api "${releasesUrl}" | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')"
+                if test "${releaseId}" -gt 0
+                then
+                  gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${releasesUrl}/${releaseId}" > /dev/null
+                fi
+                echo "${releaseId}"
+              '''
+              release = sh(script: releaseScript, returnStdout: true)
+            } else {
+              final String releaseScript = '''
+                $originUrl = (git remote get-url origin) -replace '\\.git', ''
+                $org = $originUrl.split('/')[3]
+                $repository = $originUrl.split('/')[4]
+                $releasesUrl = "/repos/$org/$repository/releases"
+                $releaseId = (gh api $releasesUrl | jq -e -r '[ .[] | select(.draft == true and .name == \"next\").id] | max | select(. != null)')
+                $output = ''
+                if ($releaseId -gt 0)
+                {
+                  Invoke-Expression -Command "gh api -X PATCH -F draft=false -F name=$env:TAG_NAME -F tag_name=$env:TAG_NAME $releasesUrl/$releaseId" > $null
+                  $output = $releaseId
+                }
+                Write-Output $output
+              '''
+              release = powershell(script: releaseScript, returnStdout: true)
+            }
+            if (release == '') {
+              echo "No next release draft found."
+            } // if
           } // withCredentials
         } // stage
       } // if
     } // withEnv
-  }) // withContainerEngineAgent
+  } // node
 } // call
-
-def withContainerEngineAgent(finalConfig, body) {
-  if (finalConfig.useContainer) {
-    // The podTemplate must define only a single container, named `jnlp`
-    // Ref - https://support.cloudbees.com/hc/en-us/articles/360054642231-Considerations-for-Kubernetes-Clients-Connections-when-using-Kubernetes-Plugin
-    podTemplate(
-        annotations: [
-          podAnnotation(key: 'container.apparmor.security.beta.kubernetes.io/jnlp', value: 'unconfined'),
-          podAnnotation(key: 'container.seccomp.security.alpha.kubernetes.io/jnlp', value: 'unconfined'),
-        ],
-        containers: [
-          // This container must be named `jnlp` and should use the default entrypoint/cmd (command/args) inherited from inbound-agent parent image
-          containerTemplate(
-          name: 'jnlp',
-          image: finalConfig.builderImage,
-          resourceRequestCpu: '2',
-          resourceLimitCpu: '2',
-          resourceRequestMemory: '2Gi',
-          resourceLimitMemory: '2Gi',
-          ),
-        ]
-        ) {
-          node(POD_LABEL) {
-            withEnv(['CONTAINER_BIN=img', 'CST_DRIVER=tar']) {
-              body.call()
-            }
-          }
-        }
-  } else {
-    node(finalConfig.agentLabels) {
-      withEnv(['CONTAINER_BIN=docker', 'CST_DRIVER=docker',]) {
-        body.call()
-      }
-    }
-  }
-}
