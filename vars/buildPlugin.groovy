@@ -48,224 +48,227 @@ def call(Map params = [:]) {
     }
 
     tasks[stageIdentifier] = {
-      node(label) {
-        try {
-          timeout(timeoutValue) {
-            boolean isMaven
-            // Archive artifacts once with pom declared baseline
-            boolean doArchiveArtifacts = !jenkinsVersion && !archivedArtifacts
-            if (doArchiveArtifacts) {
-              archivedArtifacts = true
-            }
-            boolean incrementals // cf. JEP-305
-
-            stage("Checkout (${stageIdentifier})") {
-              infra.checkoutSCM(repo)
-              isMaven = fileExists('pom.xml')
-              incrementals = fileExists('.mvn/extensions.xml') &&
-                  readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')
-              final String gitUnavailableMessage = '[buildPlugin] Git CLI may not be available'
-              withEnv(["GITUNAVAILABLEMESSAGE=${gitUnavailableMessage}"]) {
-                if (incrementals) { // Incrementals needs 'git status -s' to be empty at start of job
-                  if (isUnix()) {
-                    sh 'git clean -xffd || echo "$GITUNAVAILABLEMESSAGE"'
-                  } else {
-                    bat 'git clean -xffd || echo %GITUNAVAILABLEMESSAGE%'
-                  }
-                }
-
-                if (gitDefaultBranch) {
-                  withEnv(["GITDEFAULTBRANCH=${gitDefaultBranch}"]) {
-                    if (isUnix()) {
-                      sh 'git config --global init.defaultBranch "$GITDEFAULTBRANCH" || echo "$GITUNAVAILABLEMESSAGE"'
-                    } else {
-                      bat 'git config --global init.defaultBranch %GITDEFAULTBRANCH% || echo %GITUNAVAILABLEMESSAGE%'
-                    }
-                  }
-                }
-              }
-            }
-
-            String changelistF
-            String m2repo
-
-            stage("Build (${stageIdentifier})") {
-              String command
-              if (isMaven) {
-                m2repo = "${pwd tmp: true}/m2repo"
-                List<String> mavenOptions = [
-                  '--update-snapshots',
-                  "-Dmaven.repo.local=$m2repo",
-                  '-Dmaven.test.failure.ignore',
-                  '-Dspotbugs.failOnError=false',
-                  '-Dcheckstyle.failOnViolation=false',
-                  '-Dcheckstyle.failsOnError=false',
-                ]
-                // jacoco had file locking issues on Windows, so only running on linux
-                if (isUnix()) {
-                  mavenOptions += '-Penable-jacoco'
-                }
-                if (incrementals) { // set changelist and activate produce-incrementals profile
-                  mavenOptions += '-Dset.changelist'
-                  if (doArchiveArtifacts) { // ask Maven for the value of -rc999.abc123def456
-                    changelistF = "${pwd tmp: true}/changelist"
-                    mavenOptions += "help:evaluate -Dexpression=changelist -Doutput=$changelistF"
-                  }
-                }
-                if (jenkinsVersion) {
-                  mavenOptions += "-Djenkins.version=${jenkinsVersion} -Daccess-modifier-checker.failOnError=false"
-                }
-                if (skipTests) {
-                  mavenOptions += '-DskipTests'
-                }
-                mavenOptions += 'clean install'
-                try {
-                  infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
-                } finally {
-                  if (!skipTests) {
-                    junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
-                    if (first) {
-                      publishCoverage calculateDiffForChangeRequests: true, adapters: [jacocoAdapter('**/target/site/jacoco/jacoco.xml')]
-                    }
-                  }
-                }
-              } else {
-                infra.publishDeprecationCheck('Replace buildPlugin with buildPluginWithGradle', 'Gradle mode for buildPlugin() is deprecated, please use buildPluginWithGradle()')
-                List<String> gradleOptions = [
-                  '--no-daemon',
-                  'cleanTest',
-                  'build',
-                ]
-                if (skipTests) {
-                  gradleOptions += '--exclude-task test'
-                }
-                command = "gradlew ${gradleOptions.join(' ')}"
-                if (isUnix()) {
-                  command = './' + command
-                }
-
-                try {
-                  infra.runWithJava(command, jdk, null, addToolEnv)
-                } finally {
-                  if (!skipTests) {
-                    junit('**/build/test-results/**/*.xml')
-                  }
-                }
-              }
-            }
-
-            stage("Archive (${stageIdentifier})") {
-              if (failFast && currentBuild.result == 'UNSTABLE') {
-                error 'There were test failures; halting early'
-              }
-
-              if (first) {
-                folders = env.JOB_NAME.split('/')
-                if (folders.length > 1) {
-                  discoverGitReferenceBuild(scm: folders[1])
-                }
-
-                echo "Recording static analysis results on '${stageIdentifier}'"
-
-                recordIssues(
-                    enabledForFailure: true,
-                    tool: mavenConsole(),
-                    skipBlames: true,
-                    trendChartType: 'TOOLS_ONLY'
-                    )
-                recordIssues(
-                    enabledForFailure: true,
-                    tools: [java(), javaDoc()],
-                    filters: [excludeFile('.*Assert.java')],
-                    sourceCodeEncoding: 'UTF-8',
-                    skipBlames: true,
-                    trendChartType: 'TOOLS_ONLY'
-                    )
-
-                // Default configuration for SpotBugs can be overwritten using a `spotbugs`, `checkstyle', etc. parameter (map).
-                // Configuration see: https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration
-                Map spotbugsArguments = [tool: spotBugs(pattern: '**/target/spotbugsXml.xml,**/target/findbugsXml.xml'),
-                  sourceCodeEncoding: 'UTF-8',
-                  skipBlames: true,
-                  trendChartType: 'TOOLS_ONLY',
-                  qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]]
-                if (params?.spotbugs) {
-                  spotbugsArguments.putAll(params.spotbugs as Map)
-                }
-                recordIssues spotbugsArguments
-
-                Map checkstyleArguments = [tool: checkStyle(pattern: '**/target/checkstyle-result.xml'),
-                  sourceCodeEncoding: 'UTF-8',
-                  skipBlames: true,
-                  trendChartType: 'TOOLS_ONLY',
-                  qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]]]
-                if (params?.checkstyle) {
-                  checkstyleArguments.putAll(params.checkstyle as Map)
-                }
-                recordIssues checkstyleArguments
-
-                Map pmdArguments = [tool: pmdParser(pattern: '**/target/pmd.xml'),
-                  sourceCodeEncoding: 'UTF-8',
-                  skipBlames: true,
-                  trendChartType: 'NONE']
-                if (params?.pmd) {
-                  pmdArguments.putAll(params.pmd as Map)
-                }
-                recordIssues pmdArguments
-
-                Map cpdArguments = [tool: cpd(pattern: '**/target/cpd.xml'),
-                  sourceCodeEncoding: 'UTF-8',
-                  skipBlames: true,
-                  trendChartType: 'NONE']
-                if (params?.cpd) {
-                  cpdArguments.putAll(params.cpd as Map)
-                }
-                recordIssues cpdArguments
-
-                recordIssues(
-                    enabledForFailure: true, tool: taskScanner(
-                    includePattern:'**/*.java',
-                    excludePattern:'**/target/**',
-                    highTags:'FIXME',
-                    normalTags:'TODO'),
-                    sourceCodeEncoding: 'UTF-8',
-                    skipBlames: true,
-                    trendChartType: 'NONE'
-                    )
-                if (failFast && currentBuild.result == 'UNSTABLE') {
-                  error 'Static analysis quality gates not passed; halting early'
-                }
-              } else {
-                echo "Skipping static analysis results for ${stageIdentifier}"
-              }
+      // TODO use kubernetesAgent() if we know we are using a pod
+      retry(count: 3, conditions: [agent(), nonresumable()]) {
+        node(label) {
+          try {
+            timeout(timeoutValue) {
+              boolean isMaven
+              // Archive artifacts once with pom declared baseline
+              boolean doArchiveArtifacts = !jenkinsVersion && !archivedArtifacts
               if (doArchiveArtifacts) {
-                if (incrementals) {
-                  String changelist = readFile(changelistF)
-                  dir(m2repo) {
-                    fingerprint '**/*-rc*.*/*-rc*.*' // includes any incrementals consumed
-                    archiveArtifacts artifacts: "**/*$changelist/*$changelist*",
-                    excludes: '**/*.lastUpdated',
-                    allowEmptyArchive: true // in case we forgot to reincrementalify
+                archivedArtifacts = true
+              }
+              boolean incrementals // cf. JEP-305
+
+              stage("Checkout (${stageIdentifier})") {
+                infra.checkoutSCM(repo)
+                isMaven = fileExists('pom.xml')
+                incrementals = fileExists('.mvn/extensions.xml') &&
+                    readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')
+                final String gitUnavailableMessage = '[buildPlugin] Git CLI may not be available'
+                withEnv(["GITUNAVAILABLEMESSAGE=${gitUnavailableMessage}"]) {
+                  if (incrementals) { // Incrementals needs 'git status -s' to be empty at start of job
+                    if (isUnix()) {
+                      sh 'git clean -xffd || echo "$GITUNAVAILABLEMESSAGE"'
+                    } else {
+                      bat 'git clean -xffd || echo %GITUNAVAILABLEMESSAGE%'
+                    }
                   }
-                  publishingIncrementals = true
+
+                  if (gitDefaultBranch) {
+                    withEnv(["GITDEFAULTBRANCH=${gitDefaultBranch}"]) {
+                      if (isUnix()) {
+                        sh 'git config --global init.defaultBranch "$GITDEFAULTBRANCH" || echo "$GITUNAVAILABLEMESSAGE"'
+                      } else {
+                        bat 'git config --global init.defaultBranch %GITDEFAULTBRANCH% || echo %GITUNAVAILABLEMESSAGE%'
+                      }
+                    }
+                  }
+                }
+              }
+
+              String changelistF
+              String m2repo
+
+              stage("Build (${stageIdentifier})") {
+                String command
+                if (isMaven) {
+                  m2repo = "${pwd tmp: true}/m2repo"
+                  List<String> mavenOptions = [
+                    '--update-snapshots',
+                    "-Dmaven.repo.local=$m2repo",
+                    '-Dmaven.test.failure.ignore',
+                    '-Dspotbugs.failOnError=false',
+                    '-Dcheckstyle.failOnViolation=false',
+                    '-Dcheckstyle.failsOnError=false',
+                  ]
+                  // jacoco had file locking issues on Windows, so only running on linux
+                  if (isUnix()) {
+                    mavenOptions += '-Penable-jacoco'
+                  }
+                  if (incrementals) { // set changelist and activate produce-incrementals profile
+                    mavenOptions += '-Dset.changelist'
+                    if (doArchiveArtifacts) { // ask Maven for the value of -rc999.abc123def456
+                      changelistF = "${pwd tmp: true}/changelist"
+                      mavenOptions += "help:evaluate -Dexpression=changelist -Doutput=$changelistF"
+                    }
+                  }
+                  if (jenkinsVersion) {
+                    mavenOptions += "-Djenkins.version=${jenkinsVersion} -Daccess-modifier-checker.failOnError=false"
+                  }
+                  if (skipTests) {
+                    mavenOptions += '-DskipTests'
+                  }
+                  mavenOptions += 'clean install'
+                  try {
+                    infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
+                  } finally {
+                    if (!skipTests) {
+                      junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
+                      if (first) {
+                        publishCoverage calculateDiffForChangeRequests: true, adapters: [jacocoAdapter('**/target/site/jacoco/jacoco.xml')]
+                      }
+                    }
+                  }
                 } else {
-                  String artifacts
-                  if (isMaven) {
-                    artifacts = '**/target/*.hpi,**/target/*.jpi,**/target/*.jar'
-                  } else {
-                    artifacts = '**/build/libs/*.hpi,**/build/libs/*.jpi'
+                  infra.publishDeprecationCheck('Replace buildPlugin with buildPluginWithGradle', 'Gradle mode for buildPlugin() is deprecated, please use buildPluginWithGradle()')
+                  List<String> gradleOptions = [
+                    '--no-daemon',
+                    'cleanTest',
+                    'build',
+                  ]
+                  if (skipTests) {
+                    gradleOptions += '--exclude-task test'
                   }
-                  archiveArtifacts artifacts: artifacts, fingerprint: true
+                  command = "gradlew ${gradleOptions.join(' ')}"
+                  if (isUnix()) {
+                    command = './' + command
+                  }
+
+                  try {
+                    infra.runWithJava(command, jdk, null, addToolEnv)
+                  } finally {
+                    if (!skipTests) {
+                      junit('**/build/test-results/**/*.xml')
+                    }
+                  }
+                }
+              }
+
+              stage("Archive (${stageIdentifier})") {
+                if (failFast && currentBuild.result == 'UNSTABLE') {
+                  error 'There were test failures; halting early'
+                }
+
+                if (first) {
+                  folders = env.JOB_NAME.split('/')
+                  if (folders.length > 1) {
+                    discoverGitReferenceBuild(scm: folders[1])
+                  }
+
+                  echo "Recording static analysis results on '${stageIdentifier}'"
+
+                  recordIssues(
+                      enabledForFailure: true,
+                      tool: mavenConsole(),
+                      skipBlames: true,
+                      trendChartType: 'TOOLS_ONLY'
+                      )
+                  recordIssues(
+                      enabledForFailure: true,
+                      tools: [java(), javaDoc()],
+                      filters: [excludeFile('.*Assert.java')],
+                      sourceCodeEncoding: 'UTF-8',
+                      skipBlames: true,
+                      trendChartType: 'TOOLS_ONLY'
+                      )
+
+                  // Default configuration for SpotBugs can be overwritten using a `spotbugs`, `checkstyle', etc. parameter (map).
+                  // Configuration see: https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration
+                  Map spotbugsArguments = [tool: spotBugs(pattern: '**/target/spotbugsXml.xml,**/target/findbugsXml.xml'),
+                    sourceCodeEncoding: 'UTF-8',
+                    skipBlames: true,
+                    trendChartType: 'TOOLS_ONLY',
+                    qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]]
+                  if (params?.spotbugs) {
+                    spotbugsArguments.putAll(params.spotbugs as Map)
+                  }
+                  recordIssues spotbugsArguments
+
+                  Map checkstyleArguments = [tool: checkStyle(pattern: '**/target/checkstyle-result.xml'),
+                    sourceCodeEncoding: 'UTF-8',
+                    skipBlames: true,
+                    trendChartType: 'TOOLS_ONLY',
+                    qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]]]
+                  if (params?.checkstyle) {
+                    checkstyleArguments.putAll(params.checkstyle as Map)
+                  }
+                  recordIssues checkstyleArguments
+
+                  Map pmdArguments = [tool: pmdParser(pattern: '**/target/pmd.xml'),
+                    sourceCodeEncoding: 'UTF-8',
+                    skipBlames: true,
+                    trendChartType: 'NONE']
+                  if (params?.pmd) {
+                    pmdArguments.putAll(params.pmd as Map)
+                  }
+                  recordIssues pmdArguments
+
+                  Map cpdArguments = [tool: cpd(pattern: '**/target/cpd.xml'),
+                    sourceCodeEncoding: 'UTF-8',
+                    skipBlames: true,
+                    trendChartType: 'NONE']
+                  if (params?.cpd) {
+                    cpdArguments.putAll(params.cpd as Map)
+                  }
+                  recordIssues cpdArguments
+
+                  recordIssues(
+                      enabledForFailure: true, tool: taskScanner(
+                      includePattern:'**/*.java',
+                      excludePattern:'**/target/**',
+                      highTags:'FIXME',
+                      normalTags:'TODO'),
+                      sourceCodeEncoding: 'UTF-8',
+                      skipBlames: true,
+                      trendChartType: 'NONE'
+                      )
+                  if (failFast && currentBuild.result == 'UNSTABLE') {
+                    error 'Static analysis quality gates not passed; halting early'
+                  }
+                } else {
+                  echo "Skipping static analysis results for ${stageIdentifier}"
+                }
+                if (doArchiveArtifacts) {
+                  if (incrementals) {
+                    String changelist = readFile(changelistF)
+                    dir(m2repo) {
+                      fingerprint '**/*-rc*.*/*-rc*.*' // includes any incrementals consumed
+                      archiveArtifacts artifacts: "**/*$changelist/*$changelist*",
+                      excludes: '**/*.lastUpdated',
+                      allowEmptyArchive: true // in case we forgot to reincrementalify
+                    }
+                    publishingIncrementals = true
+                  } else {
+                    String artifacts
+                    if (isMaven) {
+                      artifacts = '**/target/*.hpi,**/target/*.jpi,**/target/*.jar'
+                    } else {
+                      artifacts = '**/build/libs/*.hpi,**/build/libs/*.jpi'
+                    }
+                    archiveArtifacts artifacts: artifacts, fingerprint: true
+                  }
                 }
               }
             }
-          }
-        } finally {
-          if (hasDockerLabel()) {
-            if (isUnix()) {
-              sh 'docker system prune --force --all || echo "Failed to cleanup docker images"'
-            } else {
-              bat 'docker system prune --force --all || echo "Failed to cleanup docker images"'
+          } finally {
+            if (hasDockerLabel()) {
+              if (isUnix()) {
+                sh 'docker system prune --force --all || echo "Failed to cleanup docker images"'
+              } else {
+                bat 'docker system prune --force --all || echo "Failed to cleanup docker images"'
+              }
             }
           }
         }
