@@ -127,6 +127,7 @@ def call(Map params = [:]) {
                     if (!skipTests) {
                       junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
                       if (first) {
+                        discoverReferenceBuild()
                         publishCoverage calculateDiffForChangeRequests: true, adapters: [jacocoAdapter('**/target/site/jacoco/jacoco.xml')]
                       }
                     }
@@ -162,11 +163,9 @@ def call(Map params = [:]) {
                 }
 
                 if (first) {
-                  folders = env.JOB_NAME.split('/')
-                  if (folders.length > 1) {
-                    discoverGitReferenceBuild(scm: folders[1])
+                  if (skipTests) { // otherwise the reference build has been computed already
+                    discoverReferenceBuild()
                   }
-
                   echo "Recording static analysis results on '${stageIdentifier}'"
 
                   recordIssues(
@@ -279,6 +278,13 @@ def call(Map params = [:]) {
   parallel(tasks)
   if (publishingIncrementals) {
     infra.maybePublishIncrementals()
+  }
+}
+
+private void discoverReferenceBuild() {
+  folders = env.JOB_NAME.split('/')
+  if (folders.length > 1) {
+    discoverGitReferenceBuild(scm: folders[1])
   }
 }
 
