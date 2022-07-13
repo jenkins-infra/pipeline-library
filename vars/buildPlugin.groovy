@@ -48,8 +48,7 @@ def call(Map params = [:]) {
     }
 
     tasks[stageIdentifier] = {
-      // TODO use kubernetesAgent() if we know we are using a pod
-      retry(count: 3, conditions: [agent(), nonresumable()]) {
+      retry(count: 3, conditions: [kubernetesAgent(handleNonKubernetes: true), nonresumable()]) {
         node(label) {
           try {
             timeout(timeoutValue) {
