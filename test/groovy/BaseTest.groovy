@@ -43,6 +43,8 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('node', [String.class, Closure.class], { s, body -> body() })
     helper.registerAllowedMethod('retry', [Map.class, Closure.class], { m, body ->body() })
     helper.registerAllowedMethod('agent', [], { 'agent' })
+    helper.registerAllowedMethod('kubernetesAgent', [], { 'kubernetesAgent' })
+    helper.registerAllowedMethod('kubernetesAgent', [Map.class], { 'kubernetesAgent' })
     helper.registerAllowedMethod('nonresumable', [], { 'nonresumable' })
 
     helper.registerAllowedMethod('parallel', [Map.class, Closure.class], { l, body -> body() })
