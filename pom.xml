@@ -32,7 +32,7 @@
     <dependency>
       <groupId>org.codehaus.groovy</groupId>
       <artifactId>groovy-all</artifactId>
-      <version>3.0.11</version>
+      <version>3.0.12</version>
       <!-- Type pom replaces the über "groovy-all.jar", for version 3+ -->
       <type>pom</type>
       <scope>test</scope>
