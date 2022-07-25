@@ -14,7 +14,7 @@ scms:
 
 sources:
   latestUpdatecliVersion:
-    kind: githubRelease
+    kind: githubrelease
     name: Get the latest stable updatecli version
     spec:
       owner: "updatecli"

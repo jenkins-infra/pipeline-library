@@ -14,7 +14,7 @@ scms:
 
 sources:
   dockerHashicorpToolsImageVersion:
-    kind: githubRelease
+    kind: githubrelease
     spec:
       owner: "jenkins-infra"
       repository: "docker-hashicorp-tools"
@@ -24,7 +24,7 @@ sources:
 conditions:
   checkIfDockerImageIsPublished:
     name: "Check if the Docker Image is published"
-    kind: dockerImage
+    kind: dockerimage
     spec:
       image: "jenkinsciinfra/hashicorp-tools"
       architecture: amd64
