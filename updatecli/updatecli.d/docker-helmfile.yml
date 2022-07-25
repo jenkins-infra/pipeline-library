@@ -15,7 +15,7 @@ scms:
 
 sources:
   lastVersion:
-    kind: githubRelease
+    kind: githubrelease
     name: Get the latest updatecli version
     spec:
       owner: "jenkins-infra"
@@ -28,7 +28,7 @@ sources:
 conditions:
   checkIfDockerImageIsPublished:
     name: "Check if the Docker Image is published"
-    kind: dockerImage
+    kind: dockerimage
     spec:
       image: "jenkinsciinfra/helmfile"
       architecture: amd64
