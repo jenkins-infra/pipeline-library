@@ -62,7 +62,7 @@ def call(Map params = [:]) {
 
               stage("Checkout (${stageIdentifier})") {
                 infra.checkoutSCM(repo)
-                isMaven = fileExists('pom.xml')
+                isMaven = !fileExists('gradlew')
                 incrementals = fileExists('.mvn/extensions.xml') &&
                     readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')
                 final String gitUnavailableMessage = '[buildPlugin] Git CLI may not be available'
