@@ -98,6 +98,19 @@ class BuildPluginStepTests extends BaseTest {
   }
 
   @Test
+  void test_getConfigurations_implicit_with_latest_jenkinsVersions() throws Exception {
+    def script = loadScript(scriptName)
+    def configurations = script.getConfigurations(jenkinsVersions: ['LATEST', 'LATEST_LTS'])
+    assertEquals(configurations.size, 4)
+    URL latest = new URL('https://updates.jenkins.io/current/latestCore.txt')
+    URL latestLts = new URL('https://updates.jenkins.io/stable/latestCore.txt')
+    assertNotNull(configurations.find{it.jenkins.equals(latest.text)})
+    assertNotNull(configurations.find{it.jenkins.equals(latestLts.text)})
+    printCallStack()
+    assertJobStatusSuccess()
+  }
+
+  @Test
   void test_getConfigurations_implicit_with_jdkVersions() throws Exception {
     def script = loadScript(scriptName)
     def configurations = script.getConfigurations(jdkVersions: ['1.4', '1.3'])

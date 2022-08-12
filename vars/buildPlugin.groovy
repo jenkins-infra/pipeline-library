@@ -1,4 +1,5 @@
 #!/usr/bin/env groovy
+
 /**
  * Simple wrapper step for building a plugin
  */
@@ -321,6 +322,13 @@ List<Map<String, String>> getConfigurations(Map params) {
   for (p in platforms) {
     for (jdk in jdkVersions) {
       for (jenkins in jenkinsVersions) {
+        if (jenkins.equals('LATEST')) {
+          URL updateSite = new URL('https://updates.jenkins.io/current/latestCore.txt')
+          jenkins = updateSite.text
+        } else if (jenkins.equals('LATEST_LTS')) {
+          URL updateSite = new URL('https://updates.jenkins.io/stable/latestCore.txt')
+          jenkins = updateSite.text
+        }
         ret << [
           'platform': p,
           'jdk': jdk,
