@@ -102,6 +102,14 @@ def call(Map params = [:]) {
                     '-Dcheckstyle.failOnViolation=false',
                     '-Dcheckstyle.failsOnError=false',
                   ]
+                  if (env.ARTIFACT_CACHING_PROXY_PROVIDER != null) {
+                    String mavenSettings = libraryResource 'artifact-caching-proxy-settings.xml'
+                    mavenSettings = mavenSettings.replace('PROVIDER', env.ARTIFACT_CACHING_PROXY_PROVIDER)
+                    writeFile file: "${m2repo}/settings.xml", text: mavenSettings
+                    if (isUnix()) {
+                      sh 'mkdir -p ${HOME}/.m2 && mv ${m2repo}/settings.xml ${HOME}/.m2/settings.xml'
+                    }
+                  }
                   // jacoco had file locking issues on Windows, so only running on linux
                   if (isUnix()) {
                     mavenOptions += '-Penable-jacoco'
