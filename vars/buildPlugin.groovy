@@ -102,10 +102,12 @@ def call(Map params = [:]) {
                     '-Dcheckstyle.failOnViolation=false',
                     '-Dcheckstyle.failsOnError=false',
                   ]
+                  settingsFile = null
                   if (env.ARTIFACT_CACHING_PROXY_PROVIDER != null) {
                     String mavenSettings = libraryResource 'artifact-caching-proxy-settings.xml'
                     mavenSettings = mavenSettings.replace('PROVIDER', env.ARTIFACT_CACHING_PROXY_PROVIDER)
-                    writeFile file: "${m2repo}/settings.xml", text: mavenSettings
+                    settingsFile = "${m2repo}/settings.xml"
+                    writeFile file: settingsFile, text: mavenSettings
                     if (isUnix()) {
                       sh 'mkdir -p ${HOME}/.m2 && mv ${m2repo}/settings.xml ${HOME}/.m2/settings.xml'
                       echo 'Debug:'
@@ -135,7 +137,7 @@ def call(Map params = [:]) {
                   }
                   mavenOptions += 'clean install'
                   try {
-                    infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
+                    infra.runMaven(mavenOptions, jdk, null, settingsFile, addToolEnv)
                   } finally {
                     if (!skipTests) {
                       junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
