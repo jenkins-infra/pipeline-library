@@ -3,7 +3,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.text.DateFormat
 
-def call(String imageName, Map userConfig=[:]) {
+def call(String imageShortName, Map userConfig=[:]) {
   def defaultConfig = [
     agentLabels: 'docker || linux-amd64-docker', // String expression for the labels the agent must match
     automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
@@ -13,6 +13,7 @@ def call(String imageName, Map userConfig=[:]) {
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
+    registryNamespace: '', // Empty by default (means "autodiscover based on the current controller")
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -43,6 +44,12 @@ def call(String imageName, Map userConfig=[:]) {
     cstConfigSuffix = '-windows'
   }
   String operatingSystem = finalConfig.platform.split('/')[0]
+
+  final InfraConfig infraConfig = new InfraConfig(env)
+  final String defaultRegistryNamespace = infraConfig.getDockerRegistryNamespace()
+  final String registryNamespace = finalConfig.registryNamespace ?: defaultRegistryNamespace
+  final String imageName = registryNamespace + '/' + imageShortName
+  echo "INFO: Resolved Container Image Name: ${imageName}"
 
   node(finalConfig.agentLabels) {
     withEnv([
@@ -107,7 +114,7 @@ def call(String imageName, Map userConfig=[:]) {
 
         stage("Lint ${imageName}") {
           // Define the image name as prefix to support multi images per pipeline
-          String hadolintReportId = "${imageName.replaceAll(':','-')}-hadolint-${now.getTime()}"
+          String hadolintReportId = "${imageName.replaceAll(':','-').replaceAll('/','-')}-hadolint-${now.getTime()}"
           String hadoLintReportFile = "${hadolintReportId}.json"
           withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
             try {
@@ -197,9 +204,7 @@ def call(String imageName, Map userConfig=[:]) {
       infra.withDockerPushCredentials{
         if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
           stage("Deploy ${imageName}") {
-            final InfraConfig infraConfig = new InfraConfig(env)
-            String imageDeployName = infraConfig.dockerRegistry + '/' + imageName
-
+            String imageDeployName = imageName
             if (env.TAG_NAME) {
               // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
               if (imageDeployName.contains(':')) {
@@ -208,6 +213,7 @@ def call(String imageName, Map userConfig=[:]) {
                 imageDeployName += ":${env.TAG_NAME}"
               }
             }
+
             withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
               // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
               if (isUnix()) {
