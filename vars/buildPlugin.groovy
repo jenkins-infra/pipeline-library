@@ -103,13 +103,15 @@ def call(Map params = [:]) {
                     '-Dcheckstyle.failOnViolation=false',
                     '-Dcheckstyle.failsOnError=false',
                   ]
-                  settingsFile = null
-                  if (artifactCachingProxyEnabled && env.ARTIFACT_CACHING_PROXY_PROVIDER != null) {
+                  def settingsFile = null
+                  def availableProxyProviders = ['azure', 'aws', 'do']
+                  def requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
+                  if (artifactCachingProxyEnabled && requestedProvider != null && availableProxyProviders.contains(requestedProvider)) {
                     String mavenSettings = libraryResource 'artifact-caching-proxy-settings.xml'
-                    mavenSettings = mavenSettings.replace('PROVIDER', env.ARTIFACT_CACHING_PROXY_PROVIDER)
+                    mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
                     settingsFile = "${m2repo}/settings.xml"
                     writeFile file: settingsFile, text: mavenSettings
-                    echo "INFO: using artifact caching proxy for ${env.ARTIFACT_CACHING_PROXY_PROVIDER}"
+                    echo "INFO: using artifact caching proxy for ${requestedProvider}"
                   }
                   // jacoco had file locking issues on Windows, so only running on linux
                   if (isUnix()) {
