@@ -108,6 +108,12 @@ def call(Map params = [:]) {
                     writeFile file: "${m2repo}/settings.xml", text: mavenSettings
                     if (isUnix()) {
                       sh 'mkdir -p ${HOME}/.m2 && mv ${m2repo}/settings.xml ${HOME}/.m2/settings.xml'
+                      echo 'Debug:'
+                      sh '''
+                      echo ${m2repo}
+                      ls -al ${HOME}/.m2/
+                      cat ${HOME}/.m2/settings.xml
+                      '''
                     }
                   }
                   // jacoco had file locking issues on Windows, so only running on linux
