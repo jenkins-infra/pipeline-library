@@ -103,6 +103,7 @@ def call(Map params = [:]) {
                     '-Dcheckstyle.failsOnError=false',
                   ]
                   settingsFile = null
+                  echo "env.ARTIFACT_CACHING_PROXY_PROVIDER: ${env.ARTIFACT_CACHING_PROXY_PROVIDER}"
                   if (env.ARTIFACT_CACHING_PROXY_PROVIDER != null) {
                     String mavenSettings = libraryResource 'artifact-caching-proxy-settings.xml'
                     mavenSettings = mavenSettings.replace('PROVIDER', env.ARTIFACT_CACHING_PROXY_PROVIDER)
