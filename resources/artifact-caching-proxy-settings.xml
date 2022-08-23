@@ -1,12 +1,12 @@
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
   <mirrors>
     <mirror>
-        <id>PROVIDER</id>
+        <id>artifact-caching-proxy-PROVIDER</id>
         <url>https://repo.PROVIDER.jenkins.io/public/</url>
         <mirrorOf>repo.jenkins-ci.org</mirrorOf>
     </mirror>
     <mirror>
-        <id>PROVIDER-incrementals</id>
+        <id>artifact-caching-proxy-PROVIDER-incrementals</id>
         <url>https://repo.PROVIDER.jenkins.io/incrementals/</url>
         <mirrorOf>incrementals</mirrorOf>
     </mirror>
