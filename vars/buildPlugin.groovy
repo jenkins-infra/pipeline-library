@@ -108,16 +108,10 @@ def call(Map params = [:]) {
                     mavenSettings = mavenSettings.replace('PROVIDER', env.ARTIFACT_CACHING_PROXY_PROVIDER)
                     settingsFile = "${m2repo}/settings.xml"
                     writeFile file: settingsFile, text: mavenSettings
-                    if (isUnix()) {
-                      sh 'mkdir -p ${HOME}/.m2 && mv ${m2repo}/settings.xml ${HOME}/.m2/settings.xml'
-                      echo 'Debug:'
-                      sh '''
-                      echo ${m2repo}
-                      ls -al ${HOME}/.m2/
-                      cat ${HOME}/.m2/settings.xml
-                      '''
-                    }
+                    debugContent = readFile file: settingsFile
+                    echo "debugContent: ${debugContent}"
                   }
+                  echo "settingsFile: ${settingsFile}"
                   // jacoco had file locking issues on Windows, so only running on linux
                   if (isUnix()) {
                     mavenOptions += '-Penable-jacoco'
