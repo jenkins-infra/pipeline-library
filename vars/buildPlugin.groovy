@@ -12,6 +12,7 @@ def call(Map params = [:]) {
   def failFast = params.containsKey('failFast') ? params.failFast : true
   def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
   def gitDefaultBranch = params.containsKey('gitDefaultBranch') ? params.gitDefaultBranch : null
+  def artifactCachingProxyEnabled = params.containsKey('artifactCachingProxyEnabled') ? params.artifactCachingProxyEnabled : true
 
   def useContainerAgent = params.containsKey('useContainerAgent') ? params.useContainerAgent : false
   if (params.containsKey('useAci')) {
@@ -103,16 +104,13 @@ def call(Map params = [:]) {
                     '-Dcheckstyle.failsOnError=false',
                   ]
                   settingsFile = null
-                  echo "env.ARTIFACT_CACHING_PROXY_PROVIDER: ${env.ARTIFACT_CACHING_PROXY_PROVIDER}"
-                  if (env.ARTIFACT_CACHING_PROXY_PROVIDER != null) {
+                  if (artifactCachingProxyEnabled && env.ARTIFACT_CACHING_PROXY_PROVIDER != null) {
                     String mavenSettings = libraryResource 'artifact-caching-proxy-settings.xml'
                     mavenSettings = mavenSettings.replace('PROVIDER', env.ARTIFACT_CACHING_PROXY_PROVIDER)
                     settingsFile = "${m2repo}/settings.xml"
                     writeFile file: settingsFile, text: mavenSettings
-                    debugContent = readFile file: settingsFile
-                    echo "debugContent: ${debugContent}"
+                    echo "INFO: using artifact caching proxy for ${env.ARTIFACT_CACHING_PROXY_PROVIDER}"
                   }
-                  echo "settingsFile: ${settingsFile}"
                   // jacoco had file locking issues on Windows, so only running on linux
                   if (isUnix()) {
                     mavenOptions += '-Penable-jacoco'
