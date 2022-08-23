@@ -17,8 +17,8 @@ import java.text.SimpleDateFormat
 class BuildDockerAndPublishImageStepTests extends BaseTest {
   static final String scriptName = 'vars/buildDockerAndPublishImage.groovy'
   static final String testImageName = 'bitcoinMinerImage'
-  static final String defaultDockerRegistry = 'jenkinsciinfra'
-  static final String fullTestImageName = defaultDockerRegistry + '/' + testImageName
+  static final String defaultDockerRegistryNamespace = 'jenkinsciinfra'
+  static final String fullTestImageName = defaultDockerRegistryNamespace + '/' + testImageName
   static final String defaultGitTag = '1.0.0'
   static final String defaultGitTagIncludingImageName = '1.0.0-bitcoinminerimage'
   static final String defaultNextVersionCommand = 'jx-release-version'
@@ -74,6 +74,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // Define mocks/stubs for the data objects
     infraConfigMock = new StubFor(InfraConfig.class)
+    infraConfigMock.demand.with {
+      getDockerRegistryNamespace{ defaultDockerRegistryNamespace }
+    }
 
     dateMock = new StubFor(Date.class)
     dateMock.demand.with {
@@ -105,18 +108,10 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
   void mockPrincipalBranch() {
     addEnvVar('BRANCH_IS_PRIMARY', 'true')
-
-    infraConfigMock.demand.with {
-      getDockerRegistry{ defaultDockerRegistry }
-    }
   }
 
   void mockTag(String gitTag = defaultGitTag) {
     addEnvVar('TAG_NAME', gitTag)
-
-    infraConfigMock.demand.with {
-      getDockerRegistry{ defaultDockerRegistry }
-    }
   }
 
   // Return if the set of methods expected for ALL pipeline run have been detected in the callstack
@@ -128,8 +123,12 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   // Return if the usual static checks had been recorded with the usual pattern
-  Boolean assertRecordIssues(String imageName = testImageName) {
-    return assertMethodCallContainsPattern('recordIssues', "{enabledForFailure=true, aggregatingResults=false, tool={id=${imageName}-hadolint-${mockedTimestamp}, pattern=${imageName}-hadolint-${mockedTimestamp}.json}}")
+  Boolean assertRecordIssues(String imageName = fullTestImageName) {
+    final String reportId = "${imageName}-hadolint-${mockedTimestamp}".replaceAll('/','-').replaceAll(':', '-')
+    return assertMethodCallContainsPattern(
+        'recordIssues',
+        "{enabledForFailure=true, aggregatingResults=false, tool={id=${reportId}, pattern=${reportId}.json}}",
+        )
   }
 
   // return if the "make deploy" was detected with the provided argument as image name
@@ -206,7 +205,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertBaseWorkflow())
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And generated reports are recorded with named without ':' but '-' instead
-    assertTrue(assertRecordIssues(customImageNameWithTag.replaceAll(':','-')))
+    assertTrue(assertRecordIssues(fullCustomImageName.replaceAll(':','-')))
     // With the deploy step called with the correct image name
     assertTrue(assertMakeDeploy(fullCustomImageName))
     // But no tag pushed
@@ -283,8 +282,10 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
         platform: 'linux/s390x',
         automaticSemanticVersioning: true,
         gitCredentials: 'git-creds',
+        registryNamespace: 'jenkins',
       ])
     }
+    final String expectedImageName = 'jenkins/' + testImageName
     printCallStack()
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
@@ -295,8 +296,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=docker/'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=build.Dockerfile'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/s390x'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_NAME=' + expectedImageName))
     // But no tag and no deploy called (branch or PR)
-    assertTrue(assertMakeDeploy())
+    assertTrue(assertMakeDeploy(expectedImageName))
     assertTrue(assertTagPushed(defaultGitTag))
     // And all mocked/stubbed methods have to be called
     verifyMocks()
