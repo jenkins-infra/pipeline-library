@@ -121,7 +121,7 @@ def call(Map params = [:]) {
                       String masterPassword
                       String serverPassword
                       if (isUnix()) {
-                        masterPassword = sh(script: 'mvn --encrypt-master-password $(openssl rand -hex 12)', returnStdout: true)
+                        masterPassword = sh(script: 'mvn --encrypt-master-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       } else {
                         masterPassword = bat(script: 'mvn --encrypt-master-password %ARTIFACT_CACHING_PROXY_PASSWORD%', returnStdout: true)
                       }
