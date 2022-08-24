@@ -1,5 +1,17 @@
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
-  <mirrors>
+    <servers>
+        <server>
+            <id>artifact-caching-proxy-PROVIDER</id>
+            <username>${env.ARTIFACT_CACHING_PROXY_USERNAME}</username>
+            <password>${env.ARTIFACT_CACHING_PROXY_PASSWORD}</password>
+        </server>
+        <server>
+            <id>artifact-caching-proxy-PROVIDER-incrementals</id>
+            <username>${env.ARTIFACT_CACHING_PROXY_USERNAME}</username>
+            <password>${env.ARTIFACT_CACHING_PROXY_PASSWORD}</password>
+        </server>
+    </servers>
+    <mirrors>
     <mirror>
         <id>artifact-caching-proxy-PROVIDER</id>
         <url>https://repo.PROVIDER.jenkins.io/public/</url>

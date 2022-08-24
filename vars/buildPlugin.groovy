@@ -132,7 +132,11 @@ def call(Map params = [:]) {
                   }
                   mavenOptions += 'clean install'
                   try {
-                    infra.runMaven(mavenOptions, jdk, null, settingsFile, addToolEnv)
+                    withCredentials([
+                      usernamePassword(credentialsId: 'test-creds', passwordVariable: 'ARTIFACT_CACHING_PROXY_USERNAME', usernameVariable: 'ARTIFACT_CACHING_PROXY_PASSWORD')
+                    ]) {
+                      infra.runMaven(mavenOptions, jdk, null, settingsFile, addToolEnv)
+                    }
                   } finally {
                     if (!skipTests) {
                       junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
