@@ -133,7 +133,7 @@ def call(Map params = [:]) {
                   mavenOptions += 'clean install'
                   try {
                     withCredentials([
-                      usernamePassword(credentialsId: 'test-creds', passwordVariable: 'ARTIFACT_CACHING_PROXY_USERNAME', usernameVariable: 'ARTIFACT_CACHING_PROXY_PASSWORD')
+                      usernamePassword(credentialsId: 'artifact-caching-proxy-credentials', passwordVariable: 'ARTIFACT_CACHING_PROXY_USERNAME', usernameVariable: 'ARTIFACT_CACHING_PROXY_PASSWORD')
                     ]) {
                       infra.runMaven(mavenOptions, jdk, null, settingsFile, addToolEnv)
                     }
