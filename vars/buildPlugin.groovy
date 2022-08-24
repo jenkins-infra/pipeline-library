@@ -106,12 +106,47 @@ def call(Map params = [:]) {
                   def settingsFile = null
                   def availableProxyProviders = ['azure', 'aws', 'do']
                   def requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
-                  if (artifactCachingProxyEnabled && requestedProvider != null && availableProxyProviders.contains(requestedProvider)) {
-                    String mavenSettings = libraryResource 'artifact-caching-proxy-settings.xml'
-                    mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
-                    settingsFile = "${m2repo}/settings.xml"
-                    writeFile file: settingsFile, text: mavenSettings
-                    echo "INFO: using artifact caching proxy for ${requestedProvider}"
+                  if (requestedProvider == null || requestedProvider == '') {
+                    requestedProvider = 'azure'
+                    echo "INFO: no artifact caching proxy provider specified, set to 'azure' by default."
+                  }
+                  // if (artifactCachingProxyEnabled && requestedProvider != null && availableProxyProviders.contains(requestedProvider)) {
+                  if (artifactCachingProxyEnabled && availableProxyProviders.contains(requestedProvider)) {
+                    // Add encrypted password to the settings
+                    // See steps at https://maven.apache.org/guides/mini/guide-encryption.html
+                    withCredentials([
+                      usernamePassword(credentialsId: 'artifact-caching-proxy-credentials', passwordVariable: 'ARTIFACT_CACHING_PROXY_USERNAME', usernameVariable: 'ARTIFACT_CACHING_PROXY_PASSWORD')
+                    ]) {
+                      String mavenSettingsSecurity = libraryResource 'artifact-caching-proxy-settings-security.xml'
+                      String masterPassword
+                      String serverPassword
+                      if (isUnix()) {
+                        masterPassword = sh(script: 'mvn --encrypt-master-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
+                      } else {
+                        masterPassword = bat(script: 'mvn --encrypt-master-password %ARTIFACT_CACHING_PROXY_PASSWORD%', returnStdout: true)
+                      }
+                      mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
+                      settingsSecurityFile = "${m2repo}/settings-security.xml"
+                      writeFile file: settingsSecurityFile, text: mavenSettingsSecurity
+                      if (isUnix()) {
+                        sh 'mkdir -p ${HOME}/.m2 && mv ${settingsSecurityFile} ${HOME}/.m2/settings-security.xml'
+                        serverPassword = sh(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
+                      } else {
+                        bat 'mkdir %homepath%/.m2 && mv ${settingsSecurityFile} %homepath%/.m2/settings-security.xml'
+                        serverPassword = bat(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
+                      }
+
+                      String mavenSettings = libraryResource 'artifact-caching-proxy-settings.xml'
+                      mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
+                      mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
+                      mavenSettings = mavenSettings.replace('ENCRYPTED-SERVER-PASSWORD', serverPassword)
+
+                      settingsFile = "${m2repo}/settings.xml"
+                      writeFile file: settingsFile, text: mavenSettings
+                      echo 'DEBUG: mavenSettings:'
+                      echo mavenSettings
+                      echo "INFO: using artifact caching proxy from '${requestedProvider}' provider"
+                    }
                   }
                   // jacoco had file locking issues on Windows, so only running on linux
                   if (isUnix()) {
@@ -132,11 +167,7 @@ def call(Map params = [:]) {
                   }
                   mavenOptions += 'clean install'
                   try {
-                    withCredentials([
-                      usernamePassword(credentialsId: 'artifact-caching-proxy-credentials', passwordVariable: 'ARTIFACT_CACHING_PROXY_USERNAME', usernameVariable: 'ARTIFACT_CACHING_PROXY_PASSWORD')
-                    ]) {
-                      infra.runMaven(mavenOptions, jdk, null, settingsFile, addToolEnv)
-                    }
+                    infra.runMaven(mavenOptions, jdk, null, settingsFile, addToolEnv)
                   } finally {
                     if (!skipTests) {
                       junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
