@@ -115,24 +115,24 @@ def call(Map params = [:]) {
                     // Add encrypted password to the settings
                     // See steps at https://maven.apache.org/guides/mini/guide-encryption.html
                     withCredentials([
-                      usernamePassword(credentialsId: 'artifact-caching-proxy-credentials', passwordVariable: 'ARTIFACT_CACHING_PROXY_USERNAME', usernameVariable: 'ARTIFACT_CACHING_PROXY_PASSWORD')
+                      usernamePassword(credentialsId: 'artifact-caching-proxy-credentials', usernameVariable: 'ARTIFACT_CACHING_PROXY_USERNAME', passwordVariable: 'ARTIFACT_CACHING_PROXY_PASSWORD')
                     ]) {
                       String mavenSettingsSecurity = libraryResource 'artifact-caching-proxy-settings-security.xml'
                       String masterPassword
                       String serverPassword
                       if (isUnix()) {
-                        masterPassword = sh(script: 'mvn --encrypt-master-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
+                        masterPassword = sh(script: 'set +x; mvn --encrypt-master-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       } else {
-                        masterPassword = bat(script: 'mvn --encrypt-master-password %ARTIFACT_CACHING_PROXY_PASSWORD%', returnStdout: true)
+                        masterPassword = bat(script: 'set +x; mvn --encrypt-master-password %ARTIFACT_CACHING_PROXY_PASSWORD%', returnStdout: true)
                       }
                       mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
                       settingsSecurityFile = "${m2repo}/settings-security.xml"
                       writeFile file: settingsSecurityFile, text: mavenSettingsSecurity
                       if (isUnix()) {
-                        sh 'mkdir -p ${HOME}/.m2 && mv ${settingsSecurityFile} ${HOME}/.m2/settings-security.xml'
+                        sh "mkdir -p ${HOME}/.m2 && mv ${settingsSecurityFile} ${HOME}/.m2/settings-security.xml"
                         serverPassword = sh(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       } else {
-                        bat 'mkdir %homepath%/.m2 && mv ${settingsSecurityFile} %homepath%/.m2/settings-security.xml'
+                        bat "mkdir %homepath%/.m2 && mv ${settingsSecurityFile} %homepath%/.m2/settings-security.xml"
                         serverPassword = bat(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       }
 
