@@ -147,6 +147,8 @@ def call(Map params = [:]) {
                       echo mavenSettings
                       echo "INFO: using artifact caching proxy from '${requestedProvider}' provider"
                     }
+                  } else {
+                    echo "WARNING: artifacts will be downloaded directly from https://repo.jenkins-ci.org without using the artifact caching proxy."
                   }
                   // jacoco had file locking issues on Windows, so only running on linux
                   if (isUnix()) {
