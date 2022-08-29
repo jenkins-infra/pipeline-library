@@ -110,6 +110,8 @@ def call(Map params = [:]) {
                     requestedProvider = 'azure'
                     echo "INFO: no artifact caching proxy provider specified, set to 'azure' by default."
                   }
+		  // DEBUG: set to 'azure' for all
+		  requestedProvider = 'azure'
                   // if (artifactCachingProxyEnabled && requestedProvider != null && availableProxyProviders.contains(requestedProvider)) {
                   if (artifactCachingProxyEnabled && availableProxyProviders.contains(requestedProvider)) {
                     // Add encrypted password to the settings
