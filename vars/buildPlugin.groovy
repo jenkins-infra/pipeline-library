@@ -104,7 +104,7 @@ def call(Map params = [:]) {
                     '-Dcheckstyle.failsOnError=false',
                   ]
                   def settingsFile = null
-                  def availableProxyProviders = ['azure', 'aws', 'do']
+                  def availableProxyProviders = ['azure', 'aws', 'do', 'test']
                   def requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
                   if (requestedProvider == null || requestedProvider == '') {
 		    // As azure VM agents don't have this env var, setting 'azure' as default provider if none is specified
