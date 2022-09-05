@@ -14,7 +14,7 @@ def call(String imageShortName, Map userConfig=[:]) {
     gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
     registryNamespace: '', // Empty by default (means "autodiscover based on the current controller")
-    skipCheckout: false, // Allow to skip the `checkout scm` instruction in case it's already been done previously and we want to keep generated artifacts
+    unstash: '', // Allow to unstash files if not empty
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -63,7 +63,9 @@ def call(String imageShortName, Map userConfig=[:]) {
       infra.withDockerPullCredentials{
         String nextVersion = ''
         stage("Prepare ${imageName}") {
-          if (!finalConfig.skipCheckout) {
+          if (finalConfig.unstash != '') {
+            unstash finalConfig.unstash
+          } else {
             checkout scm
           }
 
