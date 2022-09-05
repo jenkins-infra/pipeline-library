@@ -63,7 +63,7 @@ def call(String imageShortName, Map userConfig=[:]) {
       infra.withDockerPullCredentials{
         String nextVersion = ''
         stage("Prepare ${imageName}") {
-          if (!skipCheckout) {
+          if (!finalConfig.skipCheckout) {
             checkout scm
           }
 
