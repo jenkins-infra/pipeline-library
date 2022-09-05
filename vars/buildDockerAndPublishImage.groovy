@@ -14,6 +14,7 @@ def call(String imageShortName, Map userConfig=[:]) {
     gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
     registryNamespace: '', // Empty by default (means "autodiscover based on the current controller")
+    skipCheckout: false, // Allow to skip the `checkout scm` instruction in case it's already been done previously and we want to keep generated artifacts
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -62,7 +63,9 @@ def call(String imageShortName, Map userConfig=[:]) {
       infra.withDockerPullCredentials{
         String nextVersion = ''
         stage("Prepare ${imageName}") {
-          checkout scm
+          if (!skipCheckout) {
+            checkout scm
+          }
 
           // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
           // Even though we have mitigation through the multibranch job config allowing to build PRs only from the repository contributors
