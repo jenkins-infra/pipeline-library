@@ -63,10 +63,9 @@ def call(String imageShortName, Map userConfig=[:]) {
       infra.withDockerPullCredentials{
         String nextVersion = ''
         stage("Prepare ${imageName}") {
+          checkout scm
           if (finalConfig.unstash != '') {
             unstash finalConfig.unstash
-          } else {
-            checkout scm
           }
 
           // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
