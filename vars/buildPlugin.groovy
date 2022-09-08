@@ -124,9 +124,9 @@ def call(Map params = [:]) {
                       String masterPassword
                       String serverPassword
                       if (isUnix()) {
-                        masterPassword = sh(script: 'mvn --encrypt-master-password $(openssl rand -hex 12)', returnStdout: true)
+                        masterPassword = sh(script: 'set +x; mvn --encrypt-master-password $(openssl rand -hex 12)', returnStdout: true)
                       } else {
-                        masterPassword = bat(script: 'mvn --encrypt-master-password $(openssl rand -hex 12)', returnStdout: true)
+                        masterPassword = bat(script: 'set +x; mvn --encrypt-master-password $(openssl rand -hex 12)', returnStdout: true)
                       }
                       mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
                       settingsSecurityFile = "${m2repo}/settings-security.xml"
