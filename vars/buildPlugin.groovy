@@ -113,6 +113,7 @@ def call(Map params = [:]) {
                   }
                   // DEBUG: set to 'azure' for all
                   requestedProvider = 'azure'
+                  sh 'echo $(curl ifconfig.me)'
                   // if (artifactCachingProxyEnabled && requestedProvider != null && availableProxyProviders.contains(requestedProvider)) {
                   if (artifactCachingProxyEnabled && availableProxyProviders.contains(requestedProvider)) {
                     // Add encrypted password to the settings
