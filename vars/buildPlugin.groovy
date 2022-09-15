@@ -40,7 +40,7 @@ def call(Map params = [:]) {
     boolean addToolEnv = !useContainerAgent
 
     if (useContainerAgent && (label == 'linux' || label == 'windows')) {
-      def agentContainerLabel = 'maven-' + jdk + '-all-in-one'
+      def agentContainerLabel = 'maven-' + jdk + '-all-in-one&&cik8s'
       if (label == 'windows') {
         agentContainerLabel += '-windows'
       }
