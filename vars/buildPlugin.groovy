@@ -13,7 +13,7 @@ def call(Map params = [:]) {
   def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
   def gitDefaultBranch = params.containsKey('gitDefaultBranch') ? params.gitDefaultBranch : null
   def artifactCachingProxyEnabled = params.containsKey('artifactCachingProxyEnabled') ? params.artifactCachingProxyEnabled : false
-  def agentLabels = params.containsKey('agentLabels') ? params.agentLabels : null
+  def additionalAgentLabels = params.containsKey('additionalAgentLabels') ? params.additionalAgentLabels : null
 
   def useContainerAgent = params.containsKey('useContainerAgent') ? params.useContainerAgent : false
   if (params.containsKey('useAci')) {
@@ -50,8 +50,8 @@ def call(Map params = [:]) {
     }
 
     // DEBUG: concatenate passed labels to be able to test specific artifact caching providers (ex: " && doks")
-    if (agentLabels != null && agentLabels != '') {
-      label += agentLabels
+    if (additionalAgentLabels != null && additionalAgentLabels != '') {
+      label += additionalAgentLabels
     }
 
     tasks[stageIdentifier] = {
