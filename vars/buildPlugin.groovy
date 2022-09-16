@@ -104,17 +104,14 @@ def call(Map params = [:]) {
                     '-Dcheckstyle.failsOnError=false',
                   ]
                   def settingsFile = null
-                  def availableProxyProviders = ['azure', 'aws', 'do', 'test']
+                  def defaultProxyProvider = 'azure'
+                  def availableProxyProviders = ['azure', 'do'] //, 'aws']
                   def requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
-                  if (requestedProvider == null || requestedProvider == '') {
-                    // As azure VM agents don't have this env var, setting 'azure' as default provider if none is specified
-                    requestedProvider = 'azure'
-                    echo "INFO: no artifact caching proxy provider specified, set to 'azure' by default."
+                  // As azure VM agents don't have this env var, setting a default provider if none is specified or if the provider isn't available
+                  if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
+                    requestedProvider = defaultProxyProvider
+                    echo "INFO: no artifact caching proxy provider specified, set to '$defaultProxyProvider' by default."
                   }
-                  // DEBUG: set to 'azure' for all
-                  requestedProvider = 'azure'
-                  sh 'echo $(curl ifconfig.me)'
-                  // if (artifactCachingProxyEnabled && requestedProvider != null && availableProxyProviders.contains(requestedProvider)) {
                   if (artifactCachingProxyEnabled && availableProxyProviders.contains(requestedProvider)) {
                     // Add encrypted password to the settings
                     // See steps at https://maven.apache.org/guides/mini/guide-encryption.html
