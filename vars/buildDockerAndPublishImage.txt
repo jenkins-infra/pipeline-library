@@ -15,7 +15,7 @@ The following arguments are available for this function:
   * String **gitCredentials**: (Optional, defaults to "") If "automaticSemanticVersioning" is set, name of the credential to use when tagging the git repository. Support user/password or GitHub App credential types.
   * String **imageDir**: (Optional, defaults to ".", the parent directory of the Dockerfile) Path to a directory to use as build context (Example: "docker/", "python/2.7").
   * String **registry**: (Optional, defaults to "" which defines the registry based on the current controller setup) Container registry to deploy this image to (Example: "ghcr.io", "python/2.7").
-  * Boolean **unstash**: (Optional, default to "") Allow to unstash files if not empty
+  * Boolean **unstash**: (Optional, default to "") Allow to restore files from a previously saved stash if not empty.
 
 The lint phase generates a report when it fails, recorded by the hadolint tool in your Jenkins instance.
 
