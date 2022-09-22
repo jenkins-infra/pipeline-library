@@ -182,6 +182,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And the deploy step called
     assertTrue(assertMakeDeploy())
 
+    // And `unstash` isn't called
+    assertFalse(assertMethodCall('unstash'))
+
     // But no release created automatically
     assertFalse(assertTagPushed(defaultGitTag))
 
@@ -516,6 +519,48 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // But no release created automatically
     assertFalse(assertTagPushed(defaultGitTag))
     // And all mocked/stubbed methods been called
+    verifyMocks()
+  }
+
+  @Test
+  void itBuildsAndDeploysWithUnstashOnPrincipalBranch() throws Exception {
+    def script = loadScript(scriptName)
+    helper.registerAllowedMethod('unstash', [String.class], { s -> s })
+
+    mockPrincipalBranch()
+
+    withMocks {
+      script.call(testImageName, [
+        unstash: 'stashName',
+      ])
+    }
+    printCallStack()
+
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+
+    // With the common workflow run as expected
+    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
+
+    // And the expected environment variable defined to their defaults
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/amd64'))
+
+    // And generated reports are recorded
+    assertTrue(assertRecordIssues())
+
+    // And the deploy step called
+    assertTrue(assertMakeDeploy())
+
+    // And `unstash` is called
+    assertTrue(assertMethodCallContainsPattern('unstash', 'stashName'))
+
+    // But no release created automatically
+    assertFalse(assertTagPushed(defaultGitTag))
+
+    // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
 }
