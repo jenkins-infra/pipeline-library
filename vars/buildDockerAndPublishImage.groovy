@@ -66,6 +66,7 @@ def call(String imageShortName, Map userConfig=[:]) {
           checkout scm
           if (finalConfig.unstash != '') {
             unstash finalConfig.unstash
+            echo "INFO: unstashed file(s) from ${finalConfig.unstash}"
           }
 
           // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
