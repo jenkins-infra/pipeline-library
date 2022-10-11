@@ -17,7 +17,7 @@ jobs:
           UPDATECLI_VERSION: "v0.35.1"
         run: |
           curl --silent --location --show-error --output /tmp/updatecli.tgz \
-            "https://github.com/updatecli/updatecli/releases/download/v${UPDATECLI_VERSION}/updatecli_$(uname -s)_$(uname -m).tar.gz"
+            "https://github.com/updatecli/updatecli/releases/download/${UPDATECLI_VERSION}/updatecli_$(uname -s)_$(uname -m).tar.gz"
           tar xzf /tmp/updatecli.tgz -C /usr/local/bin/ updatecli
           rm -f /tmp/updatecli.tgz
       - name: Diff
