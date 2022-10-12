@@ -1,6 +1,6 @@
 /**
-terraform.groovy: Please look at https://github.com/jenkins-infra/shared-tools/tree/main/terraform#jenkins-pipeline for documentation and usage.
-Note: this shared pipeline is tailored to Jenkins infrastructure usage and thus set some default values which might not be desirable for yours.
+ terraform.groovy: Please look at https://github.com/jenkins-infra/shared-tools/tree/main/terraform#jenkins-pipeline for documentation and usage.
+ Note: this shared pipeline is tailored to Jenkins infrastructure usage and thus set some default values which might not be desirable for yours.
  **/
 
 def call(userConfig = [:]) {
@@ -165,7 +165,7 @@ def call(userConfig = [:]) {
               stage('🚢 Shipping Changes') {
                 try {
                   sh makeCliCmd + ' deploy'
-                } catch {
+                } catch(Exception e) {
                   // If the deploy failed, keep the pod until a user catch the problem (cloud be an errored state, or many reason to keep the workspace)
                   input message: 'An error happened while applying the terraform plan. Keeping the agent up and running. Delete the agent?'
                 }
