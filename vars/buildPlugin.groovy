@@ -145,13 +145,14 @@ def call(Map params = [:]) {
                       } else {
                         settingsFile = env.USERPROFILE + '\\.m2\\settings.xml'
                         final String settingsSecurityFileWindows = settingsSecurityFile.replace('/', '\\')
-                        bat "mkdir %userprofile%\\.m2 >nul 2>&1 || move ${settingsSecurityFileWindows} %userprofile%\\.m2\\settings-security.xml"
-                        serverPassword = bat(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
+                        // bat "mkdir %userprofile%\\.m2 >nul 2>&1 || move ${settingsSecurityFileWindows} %userprofile%\\.m2\\settings-security.xml"
+                        // serverPassword = bat(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       }
 
                       mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
                       mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
-                      mavenSettings = mavenSettings.replace('ENCRYPTED-SERVER-PASSWORD', serverPassword)
+                      // mavenSettings = mavenSettings.replace('ENCRYPTED-SERVER-PASSWORD', serverPassword)
+                      mavenSettings = mavenSettings.replace('ENCRYPTED-SERVER-PASSWORD', env.ARTIFACT_CACHING_PROXY_PASSWORD)
 
                       writeFile file: settingsFile, text: mavenSettings
                       echo "INFO: using artifact caching proxy from '${requestedProvider}' provider"
