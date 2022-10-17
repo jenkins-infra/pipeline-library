@@ -124,7 +124,7 @@ def call(Map params = [:]) {
                     withCredentials([
                       usernamePassword(credentialsId: 'artifact-caching-proxy-credentials', usernameVariable: 'ARTIFACT_CACHING_PROXY_USERNAME', passwordVariable: 'ARTIFACT_CACHING_PROXY_PASSWORD')
                     ]) {
-                      final String settingsFile = "${m2repo}/settings.xml"
+                      settingsFile = "${m2repo}/settings.xml"
                       final String settingsSecurityFile = "${m2repo}/settings-security.xml"
                       String mavenSettings = libraryResource 'artifact-caching-proxy/settings.xml'
                       String mavenSettingsSecurity = libraryResource 'artifact-caching-proxy/settings-security.xml'
