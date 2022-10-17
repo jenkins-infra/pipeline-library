@@ -108,6 +108,7 @@ def call(Map params = [:]) {
                     '-Dspotbugs.failOnError=false',
                     '-Dcheckstyle.failOnViolation=false',
                     '-Dcheckstyle.failsOnError=false',
+                    '-X',
                   ]
                   def settingsFile = ''
                   final String defaultProxyProvider = 'azure'
