@@ -124,6 +124,7 @@ def call(Map params = [:]) {
                     withCredentials([
                       usernamePassword(credentialsId: 'artifact-caching-proxy-credentials', usernameVariable: 'ARTIFACT_CACHING_PROXY_USERNAME', passwordVariable: 'ARTIFACT_CACHING_PROXY_PASSWORD')
                     ]) {
+                      echo "Setting up maven to use artifact caching proxy from '${requestedProvider}' provider..."
                       settingsFile = "${m2repo}/settings.xml"
                       final String settingsSecurityFile = "${m2repo}/settings-security.xml"
                       String mavenSettings = libraryResource 'artifact-caching-proxy/settings.xml'
@@ -153,6 +154,13 @@ def call(Map params = [:]) {
 
                       writeFile file: settingsFile, text: mavenSettings
                       echo "INFO: using artifact caching proxy from '${requestedProvider}' provider"
+
+                      // DEBUG
+                      if (isUnix()) {
+                        echo 'isUnix'
+                      } else {
+                        sh 'mvn clean package'
+                      }
                     }
                   } else {
                     echo "WARNING: artifacts will be downloaded directly from https://repo.jenkins-ci.org without using the artifact caching proxy."
