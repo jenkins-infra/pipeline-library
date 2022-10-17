@@ -112,7 +112,7 @@ boolean retrieveMavenSettingsFile(String settingsXml) {
  * @see #retrieveMavenSettingsFile(String)
  */
 Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = true) {
-  List<String> mvnOptions = ['--batch-mode', '--show-version', '--errors']
+  List<String> mvnOptions = ['--batch-mode', '--show-version', '--errors', '--no-transfer-progress']
   if (settingsFile) {
     mvnOptions += "-s $settingsFile"
   }
