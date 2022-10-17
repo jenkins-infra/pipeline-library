@@ -135,7 +135,7 @@ def call(Map params = [:]) {
                       if (isUnix()) {
                         masterPassword = sh(script: 'set +x; mvn --encrypt-master-password $(openssl rand -hex 12)', returnStdout: true)
                       } else {
-                        masterPassword = bat(script: 'mvn --encrypt-master-password %random%%random%%random%', returnStdout: true)
+                        masterPassword = bat(script: 'mvn --encrypt-master-password p%random%%random%%random%', returnStdout: true)
                       }
                       mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
                       writeFile file: settingsSecurityFile, text: mavenSettingsSecurity
@@ -143,26 +143,17 @@ def call(Map params = [:]) {
                         sh "mkdir -p ${HOME}/.m2 && mv ${settingsSecurityFile} ${HOME}/.m2/settings-security.xml"
                         serverPassword = sh(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       } else {
-                        // settingsFile = env.USERPROFILE + '\\.m2\\settings.xml'
                         final String settingsSecurityFileWindows = settingsSecurityFile.replace('/', '\\')
-                        // bat "mkdir %userprofile%\\.m2 >nul 2>&1 || move ${settingsSecurityFileWindows} %userprofile%\\.m2\\settings-security.xml"
-                        // serverPassword = bat(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
+                        bat "mkdir %userprofile%\\.m2 >nul 2>&1 || move ${settingsSecurityFileWindows} %userprofile%\\.m2\\settings-security.xml"
+                        serverPassword = bat(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       }
 
                       mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
                       mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
-                      // mavenSettings = mavenSettings.replace('ENCRYPTED-SERVER-PASSWORD', serverPassword)
-                      mavenSettings = mavenSettings.replace('ENCRYPTED-SERVER-PASSWORD', env.ARTIFACT_CACHING_PROXY_PASSWORD)
-
+                      mavenSettings = mavenSettings.replace('ENCRYPTED-SERVER-PASSWORD', serverPassword)
+                      
                       writeFile file: settingsFile, text: mavenSettings
                       echo "INFO: using artifact caching proxy from '${requestedProvider}' provider"
-
-                      // DEBUG
-                      if (isUnix()) {
-                        echo 'isUnix'
-                      } else {
-                        bat 'mvn -X clean'
-                      }
                     }
                   } else {
                     echo "WARNING: artifacts will be downloaded directly from https://repo.jenkins-ci.org without using the artifact caching proxy."
