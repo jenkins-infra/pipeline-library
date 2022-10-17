@@ -113,10 +113,11 @@ def call(Map params = [:]) {
                   final String defaultProxyProvider = 'azure'
                   def availableProxyProviders = ['azure', 'do', 'aws']
                   String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
+                  echo "DEBUG: ${requestedProvider}"
                   // As azure VM agents don't have this env var, setting a default provider if none is specified or if the provider isn't available
                   if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
                     requestedProvider = defaultProxyProvider
-                    echo "INFO: no artifact caching proxy provider specified, set to '$defaultProxyProvider' by default."
+                    echo "INFO: no valid artifact caching proxy provider specified, set to '$defaultProxyProvider' by default."
                   }
                   if (artifactCachingProxyEnabled && availableProxyProviders.contains(requestedProvider)) {
                     // Add encrypted password to the settings
