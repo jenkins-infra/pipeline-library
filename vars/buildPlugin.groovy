@@ -142,6 +142,8 @@ def call(Map params = [:]) {
                         serverPassword = sh(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       } else {
                         bat "echo %homepath%"
+                        bat "dir C:\\%homepath%"
+                        bat "dir %homepath%"
                         bat "move ${settingsSecurityFile} %homepath%\\.m2\\settings-security.xml"
                         serverPassword = bat(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       }
