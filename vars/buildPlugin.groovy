@@ -144,8 +144,8 @@ def call(Map params = [:]) {
                       } else {
                         final String settingsSecurityFileWindows = settingsSecurityFile.replace('/', '\\')
                         bat 'mvn --version'
-                        bat 'env'
-                        echo settingsSecurityFileWindows
+                        bat 'set'
+                        settingsFile = bat(script: 'echo %userprofile%\\.m2\\settings-security.xml', returnStdout: true)
                         bat "mkdir %userprofile%\\.m2 >nul 2>&1 || move ${settingsSecurityFileWindows} %userprofile%\\.m2\\settings-security.xml"
                         serverPassword = bat(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       }
@@ -161,6 +161,7 @@ def call(Map params = [:]) {
                       if (isUnix()) {
                         echo 'isUnix'
                       } else {
+                        cd ec2-plugin
                         sh 'mvn -X clean package'
                       }
                     }
