@@ -143,11 +143,8 @@ def call(Map params = [:]) {
                         sh "mkdir -p ${HOME}/.m2 && mv ${settingsSecurityFile} ${HOME}/.m2/settings-security.xml"
                         serverPassword = sh(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       } else {
-                        final String settingsSecurityFileWindows = settingsSecurityFile.replace('/', '\\')
-                        bat 'mvn --version'
-                        bat 'set'
                         settingsFile = env.USERPROFILE + '\\.m2\\settings.xml'
-                        echo settingsFile
+                        final String settingsSecurityFileWindows = settingsSecurityFile.replace('/', '\\')
                         bat "mkdir %userprofile%\\.m2 >nul 2>&1 || move ${settingsSecurityFileWindows} %userprofile%\\.m2\\settings-security.xml"
                         serverPassword = bat(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       }
