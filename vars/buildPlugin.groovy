@@ -124,16 +124,18 @@ def call(Map params = [:]) {
                     withCredentials([
                       usernamePassword(credentialsId: 'artifact-caching-proxy-credentials', usernameVariable: 'ARTIFACT_CACHING_PROXY_USERNAME', passwordVariable: 'ARTIFACT_CACHING_PROXY_PASSWORD')
                     ]) {
-                      String mavenSettingsSecurity = libraryResource 'artifact-caching-proxy-settings-security.xml'
+                      final String settingsFile = "${m2repo}/settings.xml"
+                      final String settingsSecurityFile = "${m2repo}/settings-security.xml"
+                      String mavenSettings = libraryResource 'artifact-caching-proxy/settings.xml'
+                      String mavenSettingsSecurity = libraryResource 'artifact-caching-proxy/settings-security.xml'
                       String masterPassword
                       String serverPassword
                       if (isUnix()) {
                         masterPassword = sh(script: 'set +x; mvn --encrypt-master-password $(openssl rand -hex 12)', returnStdout: true)
                       } else {
-                        masterPassword = bat(script: 'set +x; mvn --encrypt-master-password $(openssl rand -hex 12)', returnStdout: true)
+                        masterPassword = bat(script: 'mvn --encrypt-master-password %random%%random%%random%', returnStdout: true)
                       }
                       mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
-                      settingsSecurityFile = "${m2repo}/settings-security.xml"
                       writeFile file: settingsSecurityFile, text: mavenSettingsSecurity
                       if (isUnix()) {
                         sh "mkdir -p ${HOME}/.m2 && mv ${settingsSecurityFile} ${HOME}/.m2/settings-security.xml"
@@ -143,12 +145,10 @@ def call(Map params = [:]) {
                         serverPassword = bat(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       }
 
-                      String mavenSettings = libraryResource 'artifact-caching-proxy-settings.xml'
                       mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
                       mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
                       mavenSettings = mavenSettings.replace('ENCRYPTED-SERVER-PASSWORD', serverPassword)
 
-                      settingsFile = "${m2repo}/settings.xml"
                       writeFile file: settingsFile, text: mavenSettings
                       echo "INFO: using artifact caching proxy from '${requestedProvider}' provider"
                     }
