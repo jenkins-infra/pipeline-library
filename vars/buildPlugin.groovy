@@ -143,6 +143,8 @@ def call(Map params = [:]) {
                         serverPassword = sh(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       } else {
                         final String settingsSecurityFileWindows = settingsSecurityFile.replace('/', '\\')
+                        bat 'mvn --version'
+                        bat 'env'
                         echo settingsSecurityFileWindows
                         bat "mkdir %userprofile%\\.m2 >nul 2>&1 || move ${settingsSecurityFileWindows} %userprofile%\\.m2\\settings-security.xml"
                         serverPassword = bat(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
