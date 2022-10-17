@@ -162,7 +162,7 @@ def call(Map params = [:]) {
                       if (isUnix()) {
                         echo 'isUnix'
                       } else {
-                        sh 'mvn -X clean package'
+                        sh 'mvn -X clean'
                       }
                     }
                   } else {
