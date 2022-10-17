@@ -162,7 +162,6 @@ def call(Map params = [:]) {
                       if (isUnix()) {
                         echo 'isUnix'
                       } else {
-                        cd ec2-plugin
                         sh 'mvn -X clean package'
                       }
                     }
