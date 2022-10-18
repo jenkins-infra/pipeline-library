@@ -150,11 +150,11 @@ def call(Map params = [:]) {
                       // mavenOptions += "-Dsettings.security=${settingsSecurityFile}"
 
                       // Generating settings.xml with proxy config and encrypted basic auth password
-                      // if (isUnix()) {
-                      //   serverPassword = sh(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
-                      // } else {
-                      //   serverPassword = bat(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
-                      // }
+                      if (isUnix()) {
+                        serverPassword = sh(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
+                      } else {
+                        serverPassword = bat(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
+                      }
                       mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
                       mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
                       // mavenSettings = mavenSettings.replace('ENCRYPTED-SERVER-PASSWORD', serverPassword)
