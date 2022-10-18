@@ -3,12 +3,12 @@
         <server>
             <id>PROVIDER-artifact-caching-proxy</id>
             <username>SERVER-USERNAME</username>
-            <password>ENCRYPTED-SERVER-PASSWORD</password>
+            <password>SERVER-PASSWORD</password>
         </server>
         <server>
             <id>PROVIDER-incrementals-artifact-caching-proxy</id>
             <username>SERVER-USERNAME</username>
-            <password>ENCRYPTED-SERVER-PASSWORD</password>
+            <password>SERVER-PASSWORD</password>
         </server>
     </servers>
     <mirrors>
