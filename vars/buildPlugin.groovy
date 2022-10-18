@@ -144,9 +144,9 @@ def call(Map params = [:]) {
                         settingsSecurityFile = settingsFolder + '\\settings-security.xml'
                         bat "mkdir ${settingsFolder} >nul 2>&1"
                         // the "@" prefix avoid including the command in the stdout (equivalent to "@echo off &&")
-                        masterPassword = bat(script: '@mvn -q --encrypt-master-password %random%%random%%random%', returnStdout: true)
+                        masterPassword = bat(script: '@mvn --encrypt-master-password %random%%random%%random%', returnStdout: true)
                       }
-                      mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
+                      mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword.replaceAll('[\\n\\r]$', ''))
                       writeFile file: settingsSecurityFile, text: mavenSettingsSecurity
                       mavenOptions += "-Dsettings.security=${settingsSecurityFile}"
 
@@ -162,7 +162,7 @@ def call(Map params = [:]) {
                       }
                       mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
                       mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
-                      mavenSettings = mavenSettings.replace('SERVER-PASSWORD', serverPassword)
+                      mavenSettings = mavenSettings.replace('SERVER-PASSWORD', serverPassword.replaceAll('[\\n\\r]$', ''))
                       writeFile file: settingsFile, text: mavenSettings
 
                       // DEBUG
