@@ -146,15 +146,10 @@ def call(Map params = [:]) {
                         // the "@" prefix avoid including the command in the stdout (equivalent to "@echo off &&")
                         masterPassword = bat(script: '@mvn --quiet --encrypt-master-password %random%%random%%random%', returnStdout: true)
                       }
-                      echo "[MASTER-START]${masterPassword}[MASTER-END]"
                       masterPassword = masterPassword.replaceAll('[\\n\\r]*$', '')
-                      echo "[MASTER-FIX-START]${masterPassword}[MASTER-FIX-END]"
                       mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
                       writeFile file: settingsSecurityFile, text: mavenSettingsSecurity
                       mavenOptions += "-Dsettings.security=${settingsSecurityFile}"
-
-                      // DEBUG
-                      echo readFile(settingsSecurityFile)
 
                       // Generating settings.xml with proxy config and encrypted basic auth password
                       if (isUnix()) {
@@ -163,6 +158,7 @@ def call(Map params = [:]) {
                         // the "@" prefix avoid including the command in the stdout (equivalent to "@echo off &&")
                         serverPassword = bat(script: '@mvn --quiet --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       }
+                      serverPassword = serverPassword.replaceAll('[\\n\\r]*$', '')
                       mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
                       mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
                       mavenSettings = mavenSettings.replace('SERVER-PASSWORD', serverPassword.replaceAll('[\\n\\r]*$', ''))
@@ -174,7 +170,7 @@ def call(Map params = [:]) {
                       } else {
                         bat "dir ${settingsFolder}"
                       }
-                      // echo readFile(settingsFile)
+                      echo readFile(settingsFile)
 
                       echo "INFO: using artifact caching proxy from '${requestedProvider}' provider"
                     }
