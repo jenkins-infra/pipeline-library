@@ -149,6 +149,9 @@ def call(Map params = [:]) {
                       writeFile file: settingsSecurityFile, text: mavenSettingsSecurity
                       mavenOptions += "-Dsettings.security=${settingsSecurityFile}"
 
+                      // DEBUG
+                      echo readFile(settingsSecurityFile)
+                      
                       // Generating settings.xml with proxy config and encrypted basic auth password
                       if (isUnix()) {
                         serverPassword = sh(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
@@ -160,7 +163,7 @@ def call(Map params = [:]) {
                       mavenSettings = mavenSettings.replace('SERVER-PASSWORD', serverPassword)
                       writeFile file: settingsFile, text: mavenSettings
 
-                      //DEBUG
+                      // DEBUG
                       if (isUnix()) {
                         sh "ls ${settingsFolder}"
                       } else {
