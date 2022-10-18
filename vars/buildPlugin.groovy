@@ -143,7 +143,7 @@ def call(Map params = [:]) {
                         settingsFile = settingsFolder + '\\settings.xml'
                         settingsSecurityFile = settingsFolder + '\\settings-security.xml'
                         bat "mkdir ${settingsFolder} >nul 2>&1"
-                        masterPassword = bat(script: 'mvn -X --encrypt-master-password %random%%random%%random%', returnStdout: true)
+                        masterPassword = bat(script: 'mvn --encrypt-master-password %random%%random%%random%', returnStdout: true)
                       }
                       mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
                       writeFile file: settingsSecurityFile, text: mavenSettingsSecurity
@@ -153,7 +153,7 @@ def call(Map params = [:]) {
                       if (isUnix()) {
                         serverPassword = sh(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       } else {
-                        serverPassword = bat(script: 'mvn -X --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
+                        serverPassword = bat(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       }
                       mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
                       mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
