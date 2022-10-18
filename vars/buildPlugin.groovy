@@ -146,8 +146,8 @@ def call(Map params = [:]) {
                         masterPassword = bat(script: 'mvn --encrypt-master-password %random%%random%%random%', returnStdout: true)
                       }
                       mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
-                      writeFile file: settingsSecurityFile, text: mavenSettingsSecurity
-                      mavenOptions += "-Dsettings.security=${settingsSecurityFile}"
+                      // writeFile file: settingsSecurityFile, text: mavenSettingsSecurity
+                      // mavenOptions += "-Dsettings.security=${settingsSecurityFile}"
 
                       // Generating settings.xml with proxy config and encrypted basic auth password
                       if (isUnix()) {
@@ -157,7 +157,8 @@ def call(Map params = [:]) {
                       }
                       mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
                       mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
-                      mavenSettings = mavenSettings.replace('ENCRYPTED-SERVER-PASSWORD', serverPassword)
+                      // mavenSettings = mavenSettings.replace('ENCRYPTED-SERVER-PASSWORD', serverPassword)
+                      mavenSettings = mavenSettings.replace('ENCRYPTED-SERVER-PASSWORD', env.ARTIFACT_CACHING_PROXY_PASSWORD)
                       writeFile file: settingsFile, text: mavenSettings
 
                       echo "INFO: using artifact caching proxy from '${requestedProvider}' provider"
