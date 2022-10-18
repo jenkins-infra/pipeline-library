@@ -100,7 +100,7 @@ def call(Map params = [:]) {
               stage("Build (${stageIdentifier})") {
                 String command
                 if (isMaven) {
-                  m2repo = "${pwd tmp: true}/m2repo"
+                  m2repo = "${pwd}/m2repo"
                   List<String> mavenOptions = [
                     '--update-snapshots',
                     "-Dmaven.repo.local=$m2repo",
@@ -150,7 +150,7 @@ def call(Map params = [:]) {
                       mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
                       writeFile file: settingsSecurityFile, text: mavenSettingsSecurity, encoding: "UTF-8"
                       // backup debug
-                      writeFile file: "${pwd tmp: true}/backup-settings.xml", text: mavenSettingsSecurity, encoding: "UTF-8"
+                      writeFile file: "${env.WORKSPACE}/backup-settings-security.xml", text: mavenSettingsSecurity, encoding: "UTF-8"
 
                       // Generating settings.xml with proxy config and encrypted basic auth password
                       if (isUnix()) {
@@ -165,8 +165,8 @@ def call(Map params = [:]) {
                       mavenSettings = mavenSettings.replace('SERVER-PASSWORD', serverPassword.replaceAll('[\\n\\r]*$', ''))
                       writeFile file: settingsFile, text: mavenSettings, encoding: "UTF-8"
                       // backup debug
-                      writeFile file: "${pwd tmp: true}/backup-settings-security.xml", text: mavenSettingsSecurity, encoding: "UTF-8"
-                      archiveArtifacts artifacts: '**/*.xml'
+                      writeFile file: "${env.WORKSPACE}/backup-settings.xml", text: mavenSettings, encoding: "UTF-8"
+                      archiveArtifacts artifacts: 'backup-settings.xml, backup-settings-security.xml'
 
                       // DEBUG
                       if (isUnix()) {
