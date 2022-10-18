@@ -100,7 +100,7 @@ def call(Map params = [:]) {
               stage("Build (${stageIdentifier})") {
                 String command
                 if (isMaven) {
-                  m2repo = "${pwd}/m2repo"
+                  m2repo = "${pwd tmp: true}/m2repo"
                   List<String> mavenOptions = [
                     '--update-snapshots',
                     "-Dmaven.repo.local=$m2repo",
