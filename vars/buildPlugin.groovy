@@ -143,7 +143,7 @@ def call(Map params = [:]) {
                         settingsFile = settingsFolder + '\\settings.xml'
                         settingsSecurityFile = settingsFolder + '\\settings-security.xml'
                         bat "mkdir ${settingsFolder} >nul 2>&1"
-                        masterPassword = bat(script: 'mvn --encrypt-master-password %random%%random%%random%', returnStdout: true)
+                        masterPassword = bat(script: 'mvn -q --encrypt-master-password %random%%random%%random%', returnStdout: true)
                       }
                       mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
                       writeFile file: settingsSecurityFile, text: mavenSettingsSecurity
@@ -169,7 +169,7 @@ def call(Map params = [:]) {
                       } else {
                         bat "dir ${settingsFolder}"
                       }
-                      echo readFile(settingsFile)
+                      // echo readFile(settingsFile)
 
                       echo "INFO: using artifact caching proxy from '${requestedProvider}' provider"
                     }
