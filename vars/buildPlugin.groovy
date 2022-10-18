@@ -147,6 +147,7 @@ def call(Map params = [:]) {
                       }
                       mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
                       writeFile file: settingsSecurityFile, text: mavenSettingsSecurity
+                      mavenOptions += "-Dsettings.security=${settingsSecurityFile}"
 
                       // Generating settings.xml with proxy config and encrypted basic auth password
                       if (isUnix()) {
