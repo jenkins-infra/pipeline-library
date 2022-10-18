@@ -171,6 +171,7 @@ def call(Map params = [:]) {
                         bat "dir ${settingsFolder}"
                       }
                       echo readFile(settingsFile)
+                      echo readFile(settingsSecurityFile)
 
                       echo "INFO: using artifact caching proxy from '${requestedProvider}' provider"
                     }
