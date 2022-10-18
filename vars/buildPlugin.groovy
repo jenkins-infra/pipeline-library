@@ -159,6 +159,13 @@ def call(Map params = [:]) {
                       mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
                       mavenSettings = mavenSettings.replace('SERVER-PASSWORD', serverPassword)
                       writeFile file: settingsFile, text: mavenSettings
+
+                      //DEBUG
+                      if (isUnix()) {
+                        sh "ls ${settingsFolder}"
+                      } else {
+                        bat "dir ${settingsFolder}"
+                      }
                       echo readFile(settingsFile)
 
                       echo "INFO: using artifact caching proxy from '${requestedProvider}' provider"
