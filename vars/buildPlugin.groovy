@@ -137,14 +137,14 @@ def call(Map params = [:]) {
                         settingsFile = settingsFolder + '/settings.xml'
                         settingsSecurityFile = settingsFolder + '/settings-security.xml'
                         sh "mkdir -p ${settingsFolder}"
-                        masterPassword = sh(script: 'set +x; mvn --encrypt-master-password $(openssl rand -hex 12)', returnStdout: true)
+                        masterPassword = sh(script: 'set +x; mvn --quiet --encrypt-master-password $(openssl rand -hex 12)', returnStdout: true)
                       } else {
                         settingsFolder = env.USERPROFILE + '\\.m2'
                         settingsFile = settingsFolder + '\\settings.xml'
                         settingsSecurityFile = settingsFolder + '\\settings-security.xml'
                         bat "mkdir ${settingsFolder} >nul 2>&1"
                         // the "@" prefix avoid including the command in the stdout (equivalent to "@echo off &&")
-                        masterPassword = bat(script: '@mvn --encrypt-master-password %random%%random%%random%', returnStdout: true)
+                        masterPassword = bat(script: '@mvn --quiet --encrypt-master-password %random%%random%%random%', returnStdout: true)
                       }
                       mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword.replaceAll('[\\n\\r]$', ''))
                       writeFile file: settingsSecurityFile, text: mavenSettingsSecurity
@@ -155,10 +155,10 @@ def call(Map params = [:]) {
 
                       // Generating settings.xml with proxy config and encrypted basic auth password
                       if (isUnix()) {
-                        serverPassword = sh(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
+                        serverPassword = sh(script: 'mvn --quiet --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       } else {
                         // the "@" prefix avoid including the command in the stdout (equivalent to "@echo off &&")
-                        serverPassword = bat(script: '@mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
+                        serverPassword = bat(script: '@mvn --quiet --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       }
                       mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
                       mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
