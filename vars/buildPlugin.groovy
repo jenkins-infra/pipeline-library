@@ -346,6 +346,8 @@ def call(Map params = [:]) {
                 sh 'docker system prune --force --all || echo "Failed to cleanup docker images"'
               } else {
                 bat 'docker system prune --force --all || echo "Failed to cleanup docker images"'
+                // DEBUG
+                bat 'timeout /t 1000 /nobreak'
               }
             }
           }
