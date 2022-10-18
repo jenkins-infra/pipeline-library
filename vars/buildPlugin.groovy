@@ -110,6 +110,7 @@ def call(Map params = [:]) {
                     '-Dcheckstyle.failsOnError=false',
                     '-X',
                   ]
+                  String settingsFile
                   final String defaultProxyProvider = 'azure'
                   def availableProxyProviders = ['azure', 'do', 'aws']
                   String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
@@ -126,7 +127,6 @@ def call(Map params = [:]) {
                       String mavenSettings = libraryResource 'artifact-caching-proxy/settings.xml'
                       String mavenSettingsSecurity = libraryResource 'artifact-caching-proxy/settings-security.xml'
                       String settingsFolder
-                      String settingsFile
                       String settingsSecurityFile
                       String masterPassword
                       String serverPassword
