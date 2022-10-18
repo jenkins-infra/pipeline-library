@@ -151,7 +151,7 @@ def call(Map params = [:]) {
 
                       // DEBUG
                       echo readFile(settingsSecurityFile)
-                      
+
                       // Generating settings.xml with proxy config and encrypted basic auth password
                       if (isUnix()) {
                         serverPassword = sh(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
