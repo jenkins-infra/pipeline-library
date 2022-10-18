@@ -110,7 +110,6 @@ def call(Map params = [:]) {
                     '-Dcheckstyle.failsOnError=false',
                     '-X',
                   ]
-                  def settingsFile = ''
                   final String defaultProxyProvider = 'azure'
                   def availableProxyProviders = ['azure', 'do', 'aws']
                   String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
@@ -120,39 +119,46 @@ def call(Map params = [:]) {
                     echo "INFO: no valid artifact caching proxy provider specified, set to '$defaultProxyProvider' by default."
                   }
                   if (artifactCachingProxyEnabled && availableProxyProviders.contains(requestedProvider)) {
-                    // Add encrypted password to the settings
-                    // See steps at https://maven.apache.org/guides/mini/guide-encryption.html
                     withCredentials([
                       usernamePassword(credentialsId: 'artifact-caching-proxy-credentials', usernameVariable: 'ARTIFACT_CACHING_PROXY_USERNAME', passwordVariable: 'ARTIFACT_CACHING_PROXY_PASSWORD')
                     ]) {
-                      echo "Setting up maven to use artifact caching proxy from '${requestedProvider}' provider..."
-                      settingsFile = "${m2repo}/settings.xml"
-                      final String settingsSecurityFile = "${m2repo}/settings-security.xml"
+                      echo "Setting up Maven to use artifact caching proxy from '${requestedProvider}' provider..."
                       String mavenSettings = libraryResource 'artifact-caching-proxy/settings.xml'
                       String mavenSettingsSecurity = libraryResource 'artifact-caching-proxy/settings-security.xml'
+                      String settingsFolder
+                      String settingsFile
+                      String settingsSecurityFile
                       String masterPassword
                       String serverPassword
+
+                      // Generating settings-security.xml with a random master password (not reused)
                       if (isUnix()) {
+                        settingsFolder = env.HOME + '/.m2'
+                        settingsFile = settingsFolder + '/settings.xml'
+                        settingsSecurityFile = settingsFolder + '/settings-security.xml'
+                        sh "mkdir -p ${settingsFolder}"
                         masterPassword = sh(script: 'set +x; mvn --encrypt-master-password $(openssl rand -hex 12)', returnStdout: true)
                       } else {
-                        masterPassword = bat(script: 'mvn --encrypt-master-password p%random%%random%%random%', returnStdout: true)
+                        settingsFolder = env.USERPROFILE + '\\.m2'
+                        settingsFile = settingsFolder + '\\settings.xml'
+                        settingsSecurityFile = settingsFolder + '\\settings-security.xml'
+                        bat "mkdir ${settingsFolder} >nul 2>&1"
+                        masterPassword = bat(script: 'mvn --encrypt-master-password %random%%random%%random%', returnStdout: true)
                       }
                       mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
                       writeFile file: settingsSecurityFile, text: mavenSettingsSecurity
+
+                      // Generating settings.xml with proxy config and encrypted basic auth password
                       if (isUnix()) {
-                        sh "mkdir -p ${HOME}/.m2 && mv ${settingsSecurityFile} ${HOME}/.m2/settings-security.xml"
                         serverPassword = sh(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       } else {
-                        final String settingsSecurityFileWindows = settingsSecurityFile.replace('/', '\\')
-                        bat "mkdir %userprofile%\\.m2 >nul 2>&1 || move ${settingsSecurityFileWindows} %userprofile%\\.m2\\settings-security.xml"
                         serverPassword = bat(script: 'mvn --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
                       }
-
                       mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
                       mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
                       mavenSettings = mavenSettings.replace('ENCRYPTED-SERVER-PASSWORD', serverPassword)
-
                       writeFile file: settingsFile, text: mavenSettings
+
                       echo "INFO: using artifact caching proxy from '${requestedProvider}' provider"
                     }
                   } else {
