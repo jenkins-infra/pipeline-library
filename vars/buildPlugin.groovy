@@ -148,9 +148,9 @@ def call(Map params = [:]) {
                       }
                       masterPassword = masterPassword.replaceAll('[\\n\\r]*', '')
                       mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
-                      writeFile file: settingsSecurityFile, text: mavenSettingsSecurity, encoding: 'cp1252'
+                      writeFile file: settingsSecurityFile, text: mavenSettingsSecurity, encoding: "UTF-8"
                       // backup debug
-                      writeFile file: "${pwd tmp: true}/backup-settings.xml", text: mavenSettingsSecurity, encoding: 'cp1252'
+                      writeFile file: "${pwd tmp: true}/backup-settings.xml", text: mavenSettingsSecurity, encoding: "UTF-8"
 
                       // Generating settings.xml with proxy config and encrypted basic auth password
                       if (isUnix()) {
@@ -163,9 +163,9 @@ def call(Map params = [:]) {
                       mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
                       mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
                       mavenSettings = mavenSettings.replace('SERVER-PASSWORD', serverPassword.replaceAll('[\\n\\r]*$', ''))
-                      writeFile file: settingsFile, text: mavenSettings, encoding: 'cp1252'
+                      writeFile file: settingsFile, text: mavenSettings, encoding: "UTF-8"
                       // backup debug
-                      writeFile file: "${pwd tmp: true}/backup-settings-security.xml", text: mavenSettingsSecurity, encoding: 'cp1252'
+                      writeFile file: "${pwd tmp: true}/backup-settings-security.xml", text: mavenSettingsSecurity, encoding: "UTF-8"
                       archiveArtifacts artifacts: '**/*.xml'
 
                       // DEBUG
