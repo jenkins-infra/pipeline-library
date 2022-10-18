@@ -149,8 +149,6 @@ def call(Map params = [:]) {
                       masterPassword = masterPassword.replaceAll('[\\n\\r]*', '')
                       mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
                       writeFile file: settingsSecurityFile, text: mavenSettingsSecurity, encoding: "UTF-8"
-                      // backup debug
-                      writeFile file: "${env.WORKSPACE}/backup-settings-security.xml", text: mavenSettingsSecurity, encoding: "UTF-8"
 
                       // Generating settings.xml with proxy config and encrypted basic auth password
                       if (isUnix()) {
@@ -164,9 +162,6 @@ def call(Map params = [:]) {
                       mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
                       mavenSettings = mavenSettings.replace('SERVER-PASSWORD', serverPassword.replaceAll('[\\n\\r]*$', ''))
                       writeFile file: settingsFile, text: mavenSettings, encoding: "UTF-8"
-                      // backup debug
-                      writeFile file: "${env.WORKSPACE}/backup-settings.xml", text: mavenSettings, encoding: "UTF-8"
-                      archiveArtifacts artifacts: 'backup-settings.xml, backup-settings-security.xml'
 
                       // DEBUG
                       if (isUnix()) {
@@ -346,10 +341,9 @@ def call(Map params = [:]) {
                 sh 'docker system prune --force --all || echo "Failed to cleanup docker images"'
               } else {
                 bat 'docker system prune --force --all || echo "Failed to cleanup docker images"'
-                // DEBUG
-                bat 'timeout /t 1000 /nobreak'
               }
             }
+            sleep 1000
           }
         }
       }
