@@ -9,6 +9,13 @@ import static org.junit.Assert.assertTrue
 
 class BuildPluginStepTests extends BaseTest {
   static final String scriptName = 'vars/buildPlugin.groovy'
+  static final String defaultArtifactCachingProxyProvider = 'azure'
+  static final String unavailableArtifactCachingProxyProvider = 'foo'
+  static final String artifactCachingProxyProviderDifferentFromDefaultOne = 'do'
+  static final String linuxHome = '/home/jenkins'
+  static final String windowsUserprofile = 'C:\\Users\\Jenkins'
+  static final String artifactCachingProxyUsername = 'myArtifactCachingProxyUsername'
+  static final String artifactCachingProxyPassword = 'myArtifactCachingProxyPassword'
 
   @Override
   @Before
@@ -18,6 +25,10 @@ class BuildPluginStepTests extends BaseTest {
     helper.registerAllowedMethod('fileExists', [String.class], { s -> return s.equals('pom.xml') })
     env.NODE_LABELS = 'docker'
     env.JOB_NAME = 'build/plugin/test'
+    env.ARTIFACT_CACHING_PROXY_NAME = artifactCachingProxyUsername
+    env.ARTIFACT_CACHING_PROXY_PASSWORD = artifactCachingProxyPassword
+    env.HOME = linuxHome
+    env.USERPROFILE = windowsUserprofile
   }
 
   @Test
@@ -309,5 +320,82 @@ class BuildPluginStepTests extends BaseTest {
     printCallStack()
     // then it runs the fingerprint
     assertTrue(assertMethodCallContainsPattern('fingerprint', '**/*-rc*.*/*-rc*.*'))
+  }
+
+  @Test
+  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_no_provider_specified() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with artifactCachingProxyEnabled set to true and no provider is specified
+    script.call(['artifactCachingProxyEnabled': true])
+    printCallStack()
+    // then it notices no valid artifact caching provider has been specified and that it will set it to the default one
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: no valid artifact caching proxy provider specified, set to '${defaultArtifactCachingProxyProvider}' by default."))
+    // then it tells it will use the default artifact caching proxy provider
+    assertTrue(assertMethodCallContainsPattern('echo', "Setting up Maven to use artifact caching proxy from '${defaultArtifactCachingProxyProvider}' provider..."))
+    // then it run the command mvn --encrypt-master-password
+    assertTrue(assertMethodCallContainsPattern('sh', 'mvn --quiet --encrypt-master-password') || assertMethodCallContainsPattern('bat','mvn --quiet --encrypt-master-password'))
+    // then it writes settings-security.xml in the user .m2 folder
+    assertTrue(assertMethodCallContainsPattern('writeFile', "file=${linuxHome}/.m2/settings-security.xml") || assertMethodCallContainsPattern('writeFile',"file=${windowsUserprofile}\\.m2\\settings-security.xml"))
+    // then settings-security.xml does not contain the master password placeholder
+    assertFalse(assertMethodCallContainsPattern('writeFile', '<master>ENCRYPTED-MASTER-PASSWORD</master>'))
+    // then it run the command mvn --encrypt-password
+    assertTrue(assertMethodCallContainsPattern('sh', 'mvn --quiet --encrypt-password') || assertMethodCallContainsPattern('bat','mvn --quiet --encrypt-password'))
+    // then it writes settings.xml in the user .m2 folder
+    assertTrue(assertMethodCallContainsPattern('writeFile', "file=${linuxHome}/.m2/settings.xml") || assertMethodCallContainsPattern('writeFile',"file=${windowsUserprofile}\\.m2\\settings.xml"))
+    // then settings.xml contains the default artifact caching proxy provider url
+    assertTrue(assertMethodCallContainsPattern('writeFile', "<url>https://repo.${defaultArtifactCachingProxyProvider}.jenkins.io/public/</url>"))
+    // then settings.xml does not contains the artifact caching proxy provider url placeholder
+    assertFalse(assertMethodCallContainsPattern('writeFile', '<url>https://repo.PROVIDER.jenkins.io/public/</url>'))
+    // then settings.xml contains the artifact caching proxy username
+    assertTrue(assertMethodCallContainsPattern('writeFile', "<username>${artifactCachingProxyUsername}</username>"))
+    // then settings.xml does not contain the server username placeholder
+    assertFalse(assertMethodCallContainsPattern('writeFile', '<username>SERVER-USERNAME</username>'))
+    // then settings.xml does not contain the server password placeholder
+    assertFalse(assertMethodCallContainsPattern('writeFile', '<password>SERVER-PASSWORD</password>'))
+    // then it tells it uses the default artifact caching proxy provider
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${defaultArtifactCachingProxyProvider}' provider."))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_empty_provider_specified() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with artifactCachingProxyEnabled set to true and an empty provider is specified
+    env.ARTIFACT_CACHING_PROXY_PROVIDER = ''
+    script.call(['artifactCachingProxyEnabled': true])
+    printCallStack()
+    // then it notices no valid artifact caching provider has been specified and that it will set it to the default one
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: no valid artifact caching proxy provider specified, set to '${defaultArtifactCachingProxyProvider}' by default."))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_unavailable_provider_specified() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with artifactCachingProxyEnabled set to true and an unavailable provider is specified
+    env.ARTIFACT_CACHING_PROXY_PROVIDER = unavailableArtifactCachingProxyProvider
+    script.call(['artifactCachingProxyEnabled': true])
+    printCallStack()
+    // then it notices no valid artifact caching provider has been specified and that it will set it to the default one
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: no valid artifact caching proxy provider specified, set to '${defaultArtifactCachingProxyProvider}' by default."))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_provider_different_from_default_one_specified() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with artifactCachingProxyEnabled set to true and a provider different from the default one is specified
+    env.ARTIFACT_CACHING_PROXY_PROVIDER = artifactCachingProxyProviderDifferentFromDefaultOne
+    script.call(['artifactCachingProxyEnabled': true])
+    printCallStack()
+    // then it does not notice no valid artifact caching provider has been specified and that it will set it to the default one
+    assertFalse(assertMethodCallContainsPattern('echo', "INFO: no valid artifact caching proxy provider specified, set to '${defaultArtifactCachingProxyProvider}' by default."))
+    // then it tells it will use the specified artifact caching proxy provider
+    assertTrue(assertMethodCallContainsPattern('echo', "Setting up Maven to use artifact caching proxy from '${artifactCachingProxyProviderDifferentFromDefaultOne}' provider..."))
+    // then settings.xml contains the specified artifact caching proxy provider url
+    assertTrue(assertMethodCallContainsPattern('writeFile', "<url>https://repo.${artifactCachingProxyProviderDifferentFromDefaultOne}.jenkins.io/public/</url>"))
+    // then it tells it uses the specified artifact caching proxy provider
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${artifactCachingProxyProviderDifferentFromDefaultOne}' provider."))
+    assertJobStatusSuccess()
   }
 }
