@@ -124,9 +124,6 @@ def call(Map params = [:]) {
 
                       echo "Setting up Maven to use artifact caching proxy from '${requestedProvider}' provider..."
 
-                      // DEBUG
-                      echo randomPassword
-
                       // As azure VM agents don't have this env var, setting a default provider if none is specified or if the provider isn't available
                       if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
                         requestedProvider = defaultProxyProvider
