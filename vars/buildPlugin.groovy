@@ -1,4 +1,6 @@
 #!/usr/bin/env groovy
+import org.apache.commons.lang3.RandomStringUtils
+
 /**
  * Simple wrapper step for building a plugin
  */
@@ -12,6 +14,7 @@ def call(Map params = [:]) {
   def failFast = params.containsKey('failFast') ? params.failFast : true
   def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
   def gitDefaultBranch = params.containsKey('gitDefaultBranch') ? params.gitDefaultBranch : null
+  def artifactCachingProxyEnabled = params.containsKey('artifactCachingProxyEnabled') ? params.artifactCachingProxyEnabled : false
 
   def useContainerAgent = params.containsKey('useContainerAgent') ? params.useContainerAgent : false
   if (params.containsKey('useAci')) {
@@ -94,6 +97,7 @@ def call(Map params = [:]) {
                 String command
                 if (isMaven) {
                   m2repo = "${pwd tmp: true}/m2repo"
+                  String settingsFile
                   List<String> mavenOptions = [
                     '--update-snapshots',
                     "-Dmaven.repo.local=$m2repo",
@@ -102,6 +106,36 @@ def call(Map params = [:]) {
                     '-Dcheckstyle.failOnViolation=false',
                     '-Dcheckstyle.failsOnError=false',
                   ]
+                  if (artifactCachingProxyEnabled) {
+                    withCredentials([
+                      usernamePassword(credentialsId: 'artifact-caching-proxy-credentials', usernameVariable: 'ARTIFACT_CACHING_PROXY_USERNAME', passwordVariable: 'ARTIFACT_CACHING_PROXY_PASSWORD')
+                    ]) {
+                      final String defaultProxyProvider = 'azure'
+                      def availableProxyProviders = ['azure', 'do', 'aws']
+                      String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
+                      String mavenSettings = libraryResource 'artifact-caching-proxy/settings.xml'
+                      String mavenSettingsSecurity = libraryResource 'artifact-caching-proxy/settings-security.xml'
+
+                      // As azure VM agents don't have this env var, setting a default provider if none is specified or if the provider isn't available
+                      if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
+                        requestedProvider = defaultProxyProvider
+                        echo "INFO: no valid artifact caching proxy provider specified, set to '$defaultProxyProvider' by default."
+                      }
+
+                      echo "Setting up Maven to use artifact caching proxy from '${requestedProvider}' provider..."
+
+                      settingsFile = "${pwd tmp: true}/mavenSettings.xml"
+                      mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
+                      mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
+                      mavenSettings = mavenSettings.replace('SERVER-PASSWORD', env.ARTIFACT_CACHING_PROXY_PASSWORD)
+                      writeFile file: settingsFile, text: mavenSettings
+
+                      echo "INFO: using artifact caching proxy from '${requestedProvider}' provider."
+                    }
+                  } else {
+                    echo 'NOTICE: artifacts will be downloaded directly from https://repo.jenkins-ci.org.'
+                    // echo 'Consider enabling the artifact caching proxy with \'artifactCachingProxyEnabled: true\'.'
+                  }
                   // jacoco had file locking issues on Windows, so only running on linux
                   if (isUnix()) {
                     mavenOptions += '-Penable-jacoco'
@@ -121,7 +155,7 @@ def call(Map params = [:]) {
                   }
                   mavenOptions += 'clean install'
                   try {
-                    infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
+                    infra.runMaven(mavenOptions, jdk, null, settingsFile, addToolEnv)
                   } finally {
                     if (!skipTests) {
                       junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
