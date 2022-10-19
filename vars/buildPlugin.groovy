@@ -150,7 +150,7 @@ def call(Map params = [:]) {
                       }
                       masterPassword = masterPassword.replaceAll('[\\n\\r]*', '')
                       mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
-                      writeFile file: settingsSecurityFile, text: mavenSettingsSecurity, encoding: "UTF-8"
+                      writeFile file: settingsSecurityFile, text: mavenSettingsSecurity
 
                       // Generating settings.xml with proxy config and encrypted basic auth password
                       if (isUnix()) {
@@ -162,8 +162,8 @@ def call(Map params = [:]) {
                       serverPassword = serverPassword.replaceAll('[\\n\\r]*', '')
                       mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
                       mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
-                      mavenSettings = mavenSettings.replace('SERVER-PASSWORD', serverPassword.replaceAll('[\\n\\r]*$', ''))
-                      writeFile file: settingsFile, text: mavenSettings, encoding: "UTF-8"
+                      mavenSettings = mavenSettings.replace('SERVER-PASSWORD', serverPassword)
+                      writeFile file: settingsFile, text: mavenSettings
 
                       echo "INFO: using artifact caching proxy from '${requestedProvider}' provider."
                     }
