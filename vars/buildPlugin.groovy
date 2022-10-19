@@ -113,8 +113,7 @@ def call(Map params = [:]) {
                       final String defaultProxyProvider = 'azure'
                       def availableProxyProviders = ['azure', 'do', 'aws']
                       String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
-                      String mavenSettings = libraryResource 'artifact-caching-proxy/settings.xml'
-                      String mavenSettingsSecurity = libraryResource 'artifact-caching-proxy/settings-security.xml'
+                      String mavenSettings = libraryResource 'artifact-caching-proxy-settings.xml'
 
                       // As azure VM agents don't have this env var, setting a default provider if none is specified or if the provider isn't available
                       if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
