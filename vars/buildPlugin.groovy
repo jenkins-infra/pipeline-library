@@ -163,15 +163,6 @@ def call(Map params = [:]) {
                       mavenSettings = mavenSettings.replace('SERVER-PASSWORD', serverPassword.replaceAll('[\\n\\r]*$', ''))
                       writeFile file: settingsFile, text: mavenSettings, encoding: "UTF-8"
 
-                      // DEBUG
-                      if (isUnix()) {
-                        sh "ls ${settingsFolder}"
-                      } else {
-                        bat "dir ${settingsFolder}"
-                      }
-                      echo readFile(settingsFile)
-                      echo readFile(settingsSecurityFile)
-
                       echo "INFO: using artifact caching proxy from '${requestedProvider}' provider"
                     }
                   } else {
@@ -343,7 +334,6 @@ def call(Map params = [:]) {
                 bat 'docker system prune --force --all || echo "Failed to cleanup docker images"'
               }
             }
-            sleep 1000
           }
         }
       }
