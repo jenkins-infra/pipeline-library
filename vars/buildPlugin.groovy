@@ -1,4 +1,6 @@
 #!/usr/bin/env groovy
+import org.apache.commons.lang3.RandomStringUtils
+
 /**
  * Simple wrapper step for building a plugin
  */
@@ -116,10 +118,14 @@ def call(Map params = [:]) {
                       String mavenSettingsSecurity = libraryResource 'artifact-caching-proxy/settings-security.xml'
                       String settingsFolder
                       String settingsSecurityFile
+                      final String randomPassword = RandomStringUtils.randomAlphanumeric(20)
                       String masterPassword
                       String serverPassword
 
                       echo "Setting up Maven to use artifact caching proxy from '${requestedProvider}' provider..."
+
+                      // DEBUG
+                      echo randomPassword
 
                       // As azure VM agents don't have this env var, setting a default provider if none is specified or if the provider isn't available
                       if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
@@ -133,14 +139,14 @@ def call(Map params = [:]) {
                         settingsFile = settingsFolder + '/settings.xml'
                         settingsSecurityFile = settingsFolder + '/settings-security.xml'
                         sh "mkdir -p ${settingsFolder}"
-                        masterPassword = sh(script: 'set +x; mvn --quiet --encrypt-master-password $(openssl rand -hex 12)', returnStdout: true)
+                        masterPassword = sh(script: "set +x; mvn --quiet --encrypt-master-password ${randomPassword}", returnStdout: true)
                       } else {
                         settingsFolder = env.USERPROFILE + '\\.m2'
                         settingsFile = settingsFolder + '\\settings.xml'
                         settingsSecurityFile = settingsFolder + '\\settings-security.xml'
                         bat "mkdir ${settingsFolder} >nul 2>&1"
                         // the "@" prefix avoid including the command in the stdout (equivalent to "@echo off &&")
-                        masterPassword = bat(script: '@mvn --quiet --encrypt-master-password %random%%random%%random%', returnStdout: true)
+                        masterPassword = bat(script: "@mvn --quiet --encrypt-master-password ${randomPassword}", returnStdout: true)
                       }
                       masterPassword = masterPassword.replaceAll('[\\n\\r]*', '')
                       mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
