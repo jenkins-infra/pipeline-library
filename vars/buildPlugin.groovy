@@ -95,6 +95,7 @@ def call(Map params = [:]) {
                 String command
                 if (isMaven) {
                   m2repo = "${pwd tmp: true}/m2repo"
+                  String settingsFile
                   List<String> mavenOptions = [
                     '--update-snapshots',
                     "-Dmaven.repo.local=$m2repo",
@@ -104,26 +105,26 @@ def call(Map params = [:]) {
                     '-Dcheckstyle.failsOnError=false',
                     '-X',
                   ]
-                  String settingsFile
-                  final String defaultProxyProvider = 'azure'
-                  def availableProxyProviders = ['azure', 'do', 'aws']
-                  String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
-                  // As azure VM agents don't have this env var, setting a default provider if none is specified or if the provider isn't available
-                  if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
-                    requestedProvider = defaultProxyProvider
-                    echo "INFO: no valid artifact caching proxy provider specified, set to '$defaultProxyProvider' by default."
-                  }
-                  if (artifactCachingProxyEnabled && availableProxyProviders.contains(requestedProvider)) {
+                  if (artifactCachingProxyEnabled) {
                     withCredentials([
                       usernamePassword(credentialsId: 'artifact-caching-proxy-credentials', usernameVariable: 'ARTIFACT_CACHING_PROXY_USERNAME', passwordVariable: 'ARTIFACT_CACHING_PROXY_PASSWORD')
                     ]) {
                       echo "Setting up Maven to use artifact caching proxy from '${requestedProvider}' provider..."
+                      final String defaultProxyProvider = 'azure'
+                      def availableProxyProviders = ['azure', 'do', 'aws']
+                      String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
                       String mavenSettings = libraryResource 'artifact-caching-proxy/settings.xml'
                       String mavenSettingsSecurity = libraryResource 'artifact-caching-proxy/settings-security.xml'
                       String settingsFolder
                       String settingsSecurityFile
                       String masterPassword
                       String serverPassword
+
+                      // As azure VM agents don't have this env var, setting a default provider if none is specified or if the provider isn't available
+                      if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
+                        requestedProvider = defaultProxyProvider
+                        echo "INFO: no valid artifact caching proxy provider specified, set to '$defaultProxyProvider' by default."
+                      }
 
                       // Generating settings-security.xml with a random master password (not reused)
                       if (isUnix()) {
@@ -157,10 +158,11 @@ def call(Map params = [:]) {
                       mavenSettings = mavenSettings.replace('SERVER-PASSWORD', serverPassword.replaceAll('[\\n\\r]*$', ''))
                       writeFile file: settingsFile, text: mavenSettings, encoding: "UTF-8"
 
-                      echo "INFO: using artifact caching proxy from '${requestedProvider}' provider"
+                      echo "INFO: using artifact caching proxy from '${requestedProvider}' provider."
                     }
                   } else {
-                    echo "WARNING: artifacts will be downloaded directly from https://repo.jenkins-ci.org without using the artifact caching proxy."
+                    echo 'NOTICE: artifacts will be downloaded directly from https://repo.jenkins-ci.org.'
+                    // echo 'Consider enabling the artifact caching proxy with \'artifactCachingProxyEnabled: true\'.'
                   }
                   // jacoco had file locking issues on Windows, so only running on linux
                   if (isUnix()) {
