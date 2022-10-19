@@ -9,7 +9,7 @@ def call(userConfig = [:]) {
     stagingCredentials: [], // No custom secrets for staging by default
     productionCredentials: [], // No custom secrets for production by default
     productionBranch: 'main', // Defaults to the principal branch
-    agentContainerImage: 'jenkinsciinfra/hashicorp-tools:0.5.73', // Version managed by updatecli
+    agentContainerImage: 'jenkinsciinfra/hashicorp-tools:0.5.75', // Version managed by updatecli
     runTests: false, // Executes the tests provided by the "calling" project, which should provide a tests/Makefile
     runCommonTests: true, // Executes the default test suite from the shared tools repository (terratest)
   ]
@@ -110,48 +110,6 @@ def call(userConfig = [:]) {
                 text: "The terraform plan for this change request can be found at <${planFileUrl}>.",
                 detailsURL: planFileUrl
               }
-              stage('💸 Report estimated costs') {
-                withCredentials([string(credentialsId: 'infracost-api-key', variable: 'INFRACOST_API_KEY')]) {
-                  Boolean commentReport = false
-                  Boolean commentComparison = false
-                  try {
-                    // On AWS we can use the terraform plan to estimate the costs as it doesn't contains most sensible secrets
-                    if (scmOutput.GIT_URL.contains('jenkins-infra/aws')) {
-                      sh 'terraform show -json tfplan > plan.json'
-                      sh 'infracost breakdown --path plan.json --show-skipped --format json --out-file infracost.json'
-                      // Also try the experimental HCL method for comparison and upstream contrib
-                      sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost-hcl.json'
-                      commentReport = true
-                      commentComparison = true
-                    }
-                    // On other supported terraform projects, we're using the experimental HCL parser instead
-                    // so infracost doesn't need the terraform plan and thus doesn't have access to any sensitive values
-                    // As soon as the parser gets out of experimental state, we can use this safer method only
-                    if (scmOutput.GIT_URL.contains('jenkins-infra/azure')) {
-                      sh 'infracost breakdown --path . --terraform-parse-hcl --show-skipped --format json --out-file infracost.json'
-                      commentReport = true
-                    }
-                    // Convert the report as github comment
-                    def githubComment = ''
-                    if (commentReport) {
-                      sh 'infracost output --path infracost.json --format github-comment --show-skipped --out-file github.md'
-                      githubComment = "### Plan parsing method\n${readFile(file: 'github.md')}"
-                    }
-                    // Compare the outputs of the two methods
-                    if (commentComparison) {
-                      sh 'infracost output --path infracost-hcl.json --format github-comment --show-skipped --out-file github-hcl.md'
-                      githubComment += "\n\n### HCL parsing method\n${readFile(file: 'github-hcl.md')}"
-                    }
-                    if (githubComment != '') {
-                      sh "git log --pretty=%s -1 ${scmOutput.GIT_COMMIT} > git-log.txt"
-                      githubComment = "## Report for \"${readFile(file: 'git-log.txt').trim()}\"\n${githubComment}"
-                      pullRequest.comment(githubComment)
-                    }
-                  } catch(e) {
-                    echo 'Warning: an error occurred during cost estimation: ' + e.toString()
-                  }
-                }
-              }
             }
 
             // Only ask for manual approval when the build was manually launched by a human
@@ -163,7 +121,13 @@ def call(userConfig = [:]) {
             }
             if (!isBuildCauseTimer && isBuildOnProductionBranch) {
               stage('🚢 Shipping Changes') {
-                sh makeCliCmd + ' deploy'
+                try {
+                  sh makeCliCmd + ' deploy'
+                } catch(Exception e) {
+                  // If the deploy failed, keep the pod until a user catch the problem (cloud be an errored state, or many reason to keep the workspace)
+                  input message: 'An error happened while applying the terraform plan. Keeping the agent up and running. Delete the agent?'
+                }
+
               }
             }
           }
