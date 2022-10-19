@@ -97,6 +97,7 @@ def call(Map params = [:]) {
                 String command
                 if (isMaven) {
                   m2repo = "${pwd tmp: true}/m2repo"
+                  String settingsFile
                   List<String> mavenOptions = [
                     '--update-snapshots',
                     "-Dmaven.repo.local=$m2repo",
@@ -106,25 +107,13 @@ def call(Map params = [:]) {
                     '-Dcheckstyle.failsOnError=false',
                     '-X',
                   ]
-                  String settingsFile
-                  // TEST START
-                  final String defaultProxyProvider = 'azure'
-                  def availableProxyProviders = ['azure', 'do', 'aws']
-                  String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
-                  // As azure VM agents don't have this env var, setting a default provider if none is specified or if the provider isn't available
-                  if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
-                    requestedProvider = defaultProxyProvider
-                    echo "INFO: no valid artifact caching proxy provider specified, set to '$defaultProxyProvider' by default."
-                  }
-                  if (artifactCachingProxyEnabled && availableProxyProviders.contains(requestedProvider)) {
-                  // TEST END
-                  // if (artifactCachingProxyEnabled) {
+                  if (artifactCachingProxyEnabled) {
                     withCredentials([
                       usernamePassword(credentialsId: 'artifact-caching-proxy-credentials', usernameVariable: 'ARTIFACT_CACHING_PROXY_USERNAME', passwordVariable: 'ARTIFACT_CACHING_PROXY_PASSWORD')
                     ]) {
-                      // final String defaultProxyProvider = 'azure'
-                      // def availableProxyProviders = ['azure', 'do', 'aws']
-                      // String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
+                      final String defaultProxyProvider = 'azure'
+                      def availableProxyProviders = ['azure', 'do', 'aws']
+                      String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
                       String mavenSettings = libraryResource 'artifact-caching-proxy/settings.xml'
                       String mavenSettingsSecurity = libraryResource 'artifact-caching-proxy/settings-security.xml'
                       String settingsFolder
@@ -135,11 +124,11 @@ def call(Map params = [:]) {
 
                       echo "Setting up Maven to use artifact caching proxy from '${requestedProvider}' provider..."
 
-                      // // As azure VM agents don't have this env var, setting a default provider if none is specified or if the provider isn't available
-                      // if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
-                      //   requestedProvider = defaultProxyProvider
-                      //   echo "INFO: no valid artifact caching proxy provider specified, set to '$defaultProxyProvider' by default."
-                      // }
+                      // As azure VM agents don't have this env var, setting a default provider if none is specified or if the provider isn't available
+                      if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
+                        requestedProvider = defaultProxyProvider
+                        echo "INFO: no valid artifact caching proxy provider specified, set to '$defaultProxyProvider' by default."
+                      }
 
                       // Generating settings-security.xml with a random master password (not reused)
                       if (isUnix()) {
