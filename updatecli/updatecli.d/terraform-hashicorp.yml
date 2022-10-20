@@ -1,4 +1,5 @@
-title: Bump `hashicorp-tools` docker image
+---
+name: Bump `hashicorp-tools` docker image
 
 scms:
   default:
@@ -20,6 +21,10 @@ sources:
       repository: "docker-hashicorp-tools"
       token: "{{ requiredEnv .github.token }}"
       username: "{{ .github.username }}"
+      versionfilter:
+        kind: semver
+    transformers:
+      - trimprefix: v
 
 conditions:
   checkIfDockerImageIsPublished:
@@ -46,8 +51,8 @@ pullrequests:
   default:
     kind: github
     scmid: default
-    targets:
-      - updateTerraformFile
+    title: Bump `hashicorp-tools` docker image to {{ source "dockerHashicorpToolsImageVersion" }}
     spec:
       labels:
         - dependencies
+        - jenkinsciinfra/hashicorp-tools

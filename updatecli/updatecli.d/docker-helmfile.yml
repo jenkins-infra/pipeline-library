@@ -1,5 +1,5 @@
 ---
-title: "Bump docker-helmfile version on shared library resources"
+name: Bump `docker-helmfile` version
 
 scms:
   default:
@@ -22,8 +22,10 @@ sources:
       repository: "docker-helmfile"
       token: "{{ requiredEnv .github.token }}"
       username: "{{ .github.username }}"
-      versionFilter:
+      versionfilter:
         kind: semver
+    transformers:
+      - trimprefix: v
 
 conditions:
   checkIfDockerImageIsPublished:
@@ -57,11 +59,9 @@ targets:
 pullrequests:
   default:
     kind: github
-    title: Bump docker-helmfile version on shared library resources to {{ source "lastVersion" }}
+    title: Bump `docker-helmfile` version to {{ source "lastVersion" }}
     scmid: default
-    targets:
-      - updateGroovyCode
-      - updateDoc
     spec:
       labels:
         - dependencies
+        - jenkinsciinfra/helmfile

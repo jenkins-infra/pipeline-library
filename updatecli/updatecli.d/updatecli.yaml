@@ -1,4 +1,5 @@
-title: "Update updatecli version"
+---
+name: Update updatecli version
 
 scms:
   default:
@@ -21,7 +22,7 @@ sources:
       repository: "updatecli"
       token: "{{ requiredEnv .github.token }}"
       username: "{{ .github.username }}"
-      versionFilter:
+      versionfilter:
         kind: semver
 
 conditions:
@@ -46,5 +47,8 @@ pullrequests:
   default:
     kind: github
     scmid: default
-    targets:
-      - setUpdatecliVersion
+    title: Update updatecli version to {{ source "latestUpdatecliVersion" }}
+    spec:
+      labels:
+        - dependencies
+        - updatecli
