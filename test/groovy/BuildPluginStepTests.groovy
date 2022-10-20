@@ -9,6 +9,9 @@ import static org.junit.Assert.assertTrue
 
 class BuildPluginStepTests extends BaseTest {
   static final String scriptName = 'vars/buildPlugin.groovy'
+  static final String defaultArtifactCachingProxyProvider = 'azure'
+  static final String unavailableArtifactCachingProxyProvider = 'foo'
+  static final String availableArtifactCachingProxyProviderDifferentFromDefaultOne = 'do'
 
   @Override
   @Before
@@ -309,5 +312,62 @@ class BuildPluginStepTests extends BaseTest {
     printCallStack()
     // then it runs the fingerprint
     assertTrue(assertMethodCallContainsPattern('fingerprint', '**/*-rc*.*/*-rc*.*'))
+  }
+
+  @Test
+  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_no_provider_specified() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with artifactCachingProxyEnabled set to true and no provider is specified
+    script.call(['artifactCachingProxyEnabled': true])
+    printCallStack()
+    // then it notices no valid artifact caching provider has been specified and that it will set it to the default one
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: no valid artifact caching proxy provider specified, set to '${defaultArtifactCachingProxyProvider}' by default."))
+    // then configFile contains the default artifact caching proxy provider id
+    assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${defaultArtifactCachingProxyProvider}"))
+    // then configFileProvider is correctly set
+    assertTrue(assertMethodCallContainsPattern('configFileProvider', '[OK]'))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_empty_provider_specified() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with artifactCachingProxyEnabled set to true and an empty provider is specified
+    env.ARTIFACT_CACHING_PROXY_PROVIDER = ''
+    script.call(['artifactCachingProxyEnabled': true])
+    printCallStack()
+    // then it notices no valid artifact caching provider has been specified and that it will set it to the default one
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: no valid artifact caching proxy provider specified, set to '${defaultArtifactCachingProxyProvider}' by default."))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_unavailable_provider_specified() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with artifactCachingProxyEnabled set to true and an unavailable provider is specified
+    env.ARTIFACT_CACHING_PROXY_PROVIDER = unavailableArtifactCachingProxyProvider
+    script.call(['artifactCachingProxyEnabled': true])
+    printCallStack()
+    // then it notices no valid artifact caching provider has been specified and that it will set it to the default one
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: no valid artifact caching proxy provider specified, set to '${defaultArtifactCachingProxyProvider}' by default."))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_available_provider_different_from_default_one_specified() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with artifactCachingProxyEnabled set to true and an available provider different from the default one is specified
+    env.ARTIFACT_CACHING_PROXY_PROVIDER = availableArtifactCachingProxyProviderDifferentFromDefaultOne
+    script.call(['artifactCachingProxyEnabled': true])
+    printCallStack()
+    // then configFile contains the specified artifact caching proxy provider id
+    assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${availableArtifactCachingProxyProviderDifferentFromDefaultOne}"))
+    // then configFileProvider is correctly set
+    assertTrue(assertMethodCallContainsPattern('configFileProvider', '[OK]'))
+    // then it succeeds
+    assertJobStatusSuccess()
   }
 }
