@@ -363,6 +363,8 @@ class BuildPluginStepTests extends BaseTest {
     env.ARTIFACT_CACHING_PROXY_PROVIDER = availableArtifactCachingProxyProviderDifferentFromDefaultOne
     script.call(['artifactCachingProxyEnabled': true])
     printCallStack()
+    // then it notices the specified artifact caching provider will be used
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${availableArtifactCachingProxyProviderDifferentFromDefaultOne}' provider."))
     // then configFile contains the specified artifact caching proxy provider id
     assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${availableArtifactCachingProxyProviderDifferentFromDefaultOne}"))
     // then configFileProvider is correctly set
