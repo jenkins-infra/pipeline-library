@@ -140,9 +140,6 @@ def call(Map params = [:]) {
                             infra.runMaven(mavenOptions, jdk, null, env.MAVEN_SETTINGS, addToolEnv)
                           }
                     } else {
-                      echo 'NOTICE: artifacts will be downloaded directly from https://repo.jenkins-ci.org.'
-                      // TODO: uncomment the line below when `artifactCachingProxyEnabled` is set as true by default (for opt-in)
-                      // echo 'Consider enabling the artifact caching proxy with "artifactCachingProxyEnabled: true".'
                       infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
                     }
                   } finally {
