@@ -12,6 +12,8 @@ def call(Map params = [:]) {
   def failFast = params.containsKey('failFast') ? params.failFast : true
   def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
   def gitDefaultBranch = params.containsKey('gitDefaultBranch') ? params.gitDefaultBranch : null
+  // This functionnality is set as opt-in for now
+  def artifactCachingProxyEnabled = params.containsKey('artifactCachingProxyEnabled') ? params.artifactCachingProxyEnabled : false
 
   def useContainerAgent = params.containsKey('useContainerAgent') ? params.useContainerAgent : false
   if (params.containsKey('useAci')) {
@@ -121,7 +123,25 @@ def call(Map params = [:]) {
                   }
                   mavenOptions += 'clean install'
                   try {
-                    infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
+                    if (artifactCachingProxyEnabled) {
+                      // As azure VM agents don't have this env var, setting a default provider if none is specified or if the provider isn't available
+                      final String defaultProxyProvider = 'azure'
+                      def availableProxyProviders = ['azure', 'do', 'aws']
+                      String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
+                      if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
+                        requestedProvider = defaultProxyProvider
+                        echo "INFO: no valid artifact caching proxy provider specified, set to '$defaultProxyProvider' by default."
+                      } else {
+                        echo "INFO: using artifact caching proxy from '${requestedProvider}' provider."
+                      }
+
+                      configFileProvider(
+                          [configFile(fileId: "artifact-caching-proxy-${requestedProvider}", variable: 'MAVEN_SETTINGS')]) {
+                            infra.runMaven(mavenOptions, jdk, null, env.MAVEN_SETTINGS, addToolEnv)
+                          }
+                    } else {
+                      infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
+                    }
                   } finally {
                     if (!skipTests) {
                       junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
