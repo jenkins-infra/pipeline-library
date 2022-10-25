@@ -132,25 +132,25 @@ def call(Map params = [:]) {
                       String availableProxyProviders
                       if (configuredAvailableProxyProviders != null && configuredAvailableProxyProviders != '') {
                         availableProxyProviders = configuredAvailableProxyProviders.split(',').intersect(validProxyProviders)
+                        String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
+                        if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
+                          requestedProvider = defaultProxyProvider
+                          echo "INFO: no valid artifact caching proxy provider specified, set to '$defaultProxyProvider' by default."
+                        } else {
+                          echo "INFO: using artifact caching proxy from '${requestedProvider}' provider."
+                        }
+
+                        if (availableProxyProviders.contains(requestedProvider)) {
+                          noArtifactCachingProxyAvailable = false
+                          configFileProvider(
+                              [configFile(fileId: "artifact-caching-proxy-${requestedProvider}", variable: 'MAVEN_SETTINGS')]) {
+                                infra.runMaven(mavenOptions, jdk, null, env.MAVEN_SETTINGS, addToolEnv)
+                              }
+                        } else {
+                          echo "WARNING: there is no available artifact caching proxy provider corresponding to '${requestedProvider}'."
+                        }
                       } else {
                         echo 'WARNING: no or empty value found for ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS environment variable.'
-                      }
-                      String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
-                      if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
-                        requestedProvider = defaultProxyProvider
-                        echo "INFO: no valid artifact caching proxy provider specified, set to '$defaultProxyProvider' by default."
-                      } else {
-                        echo "INFO: using artifact caching proxy from '${requestedProvider}' provider."
-                      }
-
-                      if (availableProxyProviders.contains(requestedProvider)) {
-                        noArtifactCachingProxyAvailable = false
-                        configFileProvider(
-                            [configFile(fileId: "artifact-caching-proxy-${requestedProvider}", variable: 'MAVEN_SETTINGS')]) {
-                              infra.runMaven(mavenOptions, jdk, null, env.MAVEN_SETTINGS, addToolEnv)
-                            }
-                      } else {
-                        echo "WARNING: there is no available artifact caching proxy provider corresponding to '${requestedProvider}'."
                       }
                     }
                     if (noArtifactCachingProxyAvailable) {
