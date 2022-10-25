@@ -333,6 +333,7 @@ class BuildPluginStepTests extends BaseTest {
 
   @Test
   void test_buildPlugin_with_artifact_caching_proxy_enabled_and_empty_provider_specified() throws Exception {
+    helper.registerAllowedMethod('intersect', [List.class], { list -> list })
     def script = loadScript(scriptName)
     // when running with artifactCachingProxyEnabled set to true and an empty provider is specified
     env.ARTIFACT_CACHING_PROXY_PROVIDER = ''

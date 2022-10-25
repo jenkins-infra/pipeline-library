@@ -131,9 +131,10 @@ def call(Map params = [:]) {
                       final String configuredAvailableProxyProviders = env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS
                       String availableProxyProviders
                       if (configuredAvailableProxyProviders != null && configuredAvailableProxyProviders != '') {
-                        availableProxyProviders = configuredAvailableProxyProviders.split(',').intersect(validProxyProviders)
+                        availableProxyProviders = configuredAvailableProxyProviders.split(',')
                         String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
-                        if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
+                        // Fallback to the default artifact caching proxy provider if the requested provider is empty, not available or not valid
+                        if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider) || !validProxyProviders.contains(requestedProvider)) {
                           requestedProvider = defaultProxyProvider
                           echo "INFO: no valid artifact caching proxy provider specified, set to '$defaultProxyProvider' by default."
                         } else {
@@ -150,7 +151,7 @@ def call(Map params = [:]) {
                           echo "WARNING: there is no available artifact caching proxy provider corresponding to '${requestedProvider}'."
                         }
                       } else {
-                        echo 'WARNING: no or empty value found for ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS environment variable.'
+                        echo 'WARNING: empty or not valid value found for ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS environment variable.'
                       }
                     }
                     if (noArtifactCachingProxyAvailable) {
