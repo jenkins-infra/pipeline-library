@@ -143,7 +143,7 @@ def call(Map params = [:]) {
                         echo "INFO: using artifact caching proxy from '${requestedProvider}' provider."
                       }
 
-                      if (availableProxyProviders.contains(requestedProvider))
+                      if (availableProxyProviders.contains(requestedProvider)) {
                         noArtifactCachingProxyAvailable = false
                         configFileProvider(
                             [configFile(fileId: "artifact-caching-proxy-${requestedProvider}", variable: 'MAVEN_SETTINGS')]) {
@@ -153,7 +153,7 @@ def call(Map params = [:]) {
                         echo "WARNING: there is no available artifact caching proxy provider corresponding to '${requestedProvider}'."
                       }
                     }
-                    if (noArtifactCachingProxyAvailable)
+                    if (noArtifactCachingProxyAvailable) {
                       infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
                     }
                   } finally {
