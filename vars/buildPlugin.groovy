@@ -123,10 +123,18 @@ def call(Map params = [:]) {
                   }
                   mavenOptions += 'clean install'
                   try {
+                    boolean noArtifactCachingProxyAvailable = true
                     if (artifactCachingProxyEnabled) {
                       // As azure VM agents don't have this env var, setting a default provider if none is specified or if the provider isn't available
                       final String defaultProxyProvider = 'azure'
-                      def availableProxyProviders = ['azure', 'do']
+                      final String validProxyProviders = ['aws', 'azure', 'do']
+                      final String configuredAvailableProxyProviders = env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS
+                      String availableProxyProviders
+                      if (configuredAvailableProxyProviders != null && configuredAvailableProxyProviders != '') {
+                        availableProxyProviders = configuredAvailableProxyProviders.split(',').intersect(validProxyProviders)
+                      } else {
+                        echo 'WARNING: no or empty value found for ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS environment variable.'
+                      }
                       String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
                       if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
                         requestedProvider = defaultProxyProvider
@@ -135,11 +143,17 @@ def call(Map params = [:]) {
                         echo "INFO: using artifact caching proxy from '${requestedProvider}' provider."
                       }
 
-                      configFileProvider(
-                          [configFile(fileId: "artifact-caching-proxy-${requestedProvider}", variable: 'MAVEN_SETTINGS')]) {
-                            infra.runMaven(mavenOptions, jdk, null, env.MAVEN_SETTINGS, addToolEnv)
-                          }
-                    } else {
+                      if (availableProxyProviders.contains(requestedProvider))
+                        noArtifactCachingProxyAvailable = false
+                        configFileProvider(
+                            [configFile(fileId: "artifact-caching-proxy-${requestedProvider}", variable: 'MAVEN_SETTINGS')]) {
+                              infra.runMaven(mavenOptions, jdk, null, env.MAVEN_SETTINGS, addToolEnv)
+                            }
+                      } else {
+                        echo "WARNING: there is no available artifact caching proxy provider corresponding to '${requestedProvider}'."
+                      }
+                    }
+                    if (noArtifactCachingProxyAvailable)
                       infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
                     }
                   } finally {
