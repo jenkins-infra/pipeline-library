@@ -123,9 +123,9 @@ def call(Map params = [:]) {
                   }
                   mavenOptions += 'clean install'
                   try {
-                    boolean noArtifactCachingProxyAvailable = true
+                    boolean usingArtifactCachingProxy = false
                     if (artifactCachingProxyEnabled) {
-                      // As azure VM agents don't have this env var, setting a default provider if none is specified or if the provider isn't available
+                      // As azure VM agents don't have this env var, setting a default provider if none is specified
                       final String defaultProxyProvider = 'azure'
                       final String validProxyProviders = ['aws', 'azure', 'do']
                       final String configuredAvailableProxyProviders = env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS
@@ -136,7 +136,7 @@ def call(Map params = [:]) {
                         // Configure Maven settings if the requested provider is valid an available
                         if (validProxyProviders.contains(requestedProvider) && availableProxyProviders.contains(requestedProvider)) {
                           echo "INFO: using artifact caching proxy from '${requestedProvider}' provider."
-                          noArtifactCachingProxyAvailable = false
+                          usingArtifactCachingProxy = true
                           configFileProvider(
                               [configFile(fileId: "artifact-caching-proxy-${requestedProvider}", variable: 'MAVEN_SETTINGS')]) {
                                 infra.runMaven(mavenOptions, jdk, null, env.MAVEN_SETTINGS, addToolEnv)
@@ -148,7 +148,7 @@ def call(Map params = [:]) {
                         echo 'WARNING: the value of ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS environment variable is not set on the controller, will use repo.jenkins-ci.org'
                       }
                     }
-                    if (noArtifactCachingProxyAvailable) {
+                    if (!usingArtifactCachingProxy) {
                       infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
                     }
                   } finally {
