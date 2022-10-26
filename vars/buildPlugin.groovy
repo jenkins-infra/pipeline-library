@@ -132,23 +132,17 @@ def call(Map params = [:]) {
                       String availableProxyProviders
                       if (configuredAvailableProxyProviders != null && configuredAvailableProxyProviders != '') {
                         availableProxyProviders = configuredAvailableProxyProviders.split(',')
-                        String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
-                        // Fallback to the default artifact caching proxy provider if the requested provider is empty, not available or not valid
-                        if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider) || !validProxyProviders.contains(requestedProvider)) {
-                          echo "INFO: invalid or unavailable artifact caching proxy provider '${requestedProvider}' specified, set to '${defaultProxyProvider}' by default."
-                          requestedProvider = defaultProxyProvider
-                        } else {
+                        String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER ?: defaultProxyProvider
+                        // Configure Maven settings if the requested provider is valid an available
+                        if (validProxyProviders.contains(requestedProvider) && availableProxyProviders.contains(requestedProvider)) {
                           echo "INFO: using artifact caching proxy from '${requestedProvider}' provider."
-                        }
-
-                        if (availableProxyProviders.contains(requestedProvider)) {
                           noArtifactCachingProxyAvailable = false
                           configFileProvider(
                               [configFile(fileId: "artifact-caching-proxy-${requestedProvider}", variable: 'MAVEN_SETTINGS')]) {
                                 infra.runMaven(mavenOptions, jdk, null, env.MAVEN_SETTINGS, addToolEnv)
                               }
                         } else {
-                          echo "WARNING: there is no available artifact caching proxy provider corresponding to '${requestedProvider}'."
+                          echo "WARNING: invalid or unavailable artifact caching proxy provider '${requestedProvider}' specified, will use repo.jenkins-ci.org"
                         }
                       } else {
                         echo 'WARNING: the value of ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS environment variable is not set on the controller, will use repo.jenkins-ci.org'
