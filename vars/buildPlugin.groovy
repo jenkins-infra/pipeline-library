@@ -135,8 +135,8 @@ def call(Map params = [:]) {
                         String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
                         // Fallback to the default artifact caching proxy provider if the requested provider is empty, not available or not valid
                         if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider) || !validProxyProviders.contains(requestedProvider)) {
+                          echo "INFO: invalid or unavailable artifact caching proxy provider '${requestedProvider}' specified, set to '${defaultProxyProvider}' by default."
                           requestedProvider = defaultProxyProvider
-                          echo "INFO: no valid artifact caching proxy provider specified, set to '$defaultProxyProvider' by default."
                         } else {
                           echo "INFO: using artifact caching proxy from '${requestedProvider}' provider."
                         }
@@ -151,7 +151,7 @@ def call(Map params = [:]) {
                           echo "WARNING: there is no available artifact caching proxy provider corresponding to '${requestedProvider}'."
                         }
                       } else {
-                        echo 'WARNING: empty or not valid value found for ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS environment variable.'
+                        echo 'WARNING: the value of ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS environment variable is not set on the controller, will use repo.jenkins-ci.org'
                       }
                     }
                     if (noArtifactCachingProxyAvailable) {
