@@ -132,7 +132,7 @@ def call(Map params = [:]) {
                       final String configuredAvailableProxyProviders = env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS
                       if (configuredAvailableProxyProviders != null && configuredAvailableProxyProviders != '') {
                         final String availableProxyProviders = configuredAvailableProxyProviders.split(',')
-                        // Configure Maven settings if the requested provider is valid an available
+                        // Configure Maven settings if the requested provider is valid and available
                         if (validProxyProviders.contains(requestedProxyProvider) && availableProxyProviders.contains(requestedProxyProvider)) {
                           echo "INFO: using artifact caching proxy from '${requestedProxyProvider}' provider."
                           usingArtifactCachingProxy = true
