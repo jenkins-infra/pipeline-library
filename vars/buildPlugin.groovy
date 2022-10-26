@@ -125,14 +125,15 @@ def call(Map params = [:]) {
                   try {
                     boolean usingArtifactCachingProxy = false
                     if (artifactCachingProxyEnabled) {
-                      // As azure VM agents don't have this env var, setting a default provider if none is specified
+                      // As the env var ARTIFACT_CACHING_PROXY_PROVIDER can't be set on Azure VM agents,
+                      // we're using 'azure' as default provider if none is specified
                       final String defaultProxyProvider = 'azure'
+                      final String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER ?: defaultProxyProvider
                       final String validProxyProviders = ['aws', 'azure', 'do']
                       final String configuredAvailableProxyProviders = env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS
                       String availableProxyProviders
                       if (configuredAvailableProxyProviders != null && configuredAvailableProxyProviders != '') {
                         availableProxyProviders = configuredAvailableProxyProviders.split(',')
-                        String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER ?: defaultProxyProvider
                         // Configure Maven settings if the requested provider is valid an available
                         if (validProxyProviders.contains(requestedProvider) && availableProxyProviders.contains(requestedProvider)) {
                           echo "INFO: using artifact caching proxy from '${requestedProvider}' provider."
