@@ -10,8 +10,8 @@ import static org.junit.Assert.assertTrue
 class BuildPluginStepTests extends BaseTest {
   static final String scriptName = 'vars/buildPlugin.groovy'
   static final String defaultArtifactCachingProxyProvider = 'azure'
-  static final String unavailableArtifactCachingProxyProvider = 'foo'
-  static final String availableArtifactCachingProxyProviderDifferentFromDefaultOne = 'do'
+  static final String anotherArtifactCachingProxyProvider = 'do'
+  static final String invalidArtifactCachingProxyProvider = 'foo'
 
   @Override
   @Before
@@ -21,6 +21,7 @@ class BuildPluginStepTests extends BaseTest {
     helper.registerAllowedMethod('fileExists', [String.class], { s -> return s.equals('pom.xml') })
     env.NODE_LABELS = 'docker'
     env.JOB_NAME = 'build/plugin/test'
+    env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS = 'aws,azure,do'
   }
 
   @Test
@@ -320,8 +321,8 @@ class BuildPluginStepTests extends BaseTest {
     // when running with artifactCachingProxyEnabled set to true and no provider is specified
     script.call(['artifactCachingProxyEnabled': true])
     printCallStack()
-    // then it notices no valid artifact caching provider has been specified and that it will set it to the default one
-    assertTrue(assertMethodCallContainsPattern('echo', "INFO: no valid artifact caching proxy provider specified, set to '${defaultArtifactCachingProxyProvider}' by default."))
+    // then it notices the use of the default artifact caching provider
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${defaultArtifactCachingProxyProvider}' provider."))
     // then configFile contains the default artifact caching proxy provider id
     assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${defaultArtifactCachingProxyProvider}"))
     // then configFileProvider is correctly set
@@ -337,8 +338,55 @@ class BuildPluginStepTests extends BaseTest {
     env.ARTIFACT_CACHING_PROXY_PROVIDER = ''
     script.call(['artifactCachingProxyEnabled': true])
     printCallStack()
-    // then it notices no valid artifact caching provider has been specified and that it will set it to the default one
-    assertTrue(assertMethodCallContainsPattern('echo', "INFO: no valid artifact caching proxy provider specified, set to '${defaultArtifactCachingProxyProvider}' by default."))
+    // then it notices the use of the default artifact caching provider
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${defaultArtifactCachingProxyProvider}' provider."))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_invalid_provider_specified() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with artifactCachingProxyEnabled set to true and an invalid provider is specified
+    env.ARTIFACT_CACHING_PROXY_PROVIDER = invalidArtifactCachingProxyProvider
+    script.call(['artifactCachingProxyEnabled': true])
+    printCallStack()
+    // then it notices invalid or unavailable artifact caching provider has been specified and that it will fallback to repo.jenkins-ci.org
+    assertTrue(assertMethodCallContainsPattern('echo', "WARNING: invalid or unavailable artifact caching proxy provider '${invalidArtifactCachingProxyProvider}' specified, will use repo.jenkins-ci.org"))
+    // then there is no call to configFile containing the specified artifact caching proxy provider id
+    assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${invalidArtifactCachingProxyProvider}"))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_no_providers_env_var() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with artifactCachingProxyEnabled set to true and an available provider different from the default one is specified
+    env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
+    env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS = null
+    script.call(['artifactCachingProxyEnabled': true])
+    printCallStack()
+    // then it warns the env var is incorrectly or not set
+    assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: the value of ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS environment variable is not set on the controller, will use repo.jenkins-ci.org'))
+    // then there is no call to configFile containing the specified artifact caching proxy provider id
+    assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  // @Test
+  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_invalid_providers_env_var() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with artifactCachingProxyEnabled set to true and an available provider different from the default one is specified
+    env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
+    env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS = invalidArtifactCachingProxyProvider
+    script.call(['artifactCachingProxyEnabled': true])
+    printCallStack()
+    // then it notices invalid or unavailable artifact caching provider has been specified and that it will fallback to repo.jenkins-ci.org
+    assertTrue(assertMethodCallContainsPattern('echo', "WARNING: invalid or unavailable artifact caching proxy provider '${invalidArtifactCachingProxyProvider}' specified, will use repo.jenkins-ci.org"))
+    // then there is no call to configFile containing the specified artifact caching proxy provider id
+    assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
     // then it succeeds
     assertJobStatusSuccess()
   }
@@ -346,29 +394,15 @@ class BuildPluginStepTests extends BaseTest {
   @Test
   void test_buildPlugin_with_artifact_caching_proxy_enabled_and_unavailable_provider_specified() throws Exception {
     def script = loadScript(scriptName)
-    // when running with artifactCachingProxyEnabled set to true and an unavailable provider is specified
-    env.ARTIFACT_CACHING_PROXY_PROVIDER = unavailableArtifactCachingProxyProvider
+    // when running with artifactCachingProxyEnabled set to true and an invalid provider is specified
+    env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
+    env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS = 'aws,azure' // without anotherArtifactCachingProxyProvider
     script.call(['artifactCachingProxyEnabled': true])
     printCallStack()
-    // then it notices no valid artifact caching provider has been specified and that it will set it to the default one
-    assertTrue(assertMethodCallContainsPattern('echo', "INFO: no valid artifact caching proxy provider specified, set to '${defaultArtifactCachingProxyProvider}' by default."))
-    // then it succeeds
-    assertJobStatusSuccess()
-  }
-
-  @Test
-  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_available_provider_different_from_default_one_specified() throws Exception {
-    def script = loadScript(scriptName)
-    // when running with artifactCachingProxyEnabled set to true and an available provider different from the default one is specified
-    env.ARTIFACT_CACHING_PROXY_PROVIDER = availableArtifactCachingProxyProviderDifferentFromDefaultOne
-    script.call(['artifactCachingProxyEnabled': true])
-    printCallStack()
-    // then it notices the specified artifact caching provider will be used
-    assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${availableArtifactCachingProxyProviderDifferentFromDefaultOne}' provider."))
-    // then configFile contains the specified artifact caching proxy provider id
-    assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${availableArtifactCachingProxyProviderDifferentFromDefaultOne}"))
-    // then configFileProvider is correctly set
-    assertTrue(assertMethodCallContainsPattern('configFileProvider', '[OK]'))
+    // then it notices invalid or unavailable artifact caching provider has been specified and that it will fallback to repo.jenkins-ci.org
+    assertTrue(assertMethodCallContainsPattern('echo', "WARNING: invalid or unavailable artifact caching proxy provider '${anotherArtifactCachingProxyProvider}' specified, will use repo.jenkins-ci.org"))
+    // then there is no call to configFile containing the specified artifact caching proxy provider id
+    assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
     // then it succeeds
     assertJobStatusSuccess()
   }
