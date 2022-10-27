@@ -134,12 +134,23 @@ def call(Map params = [:]) {
                         final String availableProxyProviders = configuredAvailableProxyProviders.split(',')
                         // Configure Maven settings if the requested provider is valid and available
                         if (validProxyProviders.contains(requestedProxyProvider) && availableProxyProviders.contains(requestedProxyProvider)) {
-                          echo "INFO: using artifact caching proxy from '${requestedProxyProvider}' provider."
-                          usingArtifactCachingProxy = true
-                          configFileProvider(
-                              [configFile(fileId: "artifact-caching-proxy-${requestedProxyProvider}", variable: 'MAVEN_SETTINGS')]) {
-                                infra.runMaven(mavenOptions, jdk, null, env.MAVEN_SETTINGS, addToolEnv)
-                              }
+                          boolean healthCheckOK = false
+                          final String healthCheckScript = "curl --fail https://repo.${requestedProxyProvider}.jenkins.io/healthz"
+                          if (isUnix()) {
+                            healthCheckOK = sh(script: healthCheckScript, returnStatus: true) == 0
+                          } else {
+                            healthCheckOK = bat(script: healthCheckScript, returnStatus: true) == 0
+                          }
+                          if (healthCheckOK) {
+                            echo "INFO: using artifact caching proxy from '${requestedProxyProvider}' provider."
+                            usingArtifactCachingProxy = true
+                            configFileProvider(
+                                [configFile(fileId: "artifact-caching-proxy-${requestedProxyProvider}", variable: 'MAVEN_SETTINGS')]) {
+                                  infra.runMaven(mavenOptions, jdk, null, env.MAVEN_SETTINGS, addToolEnv)
+                                }
+                          } else {
+                            echo "WARNING: the artifact caching proxy from '${requestedProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"
+                          }
                         } else {
                           echo "WARNING: invalid or unavailable artifact caching proxy provider '${requestedProxyProvider}' specified, will use repo.jenkins-ci.org"
                         }
