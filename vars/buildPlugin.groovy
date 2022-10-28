@@ -135,11 +135,12 @@ def call(Map params = [:]) {
                         // Configure Maven settings if the requested provider is valid and available
                         if (validProxyProviders.contains(requestedProxyProvider) && availableProxyProviders.contains(requestedProxyProvider)) {
                           boolean healthCheckOK = false
-                          final String healthCheckScript = "curl --fail https://repo.${requestedProxyProvider}.jenkins.io/healthz"
-                          if (isUnix()) {
-                            healthCheckOK = sh(script: healthCheckScript, returnStatus: true) == 0
-                          } else {
-                            healthCheckOK = bat(script: healthCheckScript, returnStatus: true) == 0
+                          withEnv(["HEALTHCHECK=https://repo.${requestedProxyProvider}.jenkins.io/healthz"]) {
+                            if (isUnix()) {
+                              healthCheckOK = sh(script: 'curl --fail $HEALTHCHECK', returnStatus: true) == 0
+                            } else {
+                              healthCheckOK = bat(script: 'curl --fail $HEALTHCHECK', returnStatus: true) == 0
+                            }
                           }
                           if (healthCheckOK) {
                             echo "INFO: using artifact caching proxy from '${requestedProxyProvider}' provider."
