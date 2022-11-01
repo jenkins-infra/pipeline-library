@@ -157,7 +157,7 @@ def call(Map params = [:]) {
                           echo "WARNING: invalid or unavailable artifact caching proxy provider '${requestedProxyProvider}' specified, will use repo.jenkins-ci.org"
                         }
                       } else {
-                        echo 'WARNING: the value of ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS environment variable is not set on the controller, will use repo.jenkins-ci.org'
+                        echo "WARNING: invalid or unavailable artifact caching proxy provider '${requestedProxyProvider}' specified, will use repo.jenkins-ci.org"
                       }
                     }
                     if (!usingArtifactCachingProxy) {
