@@ -365,15 +365,15 @@ class BuildPluginStepTests extends BaseTest {
   @Test
   void test_buildPlugin_with_artifact_caching_proxy_enabled_and_no_providers_env_var() throws Exception {
     def script = loadScript(scriptName)
-    // when running with artifactCachingProxyEnabled set to true and an available provider different from the default one is specified
+    // when running with artifactCachingProxyEnabled set to true and an available provider different from the default one is specified, without ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS env var declared
     env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
     env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS = null
     script.call(['artifactCachingProxyEnabled': true])
     printCallStack()
-    // then it warns the env var is incorrectly or not set
-    assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: the value of ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS environment variable is not set on the controller, will use repo.jenkins-ci.org'))
+    // then it notices the use of the specified artifact caching provider
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider."))
     // then there is no call to configFile containing the specified artifact caching proxy provider id
-    assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
+    assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
     // then it succeeds
     assertJobStatusSuccess()
   }
