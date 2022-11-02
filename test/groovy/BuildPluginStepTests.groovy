@@ -21,7 +21,6 @@ class BuildPluginStepTests extends BaseTest {
     helper.registerAllowedMethod('fileExists', [String.class], { s -> return s.equals('pom.xml') })
     env.NODE_LABELS = 'docker'
     env.JOB_NAME = 'build/plugin/test'
-    env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS = 'aws,azure,do'
   }
 
   @Test
