@@ -129,34 +129,31 @@ def call(Map params = [:]) {
                       // we're using 'azure' as default provider if none is specified
                       final String requestedProxyProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER ?: 'azure'
                       final String[] validProxyProviders = ['aws', 'azure', 'do']
-                      final String configuredAvailableProxyProviders = env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS
-                      if (configuredAvailableProxyProviders != null && configuredAvailableProxyProviders != '') {
-                        final String[] availableProxyProviders = configuredAvailableProxyProviders.split(',')
-                        // Configure Maven settings if the requested provider is valid and available
-                        if (validProxyProviders.contains(requestedProxyProvider) && availableProxyProviders.contains(requestedProxyProvider)) {
-                          boolean healthCheckOK = false
-                          withEnv(["HEALTHCHECK=https://repo.${requestedProxyProvider}.jenkins.io/healthz"]) {
-                            if (isUnix()) {
-                              healthCheckOK = sh(script: 'curl --fail $HEALTHCHECK', returnStatus: true) == 0
-                            } else {
-                              healthCheckOK = bat(script: 'curl --fail $HEALTHCHECK', returnStatus: true) == 0
-                            }
-                          }
-                          if (healthCheckOK) {
-                            echo "INFO: using artifact caching proxy from '${requestedProxyProvider}' provider."
-                            usingArtifactCachingProxy = true
-                            configFileProvider(
-                                [configFile(fileId: "artifact-caching-proxy-${requestedProxyProvider}", variable: 'MAVEN_SETTINGS')]) {
-                                  infra.runMaven(mavenOptions, jdk, null, env.MAVEN_SETTINGS, addToolEnv)
-                                }
+                      // Useful when a provider is in maintainance (or similar cases), add a global env var in Jenkins controller settings to restrict them
+                      final String configuredAvailableProxyProviders = env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS ?: validProxyProviders.join(',')
+                      final String[] availableProxyProviders = configuredAvailableProxyProviders.split(',')
+                      // Configure Maven settings if the requested provider is valid and available
+                      if (validProxyProviders.contains(requestedProxyProvider) && availableProxyProviders.contains(requestedProxyProvider)) {
+                        boolean healthCheckOK = false
+                        withEnv(["HEALTHCHECK=https://repo.${requestedProxyProvider}.jenkins.io/healthz"]) {
+                          if (isUnix()) {
+                            healthCheckOK = sh(script: 'curl --fail $HEALTHCHECK', returnStatus: true) == 0
                           } else {
-                            echo "WARNING: the artifact caching proxy from '${requestedProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"
+                            healthCheckOK = bat(script: 'curl --fail $HEALTHCHECK', returnStatus: true) == 0
                           }
+                        }
+                        if (healthCheckOK) {
+                          echo "INFO: using artifact caching proxy from '${requestedProxyProvider}' provider."
+                          usingArtifactCachingProxy = true
+                          configFileProvider(
+                              [configFile(fileId: "artifact-caching-proxy-${requestedProxyProvider}", variable: 'MAVEN_SETTINGS')]) {
+                                infra.runMaven(mavenOptions, jdk, null, env.MAVEN_SETTINGS, addToolEnv)
+                              }
                         } else {
-                          echo "WARNING: invalid or unavailable artifact caching proxy provider '${requestedProxyProvider}' specified, will use repo.jenkins-ci.org"
+                          echo "WARNING: the artifact caching proxy from '${requestedProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"
                         }
                       } else {
-                        echo 'WARNING: the value of ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS environment variable is not set on the controller, will use repo.jenkins-ci.org'
+                        echo "WARNING: invalid or unavailable artifact caching proxy provider '${requestedProxyProvider}' specified, will use repo.jenkins-ci.org"
                       }
                     }
                     if (!usingArtifactCachingProxy) {
