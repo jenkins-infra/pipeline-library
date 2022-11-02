@@ -334,10 +334,13 @@ class BuildPluginStepTests extends BaseTest {
   @Test
   void test_buildPlugin_with_artifact_caching_proxy_enabled_and_empty_provider_specified() throws Exception {
     def script = loadScript(scriptName)
+    final String healthCheckScript = 'curl --fail $HEALTHCHECK'
     // when running with artifactCachingProxyEnabled set to true and an empty provider is specified
     env.ARTIFACT_CACHING_PROXY_PROVIDER = ''
     script.call(['artifactCachingProxyEnabled': true])
     printCallStack()
+    // then an healthcheck is performed on the provider
+    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScript) || assertMethodCallContainsPattern('bat', healthCheckScript))
     // then it notices the use of the default artifact caching provider
     assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${defaultArtifactCachingProxyProvider}' provider."))
     // then it succeeds
@@ -401,6 +404,44 @@ class BuildPluginStepTests extends BaseTest {
     printCallStack()
     // then it notices invalid or unavailable artifact caching provider has been specified and that it will fallback to repo.jenkins-ci.org
     assertTrue(assertMethodCallContainsPattern('echo', "WARNING: invalid or unavailable artifact caching proxy provider '${anotherArtifactCachingProxyProvider}' specified, will use repo.jenkins-ci.org"))
+    // then there is no call to configFile containing the specified artifact caching proxy provider id
+    assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_reachable_provider_specified() throws Exception {
+    def script = loadScript(scriptName)
+    final String healthCheckScript = 'curl --fail $HEALTHCHECK'
+    // when running with artifactCachingProxyEnabled set to true and a reachable provider is specified
+    env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
+    script.call(['artifactCachingProxyEnabled': true])
+    printCallStack()
+    // then an healthcheck is performed on the provider
+    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScript) || assertMethodCallContainsPattern('bat', healthCheckScript))
+    // then it notices the provider isn't reachable and that it will fallback to repo.jenkins-ci.org
+    assertFalse(assertMethodCallContainsPattern('echo', "WARNING: the artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"))
+    // then there is no call to configFile containing the specified artifact caching proxy provider id
+    assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_unreachable_provider_specified() throws Exception {
+    def script = loadScript(scriptName)
+    final String healthCheckScript = 'curl --fail $HEALTHCHECK'
+    // Mock an healthcheck fail
+    helper.addShMock(healthCheckScript, '', 1)
+    // when running with artifactCachingProxyEnabled set to true and an unreachable provider is specified
+    env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
+    script.call(['artifactCachingProxyEnabled': true])
+    printCallStack()
+    // then an healthcheck is performed on the provider
+    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScript) || assertMethodCallContainsPattern('bat', healthCheckScript))
+    // then it notices the provider isn't reachable and that it will fallback to repo.jenkins-ci.org
+    assertTrue(assertMethodCallContainsPattern('echo', "WARNING: the artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"))
     // then there is no call to configFile containing the specified artifact caching proxy provider id
     assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
     // then it succeeds
