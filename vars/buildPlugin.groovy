@@ -128,7 +128,7 @@ def call(Map params = [:]) {
                       // As the env var ARTIFACT_CACHING_PROXY_PROVIDER can't be set on Azure VM agents,
                       // we're using 'azure' as default provider if none is specified
                       final String requestedProxyProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER ?: 'azure'
-                      final String validProxyProviders = ['aws', 'azure', 'do']
+                      final String[] validProxyProviders = ['aws', 'azure', 'do']
                       final String configuredAvailableProxyProviders = env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS
                       if (configuredAvailableProxyProviders != null && configuredAvailableProxyProviders != '') {
                         final String[] availableProxyProviders = configuredAvailableProxyProviders.split(',')
