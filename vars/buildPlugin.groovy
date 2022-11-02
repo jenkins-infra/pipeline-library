@@ -131,7 +131,7 @@ def call(Map params = [:]) {
                       final String validProxyProviders = ['aws', 'azure', 'do']
                       final String configuredAvailableProxyProviders = env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS
                       if (configuredAvailableProxyProviders != null && configuredAvailableProxyProviders != '') {
-                        final String availableProxyProviders = configuredAvailableProxyProviders.split(',')
+                        final String[] availableProxyProviders = configuredAvailableProxyProviders.split(',')
                         // Configure Maven settings if the requested provider is valid and available
                         if (validProxyProviders.contains(requestedProxyProvider) && availableProxyProviders.contains(requestedProxyProvider)) {
                           boolean healthCheckOK = false
