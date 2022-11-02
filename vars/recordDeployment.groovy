@@ -1,6 +1,3 @@
-import groovy.json.JsonSlurper
-import groovy.json.JsonOutput
-
 def call(owner, repo, ref, status, environmentURL, Map userConfig=[:]) {
   def defaultConfig = [
     environment: "preview",
@@ -12,28 +9,43 @@ def call(owner, repo, ref, status, environmentURL, Map userConfig=[:]) {
   final Map finalConfig = defaultConfig << userConfig
 
   withCredentials([usernamePassword(credentialsId: finalConfig.credentialsId, usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')]) {
-    def jsonSlurper = new JsonSlurper()
-
-    def json = JsonOutput.toJson(
-        "ref": ref,
-        "environment": finalConfig.environment,
-        "description": finalConfig.description,
-        "required_contexts": [],
-        "auto_merge": false,
-        "auto_inactive": false,
-        "transient_environment": finalConfig.environment != "production",
-    ])
-    def object = jsonSlurper.parseText(sh(script: "gh api repos/${owner}/${repo}/deployments  -X POST --input - << EOF\n${json}\nEOF", returnStdout: true).trim()).id
-    if (id == ''){
-      error('Unable to create deployment')
-    }
-    def json = JsonOutput.toJson(
-        "state": status,
-        "environment": finalConfig.environment,
-        "description": finalConfig.description,
-        "log_url": "${BUILD_URL}console",
-        "environment_url": environmentURL,
-    ])
-    sh("gh api repos/${owner}/${repo}/deployments/${id}/statuses  -X POST --input - << EOF\n${json}\nEOF")
+    withEnv([
+        "STATUS=${status}",
+        "REF=${ref}",
+        "ENVIRONMENT=${finalConfig.environment}",
+        "DESCRIPTION=${finalConfig.description}",
+        "TRANSIENT_ENVIRONMENT=${finalConfig.environment != "production" ? "true" : "false"}",
+        "LOG_URL=${BUILD_URL}console",
+        "ENVIRONMENT_URL=${environmentURL}",
+        "OWNER=${owner}",
+        "REPO=${repo}",
+    ]) {
+      def id = sh(script: """
+          jq --null-input \
+            --arg ref "$REF" \
+            --arg environment "$ENVIRONMENT" \
+            --arg description "$DESCRIPTION" \
+            --arg transient_environment "$TRANSIENT_ENVIRONMENT" \
+          '{"ref": $ref, "environment": $environment, "description": $description, "required_contexts": [], "auto_merge": false, "auto_inactive": false, "transient_environment": $transient_environment }') | \
+          gh api repos/${OWNER}/${REPO}/deployments \
+          -X POST \
+          --jq '.id' \
+          --input - \
+          """, returnStdout: true).trim()
+      if (id == ''){
+        error('Unable to create deployment')
+      }
+      withEnv(["ID=${id}"]) {
+        sh('''
+            jq --null-input \
+              --arg status "$STATUS" \
+              --arg environment "$ENVIRONMENT" \
+              --arg description "$DESCRIPTION" \
+              --arg log_url "$LOG_URL" \
+              --arg environment_url "$ENVIRONMENT_URL" \
+            '{"state": $status, "environment": $environment, "description": $description, "log_url": $log_url, "environment_url": $environment_url }') | \
+            gh api repos/${OWNER}/${REPO}/deployments/${ID}/statuses -X POST --input -
+        ''')
+      }
   }
 }
