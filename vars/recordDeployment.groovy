@@ -20,8 +20,8 @@ def call(owner, repo, ref, status, environmentURL, Map userConfig=[:]) {
         "OWNER=${owner}",
         "REPO=${repo}",
     ]) {
-      def id = sh(script: """
-          jq --null-input \
+      sh('''
+          ID=$(jq --null-input \
             --arg ref "$REF" \
             --arg environment "$ENVIRONMENT" \
             --arg description "$DESCRIPTION" \
@@ -30,19 +30,19 @@ def call(owner, repo, ref, status, environmentURL, Map userConfig=[:]) {
           gh api repos/${OWNER}/${REPO}/deployments \
           -X POST \
           --jq '.id' \
-          --input - \
-          """, returnStdout: true).trim()
-      if (id == ''){
-        error('Unable to create deployment')
-      }
-      withEnv(["ID=${id}"]) {
-        sh('''
-            jq --null-input \
-              --arg status "$STATUS" \
-              --arg environment "$ENVIRONMENT" \
-              --arg description "$DESCRIPTION" \
-              --arg log_url "$LOG_URL" \
-              --arg environment_url "$ENVIRONMENT_URL" \
+          --input -)
+
+          if [ -z "$ID" ]; then
+            echo "Unable to create a deployment"
+            exit 1
+          fi
+
+          jq --null-input \
+            --arg status "$STATUS" \
+            --arg environment "$ENVIRONMENT" \
+            --arg description "$DESCRIPTION" \
+            --arg log_url "$LOG_URL" \
+            --arg environment_url "$ENVIRONMENT_URL" \
             '{"state": $status, "environment": $environment, "description": $description, "log_url": $log_url, "environment_url": $environment_url }') | \
             gh api repos/${OWNER}/${REPO}/deployments/${ID}/statuses -X POST --input -
         ''')
