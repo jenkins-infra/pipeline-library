@@ -8,7 +8,7 @@ Records a deployment to github
 - Map **config**: (Optional) custom configuration extra configuration
   * String **environment** (Optional, defaults to "preview") String which environment its deployed to
   * String **description** (Optional, defaults to "Deploy to preview environment") String description of deployment
-  * String **credentialId** (Optional, defaults to "github-app-infra") String contains which credential to use
+  * String **credentialsId** (Optional, defaults to "github-app-infra") String contains which credential to use
 
 
 Example Usages

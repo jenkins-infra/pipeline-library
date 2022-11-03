@@ -2,7 +2,7 @@ def call(owner, repo, ref, status, environmentURL, Map userConfig=[:]) {
   def defaultConfig = [
     environment: "preview",
     description: "Deploy to preview environment",
-    credentialId: "github-app-infra"
+    credentialsId: "github-app-infra"
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
