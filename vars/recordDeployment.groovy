@@ -8,17 +8,19 @@ def call(owner, repo, ref, status, environmentURL, Map userConfig=[:]) {
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
   final Map finalConfig = defaultConfig << userConfig
 
-  withCredentials([usernamePassword(credentialsId: finalConfig.credentialsId, usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')]) {
+  withCredentials([
+    usernamePassword(credentialsId: finalConfig.credentialsId, usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
+  ]) {
     withEnv([
-        "STATUS=${status}",
-        "REF=${ref}",
-        "ENVIRONMENT=${finalConfig.environment}",
-        "DESCRIPTION=${finalConfig.description}",
-        "TRANSIENT_ENVIRONMENT=${finalConfig.environment != "production" ? "true" : "false"}",
-        "LOG_URL=${BUILD_URL}console",
-        "ENVIRONMENT_URL=${environmentURL}",
-        "OWNER=${owner}",
-        "REPO=${repo}",
+      "STATUS=${status}",
+      "REF=${ref}",
+      "ENVIRONMENT=${finalConfig.environment}",
+      "DESCRIPTION=${finalConfig.description}",
+      "TRANSIENT_ENVIRONMENT=${finalConfig.environment != "production" ? "true" : "false"}",
+      "LOG_URL=${BUILD_URL}console",
+      "ENVIRONMENT_URL=${environmentURL}",
+      "OWNER=${owner}",
+      "REPO=${repo}",
     ]) {
       sh('''
           ID=$(jq --null-input \
@@ -46,6 +48,6 @@ def call(owner, repo, ref, status, environmentURL, Map userConfig=[:]) {
             '{"state": $status, "environment": $environment, "description": $description, "log_url": $log_url, "environment_url": $environment_url }' | \
             gh api repos/${OWNER}/${REPO}/deployments/${ID}/statuses -X POST --input -
         ''')
-      }
+    }
   }
 }
