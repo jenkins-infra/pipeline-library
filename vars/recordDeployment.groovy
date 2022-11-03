@@ -26,7 +26,7 @@ def call(owner, repo, ref, status, environmentURL, Map userConfig=[:]) {
             --arg environment "$ENVIRONMENT" \
             --arg description "$DESCRIPTION" \
             --arg transient_environment "$TRANSIENT_ENVIRONMENT" \
-          '{"ref": $ref, "environment": $environment, "description": $description, "required_contexts": [], "auto_merge": false, "auto_inactive": false, "transient_environment": $transient_environment }') | \
+          '{"ref": $ref, "environment": $environment, "description": $description, "required_contexts": [], "auto_merge": false, "auto_inactive": false, "transient_environment": $transient_environment }' | \
           gh api repos/${OWNER}/${REPO}/deployments \
           -X POST \
           --jq '.id' \
@@ -43,7 +43,7 @@ def call(owner, repo, ref, status, environmentURL, Map userConfig=[:]) {
             --arg description "$DESCRIPTION" \
             --arg log_url "$LOG_URL" \
             --arg environment_url "$ENVIRONMENT_URL" \
-            '{"state": $status, "environment": $environment, "description": $description, "log_url": $log_url, "environment_url": $environment_url }') | \
+            '{"state": $status, "environment": $environment, "description": $description, "log_url": $log_url, "environment_url": $environment_url }' | \
             gh api repos/${OWNER}/${REPO}/deployments/${ID}/statuses -X POST --input -
         ''')
       }
