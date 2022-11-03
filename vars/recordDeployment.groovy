@@ -25,7 +25,7 @@ def call(owner, repo, ref, status, environmentURL, Map userConfig=[:]) {
             --arg ref "$REF" \
             --arg environment "$ENVIRONMENT" \
             --arg description "$DESCRIPTION" \
-            --arg transient_environment "$TRANSIENT_ENVIRONMENT" \
+            --argjson transient_environment $TRANSIENT_ENVIRONMENT \
           '{"ref": $ref, "environment": $environment, "description": $description, "required_contexts": [], "auto_merge": false, "auto_inactive": false, "transient_environment": $transient_environment }' | \
           gh api repos/${OWNER}/${REPO}/deployments \
           -X POST \
