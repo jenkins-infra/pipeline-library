@@ -1,0 +1,25 @@
+Records a deployment to github
+
+
+- String **owner**: (Manditory) github owner of the repo, ex jenkins-admin
+- String **repo**: (Manditory) repo name, ex jenkins.io
+- String **ref**: (Manditory) git hash
+- String **status**: (Manditory) success|failure
+- Map **config**: (Optional) custom configuration extra configuration
+  * String **environment** (Optional, defaults to "preview") String which environment its deployed to
+  * String **description** (Optional, defaults to "Deploy to preview environment") String description of deployment
+  * String **credentialsId** (Optional, defaults to "github-app-infra") String contains which credential to use
+
+
+Example Usages
+
+<pre><code>
+post {
+  success {
+    recordDeployment('jenkins-infra', 'jenkins.io', pullRequest.head, 'success', "https://deploy-preview-${CHANGE_ID}--jenkins-io-site-pr.netlify.app")
+  }
+  failure {
+    recordDeployment('jenkins-infra', 'jenkins.io', pullRequest.head, 'failure', "https://deploy-preview-${CHANGE_ID}--jenkins-io-site-pr.netlify.app")
+  }
+}
+</code></pre>
