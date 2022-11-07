@@ -12,7 +12,8 @@ class BuildPluginStepTests extends BaseTest {
   static final String defaultArtifactCachingProxyProvider = 'azure'
   static final String anotherArtifactCachingProxyProvider = 'do'
   static final String invalidArtifactCachingProxyProvider = 'foo'
-  static final String healthCheckScript = 'curl --fail --silent --show-error --location $HEALTHCHECK'
+  static final String healthCheckScriptLinux = 'curl --fail --silent --show-error --location $HEALTHCHECK'
+  static final String healthCheckScriptWindows = 'curl --fail --silent --show-error --location %HEALTHCHECK%'
 
   @Override
   @Before
@@ -339,7 +340,7 @@ class BuildPluginStepTests extends BaseTest {
     script.call(['artifactCachingProxyEnabled': true])
     printCallStack()
     // then an healthcheck is performed on the provider
-    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScript) || assertMethodCallContainsPattern('bat', healthCheckScript))
+    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptLinux) || assertMethodCallContainsPattern('bat', healthCheckScriptWindows))
     // then it notices the use of the default artifact caching provider
     assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${defaultArtifactCachingProxyProvider}' provider."))
     // then it succeeds
@@ -435,7 +436,7 @@ class BuildPluginStepTests extends BaseTest {
     script.call(['artifactCachingProxyEnabled': true])
     printCallStack()
     // then an healthcheck is performed on the provider
-    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScript) || assertMethodCallContainsPattern('bat', healthCheckScript))
+    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptLinux) || assertMethodCallContainsPattern('bat', healthCheckScriptWindows))
     // then it notices the provider isn't reachable and that it will fallback to repo.jenkins-ci.org
     assertFalse(assertMethodCallContainsPattern('echo', "WARNING: the artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"))
     // then there is no call to configFile containing the specified artifact caching proxy provider id
@@ -448,13 +449,14 @@ class BuildPluginStepTests extends BaseTest {
   void test_buildPlugin_with_artifact_caching_proxy_enabled_and_unreachable_provider_specified() throws Exception {
     def script = loadScript(scriptName)
     // Mock an healthcheck fail
-    helper.addShMock(healthCheckScript, '', 1)
+    helper.addShMock(healthCheckScriptLinux, '', 1)
+    helper.addBatMock(healthCheckScriptWindows, '', 1)
     // when running with artifactCachingProxyEnabled set to true and an unreachable provider is specified
     env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
     script.call(['artifactCachingProxyEnabled': true])
     printCallStack()
     // then an healthcheck is performed on the provider
-    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScript) || assertMethodCallContainsPattern('bat', healthCheckScript))
+    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptLinux) || assertMethodCallContainsPattern('bat', healthCheckScriptWindows))
     // then it notices the provider isn't reachable and that it will fallback to repo.jenkins-ci.org
     assertTrue(assertMethodCallContainsPattern('echo', "WARNING: the artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"))
     // then there is no call to configFile containing the specified artifact caching proxy provider id
