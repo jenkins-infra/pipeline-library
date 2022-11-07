@@ -12,6 +12,7 @@ class BuildPluginStepTests extends BaseTest {
   static final String defaultArtifactCachingProxyProvider = 'azure'
   static final String anotherArtifactCachingProxyProvider = 'do'
   static final String invalidArtifactCachingProxyProvider = 'foo'
+  static final String healthCheckScript = 'curl --fail --silent --show-error --location $HEALTHCHECK'
 
   @Override
   @Before
@@ -333,7 +334,6 @@ class BuildPluginStepTests extends BaseTest {
   @Test
   void test_buildPlugin_with_artifact_caching_proxy_enabled_and_empty_provider_specified() throws Exception {
     def script = loadScript(scriptName)
-    final String healthCheckScript = 'curl --fail $HEALTHCHECK'
     // when running with artifactCachingProxyEnabled set to true and an empty provider is specified
     env.ARTIFACT_CACHING_PROXY_PROVIDER = ''
     script.call(['artifactCachingProxyEnabled': true])
@@ -430,7 +430,6 @@ class BuildPluginStepTests extends BaseTest {
   @Test
   void test_buildPlugin_with_artifact_caching_proxy_enabled_and_reachable_provider_specified() throws Exception {
     def script = loadScript(scriptName)
-    final String healthCheckScript = 'curl --fail $HEALTHCHECK'
     // when running with artifactCachingProxyEnabled set to true and a reachable provider is specified
     env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
     script.call(['artifactCachingProxyEnabled': true])
@@ -448,7 +447,6 @@ class BuildPluginStepTests extends BaseTest {
   @Test
   void test_buildPlugin_with_artifact_caching_proxy_enabled_and_unreachable_provider_specified() throws Exception {
     def script = loadScript(scriptName)
-    final String healthCheckScript = 'curl --fail $HEALTHCHECK'
     // Mock an healthcheck fail
     helper.addShMock(healthCheckScript, '', 1)
     // when running with artifactCachingProxyEnabled set to true and an unreachable provider is specified
