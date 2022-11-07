@@ -139,7 +139,7 @@ def call(Map params = [:]) {
                           if (isUnix()) {
                             healthCheckOK = sh(script: 'curl --fail --silent --show-error --location $HEALTHCHECK', returnStatus: true) == 0
                           } else {
-                            healthCheckOK = bat(script: 'curl --fail --silent --show-error --location $HEALTHCHECK', returnStatus: true) == 0
+                            healthCheckOK = bat(script: 'curl --fail --silent --show-error --location %HEALTHCHECK%', returnStatus: true) == 0
                           }
                         }
                         if (healthCheckOK) {
