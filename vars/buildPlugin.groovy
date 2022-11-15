@@ -29,24 +29,31 @@ def call(Map params = [:]) {
   boolean archivedArtifacts = false
   Map tasks = [failFast: failFast]
   getConfigurations(params).each { config ->
-    String label = config.platform
+    String label = ''
+    String platform = config.platform
     String jdk = config.jdk
     String jenkinsVersion = config.jenkins
     if (config.containsKey('javaLevel')) {
       infra.publishDeprecationCheck('Remove javaLevel', 'Ignoring deprecated "javaLevel" parameter. This parameter should be removed from your "Jenkinsfile".')
     }
 
-    String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
+    String stageIdentifier = "${platform}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
     boolean first = tasks.size() == 1
     boolean skipTests = params?.tests?.skip
     boolean addToolEnv = !useContainerAgent
 
-    if (useContainerAgent && (label == 'linux' || label == 'windows')) {
-      def agentContainerLabel = jdk == '8' ? 'maven' : 'maven-' + jdk
-      if (label == 'windows') {
-        agentContainerLabel += '-windows'
+    if (useContainerAgent) {
+      if (platform == 'linux' || platform == 'windows') {
+        def agentContainerLabel = jdk == '8' ? 'maven' : 'maven-' + jdk
+        if (platform == 'windows') {
+          agentContainerLabel += '-windows'
+        }
+        label = agentContainerLabel
       }
-      label = agentContainerLabel
+    } else {
+      if (platform == 'windows') {
+        label = 'docker-windows'
+      }
     }
 
     tasks[stageIdentifier] = {
