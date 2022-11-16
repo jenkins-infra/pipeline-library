@@ -38,7 +38,7 @@ def call(Map params = [:]) {
 
     stage('Getting ATH sources and Jenkins war') {
       // Start validation
-      if (isLinux()) {
+      if (isUnix()) {
         metadata = sh(script: "yq -o=props '.ath' ${metadataFile}", returnStdout: true)
       } else {
         metadata = bat(script: "yq -o=props '.ath' ${metadataFile}", returnStdout: true)
