@@ -38,7 +38,12 @@ def call(Map params = [:]) {
 
     stage('Getting ATH sources and Jenkins war') {
       // Start validation
-      metadata = readYaml(file: metadataFile)?.ath
+      if (isLinux()) {
+        metadata = sh(script: "yq -o=props '.ath' ${metadataFile}", returnStdout: true)
+      } else {
+        metadata = bat(script: "yq -o=props '.ath' ${metadataFile}", returnStdout: true)
+      }
+      echo "[DEBUG] metadata:\n${metadata}"
       if (metadata == null) {
         echo 'Skipping ATH execution because the metadata file does not contain an ath section'
         skipExecution = true
@@ -47,21 +52,27 @@ def call(Map params = [:]) {
       if (metadata == 'default') {
         echo 'Using default configuration for ATH'
         metadata = [:]
-      } else if (metadata.browsers == null) {
+      } else if (!metadata.contains('browsers')) {
         echo "The provided metadata file does not include the browsers property, using firefox as default"
       }
       // Allow to override athUrl and athRevision from metadata file
-      athUrl = metadata.athUrl ?: athUrl
+      athUrl = (metadata =~ "athUrl = (.*)")[0] ?: athUrl
       isLocalATH = athUrl.startsWith("file://")
-      athRevision = metadata.athRevision ?: athRevision
-      athContainerImageTag = metadata.athImage ?: athContainerImageTag
+      athRevision = (metadata =~ "athRevision = (.*)")[0] ?: athRevision
+      athContainerImageTag = (metadata =~ "athContainerImageTag = (.*)")[0] ?: athContainerImageTag
+      echo "[DEBUG] athUrl:\n${athUrl}"
+      echo "[DEBUG] athRevision:\n${athRevision}"
+      echo "[DEBUG] athContainerImageTag:\n${athContainerImageTag}"
 
       // Allow override of jenkins version from metadata file
-      jenkins = metadata.jenkins ?: jenkins
+      jenkins = (metadata =~ "jenkins = (.*)")[0] ?: jenkins
       isVersionNumber = (jenkins =~ /^\d+([.]\d+)*$/).matches()
+      echo "[DEBUG] jenkins:\n${jenkins}"
 
       // Allow override of JDK version from metadata file
-      jdks = metadata.jdks ?: jdks
+      jdks = (metadata =~ "jdks\.\d = (\d+)")[0] ?: jdks
+      echo "[DEBUG] jdks:"
+      echo jdks
 
       if (!isLocalATH) {
         echo 'Checking connectivity to ATH sources…'
@@ -107,13 +118,27 @@ def call(Map params = [:]) {
         }
       }
 
-      def testsToRun = metadata.tests?.join(",")
-      def categoriesToRun = metadata.categories?.join(",")
-      def browsers = metadata.browsers ?: ['firefox']
-      def failFast = metadata.failFast ?: false
-      def rerunCount = metadata.rerunFailingTestsCount ?: 0
+      def testsToRun = (metadata =~ "tests\.\d+ = (.*)")[0].join(",")
+      def categoriesToRun = (metadata =~ "categories\.\d+ = (.*)")[0].join(",")
+      def browsers = (metadata =~ "categories\.\d+ = (.*)")[0] ?: ['firefox']
+      def failFast = (metadata =~ "failFast = (.*)")[0]?.toBoolean() ?: false
+      def rerunCount = (metadata =~ "rerunFailingTestsCount = (.*)")[0]?.toInteger() ?: 0
       // Elvis fails in case useLocalSnapshots == false in metadata File
-      def localSnapshots = metadata.useLocalSnapshots != null ? metadata.useLocalSnapshots : true
+      def useLocalSnapshots = (metadata =~ "useLocalSnapshots = (.*)")[0]?.toBoolean()
+      def localSnapshots = useLocalSnapshots != null ? useLocalSnapshots : true
+      echo "[DEBUG] testsToRun:"
+      echo testsToRun
+      echo "[DEBUG] categoriesToRun:"
+      echo categoriesToRun
+      echo "[DEBUG] browsers:"
+      echo browsers
+      echo "[DEBUG] failFast:"
+      echo failFast
+      echo "[DEBUG] rerunCount:\n${rerunCount}"
+      echo "[DEBUG] useLocalSnapshots:"
+      echo useLocalSnapshots
+      echo "[DEBUG] localSnapshots:"
+      echo localSnapshots
 
       if (testsToRun == null && categoriesToRun == null) {
         categoriesToRun = defaultCategory
