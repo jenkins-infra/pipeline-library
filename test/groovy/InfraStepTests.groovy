@@ -168,5 +168,4 @@ class InfraStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh', 'settings.xml foo.xml'))
     assertTrue(assertMethodCallContainsPattern('configFile', 'foo.id'))
   }
-
 }
