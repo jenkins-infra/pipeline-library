@@ -70,7 +70,7 @@ def call(Map params = [:]) {
       echo "[DEBUG] jenkins:\n${jenkins}"
 
       // Allow override of JDK version from metadata file
-      jdks = (metadata =~ "jdks\.\d = (\d+)")[0] ?: jdks
+      jdks = (metadata =~ "jdks\\.\\d = (\\d+)")[0] ?: jdks
       echo "[DEBUG] jdks:"
       echo jdks
 
@@ -118,9 +118,9 @@ def call(Map params = [:]) {
         }
       }
 
-      def testsToRun = (metadata =~ "tests\.\d+ = (.*)")[0].join(",")
-      def categoriesToRun = (metadata =~ "categories\.\d+ = (.*)")[0].join(",")
-      def browsers = (metadata =~ "categories\.\d+ = (.*)")[0] ?: ['firefox']
+      def testsToRun = (metadata =~ "tests\\.\\d+ = (.*)")[0].join(",")
+      def categoriesToRun = (metadata =~ "categories\\.\\d+ = (.*)")[0].join(",")
+      def browsers = (metadata =~ "categories\\.\\d+ = (.*)")[0] ?: ['firefox']
       def failFast = (metadata =~ "failFast = (.*)")[0]?.toBoolean() ?: false
       def rerunCount = (metadata =~ "rerunFailingTestsCount = (.*)")[0]?.toInteger() ?: 0
       // Elvis fails in case useLocalSnapshots == false in metadata File
