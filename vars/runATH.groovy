@@ -243,7 +243,11 @@ private void test(discriminator, commandBase, localSnapshots, localPluginsStashN
         command = """export JAVA_OPTS="${javaOptions.join(' ')}" && ${command}"""
       }
 
-      sh command
+      // sh command
+      // TODO: restore after testing
+      echo '============== TEST COMMAND START ================'
+      echo command
+      echo '=============== TEST COMMAND END ================='
     }
   }
 }
