@@ -53,14 +53,14 @@ def call(Map params = [:]) {
     } else {
       switch(platform) {
         case 'windows':
-          label = 'docker-windows';
-          break;
+          label = 'docker-windows'
+          break
         case 'linux':
-          label = 'vm && linux';
-          break;
+          label = 'vm && linux'
+          break
         default:
-          echo "WARNING: Unknown platform '${platform}'. Agent label set to fallback value 'linux'" ;
-          label = 'linux';
+          echo "WARNING: Unknown platform '${platform}'. Agent label set to fallback value 'linux'"
+          label = 'linux'
       }
     }
 
