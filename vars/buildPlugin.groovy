@@ -51,8 +51,16 @@ def call(Map params = [:]) {
         label = agentContainerLabel
       }
     } else {
-      if (platform == 'windows') {
-        label = 'docker-windows'
+      switch(platform) {
+        case 'windows':
+          label = 'docker-windows';
+          break;
+        case 'linux':
+          label = 'vm && linux';
+          break;
+        default:
+          echo "WARNING: Unknown platform '${platform}'. Agent label set to fallback value 'linux'" ;
+          label = 'linux';
       }
     }
 
