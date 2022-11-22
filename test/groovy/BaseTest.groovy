@@ -69,8 +69,6 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('jacocoAdapter', [String.class], {'jacoco'})
     helper.registerAllowedMethod('publishCoverage', [Map.class], {s -> s})
 
-    helper.registerAllowedMethod('runATH', [Map.class], { })
-    helper.registerAllowedMethod('runPCT', [Map.class], { })
     helper.registerAllowedMethod('sh', [String.class], { s -> s })
     helper.registerAllowedMethod('powershell', [String.class], { s -> s })
     helper.registerAllowedMethod('stage', [String.class], { s -> s })
