@@ -1,10 +1,8 @@
 import com.lesfurets.jenkins.unit.declarative.DeclarativePipelineTest
 import mock.CurrentBuild
-import mock.CustomWARPackager
 import mock.Infra
 import org.junit.Before
 import org.junit.Test
-import org.yaml.snakeyaml.Yaml
 
 import static com.lesfurets.jenkins.unit.MethodCall.callArgsToString
 
@@ -18,7 +16,6 @@ class BaseTest extends DeclarativePipelineTest {
     binding.setVariable('env', env)
     binding.setProperty('scm', new String())
     binding.setProperty('buildPlugin', loadScript('vars/buildPlugin.groovy'))
-    binding.setProperty('customWARPackager', new CustomWARPackager())
     binding.setProperty('infra', new Infra())
     binding.setProperty('mvnSettingsFile', 'settings.xml')
 
@@ -50,10 +47,6 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('parallel', [Map.class, Closure.class], { l, body -> body() })
     helper.registerAllowedMethod('pwd', [], { '/foo' })
     helper.registerAllowedMethod('pwd', [Map.class], { '/bar' })
-    helper.registerAllowedMethod('readYaml', [Map.class], {
-      Yaml yaml = new Yaml()
-      return yaml.load('')
-    })
     helper.registerAllowedMethod('discoverGitReferenceBuild', [Map.class], { true })
     helper.registerAllowedMethod('recordIssues', [Map.class], { true })
     helper.registerAllowedMethod('mavenConsole', [], { 'maven' })
@@ -76,7 +69,6 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('timeout', [Integer.class, Closure.class], { list, body -> body() })
     helper.registerAllowedMethod('withCredentials', [List.class, Closure.class], { list, body -> body() })
     helper.registerAllowedMethod('withEnv', [List.class, Closure.class], { list, body -> body() })
-    helper.registerAllowedMethod('writeYaml', [Map.class], { })
     helper.registerAllowedMethod('publishChecks', [Map.class], { m -> m })
     helper.registerAllowedMethod('input', [Map.class], { m -> m })
 
