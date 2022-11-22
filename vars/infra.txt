@@ -89,12 +89,6 @@
     See the method Javadoc in the repository for more information.
 </p>
 
-<strong>infra.stashJenkinsWar(String jenkins, String stashName)</strong>
-
-<p>
-    Get a specification for a Jenkins version or WAR, download it, and stash it under the name provided.
-</p>
-
 <strong>infra.ensureInNode(nodeLabels, body)</strong>
 
 <p>
