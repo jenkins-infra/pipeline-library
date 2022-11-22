@@ -1,9 +1,0 @@
-<p>
-    Builds a custom Jenkins WAR using <a href="https://github.com/jenkinsci/custom-war-packager">Custom WAR Packager</a>.
-    Configuration is driven by a YAML metadata file, <code>packaging</code> section.
-    See Javadoc for more information.
-</p>
-
-<!--
-vim: ft=html
--->
