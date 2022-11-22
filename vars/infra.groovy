@@ -227,64 +227,6 @@ Object runWithJava(String command, String jdk = '8', List<String> extraEnv = nul
 }
 
 /**
- * Gets a specification for a jenkins version or war and downloads and stash it under the name provided
- * @param Specification for a jenkins war, can be a jenkins URI to the jenkins.war, a Jenkins version or one of "latest", "latest-rc", "lts" and "lts-rc". Defaults to "latest". For local war files use the file:// protocol
- * @param stashName The name used to stash the jenkins war file, defaults to "jenkinsWar"
- */
-void stashJenkinsWar(String jenkins, String stashName = 'jenkinsWar') {
-  def isVersionNumber = (jenkins =~ /^\d+([.]\d+)*(-rc[0-9]+[.][0-9a-f]{12})?$/).matches()
-  def isLocalJenkins = jenkins.startsWith('file://')
-  def mirror = 'https://get.jenkins.io/'
-
-  def jenkinsURL
-
-  if (jenkins == 'latest') {
-    jenkinsURL = mirror + 'war/latest/jenkins.war'
-  } else if (jenkins == 'latest-rc') {
-    jenkinsURL = mirror + '/war-rc/latest/jenkins.war'
-  } else if (jenkins == 'lts') {
-    jenkinsURL = mirror + 'war-stable/latest/jenkins.war'
-  } else if (jenkins == 'lts-rc') {
-    jenkinsURL = mirror + 'war-stable-rc/latest/jenkins.war'
-  }
-
-  if (isLocalJenkins) {
-    if (!fileExists(jenkins - 'file://')) {
-      error 'Specified Jenkins file does not exists'
-    }
-  }
-  if (!isVersionNumber && !isLocalJenkins) {
-    if (!jenkinsURL) {
-      error "Not sure how to interpret $jenkins as a version, alias, or URL"
-    }
-    echo 'Checking whether Jenkins WAR is available…'
-    sh "curl -ILf ${jenkinsURL}"
-  }
-
-  if (isVersionNumber) {
-    List<String> downloadCommand = [
-      'dependency:copy',
-      "-Dartifact=org.jenkins-ci.main:jenkins-war:${jenkins}:war",
-      '-DoutputDirectory=.',
-      '-Dmdep.stripVersion=true',
-    ]
-    dir('deps') {
-      runMaven(downloadCommand)
-      sh 'cp jenkins-war.war jenkins.war'
-      stash includes: 'jenkins.war', name: stashName
-    }
-  } else if (isLocalJenkins) {
-    dir(pwd(tmp: true)) {
-      sh "cp ${jenkins - 'file://'} jenkins.war"
-      stash includes: '*.war', name: 'jenkinsWar'
-    }
-  } else {
-    sh("curl -o jenkins.war -L ${jenkinsURL}")
-    stash includes: '*.war', name: 'jenkinsWar'
-  }
-}
-
-/**
  * Make sure the code block is run in a node with the all the specified nodeLabels as labels, if already running in that
  * it simply executes the code block, if not allocates the desired node and runs the code inside it
  * Node labels must be specified as String formed by a comma separated list of labels

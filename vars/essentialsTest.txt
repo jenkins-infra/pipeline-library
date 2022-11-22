@@ -1,9 +1,0 @@
-<p>
-    Runs PCT and ATH for a custom set of versions.
-    The configuration is driven by a YAML metadata file which should combine sections for
-    <code>customWARPackager.build()</code>, <code>runATH()</code> and <code>runPCT()</code>.
-</p>
-
-<!--
-vim: ft=html
--->
