@@ -178,11 +178,14 @@ def call(Map params = [:]) {
                   if (skipTests) {
                     gradleOptions += '--exclude-task test'
                   }
+                  File gradleWrapper = new File("${pwd()}/gradlew")
+                  if (gradleWrapper.exists() && isUnix() && !gradleWrapper.canExecute()) {
+                    gradleWrapper.setExecutable(true)
+                  }
                   command = "gradlew ${gradleOptions.join(' ')}"
                   if (isUnix()) {
                     command = './' + command
                   }
-
                   try {
                     infra.runWithJava(command, jdk, null, addToolEnv)
                   } finally {
