@@ -34,7 +34,7 @@ buildPlugin()
 * `failFast` (default: `true`) - instruct Maven tests to fail fast
 * `platforms` (default: `['linux', 'windows']`) - Labels matching platforms to
   execute the steps against in parallel
-* `jdkVersions` (default: `[8]`) - JDK version numbers, must match a version
+* `jdkVersions` (default: `[11]`) - JDK version numbers, must match a version
   number jdk tool installed
 * `jenkinsVersions`: (default: `[null]`) - a matrix of Jenkins baseline versions to build/test against in parallel (null means default,
   only available for Maven projects)
@@ -48,9 +48,8 @@ buildPlugin()
 [source,groovy]
 ----
 buildPlugin(/*...*/, configurations: [
-  [ platform: "linux", jdk: "8", jenkins: null ],
-  [ platform: "windows", jdk: "8", jenkins: null ],
-  [ platform: "linux", jdk: "11", jenkins: "2.150" ]
+  [ platform: "linux", jdk: "11", jenkins: "2.375.1" ],
+  [ platform: "windows", jdk: "17" ]
 ])
 ----
 
@@ -73,7 +72,7 @@ Usage:
 [source,groovy]
 ----
 buildPlugin(platforms: ['linux'],
-        jdkVersions: [7, 8],
+        jdkVersions: [11],
         checkstyle: [qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]],
         pmd: [trendChartType: 'TOOLS_ONLY', qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]])
 ----
@@ -193,7 +192,7 @@ buildDockerImage_k8s('plugins-site-api')
 
 === Requirements
 
-* (Open)JDK v8
-* Maven 3.6.x
+* (Open)JDK v11
+* Maven 3.8.x
 
 ===
