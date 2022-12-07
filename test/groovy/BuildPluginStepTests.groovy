@@ -71,8 +71,8 @@ class BuildPluginStepTests extends BaseTest {
     def configurations = script.getConfigurations([:])
 
     def expected = [
-      ['platform': 'linux', 'jdk': '8', 'jenkins': null],
-      ['platform': 'windows', 'jdk': '8', 'jenkins': null],
+      ['platform': 'linux', 'jdk': '11', 'jenkins': null],
+      ['platform': 'windows', 'jdk': '11', 'jenkins': null],
     ]
     assertEquals(expected, configurations)
     printCallStack()
