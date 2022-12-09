@@ -22,7 +22,13 @@ You are advised to be using a link:https://github.com/jenkinsci/plugin-pom/blob/
 .Jenkinsfile
 [source,groovy]
 ----
-buildPlugin()
+buildPlugin(
+  useContainerAgent: true,
+  configurations: [
+    [platform: 'linux', jdk: 11],
+    [platform: 'linux', jdk: 17],
+    [platform: 'windows', jdk: 11],
+])
 ----
 
 ==== Optional arguments
