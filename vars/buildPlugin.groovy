@@ -144,7 +144,8 @@ def call(Map params = [:]) {
                       // we're using 'azure' as default provider if none is specified
                       final String requestedProxyProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER ?: 'azure'
                       final String[] validProxyProviders = ['aws', 'azure', 'do']
-                      // Useful when a provider is in maintainance (or similar cases), add a global env var in Jenkins controller settings to restrict them
+                      // Useful when a provider is in maintenance (or similar cases), add a global env var in Jenkins controller settings to restrict them.
+                      // To completely disable the artifact caching proxies, this value can be set to a value absent of validProxyProviders like "none" for example.
                       final String configuredAvailableProxyProviders = env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS ?: validProxyProviders.join(',')
                       final String[] availableProxyProviders = configuredAvailableProxyProviders.split(',')
                       // Configure Maven settings if the requested provider is valid and available
