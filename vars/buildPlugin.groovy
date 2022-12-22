@@ -139,7 +139,23 @@ def call(Map params = [:]) {
                   mavenOptions += 'clean install'
                   try {
                     boolean usingArtifactCachingProxy = false
-                    if (artifactCachingProxyEnabled) {
+
+                    // If the build concerns a pull request, check if there is "skip-artifact-caching-proxy" label applied in case the user doesn't wan't ACP
+                    boolean prLabelsContainSkipACP = false
+                    final String skipACPLabel = 'skip-artifact-caching-proxy'
+                    if (!env.BRANCH_IS_PRIMARY) {
+                      withCredentials([usernamePassword(credentialsId: 'github-app-infra', usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')]) {
+                          if (isUnix()) {
+                            prLabelsContainSkipACP = sh(script: 'gh pr view $CHANGE_URL --json labels | grep --ignore-case \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
+                          } else {
+                            prLabelsContainSkipACP = bat(script: 'gh pr view $CHANGE_URL --json labels | findstr /i \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
+                          }
+                      }
+                      if (prLabelsContainSkipACP) {
+                        echo "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"
+                      }
+                    }
+                    if (artifactCachingProxyEnabled && !prLabelsContainSkipACP) {
                       // As the env var ARTIFACT_CACHING_PROXY_PROVIDER can't be set on Azure VM agents,
                       // we're using 'azure' as default provider if none is specified
                       final String requestedProxyProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER ?: 'azure'
