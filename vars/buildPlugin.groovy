@@ -144,12 +144,14 @@ def call(Map params = [:]) {
                     boolean prLabelsContainSkipACP = false
                     final String skipACPLabel = 'skip-artifact-caching-proxy'
                     if (!env.BRANCH_IS_PRIMARY) {
-                      withCredentials([usernamePassword(credentialsId: 'github-app-infra', usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')]) {
-                          if (isUnix()) {
-                            prLabelsContainSkipACP = sh(script: 'gh pr view $CHANGE_URL --json labels | grep --ignore-case \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
-                          } else {
-                            prLabelsContainSkipACP = bat(script: 'gh pr view $CHANGE_URL --json labels | findstr /i \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
-                          }
+                      withCredentials([
+                        usernamePassword(credentialsId: 'github-app-infra', usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
+                      ]) {
+                        if (isUnix()) {
+                          prLabelsContainSkipACP = sh(script: 'gh pr view $CHANGE_URL --json labels | grep --ignore-case \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
+                        } else {
+                          prLabelsContainSkipACP = bat(script: 'gh pr view $CHANGE_URL --json labels | findstr /i \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
+                        }
                       }
                       if (prLabelsContainSkipACP) {
                         echo "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"
