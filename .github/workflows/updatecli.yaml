@@ -28,7 +28,7 @@ jobs:
           UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ## This step allows to generate a short-lived token which is allowed to modify GitHub Workflow files (that the default GITHUB_TOKEN cannot)
       ## Please make sure that the 2 secrets are defined (usually at organization level, with a per-repository access)
-      - uses: tibdex/github-app-token@v1.7
+      - uses: tibdex/github-app-token@v1.8
         id: generate_token
         if: github.ref == 'refs/heads/master'
         with:
