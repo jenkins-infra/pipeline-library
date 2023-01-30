@@ -332,6 +332,24 @@ class BuildPluginStepTests extends BaseTest {
     assertJobStatusSuccess()
   }
 
+
+  @Test
+  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_no_provider_specified_and_different_default_provider() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with artifactCachingProxyEnabled set to true and no provider is specified and a different default provider is configured
+    env.ARTIFACT_CACHING_PROXY_DEFAULT_PROVIDER = anotherArtifactCachingProxyProvider
+    script.call(['artifactCachingProxyEnabled': true])
+    printCallStack()
+    // then it notices the use of the default artifact caching provider
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider."))
+    // then configFile contains the default artifact caching proxy provider id
+    assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
+    // then configFileProvider is correctly set
+    assertTrue(assertMethodCallContainsPattern('configFileProvider', '[OK]'))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
   @Test
   void test_buildPlugin_with_artifact_caching_proxy_enabled_and_empty_provider_specified() throws Exception {
     def script = loadScript(scriptName)
