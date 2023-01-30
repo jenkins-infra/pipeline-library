@@ -322,9 +322,9 @@ class BuildPluginStepTests extends BaseTest {
     // when running with artifactCachingProxyEnabled set to true and no provider is specified
     script.call(['artifactCachingProxyEnabled': true])
     printCallStack()
-    // then it notices the use of the default artifact caching provider
+    // then it notices the use of the default artifact caching provider set as global variable
     assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${defaultArtifactCachingProxyProvider}' provider."))
-    // then configFile contains the default artifact caching proxy provider id
+    // then configFile contains the default artifact caching proxy provider id set as global variable
     assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${defaultArtifactCachingProxyProvider}"))
     // then configFileProvider is correctly set
     assertTrue(assertMethodCallContainsPattern('configFileProvider', '[OK]'))
