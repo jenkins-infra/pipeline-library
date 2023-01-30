@@ -332,7 +332,6 @@ class BuildPluginStepTests extends BaseTest {
     assertJobStatusSuccess()
   }
 
-
   @Test
   void test_buildPlugin_with_artifact_caching_proxy_enabled_and_no_provider_specified_and_different_default_provider() throws Exception {
     def script = loadScript(scriptName)
