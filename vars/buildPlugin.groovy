@@ -159,7 +159,7 @@ def call(Map params = [:]) {
                     }
                     if (artifactCachingProxyEnabled && !prLabelsContainSkipACP) {
                       // As the env var ARTIFACT_CACHING_PROXY_PROVIDER can't be set on Azure VM agents,
-                      // we're using 'azure' as default provider if none is specified
+                      // we're specifying a default provider if none is specified.
                       final String requestedProxyProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER ?: 'azure'
                       final String[] validProxyProviders = ['aws', 'azure', 'do']
                       // Useful when a provider is in maintenance (or similar cases), add a global env var in Jenkins controller settings to restrict them.
