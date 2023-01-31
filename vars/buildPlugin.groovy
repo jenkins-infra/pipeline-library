@@ -145,7 +145,7 @@ def call(Map params = [:]) {
                     final String skipACPLabel = 'skip-artifact-caching-proxy'
                     if (!env.BRANCH_IS_PRIMARY) {
                       withCredentials([
-                        usernamePassword(credentialsId: 'github-app-infra', usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
+                        usernamePassword(credentialsId: 'app-ci.jenkins.io', usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
                       ]) {
                         if (isUnix()) {
                           prLabelsContainSkipACP = sh(script: 'gh pr view $CHANGE_URL --json labels | grep --ignore-case \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
