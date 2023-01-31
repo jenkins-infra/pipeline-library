@@ -148,7 +148,7 @@ def call(Map params = [:]) {
                         usernamePassword(credentialsId: 'app-ci.jenkins.io', usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
                       ]) {
                         // Creating the correct API URL to retrieve pull request labels from the $CHANGE_URL 
-                        final String pullrequestLabelsApiURL = (env.CHANGE_URL).replace('/pull/', '/issues/').replace('/github.com/', '/api.github.com/') + '/labels'
+                        final String pullrequestLabelsApiURL = (env.CHANGE_URL).replace('/pull/', '/issues/').replace('/github.com/', '/api.github.com/repos/') + '/labels'
                         if (isUnix()) {
                           prLabelsContainSkipACP = sh(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" ' + pullrequestLabelsApiURL + ' | grep --ignore-case \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
                         } else {
