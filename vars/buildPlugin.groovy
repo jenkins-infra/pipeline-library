@@ -150,10 +150,8 @@ def call(Map params = [:]) {
                         // Creating the correct API URL to retrieve pull request labels from the $CHANGE_URL 
                         final String pullrequestLabelsApiURL = (env.CHANGE_URL).replace('/pull/', '/issues/').replace('/github.com/', '/api.github.com/repos/') + '/labels'
                         if (isUnix()) {
-                          prLabelsContainSkipACP = sh(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" ' + pullrequestLabelsApiURL + ' | grep --ignore-case \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
+                          prLabelsContainSkipACP = sh(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" ' + pullrequestLabelsApiURL + ' | grep --ignore-case "skip-artifact-caching-proxy"', returnStatus: true) == 0
                         } else {
-                          resultPrLabelsContainSkipACP = bat(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" ' + pullrequestLabelsApiURL + ' | findstr "skip-artifact-caching-proxy"', returnStdout: true)
-                          echo "resultPrLabelsContainSkipACP: $resultPrLabelsContainSkipACP"
                           prLabelsContainSkipACP = bat(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" ' + pullrequestLabelsApiURL + ' | findstr /i "skip-artifact-caching-proxy"', returnStdout: true) != ''
                         }
                       }
