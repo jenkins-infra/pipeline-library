@@ -15,8 +15,8 @@ class BuildPluginStepTests extends BaseTest {
   static final String healthCheckScriptSh = 'curl --fail --silent --show-error --location $HEALTHCHECK'
   static final String healthCheckScriptBat = 'curl --fail --silent --show-error --location %HEALTHCHECK%'
   static final String changeUrlWithSkipACPLabel = 'https://api.github.com/repos/jenkins-infra/pipeline-library/pull/123'
-  static final String prLabelsContainSkipACPScriptSh = 'curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/jenkins-infra/pipeline-library/issues/123/labels | grep --ignore-case \'"skip-artifact-caching-proxy"\''
-  static final String prLabelsContainSkipACPScriptBat = 'curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" https://api.github.com/repos/jenkins-infra/pipeline-library/issues/123/labels | findstr /i \'"skip-artifact-caching-proxy"\''
+  static final String prLabelsContainSkipACPScriptSh = 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/jenkins-infra/pipeline-library/issues/123/labels | grep --ignore-case \'"skip-artifact-caching-proxy"\''
+  static final String prLabelsContainSkipACPScriptBat = 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" https://api.github.com/repos/jenkins-infra/pipeline-library/issues/123/labels | findstr /i \'"skip-artifact-caching-proxy"\''
 
   @Override
   @Before
