@@ -152,7 +152,7 @@ def call(Map params = [:]) {
                         if (isUnix()) {
                           prLabelsContainSkipACP = sh(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" ' + pullrequestLabelsApiURL + ' | grep --ignore-case \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
                         } else {
-                          prLabelsContainSkipACP = bat(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" ' + pullrequestLabelsApiURL + ' | findstr /i \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
+                          prLabelsContainSkipACP = bat(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" ' + pullrequestLabelsApiURL + ' | findstr /i \'"skip-artifact-caching-proxy"\'', returnStdout: true) != ''
                         }
                       }
                       if (prLabelsContainSkipACP) {
