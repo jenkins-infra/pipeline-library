@@ -151,7 +151,7 @@ def call(Map params = [:]) {
                       // Configure Maven settings if the requested provider is valid and available
                       if (validProxyProviders.contains(requestedProxyProvider) && availableProxyProviders.contains(requestedProxyProvider)) {
                         boolean healthCheckOK = false
-                        withEnv(["HEALTHCHECK=https://repo.${requestedProxyProvider}.jenkins.io/healthz"]) {
+                        withEnv(["HEALTHCHECK=https://repo.${requestedProxyProvider}.jenkins.io/health"]) {
                           if (isUnix()) {
                             healthCheckOK = sh(script: 'curl --fail --silent --show-error --location $HEALTHCHECK', returnStatus: true) == 0
                           } else {
