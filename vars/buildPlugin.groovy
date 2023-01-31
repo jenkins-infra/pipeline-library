@@ -147,11 +147,11 @@ def call(Map params = [:]) {
                       withCredentials([
                         usernamePassword(credentialsId: 'app-ci.jenkins.io', usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
                       ]) {
-                        curlCommand = 'curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" ' + (env.CHANGE_URL).replace('/pull/', '/issues/') + '/labels'
+                        final String issuesChangeURL = (env.CHANGE_URL).replace('/pull/', '/issues/')
                         if (isUnix()) {
-                          prLabelsContainSkipACP = sh(script: curlCommand + ' | grep --ignore-case \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
+                          prLabelsContainSkipACP = sh(script: 'curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" ' + issuesChangeURL + '/labels | grep --ignore-case \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
                         } else {
-                          prLabelsContainSkipACP = bat(script: curlCommand + ' | findstr /i \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
+                          prLabelsContainSkipACP = bat(script: 'curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" ' + issuesChangeURL + '/labels | findstr /i \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
                         }
                       }
                       if (prLabelsContainSkipACP) {

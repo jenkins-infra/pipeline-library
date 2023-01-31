@@ -14,8 +14,9 @@ class BuildPluginStepTests extends BaseTest {
   static final String invalidArtifactCachingProxyProvider = 'foo'
   static final String healthCheckScriptSh = 'curl --fail --silent --show-error --location $HEALTHCHECK'
   static final String healthCheckScriptBat = 'curl --fail --silent --show-error --location %HEALTHCHECK%'
-  static final String prLabelsContainSkipACPScriptSh = 'gh pr view $CHANGE_URL --json labels | grep --ignore-case \'"skip-artifact-caching-proxy"\''
-  static final String prLabelsContainSkipACPScriptBat = 'gh pr view $CHANGE_URL --json labels | findstr /i \'"skip-artifact-caching-proxy"\''
+  static final String changeUrlWithSkipACPLabel = 'https://api.github.com/repos/jenkins-infra/pipeline-library/pull/123'
+  static final String prLabelsContainSkipACPScriptSh = 'curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/jenkins-infra/pipeline-library/issues/123/labels | grep --ignore-case \'"skip-artifact-caching-proxy"\''
+  static final String prLabelsContainSkipACPScriptBat = 'curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" https://api.github.com/repos/jenkins-infra/pipeline-library/issues/123/labels | findstr /i \'"skip-artifact-caching-proxy"\''
 
   @Override
   @Before
@@ -476,6 +477,7 @@ class BuildPluginStepTests extends BaseTest {
 
     // when running with artifactCachingProxyEnabled set to true, on a pull request with a "skip-artifact-caching-proxy" label
     env.BRANCH_IS_PRIMARY = false
+    env.CHANGE_URL = changeUrlWithSkipACPLabel
     // Mock a "skip-artifact-caching-proxy" label
     helper.addShMock(prLabelsContainSkipACPScriptSh, '', 0)
     helper.addBatMock(prLabelsContainSkipACPScriptBat, '', 0)
@@ -497,6 +499,7 @@ class BuildPluginStepTests extends BaseTest {
 
     // when running with artifactCachingProxyEnabled set to true, on a pull request without a "skip-artifact-caching-proxy" label
     env.BRANCH_IS_PRIMARY = false
+    env.CHANGE_URL = 'https://api.github.com/repos/jenkins-infra/pipeline-library/pull/123'
     // Mock the absence of "skip-artifact-caching-proxy" label
     helper.addShMock(prLabelsContainSkipACPScriptSh, '', 1)
     helper.addBatMock(prLabelsContainSkipACPScriptBat, '', 1)
