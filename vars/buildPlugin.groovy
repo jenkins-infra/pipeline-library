@@ -147,11 +147,12 @@ def call(Map params = [:]) {
                       withCredentials([
                         usernamePassword(credentialsId: 'app-ci.jenkins.io', usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
                       ]) {
-                        final String issuesChangeURL = (env.CHANGE_URL).replace('/pull/', '/issues/')
+                        // Creating the correct API URL to retrieve pull request labels from the $CHANGE_URL 
+                        final String pullrequestLabelsApiURL = (env.CHANGE_URL).replace('/pull/', '/issues/').replace('/github.com/', '/api.github.com') + '/labels'
                         if (isUnix()) {
-                          prLabelsContainSkipACP = sh(script: 'curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" ' + issuesChangeURL + '/labels | grep --ignore-case \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
+                          prLabelsContainSkipACP = sh(script: 'curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" ' + pullrequestLabelsApiURL + ' | grep --ignore-case \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
                         } else {
-                          prLabelsContainSkipACP = bat(script: 'curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" ' + issuesChangeURL + '/labels | findstr /i \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
+                          prLabelsContainSkipACP = bat(script: 'curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" ' + pullrequestLabelsApiURL + ' | findstr /i \'"skip-artifact-caching-proxy"\'', returnStatus: true) == 0
                         }
                       }
                       if (prLabelsContainSkipACP) {
