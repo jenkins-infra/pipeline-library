@@ -145,6 +145,8 @@ def call(Map params = [:]) {
                     final String skipACPLabel = 'skip-artifact-caching-proxy'
                     if (!env.BRANCH_IS_PRIMARY) {
                       withCredentials([
+                        // This credential only exists on ci.jenkins.io and allows to check for GitHub PR labels
+                        // Would not be needed if GitHub Branch Sources plugin was be able to provide labels in an environment variable
                         usernamePassword(credentialsId: 'app-ci.jenkins.io', usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
                       ]) {
                         // Creating the correct API URL to retrieve pull request labels from the $CHANGE_URL
