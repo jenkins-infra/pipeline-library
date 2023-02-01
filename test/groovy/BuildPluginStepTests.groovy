@@ -12,8 +12,11 @@ class BuildPluginStepTests extends BaseTest {
   static final String defaultArtifactCachingProxyProvider = 'azure'
   static final String anotherArtifactCachingProxyProvider = 'do'
   static final String invalidArtifactCachingProxyProvider = 'foo'
-  static final String healthCheckScriptLinux = 'curl --fail --silent --show-error --location $HEALTHCHECK'
-  static final String healthCheckScriptWindows = 'curl --fail --silent --show-error --location %HEALTHCHECK%'
+  static final String healthCheckScriptSh = 'curl --fail --silent --show-error --location $HEALTHCHECK'
+  static final String healthCheckScriptBat = 'curl --fail --silent --show-error --location %HEALTHCHECK%'
+  static final String changeUrlWithSkipACPLabel = 'https://api.github.com/repos/jenkins-infra/pipeline-library/pull/123'
+  static final String prLabelsContainSkipACPScriptSh = 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/jenkins-infra/pipeline-library/issues/123/labels | grep --ignore-case "skip-artifact-caching-proxy"'
+  static final String prLabelsContainSkipACPScriptBat = 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" https://api.github.com/repos/jenkins-infra/pipeline-library/issues/123/labels | findstr /i "skip-artifact-caching-proxy"'
 
   @Override
   @Before
@@ -23,6 +26,8 @@ class BuildPluginStepTests extends BaseTest {
     helper.registerAllowedMethod('fileExists', [String.class], { s -> return s.equals('pom.xml') })
     env.NODE_LABELS = 'docker'
     env.JOB_NAME = 'build/plugin/test'
+    // Testing by default on the primary branch
+    env.BRANCH_IS_PRIMARY = true
   }
 
   @Test
@@ -340,7 +345,7 @@ class BuildPluginStepTests extends BaseTest {
     script.call(['artifactCachingProxyEnabled': true])
     printCallStack()
     // then an healthcheck is performed on the provider
-    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptLinux) || assertMethodCallContainsPattern('bat', healthCheckScriptWindows))
+    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptSh) || assertMethodCallContainsPattern('bat', healthCheckScriptBat))
     // then it notices the use of the default artifact caching provider
     assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${defaultArtifactCachingProxyProvider}' provider."))
     // then it succeeds
@@ -436,7 +441,7 @@ class BuildPluginStepTests extends BaseTest {
     script.call(['artifactCachingProxyEnabled': true])
     printCallStack()
     // then an healthcheck is performed on the provider
-    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptLinux) || assertMethodCallContainsPattern('bat', healthCheckScriptWindows))
+    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptSh) || assertMethodCallContainsPattern('bat', healthCheckScriptBat))
     // then it notices the provider isn't reachable and that it will fallback to repo.jenkins-ci.org
     assertFalse(assertMethodCallContainsPattern('echo', "WARNING: the artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"))
     // then there is no call to configFile containing the specified artifact caching proxy provider id
@@ -449,18 +454,63 @@ class BuildPluginStepTests extends BaseTest {
   void test_buildPlugin_with_artifact_caching_proxy_enabled_and_unreachable_provider_specified() throws Exception {
     def script = loadScript(scriptName)
     // Mock an healthcheck fail
-    helper.addShMock(healthCheckScriptLinux, '', 1)
-    helper.addBatMock(healthCheckScriptWindows, '', 1)
+    helper.addShMock(healthCheckScriptSh, '', 1)
+    helper.addBatMock(healthCheckScriptBat, '', 1)
+
     // when running with artifactCachingProxyEnabled set to true and an unreachable provider is specified
     env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
     script.call(['artifactCachingProxyEnabled': true])
     printCallStack()
     // then an healthcheck is performed on the provider
-    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptLinux) || assertMethodCallContainsPattern('bat', healthCheckScriptWindows))
+    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptSh) || assertMethodCallContainsPattern('bat', healthCheckScriptBat))
     // then it notices the provider isn't reachable and that it will fallback to repo.jenkins-ci.org
     assertTrue(assertMethodCallContainsPattern('echo', "WARNING: the artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"))
     // then there is no call to configFile containing the specified artifact caching proxy provider id
     assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_skip_artifact_caching_proxy_label_applied_to_pull_request() throws Exception {
+    def script = loadScript(scriptName)
+
+    // when running with artifactCachingProxyEnabled set to true, on a pull request with a "skip-artifact-caching-proxy" label
+    env.BRANCH_IS_PRIMARY = false
+    env.CHANGE_URL = changeUrlWithSkipACPLabel
+    // Mock a "skip-artifact-caching-proxy" label
+    helper.addShMock(prLabelsContainSkipACPScriptSh, '', 0)
+    helper.addBatMock(prLabelsContainSkipACPScriptBat, '', 0)
+    script.call(['artifactCachingProxyEnabled': true])
+    printCallStack()
+    // then a check is performed on the pull request labels
+    assertTrue(assertMethodCallContainsPattern('sh', prLabelsContainSkipACPScriptSh) || assertMethodCallContainsPattern('bat', prLabelsContainSkipACPScriptBat))
+    // then it notices the skipping of artifact-caching-proxy
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"))
+    // then there is no call to configFile containing the default artifact caching proxy provider id
+    assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${defaultArtifactCachingProxyProvider}"))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_without_skip_artifact_caching_proxy_label_applied_to_pull_request() throws Exception {
+    def script = loadScript(scriptName)
+
+    // when running with artifactCachingProxyEnabled set to true, on a pull request without a "skip-artifact-caching-proxy" label
+    env.BRANCH_IS_PRIMARY = false
+    env.CHANGE_URL = 'https://api.github.com/repos/jenkins-infra/pipeline-library/pull/123'
+    // Mock the absence of "skip-artifact-caching-proxy" label
+    helper.addShMock(prLabelsContainSkipACPScriptSh, '', 1)
+    helper.addBatMock(prLabelsContainSkipACPScriptBat, '', 1)
+    script.call(['artifactCachingProxyEnabled': true])
+    printCallStack()
+    // then a check is performed on the pull request labels
+    assertTrue(assertMethodCallContainsPattern('sh', prLabelsContainSkipACPScriptSh) || assertMethodCallContainsPattern('bat', prLabelsContainSkipACPScriptBat))
+    // then it doesn't notice the skipping of artifact-caching-proxy
+    assertFalse(assertMethodCallContainsPattern('echo', "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"))
+    // then there is a call to configFile containing the default artifact caching proxy provider id
+    assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${defaultArtifactCachingProxyProvider}"))
     // then it succeeds
     assertJobStatusSuccess()
   }
