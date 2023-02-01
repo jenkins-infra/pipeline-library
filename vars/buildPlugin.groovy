@@ -13,7 +13,11 @@ def call(Map params = [:]) {
   def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
   def gitDefaultBranch = params.containsKey('gitDefaultBranch') ? params.gitDefaultBranch : null
   // This functionnality is set as opt-in for now
-  def artifactCachingProxyEnabled = params.containsKey('artifactCachingProxyEnabled') ? params.artifactCachingProxyEnabled : false
+  def useArtifactCachingProxy = params.containsKey('useArtifactCachingProxy') ? params.useArtifactCachingProxy : false
+  // Deprecated parameter name, to be removed as soon as we're switching to opt-out
+  if (params.containsKey('artifactCachingProxyEnabled')) {
+    useArtifactCachingProxy = params.artifactCachingProxyEnabled
+  }
 
   def useContainerAgent = params.containsKey('useContainerAgent') ? params.useContainerAgent : false
   if (params.containsKey('useAci')) {
@@ -161,7 +165,7 @@ def call(Map params = [:]) {
                         echo "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"
                       }
                     }
-                    if (artifactCachingProxyEnabled && !prLabelsContainSkipACP) {
+                    if (useArtifactCachingProxy && !prLabelsContainSkipACP) {
                       // As the env var ARTIFACT_CACHING_PROXY_PROVIDER can't be set on Azure VM agents,
                       // we're specifying a default provider if none is specified.
                       final String requestedProxyProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER ?: 'azure'
