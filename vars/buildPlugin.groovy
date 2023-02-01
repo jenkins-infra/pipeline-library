@@ -15,7 +15,7 @@ def call(Map params = [:]) {
   // This functionnality is set as opt-in for now
   def useArtifactCachingProxy = params.containsKey('useArtifactCachingProxy') ? params.useArtifactCachingProxy : false
   // Deprecated parameter name, to be removed as soon as we're switching to opt-out
-  if params.containsKey('artifactCachingProxyEnabled') {
+  if (params.containsKey('artifactCachingProxyEnabled')) {
     useArtifactCachingProxy = params.artifactCachingProxyEnabled
   }
 
