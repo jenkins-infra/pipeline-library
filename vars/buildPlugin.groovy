@@ -12,12 +12,7 @@ def call(Map params = [:]) {
   def failFast = params.containsKey('failFast') ? params.failFast : true
   def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
   def gitDefaultBranch = params.containsKey('gitDefaultBranch') ? params.gitDefaultBranch : null
-  // This functionnality is set as opt-in for now
-  def useArtifactCachingProxy = params.containsKey('useArtifactCachingProxy') ? params.useArtifactCachingProxy : false
-  // Deprecated parameter name, to be removed as soon as we're switching to opt-out
-  if (params.containsKey('artifactCachingProxyEnabled')) {
-    useArtifactCachingProxy = params.artifactCachingProxyEnabled
-  }
+  def useArtifactCachingProxy = params.containsKey('useArtifactCachingProxy') ? params.useArtifactCachingProxy : true
 
   def useContainerAgent = params.containsKey('useContainerAgent') ? params.useContainerAgent : false
   if (params.containsKey('useAci')) {
