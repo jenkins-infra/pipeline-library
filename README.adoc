@@ -46,7 +46,7 @@ buildPlugin(
   only available for Maven projects)
 * `configurations`: An alternative way to specify `platforms`, `jdkVersions` and `jenkinsVersions` (that can not be combined
   with any of them).
-* `useArtifactCachingProxy`: (default: `false`) - if set to `true`, artifacts will be downloaded using one of the artifact caching proxy depending on the agent provider (Azure, DigitalOcean or AWS).
+* `useArtifactCachingProxy`: (default: `true`) - if set to `false`, artifacts will not use one of the artifact caching proxy depending on the agent provider (Azure, DigitalOcean or AWS), and will directly use repo.jenkins-ci.org instead (discouraged as less reliable and consuming bandwidth)
 
 ** Those options will run the build for all combinations of their values. While that is desirable in
   many cases, `configurations` permit to provide a specific combinations of label and java/jenkins versions to use

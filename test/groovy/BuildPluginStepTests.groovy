@@ -322,10 +322,10 @@ class BuildPluginStepTests extends BaseTest {
   }
 
   @Test
-  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_no_provider_specified() throws Exception {
+  void test_buildPlugin_with_no_artifact_caching_proxy_provider_specified() throws Exception {
     def script = loadScript(scriptName)
-    // when running with useArtifactCachingProxy set to true and no provider is specified
-    script.call(['useArtifactCachingProxy': true])
+    // when running with no artifact caching proxy provider specified
+    script.call()
     printCallStack()
     // then it notices the use of the default artifact caching provider
     assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${defaultArtifactCachingProxyProvider}' provider."))
@@ -338,11 +338,27 @@ class BuildPluginStepTests extends BaseTest {
   }
 
   @Test
-  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_empty_provider_specified() throws Exception {
+  void test_buildPlugin_with_artifact_caching_proxy_disabled() throws Exception {
     def script = loadScript(scriptName)
-    // when running with useArtifactCachingProxy set to true and an empty provider is specified
+    // when running with useArtifactCachingProxy set to false
+    script.call(['useArtifactCachingProxy': false])
+    printCallStack()
+    // then it doesn't notice the use of the default artifact caching provider
+    assertFalse(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${defaultArtifactCachingProxyProvider}' provider."))
+    // then configFile doesn't contain the default artifact caching proxy provider id
+    assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${defaultArtifactCachingProxyProvider}"))
+    // then configFileProvider is not set
+    assertFalse(assertMethodCallContainsPattern('configFileProvider', '[OK]'))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_empty_artifact_caching_proxy_provider_specified() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with an empty artifact caching proxy provider specified
     env.ARTIFACT_CACHING_PROXY_PROVIDER = ''
-    script.call(['useArtifactCachingProxy': true])
+    script.call()
     printCallStack()
     // then an healthcheck is performed on the provider
     assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptSh) || assertMethodCallContainsPattern('bat', healthCheckScriptBat))
@@ -353,11 +369,11 @@ class BuildPluginStepTests extends BaseTest {
   }
 
   @Test
-  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_invalid_provider_specified() throws Exception {
+  void test_buildPlugin_with_invalid_artifact_caching_proxy_provider_specified() throws Exception {
     def script = loadScript(scriptName)
-    // when running with useArtifactCachingProxy set to true and an invalid provider is specified
+    // when running with an invalid artifact caching proxy provider specified
     env.ARTIFACT_CACHING_PROXY_PROVIDER = invalidArtifactCachingProxyProvider
-    script.call(['useArtifactCachingProxy': true])
+    script.call()
     printCallStack()
     // then it notices invalid or unavailable artifact caching provider has been specified and that it will fallback to repo.jenkins-ci.org
     assertTrue(assertMethodCallContainsPattern('echo', "WARNING: invalid or unavailable artifact caching proxy provider '${invalidArtifactCachingProxyProvider}' specified, will use repo.jenkins-ci.org"))
@@ -368,13 +384,13 @@ class BuildPluginStepTests extends BaseTest {
   }
 
   @Test
-  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_no_providers_env_var() throws Exception {
+  void test_buildPlugin_with_artifact_caching_proxy_and_no_providers_env_var() throws Exception {
     def script = loadScript(scriptName)
-    // when running with useArtifactCachingProxy set to true and an available provider different from the default one is specified
+    // when running with an available provider different from the default one specified
     // without ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS env var declared
     env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
     env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS = null
-    script.call(['useArtifactCachingProxy': true])
+    script.call()
     printCallStack()
     // then it notices the use of the specified artifact caching provider
     assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider."))
@@ -385,12 +401,12 @@ class BuildPluginStepTests extends BaseTest {
   }
 
   @Test
-  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_empty_providers_env_var() throws Exception {
+  void test_buildPlugin_with_artifact_caching_proxy_and_empty_providers_env_var() throws Exception {
     def script = loadScript(scriptName)
-    // when running with useArtifactCachingProxy set to true and an available provider different from the default one is specified
+    // when running with an available provider different from the default one specified
     env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
     env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS = ''
-    script.call(['useArtifactCachingProxy': true])
+    script.call()
     printCallStack()
     // then it notices the use of the specified artifact caching provider
     assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider."))
@@ -401,13 +417,13 @@ class BuildPluginStepTests extends BaseTest {
   }
 
   @Test
-  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_invalid_providers_env_var() throws Exception {
+  void test_buildPlugin_with_invalid_artifact_caching_proxy_providers_env_var() throws Exception {
     def script = loadScript(scriptName)
-    // when running with useArtifactCachingProxy set to true and an available provider different from the default one is specified
+    // when running with an available provider different from the default one specified
     // with an invalid provider configured with ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS env var declared
     env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
     env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS = invalidArtifactCachingProxyProvider
-    script.call(['useArtifactCachingProxy': true])
+    script.call()
     printCallStack()
     // then it notices invalid or unavailable artifact caching provider has been specified and that it will fallback to repo.jenkins-ci.org
     assertTrue(assertMethodCallContainsPattern('echo', "WARNING: invalid or unavailable artifact caching proxy provider '${anotherArtifactCachingProxyProvider}' specified, will use repo.jenkins-ci.org"))
@@ -418,12 +434,12 @@ class BuildPluginStepTests extends BaseTest {
   }
 
   @Test
-  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_unavailable_provider_specified() throws Exception {
+  void test_buildPlugin_with_unavailable_artifact_caching_proxy_provider_specified() throws Exception {
     def script = loadScript(scriptName)
-    // when running with useArtifactCachingProxy set to true and an unavailable provider is specified
+    // when running with an unavailable provider specified
     env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
     env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS = 'aws,azure' // without anotherArtifactCachingProxyProvider
-    script.call(['useArtifactCachingProxy': true])
+    script.call()
     printCallStack()
     // then it notices invalid or unavailable artifact caching provider has been specified and that it will fallback to repo.jenkins-ci.org
     assertTrue(assertMethodCallContainsPattern('echo', "WARNING: invalid or unavailable artifact caching proxy provider '${anotherArtifactCachingProxyProvider}' specified, will use repo.jenkins-ci.org"))
@@ -434,11 +450,11 @@ class BuildPluginStepTests extends BaseTest {
   }
 
   @Test
-  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_reachable_provider_specified() throws Exception {
+  void test_buildPlugin_with_reachable_artifact_caching_proxy_provider_specified() throws Exception {
     def script = loadScript(scriptName)
-    // when running with useArtifactCachingProxy set to true and a reachable provider is specified
+    // when running with a reachable provider specified
     env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
-    script.call(['useArtifactCachingProxy': true])
+    script.call()
     printCallStack()
     // then an healthcheck is performed on the provider
     assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptSh) || assertMethodCallContainsPattern('bat', healthCheckScriptBat))
@@ -451,15 +467,15 @@ class BuildPluginStepTests extends BaseTest {
   }
 
   @Test
-  void test_buildPlugin_with_artifact_caching_proxy_enabled_and_unreachable_provider_specified() throws Exception {
+  void test_buildPlugin_with_unreachable_artifact_caching_proxy_provider_specified() throws Exception {
     def script = loadScript(scriptName)
     // Mock an healthcheck fail
     helper.addShMock(healthCheckScriptSh, '', 1)
     helper.addBatMock(healthCheckScriptBat, '', 1)
 
-    // when running with useArtifactCachingProxy set to true and an unreachable provider is specified
+    // when running with an unreachable provider specified
     env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
-    script.call(['useArtifactCachingProxy': true])
+    script.call()
     printCallStack()
     // then an healthcheck is performed on the provider
     assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptSh) || assertMethodCallContainsPattern('bat', healthCheckScriptBat))
@@ -475,13 +491,13 @@ class BuildPluginStepTests extends BaseTest {
   void test_buildPlugin_with_skip_artifact_caching_proxy_label_applied_to_pull_request() throws Exception {
     def script = loadScript(scriptName)
 
-    // when running with useArtifactCachingProxy set to true, on a pull request with a "skip-artifact-caching-proxy" label
+    // when running on a pull request with a "skip-artifact-caching-proxy" label
     env.BRANCH_IS_PRIMARY = false
     env.CHANGE_URL = changeUrlWithSkipACPLabel
     // Mock a "skip-artifact-caching-proxy" label
     helper.addShMock(prLabelsContainSkipACPScriptSh, '', 0)
     helper.addBatMock(prLabelsContainSkipACPScriptBat, '', 0)
-    script.call(['useArtifactCachingProxy': true])
+    script.call()
     printCallStack()
     // then a check is performed on the pull request labels
     assertTrue(assertMethodCallContainsPattern('sh', prLabelsContainSkipACPScriptSh) || assertMethodCallContainsPattern('bat', prLabelsContainSkipACPScriptBat))
@@ -497,13 +513,13 @@ class BuildPluginStepTests extends BaseTest {
   void test_buildPlugin_without_skip_artifact_caching_proxy_label_applied_to_pull_request() throws Exception {
     def script = loadScript(scriptName)
 
-    // when running with useArtifactCachingProxy set to true, on a pull request without a "skip-artifact-caching-proxy" label
+    // when running on a pull request without a "skip-artifact-caching-proxy" label
     env.BRANCH_IS_PRIMARY = false
     env.CHANGE_URL = 'https://api.github.com/repos/jenkins-infra/pipeline-library/pull/123'
     // Mock the absence of "skip-artifact-caching-proxy" label
     helper.addShMock(prLabelsContainSkipACPScriptSh, '', 1)
     helper.addBatMock(prLabelsContainSkipACPScriptBat, '', 1)
-    script.call(['useArtifactCachingProxy': true])
+    script.call()
     printCallStack()
     // then a check is performed on the pull request labels
     assertTrue(assertMethodCallContainsPattern('sh', prLabelsContainSkipACPScriptSh) || assertMethodCallContainsPattern('bat', prLabelsContainSkipACPScriptBat))
