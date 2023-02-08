@@ -24,6 +24,7 @@ class BuildPluginStepTests extends BaseTest {
     super.setUp()
     // It is expected to be on Maven by default. Override this behavior when you need to specialize
     helper.registerAllowedMethod('fileExists', [String.class], { s -> return s.equals('pom.xml') })
+    binding.setVariable('infra', ['withArtifactCachingProxy': {body -> body()}])
     env.NODE_LABELS = 'docker'
     env.JOB_NAME = 'build/plugin/test'
     // Testing by default on the primary branch
