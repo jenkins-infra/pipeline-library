@@ -158,11 +158,14 @@ def withArtifactCachingProxy(Closure body) {
     }
   }
   if (usingArtifactCachingProxy) {
+    echo "usingArtifactCachingProxy"
     configFileProvider(
         [configFile(fileId: "artifact-caching-proxy-${requestedProxyProvider}", variable: 'MAVEN_SETTINGS')]) {
+          echo "in configFileProvider"
           body()
         }
   } else {
+    echo "not usingArtifactCachingProxy"
     body()
   }
 }
