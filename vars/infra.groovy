@@ -105,6 +105,14 @@ boolean retrieveMavenSettingsFile(String settingsXml) {
 
 def withArtifactCachingProxy(Closure body) {
   boolean usingArtifactCachingProxy = false
+  // As the env var ARTIFACT_CACHING_PROXY_PROVIDER can't be set on Azure VM agents,
+  // we're specifying a default provider if none is specified.
+  final String requestedProxyProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER ?: 'azure'
+  final String[] validProxyProviders = ['aws', 'azure', 'do']
+  // Useful when a provider is in maintenance (or similar cases), add a global env var in Jenkins controller settings to restrict them.
+  // To completely disable the artifact caching proxies, this value can be set to a value absent of validProxyProviders like "none" for example.
+  final String configuredAvailableProxyProviders = env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS ?: validProxyProviders.join(',')
+  final String[] availableProxyProviders = configuredAvailableProxyProviders.split(',')
 
   // If the build concerns a pull request, check if there is "skip-artifact-caching-proxy" label applied in case the user doesn't wan't ACP
   boolean prLabelsContainSkipACP = false
@@ -129,14 +137,6 @@ def withArtifactCachingProxy(Closure body) {
     }
   }
   if (!prLabelsContainSkipACP) {
-    // As the env var ARTIFACT_CACHING_PROXY_PROVIDER can't be set on Azure VM agents,
-    // we're specifying a default provider if none is specified.
-    final String requestedProxyProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER ?: 'azure'
-    final String[] validProxyProviders = ['aws', 'azure', 'do']
-    // Useful when a provider is in maintenance (or similar cases), add a global env var in Jenkins controller settings to restrict them.
-    // To completely disable the artifact caching proxies, this value can be set to a value absent of validProxyProviders like "none" for example.
-    final String configuredAvailableProxyProviders = env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS ?: validProxyProviders.join(',')
-    final String[] availableProxyProviders = configuredAvailableProxyProviders.split(',')
     // Configure Maven settings if the requested provider is valid and available
     if (validProxyProviders.contains(requestedProxyProvider) && availableProxyProviders.contains(requestedProxyProvider)) {
       boolean healthCheckOK = false
@@ -158,7 +158,7 @@ def withArtifactCachingProxy(Closure body) {
     }
   }
   if (usingArtifactCachingProxy) {
-    echo "usingArtifactCachingProxy: ${requestedProxyProvider}"
+    echo "usingArtifactCachingProxy"
     echo requestedProxyProvider
     configFileProvider(
         [configFile(fileId: "artifact-caching-proxy-${requestedProxyProvider}", variable: 'MAVEN_SETTINGS')]) {
