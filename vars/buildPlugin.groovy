@@ -140,9 +140,10 @@ def call(Map params = [:]) {
                     if (useArtifactCachingProxy) {
                       withArtifactCachingProxy {
                         infra.runMaven(mavenOptions, jdk, null, env.MAVEN_SETTINGS, addToolEnv)
-                      } else {
-                        infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
                       }
+                    } else {
+                      infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
+                    }
                   } finally {
                     if (!skipTests) {
                       junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
