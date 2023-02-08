@@ -158,7 +158,7 @@ def withArtifactCachingProxy(Closure body) {
     }
   }
   if (usingArtifactCachingProxy) {
-    echo "usingArtifactCachingProxy"
+    echo "usingArtifactCachingProxy: $requestedProxyProvider"
     echo requestedProxyProvider
     echo "requestedProxyProvider: $requestedProxyProvider"
     configFileProvider(
