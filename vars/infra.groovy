@@ -103,7 +103,7 @@ boolean retrieveMavenSettingsFile(String settingsXml) {
   return false
 }
 
-def withArtifactCachingProxy(Closure body) {
+Object withArtifactCachingProxy(Closure body) {
   boolean usingArtifactCachingProxy = false
   // As the env var ARTIFACT_CACHING_PROXY_PROVIDER can't be set on Azure VM agents,
   // we're specifying a default provider if none is specified.
@@ -158,15 +158,11 @@ def withArtifactCachingProxy(Closure body) {
     }
   }
   if (usingArtifactCachingProxy) {
-    echo "usingArtifactCachingProxy"
-    echo requestedProxyProvider
     configFileProvider(
         [configFile(fileId: "artifact-caching-proxy-${requestedProxyProvider}", variable: 'MAVEN_SETTINGS')]) {
-          echo "in configFileProvider"
           body()
         }
   } else {
-    echo "not usingArtifactCachingProxy"
     body()
   }
 }
