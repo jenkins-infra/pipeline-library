@@ -204,7 +204,7 @@ class InfraStepTests extends BaseTest {
   @Test
   void testWithArtifactCachingProxyNoProvidersEnvVar() throws Exception {
     def script = loadScript(scriptName)
-    // when running with an available provider different from the default one specified
+    // when running with an available provider different from the default requested one
     // without ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS env var declared
     env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
     env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS = null
@@ -214,9 +214,9 @@ class InfraStepTests extends BaseTest {
     }
     printCallStack()
     assertTrue(isOK)
-    // then it notices the use of the specified artifact caching provider
+    // then it notices the use of the requested artifact caching provider
     assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider."))
-    // then there is a call to configFile containing the specified artifact caching proxy provider id
+    // then there is a call to configFile containing the requested artifact caching proxy provider id
     assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
     // then it succeeds
     assertJobStatusSuccess()
@@ -225,7 +225,7 @@ class InfraStepTests extends BaseTest {
   @Test
   void testWithArtifactCachingProxyEmptyProvidersEnvVar() throws Exception {
     def script = loadScript(scriptName)
-    // when running with an available provider different from the default one specified
+    // when running with an available provider different from the default requested one
     env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
     env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS = ''
     def isOK = false
@@ -234,9 +234,9 @@ class InfraStepTests extends BaseTest {
     }
     printCallStack()
     assertTrue(isOK)
-    // then it notices the use of the specified artifact caching provider
+    // then it notices the use of the requested artifact caching provider
     assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider."))
-    // then there is a call to configFile containing the specified artifact caching proxy provider id
+    // then there is a call to configFile containing the requested artifact caching proxy provider id
     assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
     // then it succeeds
     assertJobStatusSuccess()
@@ -245,7 +245,7 @@ class InfraStepTests extends BaseTest {
   @Test
   void testWithArtifactCachingProxyInvalidProvidersEnvVar() throws Exception {
     def script = loadScript(scriptName)
-    // when running with an available provider different from the default one specified
+    // when running with an available provider different from the default requested one
     // with an invalid provider configured with ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS env var declared
     env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
     env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS = invalidArtifactCachingProxyProvider
@@ -255,18 +255,18 @@ class InfraStepTests extends BaseTest {
     }
     printCallStack()
     assertTrue(isOK)
-    // then it notices invalid or unavailable artifact caching provider has been specified and that it will fallback to repo.jenkins-ci.org
-    assertTrue(assertMethodCallContainsPattern('echo', "WARNING: invalid or unavailable artifact caching proxy provider '${anotherArtifactCachingProxyProvider}' specified, will use repo.jenkins-ci.org"))
-    // then there is no call to configFile containing the specified artifact caching proxy provider id
+    // then it notices invalid or unavailable artifact caching provider has been requested and that it will fallback to repo.jenkins-ci.org
+    assertTrue(assertMethodCallContainsPattern('echo', "WARNING: invalid or unavailable artifact caching proxy provider '${anotherArtifactCachingProxyProvider}' requested by the agent, will use repo.jenkins-ci.org"))
+    // then there is no call to configFile containing the requested artifact caching proxy provider id
     assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
     // then it succeeds
     assertJobStatusSuccess()
   }
 
   @Test
-  void testWithArtifactCachingProxyEmptyRequestedProviderSpecified() throws Exception {
+  void testWithArtifactCachingProxyEmptyRequestedProvider() throws Exception {
     def script = loadScript(scriptName)
-    // when running with an empty artifact caching proxy provider specified
+    // when running with an empty artifact caching proxy provider requested
     env.ARTIFACT_CACHING_PROXY_PROVIDER = ''
     def isOK = false
     script.withArtifactCachingProxy() {
@@ -283,9 +283,9 @@ class InfraStepTests extends BaseTest {
   }
 
   @Test
-  void testWithArtifactCachingProxyInvalidRequestedProviderSpecified() throws Exception {
+  void testWithArtifactCachingProxyInvalidRequestedProvider() throws Exception {
     def script = loadScript(scriptName)
-    // when running with an invalid artifact caching proxy provider specified
+    // when running with an invalid artifact caching proxy provider requested
     env.ARTIFACT_CACHING_PROXY_PROVIDER = invalidArtifactCachingProxyProvider
     def isOK = false
     script.withArtifactCachingProxy() {
@@ -293,17 +293,17 @@ class InfraStepTests extends BaseTest {
     }
     printCallStack()
     assertTrue(isOK)
-    // then it notices invalid or unavailable artifact caching provider has been specified and that it will fallback to repo.jenkins-ci.org
-    assertTrue(assertMethodCallContainsPattern('echo', "WARNING: invalid or unavailable artifact caching proxy provider '${invalidArtifactCachingProxyProvider}' specified, will use repo.jenkins-ci.org"))
-    // then there is no call to configFile containing the specified artifact caching proxy provider id
+    // then it notices invalid or unavailable artifact caching provider has been requested and that it will fallback to repo.jenkins-ci.org
+    assertTrue(assertMethodCallContainsPattern('echo', "WARNING: invalid or unavailable artifact caching proxy provider '${invalidArtifactCachingProxyProvider}' requested by the agent, will use repo.jenkins-ci.org"))
+    // then there is no call to configFile containing the requested artifact caching proxy provider id
     assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${invalidArtifactCachingProxyProvider}"))
     // then it succeeds
     assertJobStatusSuccess()
   }
   @Test
-  void testWithArtifactCachingProxyUnavailableRequestedProviderSpecified() throws Exception {
+  void testWithArtifactCachingProxyUnavailableRequestedProvider() throws Exception {
     def script = loadScript(scriptName)
-    // when running with an unavailable provider specified
+    // when running with an unavailable requested provider
     env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
     env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS = artifactCachingProxyProvidersWithoutAnotherProvider
     def isOK = false
@@ -312,60 +312,13 @@ class InfraStepTests extends BaseTest {
     }
     printCallStack()
     assertTrue(isOK)
-    // then it notices invalid or unavailable artifact caching provider has been specified and that it will fallback to repo.jenkins-ci.org
-    assertTrue(assertMethodCallContainsPattern('echo', "WARNING: invalid or unavailable artifact caching proxy provider '${anotherArtifactCachingProxyProvider}' specified, will use repo.jenkins-ci.org"))
-    // then there is no call to configFile containing the specified artifact caching proxy provider id
+    // then it notices invalid or unavailable artifact caching provider has been requested and that it will fallback to repo.jenkins-ci.org
+    assertTrue(assertMethodCallContainsPattern('echo', "WARNING: invalid or unavailable artifact caching proxy provider '${anotherArtifactCachingProxyProvider}' requested by the agent, will use repo.jenkins-ci.org"))
+    // then there is no call to configFile containing the requested artifact caching proxy provider id
     assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
     // then it succeeds
     assertJobStatusSuccess()
   }
-
-  @Test
-  void testWithArtifactCachingProxyReachableRequestedProviderSpecified() throws Exception {
-    def script = loadScript(scriptName)
-    // when running with a reachable provider specified
-    env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
-    def isOK = false
-    script.withArtifactCachingProxy() {
-      isOK = true
-    }
-    printCallStack()
-    assertTrue(isOK)
-    // then an healthcheck is performed on the provider
-    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptSh) || assertMethodCallContainsPattern('bat', healthCheckScriptBat))
-    // then it notices the provider isn't reachable and that it will fallback to repo.jenkins-ci.org
-    assertFalse(assertMethodCallContainsPattern('echo', "WARNING: the artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"))
-    // then there is no call to configFile containing the specified artifact caching proxy provider id
-    assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
-    // then it succeeds
-    assertJobStatusSuccess()
-  }
-
-  @Test
-  void testWithArtifactCachingProxyUnreachableRequestedProviderSpecified() throws Exception {
-    def script = loadScript(scriptName)
-    // Mock an healthcheck fail
-    helper.addShMock(healthCheckScriptSh, '', 1)
-    helper.addBatMock(healthCheckScriptBat, '', 1)
-
-    // when running with an unreachable provider specified
-    env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
-    def isOK = false
-    script.withArtifactCachingProxy() {
-      isOK = true
-    }
-    printCallStack()
-    assertTrue(isOK)
-    // then an healthcheck is performed on the provider
-    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptSh) || assertMethodCallContainsPattern('bat', healthCheckScriptBat))
-    // then it notices the provider isn't reachable and that it will fallback to repo.jenkins-ci.org
-    assertTrue(assertMethodCallContainsPattern('echo', "WARNING: the artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"))
-    // then there is no call to configFile containing the specified artifact caching proxy provider id
-    assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
-    // then it succeeds
-    assertJobStatusSuccess()
-  }
-
 
   @Test
   void testWithArtifactCachingProxyWithoutSkipArtifactCachingProxyOnPullRequest() throws Exception {
@@ -410,6 +363,52 @@ class InfraStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('echo', "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"))
     // then there is no call to configFile containing the default artifact caching proxy provider id
     assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${defaultArtifactCachingProxyProvider}"))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testWithArtifactCachingProxyReachableRequestedProvider() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with a reachable requested provider
+    env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
+    def isOK = false
+    script.withArtifactCachingProxy() {
+      isOK = true
+    }
+    printCallStack()
+    assertTrue(isOK)
+    // then an healthcheck is performed on the provider
+    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptSh) || assertMethodCallContainsPattern('bat', healthCheckScriptBat))
+    // then it notices the provider isn't reachable and that it will fallback to repo.jenkins-ci.org
+    assertFalse(assertMethodCallContainsPattern('echo', "WARNING: the artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"))
+    // then there is no call to configFile containing the requested artifact caching proxy provider id
+    assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testWithArtifactCachingProxyUnreachableRequestedProvider() throws Exception {
+    def script = loadScript(scriptName)
+    // Mock an healthcheck fail
+    helper.addShMock(healthCheckScriptSh, '', 1)
+    helper.addBatMock(healthCheckScriptBat, '', 1)
+
+    // when running with an unreachable requested provider
+    env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
+    def isOK = false
+    script.withArtifactCachingProxy() {
+      isOK = true
+    }
+    printCallStack()
+    assertTrue(isOK)
+    // then an healthcheck is performed on the provider
+    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptSh) || assertMethodCallContainsPattern('bat', healthCheckScriptBat))
+    // then it notices the provider isn't reachable and that it will fallback to repo.jenkins-ci.org
+    assertTrue(assertMethodCallContainsPattern('echo', "WARNING: the artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"))
+    // then there is no call to configFile containing the requested artifact caching proxy provider id
+    assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
     // then it succeeds
     assertJobStatusSuccess()
   }
