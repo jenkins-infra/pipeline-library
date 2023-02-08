@@ -159,6 +159,7 @@ def withArtifactCachingProxy(Closure body) {
   }
   if (usingArtifactCachingProxy) {
     echo "usingArtifactCachingProxy"
+    echo "requestedProxyProvider: $requestedProxyProvider"
     configFileProvider(
         [configFile(fileId: "artifact-caching-proxy-${requestedProxyProvider}", variable: 'MAVEN_SETTINGS')]) {
           echo "in configFileProvider"
