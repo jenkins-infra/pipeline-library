@@ -138,7 +138,7 @@ def call(Map params = [:]) {
                   mavenOptions += 'clean install'
                   try {
                     if (useArtifactCachingProxy) {
-                      withArtifactCachingProxy() {
+                      withArtifactCachingProxy {
                         infra.runMaven(mavenOptions, jdk, null, env.MAVEN_SETTINGS, addToolEnv)
                       } else {
                         infra.runMaven(mavenOptions, jdk, null, null, addToolEnv)
