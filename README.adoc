@@ -17,7 +17,7 @@ WARNING: Gradle support in `buildPlugin()` is deprecated and will be eventually 
 Applies the appropriate defaults for building a Maven-based plugin project on
 Linux and Windows.
 
-You are advised to be using a link:https://github.com/jenkinsci/plugin-pom/blob/master/README.md[2.x parent POM].
+You are advised to be using a link:https://github.com/jenkinsci/plugin-pom/blob/master/README.md[2.x or newer parent POM].
 
 .Jenkinsfile
 [source,groovy]
