@@ -44,6 +44,24 @@
     See the method Javadoc in the repository for more information.
 </p>
 
+<strong>infra.withArtifactCachingProxy(Closure body)</strong>
+
+<p>
+    Execute the body passed as closure with a Maven settings file using the
+    Artifact Caching Proxy provider corresponding to the requested one defined
+    via the agent's env.ARTIFACT_CACHING_PROXY variable, or 'azure' if not defined.
+    This allows decreasing JFrog Artifactory bandwidth consumption, and increase reliability.
+    There are currently three providers, one for each cloud used in Jenkins Infrastructure:
+    "aws", "azure" and "do" (DigitalOcean).
+    The available providers can be restricted by setting a global ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS
+    variable on the Jenkins controller, with providers separated by a comma. Ex: 'aws,do' if the Azure provider is unavailable.
+    A 'skip-artifact-caching-proxy' label can be added to pull request in order to punctually disable it.
+</p>
+
+<p>
+    See the method Javadoc in the repository for more information.
+</p>
+
 <strong>infra.runMaven(List&lt;String&gt; options, String jdk = '8', List&lt;String&gt; extraEnv = null, String settingsFile = null, Boolean addToolEnv = true)</strong>
 
 <p>
