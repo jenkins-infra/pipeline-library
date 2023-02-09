@@ -106,7 +106,7 @@ boolean retrieveMavenSettingsFile(String settingsXml) {
 }
 
 @NonCPS
-def getBuildCredentialsId() {
+String getBuildCredentialsId() {
   return SCMSource.SourceByItem.findSource(currentBuild.rawBuild.parent).credentialsId
 }
 
@@ -141,29 +141,23 @@ Object withArtifactCachingProxy(Closure body) {
 
   // If the build concerns a pull request, check if there is "skip-artifact-caching-proxy" label applied in case the user doesn't want ACP
   if ((useArtifactCachingProxy) && (!env.BRANCH_IS_PRIMARY)) {
-    final String currentCredentialsId = getBuildCredentialsId()
-    try {
-      withCredentials([
-        // This credential only exists on ci.jenkins.io and allows to check for GitHub PR labels on @jenkinsci GitHub organisation.
-        // Would not be needed if there was a way to retrieve pull request labels natively.
-        usernamePassword(credentialsId: currentCredentialsId, usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
-      ]) {
-        boolean prLabelsContainSkipACP = false
-        final String skipACPLabel = 'skip-artifact-caching-proxy'
-        // Creating the correct API URL to retrieve pull request labels from the $CHANGE_URL
-        final String pullrequestLabelsApiURL = (env.CHANGE_URL).replace('/pull/', '/issues/').replace('/github.com/', '/api.github.com/repos/') + '/labels'
-        if (isUnix()) {
-          prLabelsContainSkipACP = sh(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" ' + pullrequestLabelsApiURL + ' | grep --ignore-case "skip-artifact-caching-proxy"', returnStatus: true) == 0
-        } else {
-          prLabelsContainSkipACP = bat(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" ' + pullrequestLabelsApiURL + ' | findstr /i "skip-artifact-caching-proxy"', returnStatus: true) == 0
-        }
-        if (prLabelsContainSkipACP) {
-          echo "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"
-          useArtifactCachingProxy = false
-        }
+    withCredentials([
+      // Would not be needed if there was a way to retrieve pull request labels natively.
+      usernamePassword(credentialsId: getBuildCredentialsId(), usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
+    ]) {
+      boolean prLabelsContainSkipACP = false
+      final String skipACPLabel = 'skip-artifact-caching-proxy'
+      // Creating the correct API URL to retrieve pull request labels from the $CHANGE_URL
+      final String pullrequestLabelsApiURL = (env.CHANGE_URL).replace('/pull/', '/issues/').replace('/github.com/', '/api.github.com/repos/') + '/labels'
+      if (isUnix()) {
+        prLabelsContainSkipACP = sh(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" ' + pullrequestLabelsApiURL + ' | grep --ignore-case "skip-artifact-caching-proxy"', returnStatus: true) == 0
+      } else {
+        prLabelsContainSkipACP = bat(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" ' + pullrequestLabelsApiURL + ' | findstr /i "skip-artifact-caching-proxy"', returnStatus: true) == 0
       }
-    } catch(Exception e) {
-      echo "WARNING: There was an error trying to retrieve pull request labels, skipping this check."
+      if (prLabelsContainSkipACP) {
+        echo "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"
+        useArtifactCachingProxy = false
+      }
     }
   }
 

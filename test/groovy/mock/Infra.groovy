@@ -23,10 +23,6 @@ class Infra implements Serializable {
     }
   }
 
-  public String getBuildCredentialsId() {
-    return 'aCredentialId'
-  }
-
   public Object runMaven(List<String> options, String jdk = null, List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = null) {
     def command = "mvn ${options.join(' ')}"
     return runWithMaven(command, jdk, extraEnv, addToolEnv)
