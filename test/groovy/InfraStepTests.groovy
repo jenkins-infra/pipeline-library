@@ -22,7 +22,7 @@ class InfraStepTests extends BaseTest {
   @Before
   void setUp() throws Exception {
     super.setUp()
-    helper.registerAllowedMethod('getBuildCredentialsId', []) { 'aCredentialsId' }
+    helper.registerAllowedMethod('getBuildCredentialsId', [], { 'aCredentialsId' })
     env.CHANGE_URL = changeUrl
     // Mock the absence of "skip-artifact-caching-proxy" label
     helper.addShMock(prLabelsContainSkipACPScriptSh, '', 1)
