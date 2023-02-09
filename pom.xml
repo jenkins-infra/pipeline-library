@@ -59,6 +59,12 @@
       <version>${jenkins-pipeline-unit.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>scm-api</artifactId>
+      <version>616.ve67136f6c77d</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <repositories>
     <repository>

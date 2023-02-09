@@ -1,6 +1,8 @@
 #!/usr/bin/env groovy
 
 import io.jenkins.infra.InfraConfig
+import jenkins.scm.api.SCMSource
+import com.cloudbees.groovy.cps.NonCPS
 
 // Method kept for backward compatibility (as the method is available on the InfraConfig stateful object)
 Boolean isRunningOnJenkinsInfra() {
@@ -101,6 +103,90 @@ boolean retrieveMavenSettingsFile(String settingsXml) {
     return true
   }
   return false
+}
+
+@NonCPS
+String getBuildCredentialsId() {
+  return SCMSource.SourceByItem.findSource(currentBuild.rawBuild.parent).credentialsId
+}
+
+/**
+ * Execute the body passed as closure with a Maven settings file using the
+ * Artifact Caching Proxy provider corresponding to the requested one defined
+ * via the agent's env.ARTIFACT_CACHING_PROXY variable, or 'azure' if not defined.
+ * This allows decreasing JFrog Artifactory bandwidth consumption, and increase reliability.
+ * There are currently three providers, one for each cloud used in Jenkins Infrastructure:
+ * "aws", "azure" and "do" (DigitalOcean).
+ * The available providers can be restricted by setting a global ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS
+ * variable on the Jenkins controller, with providers separated by a comma. Ex: 'aws,do' if the Azure provider is unavailable.
+ * A 'skip-artifact-caching-proxy' label can be added to pull request in order to punctually disable it.
+ */
+Object withArtifactCachingProxy(Closure body) {
+  boolean useArtifactCachingProxy = true
+
+  // As the env var ARTIFACT_CACHING_PROXY_PROVIDER can't be set on Azure VM agents,
+  // we're specifying a default provider if none is specified.
+  final String requestedProxyProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER ?: 'azure'
+  final String[] validProxyProviders = ['aws', 'azure', 'do']
+  // Useful when a provider is in maintenance (or similar cases), add a global env var in Jenkins controller settings to restrict them.
+  // To completely disable the artifact caching proxies, this value can be set to a value absent of validProxyProviders like "none" for example.
+  final String configuredAvailableProxyProviders = env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS ?: validProxyProviders.join(',')
+  final String[] availableProxyProviders = configuredAvailableProxyProviders.split(',')
+
+  // Check if the requested provider is invalid or unavailable
+  if (!validProxyProviders.contains(requestedProxyProvider) || !availableProxyProviders.contains(requestedProxyProvider)) {
+    echo "WARNING: invalid or unavailable artifact caching proxy provider '${requestedProxyProvider}' requested by the agent, will use repo.jenkins-ci.org"
+    useArtifactCachingProxy = false
+  }
+
+  // If the build concerns a pull request, check if there is "skip-artifact-caching-proxy" label applied in case the user doesn't want ACP
+  if ((useArtifactCachingProxy) && (!env.BRANCH_IS_PRIMARY)) {
+    withCredentials([
+      // Would not be needed if there was a way to retrieve pull request labels natively.
+      usernamePassword(credentialsId: getBuildCredentialsId(), usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
+    ]) {
+      boolean prLabelsContainSkipACP = false
+      final String skipACPLabel = 'skip-artifact-caching-proxy'
+      // Creating the correct API URL to retrieve pull request labels from the $CHANGE_URL
+      final String pullrequestLabelsApiURL = (env.CHANGE_URL).replace('/pull/', '/issues/').replace('/github.com/', '/api.github.com/repos/') + '/labels'
+      if (isUnix()) {
+        prLabelsContainSkipACP = sh(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" ' + pullrequestLabelsApiURL + ' | grep --ignore-case "skip-artifact-caching-proxy"', returnStatus: true) == 0
+      } else {
+        prLabelsContainSkipACP = bat(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" ' + pullrequestLabelsApiURL + ' | findstr /i "skip-artifact-caching-proxy"', returnStatus: true) == 0
+      }
+      if (prLabelsContainSkipACP) {
+        echo "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"
+        useArtifactCachingProxy = false
+      }
+    }
+  }
+
+  // Check if the artifact caching proxy provider is unreachable
+  if (useArtifactCachingProxy) {
+    boolean healthCheckFailed = false
+    withEnv(["HEALTHCHECK=https://repo.${requestedProxyProvider}.jenkins.io/health"]) {
+      if (isUnix()) {
+        healthCheckFailed = sh(script: 'curl --fail --silent --show-error --location $HEALTHCHECK', returnStatus: true) != 0
+      } else {
+        healthCheckFailed = bat(script: 'curl --fail --silent --show-error --location %HEALTHCHECK%', returnStatus: true) != 0
+      }
+    }
+    if (healthCheckFailed) {
+      echo "WARNING: the artifact caching proxy from '${requestedProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"
+      useArtifactCachingProxy = false
+    }
+  }
+
+  // Use the Maven settings with artifact caching proxy config and private auth if everything is still OK
+  if (useArtifactCachingProxy) {
+    echo "INFO: using artifact caching proxy from '${requestedProxyProvider}' provider."
+    configFileProvider(
+        [configFile(fileId: "artifact-caching-proxy-${requestedProxyProvider}", variable: 'MAVEN_SETTINGS')]) {
+          body()
+        }
+  } else {
+    body()
+  }
 }
 
 /**
