@@ -2,6 +2,7 @@
 
 import io.jenkins.infra.InfraConfig
 import jenkins.scm.api.SCMSource
+import com.cloudbees.groovy.cps.NonCPS
 
 // Method kept for backward compatibility (as the method is available on the InfraConfig stateful object)
 Boolean isRunningOnJenkinsInfra() {
@@ -104,6 +105,11 @@ boolean retrieveMavenSettingsFile(String settingsXml) {
   return false
 }
 
+@NonCPS
+def getBuildCredentialsId() {
+  return SCMSource.SourceByItem.findSource(currentBuild.rawBuild.parent).credentialsId
+}
+
 /**
  * Execute the body passed as closure with a Maven settings file using the
  * Artifact Caching Proxy provider corresponding to the requested one defined
@@ -135,7 +141,7 @@ Object withArtifactCachingProxy(Closure body) {
 
   // If the build concerns a pull request, check if there is "skip-artifact-caching-proxy" label applied in case the user doesn't want ACP
   if ((useArtifactCachingProxy) && (!env.BRANCH_IS_PRIMARY)) {
-    final String currentCredentialsId = SCMSource.SourceByItem.findSource(currentBuild.rawBuild.parent).credentialsId
+    final String currentCredentialsId = getBuildCredentialsId()
     try {
       withCredentials([
         // This credential only exists on ci.jenkins.io and allows to check for GitHub PR labels on @jenkinsci GitHub organisation.
