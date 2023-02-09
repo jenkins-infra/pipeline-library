@@ -1,6 +1,7 @@
 #!/usr/bin/env groovy
 
 import io.jenkins.infra.InfraConfig
+import jenkins.scm.api.SCMSource
 
 // Method kept for backward compatibility (as the method is available on the InfraConfig stateful object)
 Boolean isRunningOnJenkinsInfra() {
@@ -134,12 +135,12 @@ Object withArtifactCachingProxy(Closure body) {
 
   // If the build concerns a pull request, check if there is "skip-artifact-caching-proxy" label applied in case the user doesn't want ACP
   if ((useArtifactCachingProxy) && (!env.BRANCH_IS_PRIMARY)) {
+    final String currentCredentialsId = SCMSource.SourceByItem.findSource(currentBuild.rawBuild.parent).credentialsId
     try {
       withCredentials([
         // This credential only exists on ci.jenkins.io and allows to check for GitHub PR labels on @jenkinsci GitHub organisation.
         // Would not be needed if there was a way to retrieve pull request labels natively.
-        // TODO: create a GHA installed on both GitHub organizations
-        usernamePassword(credentialsId: 'NOTFOUND-app-ci.jenkins.io', usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
+        usernamePassword(credentialsId: currentCredentialsId, usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
       ]) {
         boolean prLabelsContainSkipACP = false
         final String skipACPLabel = 'skip-artifact-caching-proxy'
@@ -160,11 +161,8 @@ Object withArtifactCachingProxy(Closure body) {
     }
   }
 
-  echo "[before healcheck]"
-
   // Check if the artifact caching proxy provider is unreachable
   if (useArtifactCachingProxy) {
-    echo "[in healcheck]"
     boolean healthCheckFailed = false
     withEnv(["HEALTHCHECK=https://repo.${requestedProxyProvider}.jenkins.io/health"]) {
       if (isUnix()) {
@@ -178,9 +176,6 @@ Object withArtifactCachingProxy(Closure body) {
       useArtifactCachingProxy = false
     }
   }
-
-  echo "[after healcheck]"
-
 
   // Use the Maven settings with artifact caching proxy config and private auth if everything is still OK
   if (useArtifactCachingProxy) {
