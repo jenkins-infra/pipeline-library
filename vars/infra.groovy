@@ -123,25 +123,28 @@ Object withArtifactCachingProxy(Closure body) {
 
   // If the build concerns a pull request, check if there is "skip-artifact-caching-proxy" label applied in case the user doesn't want ACP
   if ((useArtifactCachingProxy) && (!env.BRANCH_IS_PRIMARY)) {
-    withCredentials([
-      // This credential only exists on ci.jenkins.io and allows to check for GitHub PR labels on @jenkinsci GitHub organisation.
-      // Would not be needed if there was a way to retrieve pull request labels natively.
-      // TODO: create a GHA installed on both GitHub organizations
-      usernamePassword(credentialsId: 'app-ci.jenkins.io', usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
-    ]) {
-      boolean prLabelsContainSkipACP = false
-      final String skipACPLabel = 'skip-artifact-caching-proxy'
-      // Creating the correct API URL to retrieve pull request labels from the $CHANGE_URL
-      final String pullrequestLabelsApiURL = (env.CHANGE_URL).replace('/pull/', '/issues/').replace('/github.com/', '/api.github.com/repos/') + '/labels'
-      if (isUnix()) {
-        prLabelsContainSkipACP = sh(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" ' + pullrequestLabelsApiURL + ' | grep --ignore-case "skip-artifact-caching-proxy"', returnStatus: true) == 0
-      } else {
-        prLabelsContainSkipACP = bat(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" ' + pullrequestLabelsApiURL + ' | findstr /i "skip-artifact-caching-proxy"', returnStatus: true) == 0
+    try {
+      withCredentials([
+        // This credential only exists on ci.jenkins.io and allows to check for GitHub PR labels on @jenkinsci GitHub organisation.
+        // Would not be needed if there was a way to retrieve pull request labels natively.
+        usernamePassword(credentialsId: 'app-ci.jenkins.io', usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
+      ]) {
+        boolean prLabelsContainSkipACP = false
+        final String skipACPLabel = 'skip-artifact-caching-proxy'
+        // Creating the correct API URL to retrieve pull request labels from the $CHANGE_URL
+        final String pullrequestLabelsApiURL = (env.CHANGE_URL).replace('/pull/', '/issues/').replace('/github.com/', '/api.github.com/repos/') + '/labels'
+        if (isUnix()) {
+          prLabelsContainSkipACP = sh(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" ' + pullrequestLabelsApiURL + ' | grep --ignore-case "skip-artifact-caching-proxy"', returnStatus: true) == 0
+        } else {
+          prLabelsContainSkipACP = bat(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" ' + pullrequestLabelsApiURL + ' | findstr /i "skip-artifact-caching-proxy"', returnStatus: true) == 0
+        }
+        if (prLabelsContainSkipACP) {
+          echo "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"
+          useArtifactCachingProxy = false
+        }
       }
-      if (prLabelsContainSkipACP) {
-        echo "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"
-        useArtifactCachingProxy = false
-      }
+    } catch(Exception e) {
+      echo "WARNING: There was an error trying to retrieve pull request labels, skipping this check."
     }
   }
 
