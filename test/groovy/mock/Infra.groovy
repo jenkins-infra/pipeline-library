@@ -15,6 +15,14 @@ class Infra implements Serializable {
     return location
   }
 
+  public Object withArtifactCachingProxy(Closure body) {
+    if (buildError) {
+      throw new RuntimeException('build error')
+    } else {
+      return body
+    }
+  }
+
   public Object runMaven(List<String> options, String jdk = null, List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = null) {
     def command = "mvn ${options.join(' ')}"
     return runWithMaven(command, jdk, extraEnv, addToolEnv)
