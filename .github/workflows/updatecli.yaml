@@ -1,42 +1,42 @@
 name: updatecli
 on:
-  workflow_dispatch:
-  schedule:
-    # Every monday
-    - cron: '* * * * 1'
-  push:
-  pull_request:
+    workflow_dispatch:
+    schedule:
+        # Every monday
+        - cron: '* * * * 1'
+    push:
+    pull_request:
 jobs:
-  updatecli:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Install updatecli CLI
-        env:
-          UPDATECLI_VERSION: "v0.44.0"
-        run: |
-          curl --silent --location --show-error --output /tmp/updatecli.tgz \
-            "https://github.com/updatecli/updatecli/releases/download/${UPDATECLI_VERSION}/updatecli_$(uname -s)_$(uname -m).tar.gz"
-          tar xzf /tmp/updatecli.tgz -C /usr/local/bin/ updatecli
-          rm -f /tmp/updatecli.tgz
-      - name: Diff
-        continue-on-error: true
-        run: |
-          updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml
-        env:
-          UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      ## This step allows to generate a short-lived token which is allowed to modify GitHub Workflow files (that the default GITHUB_TOKEN cannot)
-      ## Please make sure that the 2 secrets are defined (usually at organization level, with a per-repository access)
-      - uses: tibdex/github-app-token@v1.8
-        id: generate_token
-        if: github.ref == 'refs/heads/master'
-        with:
-          app_id: ${{ secrets.JENKINS_ADMIN_APP_ID }}
-          private_key: ${{ secrets.JENKINS_ADMIN_APP_PRIVKEY }}
-      - name: Apply
-        if: github.ref == 'refs/heads/master'
-        run: |
-          updatecli apply --config ./updatecli/updatecli.d --values ./updatecli/values.yaml
-        env:
-          UPDATECLI_GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+    updatecli:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
+            - name: Install updatecli CLI
+              env:
+                UPDATECLI_VERSION: "v0.44.1"
+              run: |
+                curl --silent --location --show-error --output /tmp/updatecli.tgz \
+                  "https://github.com/updatecli/updatecli/releases/download/${UPDATECLI_VERSION}/updatecli_$(uname -s)_$(uname -m).tar.gz"
+                tar xzf /tmp/updatecli.tgz -C /usr/local/bin/ updatecli
+                rm -f /tmp/updatecli.tgz
+            - name: Diff
+              continue-on-error: true
+              run: |
+                updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml
+              env:
+                UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            ## This step allows to generate a short-lived token which is allowed to modify GitHub Workflow files (that the default GITHUB_TOKEN cannot)
+            ## Please make sure that the 2 secrets are defined (usually at organization level, with a per-repository access)
+            - uses: tibdex/github-app-token@v1.8
+              id: generate_token
+              if: github.ref == 'refs/heads/master'
+              with:
+                app_id: ${{ secrets.JENKINS_ADMIN_APP_ID }}
+                private_key: ${{ secrets.JENKINS_ADMIN_APP_PRIVKEY }}
+            - name: Apply
+              if: github.ref == 'refs/heads/master'
+              run: |
+                updatecli apply --config ./updatecli/updatecli.d --values ./updatecli/values.yaml
+              env:
+                UPDATECLI_GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
