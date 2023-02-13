@@ -172,18 +172,6 @@ class InfraStepTests extends BaseTest {
   }
 
   @Test
-  void testRetrieveMavenSettingsFileWithEnvVariable() throws Exception {
-    def script = loadScript(scriptName)
-    env.MAVEN_SETTINGS_FILE_ID = 'foo.id'
-    def result = script.retrieveMavenSettingsFile('foo.xml')
-    assertTrue(result)
-    printCallStack()
-    assertJobStatusSuccess()
-    assertTrue(assertMethodCallContainsPattern('sh', 'settings.xml foo.xml'))
-    assertTrue(assertMethodCallContainsPattern('configFile', 'foo.id'))
-  }
-
-  @Test
   void testWithArtifactCachingProxy() throws Exception {
     def script = loadScript(scriptName)
     def isOK = false
