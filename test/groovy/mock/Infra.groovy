@@ -11,10 +11,6 @@ class Infra implements Serializable {
 
   public void checkoutSCM(String repo = null) { }
 
-  public String retrieveMavenSettingsFile(String location) {
-    return location
-  }
-
   public Object withArtifactCachingProxy(Closure body) {
     if (buildError) {
       throw new RuntimeException('build error')

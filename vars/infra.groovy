@@ -79,33 +79,6 @@ Object checkoutSCM(String repo = null) {
 }
 
 /**
- * Retrieves Settings file to be used with Maven.
- * If {@code MAVEN_SETTINGS_FILE_ID} variable is defined, the file will be retrieved from the specified
- * configuration ID provided by Config File Provider Plugin.
- * Otherwise it will fallback to some unspecified file for Jenkins infrastructure (currently empty).
- * @param settingsXml Absolute path to the destination settings file
- * @param jdk Version of JDK to be used (no longer used)
- * @return {@code true} if the file has been defined
- */
-boolean retrieveMavenSettingsFile(String settingsXml) {
-  if (env.MAVEN_SETTINGS_FILE_ID) {
-    configFileProvider([configFile(fileId: env.MAVEN_SETTINGS_FILE_ID, variable: 'mvnSettingsFile')]) {
-      if (isUnix()) {
-        sh "cp ${mvnSettingsFile} ${settingsXml}"
-      } else {
-        bat "copy ${mvnSettingsFile} ${settingsXml}"
-      }
-    }
-    return true
-  } else if (new InfraConfig(env).isRunningOnJenkinsInfra()) {
-    echo 'NOTE: infra.retrieveMavenSettingsFile currently writes an empty settings file.'
-    writeFile file: settingsXml, text: libraryResource('settings.xml')
-    return true
-  }
-  return false
-}
-
-/**
  * Retrieve the current credentialsId used by the build
  */
 @NonCPS
@@ -198,7 +171,6 @@ Object withArtifactCachingProxy(Closure body) {
  * @param jdk JDK to be used
  * @param options Options to be passed to the Maven command
  * @param extraEnv Extra environment variables to be passed when invoking the command
- * @see #retrieveMavenSettingsFile(String)
  */
 Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = true) {
   List<String> mvnOptions = ['--batch-mode', '--show-version', '--errors', '--no-transfer-progress']
@@ -217,7 +189,6 @@ Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = 
  * @param Major version of JDK to be used (integer)
  * @param options Options to be passed to the Maven command
  * @param extraEnv Extra environment variables to be passed when invoking the command
- * @see #retrieveMavenSettingsFile(String)
  */
 Object runMaven(List<String> options, Integer jdk, List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = true) {
   runMaven(options, jdk.toString(), extraEnv, settingsFile, addToolEnv)
