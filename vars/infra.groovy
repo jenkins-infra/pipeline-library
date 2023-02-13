@@ -171,16 +171,29 @@ Object withArtifactCachingProxy(Closure body) {
  * @param jdk JDK to be used
  * @param options Options to be passed to the Maven command
  * @param extraEnv Extra environment variables to be passed when invoking the command
+ * @param settingsFile specific Maven settings.xml filepath, not taken in account if useArtifactCachingProxy is true
+ * @param useArtifactCachingProxy (default: true) use an artifact caching proxy in front of repo.jenkins-ci.org to decrease JFrog Artifactory bandwidth usage and to increase reliability
+ * @see withArtifactCachingProxy
  */
-Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = true) {
+Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true) {
   List<String> mvnOptions = ['--batch-mode', '--show-version', '--errors', '--no-transfer-progress']
-  if (settingsFile) {
-    mvnOptions += "-s $settingsFile"
+  if (useArtifactCachingProxy) {
+    withArtifactCachingProxy {
+      mvnOptions += "-s $env.MAVEN_SETTINGS"
+      mvnOptions.addAll(options)
+      mvnOptions.unique()
+      String command = "mvn ${mvnOptions.join(' ')}"
+      runWithMaven(command, jdk, extraEnv, addToolEnv)
+    }
+  } else {
+    if (settingsFile) {
+      mvnOptions += "-s $settingsFile"
+    }
+    mvnOptions.addAll(options)
+    mvnOptions.unique()
+    String command = "mvn ${mvnOptions.join(' ')}"
+    runWithMaven(command, jdk, extraEnv, addToolEnv)
   }
-  mvnOptions.addAll(options)
-  mvnOptions.unique()
-  String command = "mvn ${mvnOptions.join(' ')}"
-  runWithMaven(command, jdk, extraEnv, addToolEnv)
 }
 
 /**
@@ -189,9 +202,12 @@ Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = 
  * @param Major version of JDK to be used (integer)
  * @param options Options to be passed to the Maven command
  * @param extraEnv Extra environment variables to be passed when invoking the command
+ * @param settingsFile specific Maven settings.xml filepath, not taken in account if useArtifactCachingProxy is true
+ * @param useArtifactCachingProxy (default: true) use an artifact caching proxy in front of repo.jenkins-ci.org to decrease JFrog Artifactory bandwidth usage and to increase reliability
+ * @see withArtifactCachingProxy
  */
-Object runMaven(List<String> options, Integer jdk, List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = true) {
-  runMaven(options, jdk.toString(), extraEnv, settingsFile, addToolEnv)
+Object runMaven(List<String> options, Integer jdk, List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true) {
+  runMaven(options, jdk.toString(), extraEnv, settingsFile, addToolEnv, useArtifactCachingProxy)
 }
 
 /**
