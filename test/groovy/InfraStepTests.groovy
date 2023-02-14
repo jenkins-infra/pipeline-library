@@ -373,11 +373,11 @@ class InfraStepTests extends BaseTest {
     }
     printCallStack()
     assertTrue(isOK)
-    // then a check is performed on the pull request labels
+    // then a check is not performed on the labels
     assertFalse(assertMethodCallContainsPattern('sh', prLabelsContainSkipACPScriptSh) || assertMethodCallContainsPattern('bat', prLabelsContainSkipACPScriptBat))
-    // then it notices the skipping of artifact-caching-proxy
+    // then it doesn't notice the skipping of artifact-caching-proxy
     assertFalse(assertMethodCallContainsPattern('echo', "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"))
-    // then there is no call to configFile containing the default artifact caching proxy provider id
+    // then there is a call to configFile containing the default artifact caching proxy provider id
     assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${defaultArtifactCachingProxyProvider}"))
     // then it succeeds
     assertJobStatusSuccess()
