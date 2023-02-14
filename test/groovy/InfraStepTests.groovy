@@ -357,6 +357,33 @@ class InfraStepTests extends BaseTest {
   }
 
   @Test
+  void testWithArtifactCachingProxySkipArtifactCachingProxyOnAnotherBranch() throws Exception {
+    def script = loadScript(scriptName)
+
+    // when running on another branch than the primary one
+    env.BRANCH_IS_PRIMARY = false
+    // but not on a pull request
+    env.CHANGE_URL = null
+    // Mock a "skip-artifact-caching-proxy" label
+    helper.addShMock(prLabelsContainSkipACPScriptSh, '', 0)
+    helper.addBatMock(prLabelsContainSkipACPScriptBat, '', 0)
+    def isOK = false
+    script.withArtifactCachingProxy() {
+      isOK = true
+    }
+    printCallStack()
+    assertTrue(isOK)
+    // then a check is performed on the pull request labels
+    assertFalse(assertMethodCallContainsPattern('sh', prLabelsContainSkipACPScriptSh) || assertMethodCallContainsPattern('bat', prLabelsContainSkipACPScriptBat))
+    // then it notices the skipping of artifact-caching-proxy
+    assertFalse(assertMethodCallContainsPattern('echo', "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"))
+    // then there is no call to configFile containing the default artifact caching proxy provider id
+    assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${defaultArtifactCachingProxyProvider}"))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  @Test
   void testWithArtifactCachingProxyReachableRequestedProvider() throws Exception {
     def script = loadScript(scriptName)
     // when running with a reachable requested provider

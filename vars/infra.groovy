@@ -116,7 +116,7 @@ Object withArtifactCachingProxy(Closure body) {
   }
 
   // If the build concerns a pull request, check if there is "skip-artifact-caching-proxy" label applied in case the user doesn't want ACP
-  if ((useArtifactCachingProxy) && (!env.BRANCH_IS_PRIMARY)) {
+  if ((useArtifactCachingProxy) && (!env.BRANCH_IS_PRIMARY) && (env.CHANGE_URL)) {
     withCredentials([
       // Would not be needed if there was a way to retrieve pull request labels natively.
       usernamePassword(credentialsId: getBuildCredentialsId(), usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
