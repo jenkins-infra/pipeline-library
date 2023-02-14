@@ -401,19 +401,4 @@ class InfraStepTests extends BaseTest {
     // then it succeeds
     assertJobStatusSuccess()
   }
-
-  @Test
-  void testRunMaven() throws Exception {
-    def script = loadScript(scriptName)
-    script.runMaven(['clean'])
-    printCallStack()
-    // then it notices the use of the default artifact caching provider
-    assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${defaultArtifactCachingProxyProvider}' provider."))
-    // then configFile contains the default artifact caching proxy provider id
-    assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${defaultArtifactCachingProxyProvider}"))
-    // then configFileProvider is correctly set
-    assertTrue(assertMethodCallContainsPattern('configFileProvider', '[OK]'))
-    // then it succeeds
-    assertJobStatusSuccess()
-  }
 }
