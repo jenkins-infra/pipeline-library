@@ -314,7 +314,6 @@ class InfraStepTests extends BaseTest {
     def script = loadScript(scriptName)
 
     // when running on a pull request without a "skip-artifact-caching-proxy" label
-    env.BRANCH_IS_PRIMARY = false
     def isOK = false
     script.withArtifactCachingProxy() {
       isOK = true
@@ -336,7 +335,6 @@ class InfraStepTests extends BaseTest {
     def script = loadScript(scriptName)
 
     // when running on a pull request with a "skip-artifact-caching-proxy" label
-    env.BRANCH_IS_PRIMARY = false
     // Mock a "skip-artifact-caching-proxy" label
     helper.addShMock(prLabelsContainSkipACPScriptSh, '', 0)
     helper.addBatMock(prLabelsContainSkipACPScriptBat, '', 0)
@@ -360,9 +358,7 @@ class InfraStepTests extends BaseTest {
   void testWithArtifactCachingProxySkipArtifactCachingProxyOnAnotherBranch() throws Exception {
     def script = loadScript(scriptName)
 
-    // when running on another branch than the primary one
-    env.BRANCH_IS_PRIMARY = false
-    // but not on a pull request
+    // when running on a branch which doesn't have a pull request associated
     env.CHANGE_URL = null
     // Mock a "skip-artifact-caching-proxy" label
     helper.addShMock(prLabelsContainSkipACPScriptSh, '', 0)
