@@ -23,10 +23,6 @@ class InfraStepTests extends BaseTest {
   void setUp() throws Exception {
     super.setUp()
     helper.registerAllowedMethod('getBuildCredentialsId', [], { 'aCredentialsId' })
-    env.CHANGE_URL = changeUrl
-    // Mock the absence of "skip-artifact-caching-proxy" label
-    helper.addShMock(prLabelsContainSkipACPScriptSh, '', 1)
-    helper.addBatMock(prLabelsContainSkipACPScriptBat, '', 1)
   }
 
   @Test
@@ -314,6 +310,10 @@ class InfraStepTests extends BaseTest {
     def script = loadScript(scriptName)
 
     // when running on a pull request without a "skip-artifact-caching-proxy" label
+    env.CHANGE_URL = changeUrl
+    // Mock the absence of "skip-artifact-caching-proxy" label
+    helper.addShMock(prLabelsContainSkipACPScriptSh, '', 1)
+    helper.addBatMock(prLabelsContainSkipACPScriptBat, '', 1)
     def isOK = false
     script.withArtifactCachingProxy() {
       isOK = true
@@ -335,6 +335,7 @@ class InfraStepTests extends BaseTest {
     def script = loadScript(scriptName)
 
     // when running on a pull request with a "skip-artifact-caching-proxy" label
+    env.CHANGE_URL = changeUrl
     // Mock a "skip-artifact-caching-proxy" label
     helper.addShMock(prLabelsContainSkipACPScriptSh, '', 0)
     helper.addBatMock(prLabelsContainSkipACPScriptBat, '', 0)
@@ -355,7 +356,7 @@ class InfraStepTests extends BaseTest {
   }
 
   @Test
-  void testWithArtifactCachingProxySkipArtifactCachingProxyOnAnotherBranch() throws Exception {
+  void testWithArtifactCachingProxySkipArtifactCachingProxyOnBranchWithoutPullRequest() throws Exception {
     def script = loadScript(scriptName)
 
     // when running on a branch which doesn't have a pull request associated
