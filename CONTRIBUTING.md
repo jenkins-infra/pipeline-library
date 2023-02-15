@@ -43,7 +43,7 @@ If you wanted to become a contributor for the whole Jenkins infrastructure proje
 
 If you actually just had a question about the Pipeline Global Library, please don't create a Github issue for that (as they are used for keeping track of actions to do on the project) and prefer joining our [chat room](https://www.jenkins.io/chat/#jenkins-infra) or sending the team an [email](https://groups.google.com/u/1/g/jenkins-infra).
 
-Please note that there is also this [newcomer Gitter channel](https://gitter.im/jenkinsci/newcomer-contributors) which could come in handy.
+Please note that there is also this [newcomer Gitter channel](https://app.gitter.im/#/room/#jenkinsci_newcomer-contributors:gitter.im) which could come in handy.
 
 ## What can I contribute?
 
