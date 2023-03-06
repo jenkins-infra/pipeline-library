@@ -179,7 +179,11 @@ Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = 
   List<String> mvnOptions = ['--batch-mode', '--show-version', '--errors', '--no-transfer-progress']
   if (useArtifactCachingProxy) {
     withArtifactCachingProxy {
-      mvnOptions += "-s $env.MAVEN_SETTINGS"
+      // If an artifact caching proxy provider has been correctly configured,
+      // add the corresponding settings.xml to Maven options
+      if (env.MAVEN_SETTINGS) {
+        mvnOptions += "-s $env.MAVEN_SETTINGS"
+      }
       mvnOptions.addAll(options)
       mvnOptions.unique()
       String command = "mvn ${mvnOptions.join(' ')}"
