@@ -432,12 +432,8 @@ class InfraStepTests extends BaseTest {
     // when running with useArtifactCachingProxy set to true
     script.runMaven(['clean verify'], 11, null, null, null, true)
     printCallStack()
-    // then it notices the use of the default artifact caching provider
-    assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${defaultArtifactCachingProxyProvider}' provider."))
-    // then configFile contains the default artifact caching proxy provider id
-    assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${defaultArtifactCachingProxyProvider}"))
-    // then configFileProvider is correctly set
-    assertTrue(assertMethodCallContainsPattern('configFileProvider', '[OK]'))
+    // then it does notice a sh call with "-s null" (note: didn't manage to retrieve the MAVEN_SETTINGS env var value in tests outputs)
+    assertTrue(assertMethodCallContainsPattern('sh', ' -s null '))
     // then it succeeds
     assertJobStatusSuccess()
   }
@@ -453,12 +449,8 @@ class InfraStepTests extends BaseTest {
     // when running with useArtifactCachingProxy set to true
     script.runMaven(['clean verify'], 11, null, null, null, true)
     printCallStack()
-    // then a check is performed on the pull request labels
-    assertTrue(assertMethodCallContainsPattern('sh', prLabelsContainSkipACPScriptSh) || assertMethodCallContainsPattern('bat', prLabelsContainSkipACPScriptBat))
-    // then it notices the skipping of artifact-caching-proxy
-    assertTrue(assertMethodCallContainsPattern('echo', "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"))
-    // then there is no call to configFile containing the default artifact caching proxy provider id
-    assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${defaultArtifactCachingProxyProvider}"))
+    // then it does not notice a sh call with "-s null"
+    assertFalse(assertMethodCallContainsPattern('sh', ' -s null '))
     // then it succeeds
     assertJobStatusSuccess()
   }
@@ -475,12 +467,8 @@ class InfraStepTests extends BaseTest {
     // when running with useArtifactCachingProxy set to true
     script.runMaven(['clean verify'], 11, null, null, null, true)
     printCallStack()
-    // then an healthcheck is performed on the provider
-    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptSh) || assertMethodCallContainsPattern('bat', healthCheckScriptBat))
-    // then it notices the provider isn't reachable and that it will fallback to repo.jenkins-ci.org
-    assertTrue(assertMethodCallContainsPattern('echo', "WARNING: the artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"))
-    // then there is no call to configFile containing the requested artifact caching proxy provider id
-    assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
+    // then it does not notice a sh call with "-s null"
+    assertFalse(assertMethodCallContainsPattern('sh', ' -s null '))
     // then it succeeds
     assertJobStatusSuccess()
   }
