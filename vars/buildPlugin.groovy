@@ -137,7 +137,7 @@ def call(Map params = [:]) {
                   }
                   mavenOptions += 'clean install'
                   try {
-                    infra.runMaven(mavenOptions, jdk, null, null, addToolEnv, useArtifactCachingProxy)
+                    infra.runMaven(mavenOptions, jdk, null, addToolEnv, useArtifactCachingProxy)
                   } finally {
                     if (!skipTests) {
                       junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
