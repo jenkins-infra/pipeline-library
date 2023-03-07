@@ -429,46 +429,27 @@ class InfraStepTests extends BaseTest {
   @Test
   void testRunMavenWithArtifactCachingProxy() throws Exception {
     def script = loadScript(scriptName)
+    // mock a correctly configured artifact caching proxy provider
+    env.MAVEN_SETTINGS = "/tmp_path/settings.xml"
     // when running with useArtifactCachingProxy set to true
     script.runMaven(['clean verify'], 11, null, null, null, true)
     printCallStack()
-    // then it does notice a sh call with "-s null" (note: didn't manage to retrieve the MAVEN_SETTINGS env var value in tests outputs)
-    assertTrue(assertMethodCallContainsPattern('sh', ' -s null '))
+    // then it does notice a sh call with the settings.xml path
+    assertTrue(assertMethodCallContainsPattern('sh', '-s /tmp_path/settings.xml'))
     // then it succeeds
     assertJobStatusSuccess()
   }
 
   @Test
-  void testRunMavenWithArtifactCachingProxySkipArtifactCachingProxyOnPullRequest() throws Exception {
+  void testRunMavenWithArtifactCachingProxyUnavailableSkippedOrNotReachable() throws Exception {
     def script = loadScript(scriptName)
-    // when running on a pull request with a "skip-artifact-caching-proxy" label
-    env.CHANGE_URL = changeUrl
-    // Mock a "skip-artifact-caching-proxy" label
-    helper.addShMock(prLabelsContainSkipACPScriptSh, '', 0)
-    helper.addBatMock(prLabelsContainSkipACPScriptBat, '', 0)
+    // mock an artifact caching proxy provider unavailable, skipped or unreachable
+    env.MAVEN_SETTINGS = null
     // when running with useArtifactCachingProxy set to true
     script.runMaven(['clean verify'], 11, null, null, null, true)
     printCallStack()
     // then it does not notice a sh call with "-s null"
-    assertFalse(assertMethodCallContainsPattern('sh', ' -s null '))
-    // then it succeeds
-    assertJobStatusSuccess()
-  }
-
-  @Test
-  void testRunMavenWithArtifactCachingProxyUnreachableRequestedProvider() throws Exception {
-    def script = loadScript(scriptName)
-    // Mock an healthcheck fail
-    helper.addShMock(healthCheckScriptSh, '', 1)
-    helper.addBatMock(healthCheckScriptBat, '', 1)
-
-    // when running with an unreachable requested provider
-    env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
-    // when running with useArtifactCachingProxy set to true
-    script.runMaven(['clean verify'], 11, null, null, null, true)
-    printCallStack()
-    // then it does not notice a sh call with "-s null"
-    assertFalse(assertMethodCallContainsPattern('sh', ' -s null '))
+    assertFalse(assertMethodCallContainsPattern('sh', '-s null'))
     // then it succeeds
     assertJobStatusSuccess()
   }
