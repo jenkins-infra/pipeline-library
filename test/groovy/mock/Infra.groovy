@@ -11,7 +11,7 @@ class Infra implements Serializable {
 
   public void checkoutSCM(String repo = null) { }
 
-  public Object withArtifactCachingProxy(Closure body) {
+  public Object withArtifactCachingProxy(Boolean useArtifactCachingProxy, Closure body) {
     if (buildError) {
       throw new RuntimeException('build error')
     } else {

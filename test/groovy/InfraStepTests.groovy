@@ -432,7 +432,7 @@ class InfraStepTests extends BaseTest {
     // mock a correctly configured artifact caching proxy provider
     env.MAVEN_SETTINGS = "/tmp_path/settings.xml"
     // when running with useArtifactCachingProxy set to true
-    script.runMaven(['clean verify'], 11, null, null, null, true)
+    script.runMaven(['clean verify'], 11, null, null, true)
     printCallStack()
     // then it does notice a sh call with the settings.xml path
     assertTrue(assertMethodCallContainsPattern('sh', '-s /tmp_path/settings.xml'))
@@ -446,7 +446,21 @@ class InfraStepTests extends BaseTest {
     // mock an artifact caching proxy provider unavailable, skipped or unreachable
     env.MAVEN_SETTINGS = null
     // when running with useArtifactCachingProxy set to true
-    script.runMaven(['clean verify'], 11, null, null, null, true)
+    script.runMaven(['clean verify'], 11, null, null, true)
+    printCallStack()
+    // then it does not notice a sh call with "-s null"
+    assertFalse(assertMethodCallContainsPattern('sh', '-s null'))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testRunMavenWithArtifactCachingProxyDisabled() throws Exception {
+    def script = loadScript(scriptName)
+    // mock an artifact caching proxy disabled
+    env.MAVEN_SETTINGS = null
+    // when running with useArtifactCachingProxy set to false
+    script.runMaven(['clean verify'], 11, null, null, false)
     printCallStack()
     // then it does not notice a sh call with "-s null"
     assertFalse(assertMethodCallContainsPattern('sh', '-s null'))

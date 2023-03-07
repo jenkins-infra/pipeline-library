@@ -31,7 +31,7 @@
     Either this must be used as part of a Multibranch Pipeline or a repository argument must be provided.
 </p>
 
-<strong>infra.withArtifactCachingProxy(Closure body)</strong>
+<strong>infra.withArtifactCachingProxy(boolean useArtifactCachingProxy = true, Closure body)</strong>
 
 <p>
     Execute the body passed as closure with a Maven settings file using the
@@ -49,22 +49,22 @@
     See the method Javadoc in the repository for more information.
 </p>
 
-<strong>infra.runMaven(List&lt;String&gt; options, String jdk = '8', List&lt;String&gt; extraEnv = null, String settingsFile = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true)</strong>
+<strong>infra.runMaven(List&lt;String&gt; options, String jdk = '8', List&lt;String&gt; extraEnv = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true)</strong>
 
 <p>
     Run Maven with the specified options in the current workspace.
-    If <code>settingsFile</code> is <code>null</code> or <code>useArtifactCachingProxy</code> is <code>true</code>, Maven settings will be added using <code>infra.withArtifactCachingProxy()</code>.
+    If <code>useArtifactCachingProxy</code> is <code>true</code>, Maven settings will be added using <code>infra.withArtifactCachingProxy()</code> if the provider is available, reachable and not skipped.
 </p>
 
 <p>
     See the method Javadoc in the repository for more information.
 </p>
 
-<strong>infra.runMaven(List&lt;String&gt; options, Integer jdk, List&lt;String&gt; extraEnv = null, String settingsFile = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true)</strong>
+<strong>infra.runMaven(List&lt;String&gt; options, Integer jdk, List&lt;String&gt; extraEnv = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true)</strong>
 
 <p>
     Run Maven with the specified options in the current workspace.
-    If <code>settingsFile</code> is <code>null</code> or <code>useArtifactCachingProxy</code> is <code>true</code>, Maven settings will be added using <code>infra.withArtifactCachingProxy()</code>.
+    If <code>useArtifactCachingProxy</code> is <code>true</code>, Maven settings will be added using <code>infra.withArtifactCachingProxy()</code> if the provider is available, reachable and not skipped.
 </p>
 
 <p>

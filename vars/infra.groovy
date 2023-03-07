@@ -96,10 +96,9 @@ String getBuildCredentialsId() {
  * The available providers can be restricted by setting a global ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS
  * variable on the Jenkins controller, with providers separated by a comma. Ex: 'aws,do' if the Azure provider is unavailable.
  * A 'skip-artifact-caching-proxy' label can be added to pull request in order to punctually disable it.
+ * @param useArtifactCachingProxy (default: true) use or not an artifact caching proxy in front of repo.jenkins-ci.org to decrease JFrog Artifactory bandwidth usage and to increase reliability
  */
-Object withArtifactCachingProxy(Closure body) {
-  boolean useArtifactCachingProxy = true
-
+Object withArtifactCachingProxy(boolean useArtifactCachingProxy = true, Closure body) {
   // As the env var ARTIFACT_CACHING_PROXY_PROVIDER can't be set on Azure VM agents,
   // we're specifying a default provider if none is specified.
   final String requestedProxyProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER ?: 'azure'
@@ -110,7 +109,7 @@ Object withArtifactCachingProxy(Closure body) {
   final String[] availableProxyProviders = configuredAvailableProxyProviders.split(',')
 
   // Check if the requested provider is invalid or unavailable
-  if (!validProxyProviders.contains(requestedProxyProvider) || !availableProxyProviders.contains(requestedProxyProvider)) {
+  if (useArtifactCachingProxy && (!validProxyProviders.contains(requestedProxyProvider) || !availableProxyProviders.contains(requestedProxyProvider))) {
     echo "WARNING: invalid or unavailable artifact caching proxy provider '${requestedProxyProvider}' requested by the agent, will use repo.jenkins-ci.org"
     useArtifactCachingProxy = false
   }
@@ -171,28 +170,17 @@ Object withArtifactCachingProxy(Closure body) {
  * @param jdk JDK to be used
  * @param options Options to be passed to the Maven command
  * @param extraEnv Extra environment variables to be passed when invoking the command
- * @param settingsFile specific Maven settings.xml filepath, not taken in account if useArtifactCachingProxy is true
  * @param useArtifactCachingProxy (default: true) use an artifact caching proxy in front of repo.jenkins-ci.org to decrease JFrog Artifactory bandwidth usage and to increase reliability
  * @see withArtifactCachingProxy
  */
-Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true) {
+Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true) {
   List<String> mvnOptions = ['--batch-mode', '--show-version', '--errors', '--no-transfer-progress']
-  if (useArtifactCachingProxy) {
-    withArtifactCachingProxy {
-      // If an artifact caching proxy provider has been correctly configured,
-      // add the corresponding settings.xml path stored in MAVEN_SETTINGS env var
-      // by the config file provider to Maven options
-      if (env.MAVEN_SETTINGS) {
-        mvnOptions += "-s $env.MAVEN_SETTINGS"
-      }
-      mvnOptions.addAll(options)
-      mvnOptions.unique()
-      String command = "mvn ${mvnOptions.join(' ')}"
-      runWithMaven(command, jdk, extraEnv, addToolEnv)
-    }
-  } else {
-    if (settingsFile) {
-      mvnOptions += "-s $settingsFile"
+  withArtifactCachingProxy(useArtifactCachingProxy) {
+    // If an artifact caching proxy provider has been correctly configured,
+    // add the corresponding settings.xml path stored in MAVEN_SETTINGS env var
+    // by the config file provider to Maven options
+    if (env.MAVEN_SETTINGS) {
+      mvnOptions += "-s $env.MAVEN_SETTINGS"
     }
     mvnOptions.addAll(options)
     mvnOptions.unique()
@@ -211,8 +199,8 @@ Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = 
  * @param useArtifactCachingProxy (default: true) use an artifact caching proxy in front of repo.jenkins-ci.org to decrease JFrog Artifactory bandwidth usage and to increase reliability
  * @see withArtifactCachingProxy
  */
-Object runMaven(List<String> options, Integer jdk, List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true) {
-  runMaven(options, jdk.toString(), extraEnv, settingsFile, addToolEnv, useArtifactCachingProxy)
+Object runMaven(List<String> options, Integer jdk, List<String> extraEnv = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true) {
+  runMaven(options, jdk.toString(), extraEnv, addToolEnv, useArtifactCachingProxy)
 }
 
 /**
