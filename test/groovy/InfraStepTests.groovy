@@ -429,58 +429,27 @@ class InfraStepTests extends BaseTest {
   @Test
   void testRunMavenWithArtifactCachingProxy() throws Exception {
     def script = loadScript(scriptName)
+    // mock a correctly configured artifact caching proxy provider
+    env.MAVEN_SETTINGS = "/tmp_path/settings.xml"
     // when running with useArtifactCachingProxy set to true
     script.runMaven(['clean verify'], 11, null, null, null, true)
     printCallStack()
-    // then it notices the use of the default artifact caching provider
-    assertTrue(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${defaultArtifactCachingProxyProvider}' provider."))
-    // then configFile contains the default artifact caching proxy provider id
-    assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${defaultArtifactCachingProxyProvider}"))
-    // then configFileProvider is correctly set
-    assertTrue(assertMethodCallContainsPattern('configFileProvider', '[OK]'))
+    // then it does notice a sh call with the settings.xml path
+    assertTrue(assertMethodCallContainsPattern('sh', '-s /tmp_path/settings.xml'))
     // then it succeeds
     assertJobStatusSuccess()
   }
 
   @Test
-  void testRunMavenWithArtifactCachingProxySkipArtifactCachingProxyOnPullRequest() throws Exception {
+  void testRunMavenWithArtifactCachingProxyUnavailableSkippedOrNotReachable() throws Exception {
     def script = loadScript(scriptName)
-    // when running on a pull request with a "skip-artifact-caching-proxy" label
-    env.CHANGE_URL = changeUrl
-    // Mock a "skip-artifact-caching-proxy" label
-    helper.addShMock(prLabelsContainSkipACPScriptSh, '', 0)
-    helper.addBatMock(prLabelsContainSkipACPScriptBat, '', 0)
+    // mock an artifact caching proxy provider unavailable, skipped or unreachable
+    env.MAVEN_SETTINGS = null
     // when running with useArtifactCachingProxy set to true
     script.runMaven(['clean verify'], 11, null, null, null, true)
     printCallStack()
-    // then a check is performed on the pull request labels
-    assertTrue(assertMethodCallContainsPattern('sh', prLabelsContainSkipACPScriptSh) || assertMethodCallContainsPattern('bat', prLabelsContainSkipACPScriptBat))
-    // then it notices the skipping of artifact-caching-proxy
-    assertTrue(assertMethodCallContainsPattern('echo', "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"))
-    // then there is no call to configFile containing the default artifact caching proxy provider id
-    assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${defaultArtifactCachingProxyProvider}"))
-    // then it succeeds
-    assertJobStatusSuccess()
-  }
-
-  @Test
-  void testRunMavenWithArtifactCachingProxyUnreachableRequestedProvider() throws Exception {
-    def script = loadScript(scriptName)
-    // Mock an healthcheck fail
-    helper.addShMock(healthCheckScriptSh, '', 1)
-    helper.addBatMock(healthCheckScriptBat, '', 1)
-
-    // when running with an unreachable requested provider
-    env.ARTIFACT_CACHING_PROXY_PROVIDER = anotherArtifactCachingProxyProvider
-    // when running with useArtifactCachingProxy set to true
-    script.runMaven(['clean verify'], 11, null, null, null, true)
-    printCallStack()
-    // then an healthcheck is performed on the provider
-    assertTrue(assertMethodCallContainsPattern('sh', healthCheckScriptSh) || assertMethodCallContainsPattern('bat', healthCheckScriptBat))
-    // then it notices the provider isn't reachable and that it will fallback to repo.jenkins-ci.org
-    assertTrue(assertMethodCallContainsPattern('echo', "WARNING: the artifact caching proxy from '${anotherArtifactCachingProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"))
-    // then there is no call to configFile containing the requested artifact caching proxy provider id
-    assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${anotherArtifactCachingProxyProvider}"))
+    // then it does not notice a sh call with "-s null"
+    assertFalse(assertMethodCallContainsPattern('sh', '-s null'))
     // then it succeeds
     assertJobStatusSuccess()
   }

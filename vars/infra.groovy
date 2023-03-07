@@ -180,7 +180,8 @@ Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = 
   if (useArtifactCachingProxy) {
     withArtifactCachingProxy {
       // If an artifact caching proxy provider has been correctly configured,
-      // add the corresponding settings.xml to Maven options
+      // add the corresponding settings.xml path stored in MAVEN_SETTINGS env var
+      // by the config file provider to Maven options
       if (env.MAVEN_SETTINGS) {
         mvnOptions += "-s $env.MAVEN_SETTINGS"
       }
