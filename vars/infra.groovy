@@ -96,7 +96,7 @@ String getBuildCredentialsId() {
  * The available providers can be restricted by setting a global ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS
  * variable on the Jenkins controller, with providers separated by a comma. Ex: 'aws,do' if the Azure provider is unavailable.
  * A 'skip-artifact-caching-proxy' label can be added to pull request in order to punctually disable it.
- * @param useArtifactCachingProxy (default: true) use or not an artifact caching proxy in front of repo.jenkins-ci.org to decrease JFrog Artifactory bandwidth usage and to increase reliability
+ * @param useArtifactCachingProxy (default: true) if possible, use an artifact caching proxy in front of repo.jenkins-ci.org to decrease JFrog Artifactory bandwidth usage and to increase reliability
  */
 Object withArtifactCachingProxy(boolean useArtifactCachingProxy = true, Closure body) {
   // As the env var ARTIFACT_CACHING_PROXY_PROVIDER can't be set on Azure VM agents,
@@ -170,7 +170,7 @@ Object withArtifactCachingProxy(boolean useArtifactCachingProxy = true, Closure 
  * @param jdk JDK to be used
  * @param options Options to be passed to the Maven command
  * @param extraEnv Extra environment variables to be passed when invoking the command
- * @param useArtifactCachingProxy (default: true) use an artifact caching proxy in front of repo.jenkins-ci.org to decrease JFrog Artifactory bandwidth usage and to increase reliability
+ * @param useArtifactCachingProxy (default: true) if possible, use an artifact caching proxy in front of repo.jenkins-ci.org to decrease JFrog Artifactory bandwidth usage and to increase reliability
  * @see withArtifactCachingProxy
  */
 Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true) {
@@ -196,7 +196,7 @@ Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = 
  * @param options Options to be passed to the Maven command
  * @param extraEnv Extra environment variables to be passed when invoking the command
  * @param settingsFile specific Maven settings.xml filepath, not taken in account if useArtifactCachingProxy is true
- * @param useArtifactCachingProxy (default: true) use an artifact caching proxy in front of repo.jenkins-ci.org to decrease JFrog Artifactory bandwidth usage and to increase reliability
+ * @param useArtifactCachingProxy (default: true) if possible, use an artifact caching proxy in front of repo.jenkins-ci.org to decrease JFrog Artifactory bandwidth usage and to increase reliability
  * @see withArtifactCachingProxy
  */
 Object runMaven(List<String> options, Integer jdk, List<String> extraEnv = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true) {

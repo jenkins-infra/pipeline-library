@@ -53,7 +53,7 @@
 
 <p>
     Run Maven with the specified options in the current workspace.
-    If <code>useArtifactCachingProxy</code> is <code>true</code>, Maven settings will be added using <code>infra.withArtifactCachingProxy()</code> if the provider is available, reachable and not skipped.
+    If <code>useArtifactCachingProxy</code> is <code>true</code>, Maven settings will be added using <code>infra.withArtifactCachingProxy()</code> if possible (i.e. the provider is available, reachable and not skipped).
 </p>
 
 <p>
@@ -64,7 +64,7 @@
 
 <p>
     Run Maven with the specified options in the current workspace.
-    If <code>useArtifactCachingProxy</code> is <code>true</code>, Maven settings will be added using <code>infra.withArtifactCachingProxy()</code> if the provider is available, reachable and not skipped.
+    If <code>useArtifactCachingProxy</code> is <code>true</code>, Maven settings will be added using <code>infra.withArtifactCachingProxy()</code> if possible (i.e. the provider is available, reachable and not skipped).
 </p>
 
 <p>
