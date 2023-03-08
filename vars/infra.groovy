@@ -15,6 +15,11 @@ Boolean isTrusted() {
 }
 
 // Method kept for backward compatibility (as the method is available on the InfraConfig stateful object)
+Boolean isRelease() {
+  return new InfraConfig(env).isRelease()
+}
+
+// Method kept for backward compatibility (as the method is available on the InfraConfig stateful object)
 Boolean isInfra() {
   return new InfraConfig(env).isInfra()
 }

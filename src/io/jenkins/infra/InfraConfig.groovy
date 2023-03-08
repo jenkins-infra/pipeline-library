@@ -25,17 +25,21 @@ class InfraConfig implements Serializable {
     return isJenkinsURLcontains('trusted.ci')
   }
 
+  Boolean isRelease() {
+    return isJenkinsURLcontains('release.ci')
+  }
+
   Boolean isInfra() {
     return isJenkinsURLcontains('infra.ci')
   }
 
   Boolean isRunningOnJenkinsInfra() {
-    return isCI() || isTrusted() || isInfra()
+    return isCI() || isTrusted() || isRelease() || isInfra()
   }
 
   // Returns the Docker registry hostname which this instance has credentials for
   String getDockerRegistryNamespace() {
-    if (isTrusted() || isInfra()) {
+    if (isTrusted() || isRelease() || isInfra()) {
       return 'jenkinsciinfra'
     } else {
       return 'jenkins4eval'
