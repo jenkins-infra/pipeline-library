@@ -39,7 +39,7 @@ class InfraConfig implements Serializable {
 
   // Returns the Docker registry hostname which this instance has credentials for
   String getDockerRegistryNamespace() {
-    if (isTrusted() || isRelease() || isInfra()) {
+    if (isTrusted() || isInfra()) {
       return 'jenkinsciinfra'
     } else {
       return 'jenkins4eval'

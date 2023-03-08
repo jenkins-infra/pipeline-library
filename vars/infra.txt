@@ -14,7 +14,7 @@
 <strong>infra.isRelease()</strong>
 
 <p>
-    Return true if this Pipeline is executing on a release CI environment.
+    Return true if this Pipeline is executing on the Jenkins release CI environment.
 </p>
 
 <strong>infra.isInfra()</strong>
