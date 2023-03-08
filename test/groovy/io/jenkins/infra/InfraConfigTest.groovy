@@ -51,7 +51,7 @@ class InfraConfigTest {
     assertFalse(infraConfig.isInfra())
     assertFalse(infraConfig.isCI())
     assertTrue(infraConfig.isRunningOnJenkinsInfra())
-    assertEquals('jenkinsciinfra', infraConfig.getDockerRegistryNamespace())
+    assertEquals('jenkins4eval', infraConfig.getDockerRegistryNamespace())
     assertEquals('releasecijenkinsio', infraConfig.getDockerPullOrgAndCredentialsId().organisation)
     assertEquals('releasecijenkinsio-dockerhub-pull', infraConfig.getDockerPullOrgAndCredentialsId().credentialId)
     assertTrue(infraConfig.getDockerPushOrgAndCredentialsId().error)
