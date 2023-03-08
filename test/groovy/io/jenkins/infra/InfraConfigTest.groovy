@@ -15,6 +15,7 @@ class InfraConfigTest {
     def infraConfig = new InfraConfig([JENKINS_URL: 'https://ci.jenkins.io/'])
 
     assertFalse(infraConfig.isTrusted())
+    assertFalse(infraConfig.isRelease())
     assertFalse(infraConfig.isInfra())
     assertTrue(infraConfig.isCI())
     assertTrue(infraConfig.isRunningOnJenkinsInfra())
@@ -30,6 +31,7 @@ class InfraConfigTest {
     def infraConfig = new InfraConfig([JENKINS_URL: 'https://trusted.ci.jenkins.io/'])
 
     assertTrue(infraConfig.isTrusted())
+    assertFalse(infraConfig.isRelease())
     assertFalse(infraConfig.isInfra())
     assertFalse(infraConfig.isCI())
     assertTrue(infraConfig.isRunningOnJenkinsInfra())
@@ -41,10 +43,26 @@ class InfraConfigTest {
   }
 
   @Test
+  void canHandleReleaseConfiguration() throws Exception {
+    def infraConfig = new InfraConfig([JENKINS_URL: 'https://release.ci.jenkins.io/'])
+
+    assertFalse(infraConfig.isTrusted())
+    assertTrue(infraConfig.isRelease())
+    assertFalse(infraConfig.isInfra())
+    assertFalse(infraConfig.isCI())
+    assertTrue(infraConfig.isRunningOnJenkinsInfra())
+    assertEquals('jenkins4eval', infraConfig.getDockerRegistryNamespace())
+    assertEquals('releasecijenkinsio', infraConfig.getDockerPullOrgAndCredentialsId().organisation)
+    assertEquals('releasecijenkinsio-dockerhub-pull', infraConfig.getDockerPullOrgAndCredentialsId().credentialId)
+    assertTrue(infraConfig.getDockerPushOrgAndCredentialsId().error)
+  }
+
+  @Test
   void canHandleInfraConfiguration() throws Exception {
     def infraConfig = new InfraConfig([JENKINS_URL: 'https://infra.ci.jenkins.io/'])
 
     assertFalse(infraConfig.isTrusted())
+    assertFalse(infraConfig.isRelease())
     assertTrue(infraConfig.isInfra())
     assertFalse(infraConfig.isCI())
     assertTrue(infraConfig.isRunningOnJenkinsInfra())
@@ -60,6 +78,7 @@ class InfraConfigTest {
     def infraConfig = new InfraConfig([JENKINS_URL: 'https://ci.quidditch.io'])
 
     assertFalse(infraConfig.isTrusted())
+    assertFalse(infraConfig.isRelease())
     assertFalse(infraConfig.isInfra())
     assertFalse(infraConfig.isCI())
     assertFalse(infraConfig.isRunningOnJenkinsInfra())
@@ -73,6 +92,7 @@ class InfraConfigTest {
     def infraConfig = new InfraConfig()
 
     assertFalse(infraConfig.isTrusted())
+    assertFalse(infraConfig.isRelease())
     assertFalse(infraConfig.isInfra())
     assertFalse(infraConfig.isCI())
     assertFalse(infraConfig.isRunningOnJenkinsInfra())
@@ -86,6 +106,7 @@ class InfraConfigTest {
     def infraConfig = new InfraConfig([:])
 
     assertFalse(infraConfig.isTrusted())
+    assertFalse(infraConfig.isRelease())
     assertFalse(infraConfig.isInfra())
     assertFalse(infraConfig.isCI())
     assertFalse(infraConfig.isRunningOnJenkinsInfra())

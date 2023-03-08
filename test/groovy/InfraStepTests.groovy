@@ -41,6 +41,22 @@ class InfraStepTests extends BaseTest {
   }
 
   @Test
+  void testIsRelease() throws Exception {
+    def script = loadScript(scriptName)
+    env.JENKINS_URL = 'https://release.ci.jenkins.io/'
+    binding.setVariable('env', env)
+    assertTrue(script.isRelease())
+  }
+
+  @Test
+  void testIsInfra() throws Exception {
+    def script = loadScript(scriptName)
+    env.JENKINS_URL = 'https://infra.ci.jenkins.io/'
+    binding.setVariable('env', env)
+    assertTrue(script.isInfra())
+  }
+
+  @Test
   void testWithDockerCredentials() throws Exception {
     def script = loadScript(scriptName)
     env.JENKINS_URL = 'https://ci.jenkins.io/'

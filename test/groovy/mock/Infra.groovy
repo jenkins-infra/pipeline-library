@@ -6,6 +6,7 @@ package mock
 class Infra implements Serializable {
 
   private boolean trusted
+  private boolean release
   private boolean infra
   private boolean buildError
 
@@ -38,6 +39,10 @@ class Infra implements Serializable {
 
   public boolean isTrusted() {
     return trusted
+  }
+
+  public boolean isRelease() {
+    return release
   }
 
   public boolean isInfra() {
