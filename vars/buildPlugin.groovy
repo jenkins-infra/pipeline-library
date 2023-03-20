@@ -83,7 +83,8 @@ def call(Map params = [:]) {
                     readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')
                 final String gitUnavailableMessage = '[buildPlugin] Git CLI may not be available'
                 withEnv(["GITUNAVAILABLEMESSAGE=${gitUnavailableMessage}"]) {
-                  if (incrementals) { // Incrementals needs 'git status -s' to be empty at start of job
+                  if (incrementals) {
+                    // Incrementals needs 'git status -s' to be empty at start of job
                     if (isUnix()) {
                       sh 'git clean -xffd || echo "$GITUNAVAILABLEMESSAGE"'
                     } else {
@@ -122,9 +123,11 @@ def call(Map params = [:]) {
                   if (isUnix()) {
                     mavenOptions += '-Penable-jacoco'
                   }
-                  if (incrementals) { // set changelist and activate produce-incrementals profile
+                  if (incrementals) {
+                    // set changelist and activate produce-incrementals profile
                     mavenOptions += '-Dset.changelist'
-                    if (doArchiveArtifacts) { // ask Maven for the value of -rc999.abc123def456
+                    if (doArchiveArtifacts) {
+                      // ask Maven for the value of -rc999.abc123def456
                       changelistF = "${pwd tmp: true}/changelist"
                       mavenOptions += "help:evaluate -Dexpression=changelist -Doutput=$changelistF"
                     }
@@ -178,7 +181,8 @@ def call(Map params = [:]) {
                 }
 
                 if (first) {
-                  if (skipTests) { // otherwise the reference build has been computed already
+                  if (skipTests) {
+                    // otherwise the reference build has been computed already
                     discoverReferenceBuild()
                   }
                   echo "Recording static analysis results on '${stageIdentifier}'"

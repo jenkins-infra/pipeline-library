@@ -86,7 +86,6 @@ class UpdatecliStepTests extends BaseTest {
     // And the correct container memory
     assertTrue(assertMethodCallContainsPattern('containerTemplate', 'resourceRequestMemory=512Mi'))
     assertTrue(assertMethodCallContainsPattern('containerTemplate', 'resourceLimitMemory=512Mi'))
-
   }
 
   @Test
