@@ -9,7 +9,7 @@ def call(userConfig = [:]) {
     stagingCredentials: [], // No custom secrets for staging by default
     productionCredentials: [], // No custom secrets for production by default
     productionBranch: 'main', // Defaults to the principal branch
-    agentContainerImage: 'jenkinsciinfra/hashicorp-tools:0.5.140', // Version managed by updatecli
+    agentContainerImage: 'jenkinsciinfra/hashicorp-tools:0.5.148', // Version managed by updatecli
     runTests: false, // Executes the tests provided by the "calling" project, which should provide a tests/Makefile
     runCommonTests: true, // Executes the default test suite from the shared tools repository (terratest)
   ]
@@ -127,7 +127,6 @@ def call(userConfig = [:]) {
                   // If the deploy failed, keep the pod until a user catch the problem (cloud be an errored state, or many reason to keep the workspace)
                   input message: 'An error happened while applying the terraform plan. Keeping the agent up and running. Delete the agent?'
                 }
-
               }
             }
           }

@@ -292,7 +292,8 @@ Object runWithJava(String command, String jdk = '8', List<String> extraEnv = nul
   }
 
   withEnv(javaEnv) {
-    if (isUnix()) { // TODO JENKINS-44231 candidate for simplification
+    if (isUnix()) {
+      // TODO JENKINS-44231 candidate for simplification
       sh command
     } else {
       bat command

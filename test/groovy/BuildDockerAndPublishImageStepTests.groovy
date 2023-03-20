@@ -87,7 +87,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     simpleDateMock.demand.with {
       format{ mockedSimpleDate }
     }
-
   }
 
   void withMocks(Closure body) {
