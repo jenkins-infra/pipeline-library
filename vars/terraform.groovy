@@ -127,7 +127,6 @@ def call(userConfig = [:]) {
                   // If the deploy failed, keep the pod until a user catch the problem (cloud be an errored state, or many reason to keep the workspace)
                   input message: 'An error happened while applying the terraform plan. Keeping the agent up and running. Delete the agent?'
                 }
-
               }
             }
           }
