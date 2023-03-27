@@ -44,8 +44,9 @@ def call(Map params = [:]) {
             }
             //TODO(oleg-nenashev): Once supported by Gradle JPI Plugin, pass jenkinsVersion
             if (jenkinsVersion) {
-              echo "WARNING: 'jenkinsVersion' parameter is not supported in buildPluginWithGradle(). It will be ignored"
+              infra.publishDeprecationCheck('Remove jenkinsVersion', 'The "jenkinsVersion" parameter is not supported in buildPluginWithGradle(). It will be ignored.')
             }
+            infra.publishDeprecationCheck('Migrate from Gradle to Maven', 'The Jenkins project offers only partial support for building plugins with Gradle and "gradle-jpi-plugin". The Jenkins project offers full support only for building plugins with Maven and "maven-hpi-plugin".')
             List<String> gradleOptions = ['--no-daemon', 'cleanTest', 'build']
             if (skipTests) {
               gradleOptions += '--exclude-task test'
