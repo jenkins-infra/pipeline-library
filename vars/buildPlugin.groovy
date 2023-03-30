@@ -255,6 +255,19 @@ def call(Map params = [:]) {
                   if (failFast && currentBuild.result == 'UNSTABLE') {
                     error 'Static analysis quality gates not passed; halting early'
                   }
+                  /*
+                   * If the current build was successful, we send the commits to Launchable so that
+                   * the result can be consumed by a Launchable build in the future. We do not
+                   * attempt to record commits for non-incrementalified plugins because such
+                   * plugins' PR builds could not be consumed by anything else anyway, and all
+                   * plugins currently in the BOM are incrementalified. We do not attempt to record
+                   * commits on Windows because our Windows agents do not have Python installed.
+                   */
+                  if (incrementals && platform != 'windows' && currentBuild.currentResult == 'SUCCESS') {
+                    launchable.install()
+                    launchable('verify')
+                    launchable('record commit')
+                  }
                 } else {
                   echo "Skipping static analysis results for ${stageIdentifier}"
                 }
