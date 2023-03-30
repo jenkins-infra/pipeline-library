@@ -12,7 +12,7 @@ class Infra implements Serializable {
 
   public void checkoutSCM(String repo = null) { }
 
-  public Object withArtifactCachingProxy(Closure body) {
+  public Object withArtifactCachingProxy(Boolean useArtifactCachingProxy, Closure body) {
     if (buildError) {
       throw new RuntimeException('build error')
     } else {
@@ -20,7 +20,7 @@ class Infra implements Serializable {
     }
   }
 
-  public Object runMaven(List<String> options, String jdk = null, List<String> extraEnv = null, String settingsFile = null, Boolean addToolEnv = null, Boolean useArtifactCachingProxy = true) {
+  public Object runMaven(List<String> options, String jdk = null, List<String> extraEnv = null, Boolean addToolEnv = null, Boolean useArtifactCachingProxy = true) {
     def command = "mvn ${options.join(' ')}"
     return runWithMaven(command, jdk, extraEnv, addToolEnv)
   }
