@@ -185,6 +185,7 @@ class InfraStepTests extends BaseTest {
   @Test
   void testWithArtifactCachingProxy() throws Exception {
     def script = loadScript(scriptName)
+    // When running withArtifactCachingProxy with its default value
     def isOK = false
     script.withArtifactCachingProxy() {
       isOK = true
@@ -197,6 +198,27 @@ class InfraStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${defaultArtifactCachingProxyProvider}"))
     // then configFileProvider is correctly set
     assertTrue(assertMethodCallContainsPattern('configFileProvider', '[OK]'))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+
+  @Test
+  void testWithArtifactCachingProxyFalseAsParameter() throws Exception {
+    def script = loadScript(scriptName)
+    // When running withArtifactCachingProxy with false passed as parameter
+    def isOK = false
+    script.withArtifactCachingProxy(false) {
+      isOK = true
+    }
+    printCallStack()
+    assertTrue(isOK)
+    // then it doesn't notice the use of the default artifact caching provider
+    assertFalse(assertMethodCallContainsPattern('echo', "INFO: using artifact caching proxy from '${defaultArtifactCachingProxyProvider}' provider."))
+    // then there is no call to the configFile containing the default artifact caching proxy provider id
+    assertFalse(assertMethodCallContainsPattern('configFile', "artifact-caching-proxy-${defaultArtifactCachingProxyProvider}"))
+    // then there is no call to the configFileProvider correctly set
+    assertFalse(assertMethodCallContainsPattern('configFileProvider', '[OK]'))
     // then it succeeds
     assertJobStatusSuccess()
   }
