@@ -6,6 +6,8 @@ import static org.junit.Assert.assertTrue
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertEquals
 
+import mock.PullRequest
+
 class InfraStepTests extends BaseTest {
   static final String scriptName = "vars/infra.groovy"
   static final String defaultArtifactCachingProxyProvider = 'azure'
@@ -17,12 +19,11 @@ class InfraStepTests extends BaseTest {
   static final String changeUrl = 'https://github.com/jenkins-infra/pipeline-library/pull/123'
   static final String prLabelsContainSkipACPScriptSh = 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/jenkins-infra/pipeline-library/issues/123/labels | grep --ignore-case "skip-artifact-caching-proxy"'
   static final String prLabelsContainSkipACPScriptBat = 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" https://api.github.com/repos/jenkins-infra/pipeline-library/issues/123/labels | findstr /i "skip-artifact-caching-proxy"'
-
+  
   @Override
   @Before
   void setUp() throws Exception {
     super.setUp()
-    helper.registerAllowedMethod('getBuildCredentialsId', [], { 'aCredentialsId' })
   }
 
   @Test
@@ -327,17 +328,14 @@ class InfraStepTests extends BaseTest {
 
     // when running on a pull request without a "skip-artifact-caching-proxy" label
     env.CHANGE_URL = changeUrl
-    // Mock the absence of "skip-artifact-caching-proxy" label
-    helper.addShMock(prLabelsContainSkipACPScriptSh, '', 1)
-    helper.addBatMock(prLabelsContainSkipACPScriptBat, '', 1)
+    // Mock a pull request label different than "skip-artifact-caching-proxy"
+    binding.setProperty('pullRequest', new PullRequest(['a-label']))
     def isOK = false
     script.withArtifactCachingProxy() {
       isOK = true
     }
     printCallStack()
     assertTrue(isOK)
-    // then a check is performed on the pull request labels
-    assertTrue(assertMethodCallContainsPattern('sh', prLabelsContainSkipACPScriptSh) || assertMethodCallContainsPattern('bat', prLabelsContainSkipACPScriptBat))
     // then it doesn't notice the skipping of artifact-caching-proxy
     assertFalse(assertMethodCallContainsPattern('echo', "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"))
     // then there is a call to configFile containing the default artifact caching proxy provider id
@@ -352,17 +350,14 @@ class InfraStepTests extends BaseTest {
 
     // when running on a pull request with a "skip-artifact-caching-proxy" label
     env.CHANGE_URL = changeUrl
-    // Mock a "skip-artifact-caching-proxy" label
-    helper.addShMock(prLabelsContainSkipACPScriptSh, '', 0)
-    helper.addBatMock(prLabelsContainSkipACPScriptBat, '', 0)
+    // Mock a "skip-artifact-caching-proxy" pull request label
+    binding.setProperty('pullRequest', new PullRequest(['a-label', 'skip-artifact-caching-proxy']))
     def isOK = false
     script.withArtifactCachingProxy() {
       isOK = true
     }
     printCallStack()
     assertTrue(isOK)
-    // then a check is performed on the pull request labels
-    assertTrue(assertMethodCallContainsPattern('sh', prLabelsContainSkipACPScriptSh) || assertMethodCallContainsPattern('bat', prLabelsContainSkipACPScriptBat))
     // then it notices the skipping of artifact-caching-proxy
     assertTrue(assertMethodCallContainsPattern('echo', "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"))
     // then there is no call to configFile containing the default artifact caching proxy provider id
