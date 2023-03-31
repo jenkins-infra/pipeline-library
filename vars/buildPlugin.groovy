@@ -265,8 +265,10 @@ def call(Map params = [:]) {
                    */
                   if (incrementals && platform != 'windows' && currentBuild.currentResult == 'SUCCESS') {
                     launchable.install()
-                    launchable('verify')
-                    launchable('record commit')
+                    withCredentials([string(credentialsId: 'launchable-jenkins-bom', variable: 'LAUNCHABLE_TOKEN')]) {
+                      launchable('verify')
+                      launchable('record commit')
+                    }
                   }
                 } else {
                   echo "Skipping static analysis results for ${stageIdentifier}"
