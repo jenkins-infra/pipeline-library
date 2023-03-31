@@ -112,8 +112,7 @@ Object withArtifactCachingProxy(boolean useArtifactCachingProxy = true, Closure 
   }
 
   // If the build concerns a pull request, check if there is "skip-artifact-caching-proxy" label applied in case the user doesn't want ACP
-  if ((useArtifactCachingProxy) && (env.CHANGE_URL)) {
-    boolean prLabelsContainSkipACP = false
+  if (useArtifactCachingProxy && env.CHANGE_URL && pullRequest != null) {
     final String skipACPLabel = 'skip-artifact-caching-proxy'
     // Note: the pullRequest object is provided by https://github.com/jenkinsci/pipeline-github-plugin
     if (pullRequest.labels.contains(skipACPLabel)) {
