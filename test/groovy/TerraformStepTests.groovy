@@ -1,14 +1,10 @@
 import org.junit.Before
 import org.junit.Test
 import mock.CurrentBuild
+import mock.PullRequest
 
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertTrue
-
-class PullRequestMock {
-  def comment(String message) {
-  }
-}
 
 class TerraformStepTests extends BaseTest {
   static final String scriptName = 'vars/terraform.groovy'
@@ -37,7 +33,7 @@ class TerraformStepTests extends BaseTest {
     helper.registerAllowedMethod('ansiColor', [String.class, Closure.class], { s, body ->body() })
     helper.registerAllowedMethod('checkout', [Map.class], { m -> m })
 
-    binding.setVariable('pullRequest', new PullRequestMock())
+    binding.setVariable('pullRequest', new PullRequest())
 
     // Used by the publish checks
     addEnvVar('BUILD_URL', dummyBuildUrl)
