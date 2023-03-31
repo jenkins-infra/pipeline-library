@@ -23,6 +23,10 @@ class LaunchableStepTests extends BaseTest {
         launchable/bin/pip --require-virtualenv --no-cache-dir install -U setuptools wheel
         launchable/bin/pip --require-virtualenv --no-cache-dir install launchable
         '''.stripIndent()))
+    // without using any credentials
+    assertTrue(assertMethodCallOccurrences('withCredentials', 0))
+    // swallowing any errors that might occur
+    assertTrue(assertMethodCall('catchError'))
     assertJobStatusSuccess()
   }
 
@@ -33,6 +37,8 @@ class LaunchableStepTests extends BaseTest {
     printCallStack()
     // then it uses the appropriate credentials
     assertMethodCallContainsPattern('withCredentials', 'LAUNCHABLE_TOKEN')
+    // swallowing any errors that might occur
+    assertTrue(assertMethodCall('catchError'))
     // then it runs "launchable verify"
     assertTrue(assertMethodCallContainsPattern('sh', 'launchable verify'))
     assertJobStatusSuccess()
@@ -45,6 +51,8 @@ class LaunchableStepTests extends BaseTest {
     printCallStack()
     // then it uses the appropriate credentials
     assertMethodCallContainsPattern('withCredentials', 'LAUNCHABLE_TOKEN')
+    // swallowing any errors that might occur
+    assertTrue(assertMethodCall('catchError'))
     // then it passes the arguments without escaping to the Launchable CLI
     assertTrue(assertMethodCallContainsPattern('sh', "record tests --no-build maven './**/target/surefire-reports'"))
     assertJobStatusSuccess()

@@ -1,5 +1,6 @@
 import mock.CurrentBuild
 import mock.Infra
+import mock.Launchable
 import org.junit.Before
 import org.junit.Test
 import static org.junit.Assert.assertEquals
@@ -301,10 +302,12 @@ class BuildPluginStepTests extends BaseTest {
   @Test
   void test_buildPlugin_with_configurations_and_incrementals() throws Exception {
     def script = loadScript(scriptName)
+    binding.setProperty('launchable', new Launchable())
     // when running with incrementals
     helper.registerAllowedMethod('fileExists', [String.class], { s ->
       return s.equals('.mvn/extensions.xml') || s.equals('pom.xml')
     })
+    helper.registerAllowedMethod('launchable', [String.class], null)
     helper.addReadFileMock('.mvn/extensions.xml', 'git-changelist-maven-extension')
     // and no jenkins version
     script.call(configurations: [['platform': 'linux', 'jdk': 8, 'jenkins': null]])
