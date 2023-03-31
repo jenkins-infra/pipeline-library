@@ -17,8 +17,6 @@ class InfraStepTests extends BaseTest {
   static final String healthCheckScriptSh = 'curl --fail --silent --show-error --location $HEALTHCHECK'
   static final String healthCheckScriptBat = 'curl --fail --silent --show-error --location %HEALTHCHECK%'
   static final String changeUrl = 'https://github.com/jenkins-infra/pipeline-library/pull/123'
-  static final String prLabelsContainSkipACPScriptSh = 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/jenkins-infra/pipeline-library/issues/123/labels | grep --ignore-case "skip-artifact-caching-proxy"'
-  static final String prLabelsContainSkipACPScriptBat = 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" https://api.github.com/repos/jenkins-infra/pipeline-library/issues/123/labels | findstr /i "skip-artifact-caching-proxy"'
 
   @Override
   @Before
@@ -372,17 +370,14 @@ class InfraStepTests extends BaseTest {
 
     // when running on a branch which doesn't have a pull request associated
     env.CHANGE_URL = null
-    // Mock a "skip-artifact-caching-proxy" label
-    helper.addShMock(prLabelsContainSkipACPScriptSh, '', 0)
-    helper.addBatMock(prLabelsContainSkipACPScriptBat, '', 0)
+    // Mock a "skip-artifact-caching-proxy" pull request label
+    binding.setProperty('pullRequest', new PullRequest(['skip-artifact-caching-proxy']))
     def isOK = false
     script.withArtifactCachingProxy() {
       isOK = true
     }
     printCallStack()
     assertTrue(isOK)
-    // then a check is not performed on the labels
-    assertFalse(assertMethodCallContainsPattern('sh', prLabelsContainSkipACPScriptSh) || assertMethodCallContainsPattern('bat', prLabelsContainSkipACPScriptBat))
     // then it doesn't notice the skipping of artifact-caching-proxy
     assertFalse(assertMethodCallContainsPattern('echo', "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"))
     // then there is a call to configFile containing the default artifact caching proxy provider id
