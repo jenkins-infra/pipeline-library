@@ -116,7 +116,7 @@ Object withArtifactCachingProxy(boolean useArtifactCachingProxy = true, Closure 
     final String skipACPLabel = 'skip-artifact-caching-proxy'
     // Note: the pullRequest object is provided by https://github.com/jenkinsci/pipeline-github-plugin
     if (pullRequest.labels.contains(skipACPLabel)) {
-      echo "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"
+      echo "INFO: the label '$skipACPLabel' has been applied to the pull request, will use repo.jenkins-ci.org"
       useArtifactCachingProxy = false
     }
   }
