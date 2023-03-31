@@ -1,7 +1,6 @@
 import org.junit.Before
 import org.junit.Test
 import mock.CurrentBuild
-import mock.PullRequest
 
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertTrue
@@ -32,8 +31,6 @@ class TerraformStepTests extends BaseTest {
     binding.setProperty('scm', ['GIT_URL': 'https://github.com/lesfurets/jenkins-unit-test.git'])
     helper.registerAllowedMethod('ansiColor', [String.class, Closure.class], { s, body ->body() })
     helper.registerAllowedMethod('checkout', [Map.class], { m -> m })
-
-    binding.setVariable('pullRequest', new PullRequest())
 
     // Used by the publish checks
     addEnvVar('BUILD_URL', dummyBuildUrl)
