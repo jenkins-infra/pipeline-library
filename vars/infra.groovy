@@ -84,14 +84,6 @@ Object checkoutSCM(String repo = null) {
 }
 
 /**
- * Retrieve the current credentialsId used by the build
- */
-@NonCPS
-String getBuildCredentialsId() {
-  return SCMSource.SourceByItem.findSource(currentBuild.rawBuild.parent).credentialsId
-}
-
-/**
  * Execute the body passed as closure with a Maven settings file using the
  * Artifact Caching Proxy provider corresponding to the requested one defined
  * via the agent's env.ARTIFACT_CACHING_PROXY variable, or 'azure' if not defined.
@@ -120,24 +112,12 @@ Object withArtifactCachingProxy(boolean useArtifactCachingProxy = true, Closure 
   }
 
   // If the build concerns a pull request, check if there is "skip-artifact-caching-proxy" label applied in case the user doesn't want ACP
-  if ((useArtifactCachingProxy) && (env.CHANGE_URL)) {
-    withCredentials([
-      // Would not be needed if there was a way to retrieve pull request labels natively.
-      usernamePassword(credentialsId: getBuildCredentialsId(), usernameVariable: 'GITHUB_APP', passwordVariable: 'GH_TOKEN')
-    ]) {
-      boolean prLabelsContainSkipACP = false
-      final String skipACPLabel = 'skip-artifact-caching-proxy'
-      // Creating the correct API URL to retrieve pull request labels from the $CHANGE_URL
-      final String pullrequestLabelsApiURL = (env.CHANGE_URL).replace('/pull/', '/issues/').replace('/github.com/', '/api.github.com/repos/') + '/labels'
-      if (isUnix()) {
-        prLabelsContainSkipACP = sh(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" ' + pullrequestLabelsApiURL + ' | grep --ignore-case "skip-artifact-caching-proxy"', returnStatus: true) == 0
-      } else {
-        prLabelsContainSkipACP = bat(script: 'curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: Bearer %GH_TOKEN%" ' + pullrequestLabelsApiURL + ' | findstr /i "skip-artifact-caching-proxy"', returnStatus: true) == 0
-      }
-      if (prLabelsContainSkipACP) {
-        echo "INFO: the label 'skip-artifact-caching-proxy' has been applied to the pull request, will use repo.jenkins-ci.org"
-        useArtifactCachingProxy = false
-      }
+  if (useArtifactCachingProxy && env.CHANGE_URL && pullRequest != null) {
+    final String skipACPLabel = 'skip-artifact-caching-proxy'
+    // Note: the pullRequest object is provided by https://github.com/jenkinsci/pipeline-github-plugin
+    if (pullRequest.labels.contains(skipACPLabel)) {
+      echo "INFO: the label '$skipACPLabel' has been applied to the pull request, will use repo.jenkins-ci.org"
+      useArtifactCachingProxy = false
     }
   }
 
