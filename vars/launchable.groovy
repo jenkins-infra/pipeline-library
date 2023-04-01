@@ -13,13 +13,11 @@ def install() {
 }
 
 def call(String args) {
-  withCredentials([string(credentialsId: 'launchable-prototype', variable: 'LAUNCHABLE_TOKEN')]) {
-    if (isUnix()) {
-      catchError(buildResult: 'SUCCESS', catchInterruptions: false, message: 'Failed to run Launchable; continuing build.') {
-        sh 'launchable/bin/launchable ' + args
-      }
-    } else {
-      error 'The Launchable CLI is not yet implemented for Windows'
+  if (isUnix()) {
+    catchError(buildResult: 'SUCCESS', catchInterruptions: false, message: 'Failed to run Launchable; continuing build.') {
+      sh 'launchable/bin/launchable ' + args
     }
+  } else {
+    error 'The Launchable CLI is not yet implemented for Windows'
   }
 }
