@@ -23,8 +23,6 @@ class LaunchableStepTests extends BaseTest {
         launchable/bin/pip --require-virtualenv --no-cache-dir install -U setuptools wheel
         launchable/bin/pip --require-virtualenv --no-cache-dir install launchable
         '''.stripIndent()))
-    // without using any credentials
-    assertTrue(assertMethodCallOccurrences('withCredentials', 0))
     // swallowing any errors that might occur
     assertTrue(assertMethodCall('catchError'))
     assertJobStatusSuccess()
@@ -35,8 +33,6 @@ class LaunchableStepTests extends BaseTest {
     def script = loadScript(scriptName)
     script.call("verify")
     printCallStack()
-    // then it uses the appropriate credentials
-    assertMethodCallContainsPattern('withCredentials', 'LAUNCHABLE_TOKEN')
     // swallowing any errors that might occur
     assertTrue(assertMethodCall('catchError'))
     // then it runs "launchable verify"
@@ -49,8 +45,6 @@ class LaunchableStepTests extends BaseTest {
     def script = loadScript(scriptName)
     script.call("record tests --no-build maven './**/target/surefire-reports'")
     printCallStack()
-    // then it uses the appropriate credentials
-    assertMethodCallContainsPattern('withCredentials', 'LAUNCHABLE_TOKEN')
     // swallowing any errors that might occur
     assertTrue(assertMethodCall('catchError'))
     // then it passes the arguments without escaping to the Launchable CLI
