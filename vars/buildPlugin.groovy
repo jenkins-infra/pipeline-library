@@ -349,7 +349,7 @@ List<Map<String, String>> getConfigurations(Map params) {
   }
 
   def platforms = params.containsKey('platforms') ? params.platforms : ['linux', 'windows']
-  def jdkVersions = params.containsKey('jdkVersions') ? params.jdkVersions : ['8']
+  def jdkVersions = params.containsKey('jdkVersions') ? params.jdkVersions : ['11']
   def jenkinsVersions = params.containsKey('jenkinsVersions') ? params.jenkinsVersions : [null]
 
   def ret = []
