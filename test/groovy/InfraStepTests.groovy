@@ -458,6 +458,8 @@ class InfraStepTests extends BaseTest {
   @Test
   void testRunMavenWithArtifactCachingProxy() throws Exception {
     def script = loadScript(scriptName)
+    // Mock an available artifact caching proxy
+    env.MAVEN_SETTINGS = '/tmp/settings.xml'
     // when running with useArtifactCachingProxy set to true
     script.runMaven(['clean verify'], 11, null, null, true)
     printCallStack()
