@@ -142,10 +142,7 @@ Object withArtifactCachingProxy(boolean useArtifactCachingProxy = true, Closure 
     echo "INFO: using artifact caching proxy from '${requestedProxyProvider}' provider."
     configFileProvider(
         [configFile(fileId: "artifact-caching-proxy-${requestedProxyProvider}", variable: 'MAVEN_SETTINGS')]) {
-          withEnv([
-            "MAVEN_ARGS=-s $env.MAVEN_SETTINGS",
-            "ARTIFACT_CACHING_PROXY_ORIGIN=https://repo.${requestedProxyProvider}.jenkins.io"
-          ]) {
+          withEnv(["MAVEN_ARGS=-s $env.MAVEN_SETTINGS"]) {
             body()
           }
         }
