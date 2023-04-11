@@ -49,6 +49,7 @@
     The available providers can be restricted by setting a global ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS
     variable on the Jenkins controller, with providers separated by a comma. Ex: 'aws,do' if the Azure provider is unavailable.
     A 'skip-artifact-caching-proxy' label can be added to pull request in order to punctually disable it.
+    When calling this function with its boolean parameter to false, it does nothing.
 </p>
 
 <p>
