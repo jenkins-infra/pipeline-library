@@ -322,6 +322,7 @@ class InfraStepTests extends BaseTest {
     // then it succeeds
     assertJobStatusSuccess()
   }
+
   @Test
   void testWithArtifactCachingProxyUnavailableRequestedProvider() throws Exception {
     def script = loadScript(scriptName)
@@ -457,27 +458,13 @@ class InfraStepTests extends BaseTest {
   @Test
   void testRunMavenWithArtifactCachingProxy() throws Exception {
     def script = loadScript(scriptName)
-    // mock a correctly configured artifact caching proxy provider
-    env.MAVEN_SETTINGS = "/tmp_path/settings.xml"
+    // Mock an available artifact caching proxy
+    env.MAVEN_SETTINGS = '/tmp/settings.xml'
     // when running with useArtifactCachingProxy set to true
     script.runMaven(['clean verify'], 11, null, null, true)
     printCallStack()
-    // then it does notice a sh call with the settings.xml path
-    assertTrue(assertMethodCallContainsPattern('sh', '-s /tmp_path/settings.xml'))
-    // then it succeeds
-    assertJobStatusSuccess()
-  }
-
-  @Test
-  void testRunMavenWithArtifactCachingProxyUnavailableSkippedOrNotReachable() throws Exception {
-    def script = loadScript(scriptName)
-    // mock an artifact caching proxy provider unavailable, skipped or unreachable
-    env.MAVEN_SETTINGS = null
-    // when running with useArtifactCachingProxy set to true
-    script.runMaven(['clean verify'], 11, null, null, true)
-    printCallStack()
-    // then it does not notice a sh call with "-s null"
-    assertFalse(assertMethodCallContainsPattern('sh', '-s null'))
+    // then it does notice a withEnv call with the MAVEN_ARGS env var containing settings.xml path
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'MAVEN_ARGS=-s /tmp/settings.xml'))
     // then it succeeds
     assertJobStatusSuccess()
   }
@@ -485,13 +472,11 @@ class InfraStepTests extends BaseTest {
   @Test
   void testRunMavenWithArtifactCachingProxyDisabled() throws Exception {
     def script = loadScript(scriptName)
-    // mock an artifact caching proxy disabled
-    env.MAVEN_SETTINGS = null
     // when running with useArtifactCachingProxy set to false
     script.runMaven(['clean verify'], 11, null, null, false)
     printCallStack()
-    // then it does not notice a sh call with "-s null"
-    assertFalse(assertMethodCallContainsPattern('sh', '-s null'))
+    // then it does not notice a withEnv call with the MAVEN_ARGS env var containing settings.xml path
+    assertFalse(assertMethodCallContainsPattern('withEnv', 'MAVEN_ARGS=-s /tmp/settings.xml'))
     // then it succeeds
     assertJobStatusSuccess()
   }
