@@ -90,7 +90,7 @@
               <include>**/*.groovy</include>
             </includes>
             <greclipse>
-              <file>${maven.multiModuleProjectDirectory}/src/spotless/greclipse.properties</file>
+              <file>config/greclipse.properties</file>
             </greclipse>
           </groovy>
           <pom>
@@ -102,6 +102,13 @@
             </sortPom>
           </pom>
         </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>io.jenkins.lib</groupId>
+            <artifactId>shared-resources</artifactId>
+            <version>1.0</version>
+          </dependency>
+        </dependencies>
         <executions>
           <execution>
             <!-- Runs in verify phase by default -->
