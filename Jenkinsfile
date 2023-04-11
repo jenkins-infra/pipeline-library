@@ -5,6 +5,7 @@ pipeline {
   }
   options {
     timestamps()
+    disableConcurrentBuilds(abortPrevious: true)
   }
   stages {
     stage('Test') {
