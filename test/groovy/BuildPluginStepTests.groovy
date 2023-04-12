@@ -291,12 +291,51 @@ class BuildPluginStepTests extends BaseTest {
   }
 
   @Test
-  void test_buildPlugin_with_coverage() throws Exception {
+  void test_buildPlugin_with_record_coverage_defaults() throws Exception {
     def script = loadScript(scriptName)
     script.call()
     printCallStack()
 
-    assertTrue(assertMethodCallContainsPattern('publishCoverage', '{calculateDiffForChangeRequests=true, adapters=[jacoco]}'))
+    assertTrue(assertMethodCall('recordCoverage'))
+    assertDefaultRecordCoverageWithJaCoCo()
+  }
+
+  private assertDefaultRecordCoverageWithJaCoCo() {
+    assertTrue(assertMethodCallContainsPattern('recordCoverage', '{tools=[{parser=JACOCO, pattern=**/jacoco/jacoco.xml}], sourceCodeRetention=MODIFIED}'))
+  }
+
+  @Test
+  void test_buildPlugin_with_record_coverage_custom() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(jacoco: [sourceCodeRetention: 'EVERY_BUILD', sourceDirectories: [[path: 'plugin/src/main/java']]])
+    printCallStack()
+
+    assertTrue(assertMethodCall('recordCoverage'))
+    assertTrue(assertMethodCallContainsPattern('recordCoverage', '{tools=[{parser=JACOCO, pattern=**/jacoco/jacoco.xml}], sourceCodeRetention=EVERY_BUILD, sourceDirectories=[{path=plugin/src/main/java}]}'))
+  }
+
+  @Test
+  void test_buildPlugin_with_record_coverage_pit_default() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(pit: [skip: false])
+    printCallStack()
+
+    assertTrue(assertMethodCall('recordCoverage'))
+    assertDefaultRecordCoverageWithJaCoCo()
+
+    assertTrue(assertMethodCallContainsPattern('recordCoverage', '{tools=[{parser=PIT, pattern=**/pit-reports/mutations.xml}], id=pit, name=Mutation Coverage, sourceCodeRetention=MODIFIED}'))
+  }
+
+  @Test
+  void test_buildPlugin_with_record_coverage_pit_custom() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(pit: [sourceCodeRetention: 'EVERY_BUILD', name: 'PIT', sourceDirectories: [[path: 'plugin/src/main/java']]])
+    printCallStack()
+
+    assertTrue(assertMethodCall('recordCoverage'))
+    assertDefaultRecordCoverageWithJaCoCo()
+
+    assertTrue(assertMethodCallContainsPattern('recordCoverage', '{tools=[{parser=PIT, pattern=**/pit-reports/mutations.xml}], id=pit, name=PIT, sourceCodeRetention=EVERY_BUILD, sourceDirectories=[{path=plugin/src/main/java}]}'))
   }
 
   @Test

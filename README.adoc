@@ -54,9 +54,9 @@ buildPlugin(
 [source,groovy]
 ----
 buildPlugin(/*...*/, configurations: [
-  [ platform: "linux", jdk: "8", jenkins: null ],
-  [ platform: "windows", jdk: "8", jenkins: null ],
-  [ platform: "linux", jdk: "11", jenkins: "2.150" ]
+  [ platform: "linux", jdk: "11", jenkins: null ],
+  [ platform: "windows", jdk: "11", jenkins: null ],
+  [ platform: "linux", jdk: "17", jenkins: "2.400" ]
 ])
 ----
 
@@ -64,14 +64,16 @@ buildPlugin(/*...*/, configurations: [
 coverage results are recorded after the build with the corresponding Jenkins plugins.
 ** `skip` - If `true`, skip all the tests by setting the `-skipTests` profile.
   It will also skip FindBugs in modern Plugin POMs.
+* `jacoco`: (default: `null`) - a map of parameters to change the default configuration of the `recordCoverage` step of the https://github.com/jenkinsci/code-coverage-api-plugin[Code Coverage Plugin]. This step is called after a plugin build to record the code coverage results of JaCoCo. See https://www.jenkins.io/doc/pipeline/steps/code-coverage-api/#recordcoverage-record-code-coverage-results[recordCoverage step documentation] for a list of available configuration parameters.
+* `pit`: (default: `null`) - a map of parameters to change the default configuration of the `recordCoverage` step of the https://github.com/jenkinsci/code-coverage-api-plugin[Code Coverage Plugin]. See https://www.jenkins.io/doc/pipeline/steps/code-coverage-api/#recordcoverage-record-code-coverage-results[recordCoverage step documentation] for a list of available configuration parameters. Since running PIT is a time-consuming task, PIT is disabled by default. You need to enable it by setting the property `skip` to `false` as well.
 * `spotbugs`, `checkstyle`, `pmd`, `cpd`: (default: `null`) - a map of parameters to archive SpotBugs, CheckStyle, PMD, or CPD warnings, respectively (only available for Maven projects).
 These values can replace or amend the default configuration for the `recordIssues` step of the https://github.com/jenkinsci/warnings-ng-plugin[Warnings NG Plugin].
 See https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration[Warnings NG Plugin documentation]
 for a list of available configuration parameters.
 * `timeout`: (default: `60`) - the number of minutes for build timeout, cannot be bigger than 180, i.e. 3 hours.
 
-NOTE: The `recordIssues` steps of the warnings plugin run on the first platform/jdkVersion,jenkinsVersion combination only.
-So in the example below it will run for `linux`/`jdk7` but not on `jdk8`.
+NOTE: The `recordIssues` steps of the warnings plugin and the `recordCoverage` steps of the coverage plugin run on the first platform/jdkVersion,jenkinsVersion combination only.
+So in the example below it will run for `linux`/`jdk11` but not on `jdk17`.
 
 Usage:
 
@@ -79,7 +81,9 @@ Usage:
 [source,groovy]
 ----
 buildPlugin(platforms: ['linux'],
-        jdkVersions: [7, 8],
+        jdkVersions: [11, 17],
+        jacoco: [sourceCodeRetention: 'MODIFIED'],
+        pit: [skip: false],
         checkstyle: [qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]],
         pmd: [trendChartType: 'TOOLS_ONLY', qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]])
 ----

@@ -139,6 +139,11 @@ def call(Map params = [:]) {
                     mavenOptions += '-DskipTests'
                   }
                   mavenOptions += 'clean install'
+                  def pit = params?.pit as Map ?: [:]
+                  def runWithPit = pit.containsKey('skip') && !pit['skip'] // use same convention as in tests.skip
+                  if (runWithPit && first) {
+                    mavenOptions += '-Ppit'
+                  }
                   try {
                     infra.runMaven(mavenOptions, jdk, null, addToolEnv, useArtifactCachingProxy)
                   } finally {
@@ -146,7 +151,19 @@ def call(Map params = [:]) {
                       junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
                       if (first) {
                         discoverReferenceBuild()
-                        publishCoverage calculateDiffForChangeRequests: true, adapters: [jacocoAdapter('**/target/site/jacoco/jacoco.xml')]
+                        // Default configuration for JaCoCo can be overwritten using a `jacoco` parameter (map).
+                        // Configuration see: https://www.jenkins.io/doc/pipeline/steps/code-coverage-api/#recordcoverage-record-code-coverage-results
+                        Map jacocoArguments = [tools: [[parser: 'JACOCO', pattern: '**/jacoco/jacoco.xml']], sourceCodeRetention: 'MODIFIED']
+                        if (params?.jacoco) {
+                          jacocoArguments.putAll(params.jacoco as Map)
+                        }
+                        recordCoverage jacocoArguments
+                        if (pit) {
+                          Map pitArguments = [tools: [[parser: 'PIT', pattern: '**/pit-reports/mutations.xml']], id: 'pit', name: 'Mutation Coverage', sourceCodeRetention: 'MODIFIED']
+                          pitArguments.putAll(pit)
+                          pitArguments.remove('skip')
+                          recordCoverage(pitArguments)
+                        }
                       }
                     }
                   }

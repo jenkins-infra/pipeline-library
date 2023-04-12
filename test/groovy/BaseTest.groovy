@@ -59,8 +59,9 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('taskScanner', [Map.class], { 'tasks' })
     helper.registerAllowedMethod('excludeFile', [String.class], { true })
 
-    helper.registerAllowedMethod('jacocoAdapter', [String.class], {'jacoco'})
-    helper.registerAllowedMethod('publishCoverage', [Map.class], {s -> s})
+    helper.registerAllowedMethod('recordCoverage', [Map.class], { true })
+    helper.registerAllowedMethod('jacoco', [Map.class], { 'jacoco' })
+    helper.registerAllowedMethod('pit', [Map.class], { 'pit' })
 
     helper.registerAllowedMethod('sh', [String.class], { s -> s })
     helper.registerAllowedMethod('powershell', [String.class], { s -> s })
