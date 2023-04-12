@@ -142,7 +142,9 @@ Object withArtifactCachingProxy(boolean useArtifactCachingProxy = true, Closure 
     echo "INFO: using artifact caching proxy from '${requestedProxyProvider}' provider."
     configFileProvider(
         [configFile(fileId: "artifact-caching-proxy-${requestedProxyProvider}", variable: 'MAVEN_SETTINGS')]) {
-          body()
+          withEnv(["MAVEN_ARGS=-s $env.MAVEN_SETTINGS"]) {
+            body()
+          }
         }
   } else {
     body()
@@ -161,12 +163,6 @@ Object withArtifactCachingProxy(boolean useArtifactCachingProxy = true, Closure 
 Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true) {
   List<String> mvnOptions = ['--batch-mode', '--show-version', '--errors', '--no-transfer-progress']
   withArtifactCachingProxy(useArtifactCachingProxy) {
-    // If an artifact caching proxy provider has been correctly configured,
-    // add the corresponding settings.xml path stored in MAVEN_SETTINGS env var
-    // by the config file provider to Maven options
-    if (env.MAVEN_SETTINGS) {
-      mvnOptions += "-s $env.MAVEN_SETTINGS"
-    }
     mvnOptions.addAll(options)
     mvnOptions.unique()
     String command = "mvn ${mvnOptions.join(' ')}"
