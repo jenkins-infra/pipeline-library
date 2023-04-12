@@ -8,17 +8,17 @@ else
 endif
 
 IMAGE_NAME ?= helloworld
-IMAGE_DEPLOY_NAME ?= $(IMAGE_NAME)
+IMAGE_DEPLOY_NAME ?= "$(IMAGE_NAME)"
 IMAGE_PLATFORM ?= linux/amd64
 # Paths
-IMAGE_DOCKERFILE ?= $(IMAGE_DIR)/Dockerfile
-HADOLINT_REPORT ?= $(IMAGE_DIR)/hadolint.json
-TEST_HARNESS ?= $(IMAGE_DIR)/cst.yml
+IMAGE_DOCKERFILE ?= "$(IMAGE_DIR)"/Dockerfile
+HADOLINT_REPORT ?= "$(IMAGE_DIR)"/hadolint.json
+TEST_HARNESS ?= "$(IMAGE_DIR)"/cst.yml
 
 ## Image metadatas
 GIT_COMMIT_REV ?= $(shell git log -n 1 --pretty=format:'%h')
 GIT_SCM_URL ?= $(shell git config --get remote.origin.url)
-SCM_URI ?= $(subst git@github.com:,https://github.com/,$(GIT_SCM_URL))
+SCM_URI ?= $(subst git@github.com:,https://github.com/,"$(GIT_SCM_URL)")
 BUILD_DATE ?= $(shell date --utc '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || gdate --utc '+%Y-%m-%dT%H:%M:%S')
 
 help: ## Show this Makefile's help
@@ -34,8 +34,8 @@ lint: ## Lint the $(IMAGE_DOCKERFILE) content
 
 build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 	@echo "== Building $(IMAGE_NAME) from $(call FixPath,$(IMAGE_DOCKERFILE)) with docker:"
-	docker build \
-		--tag $(IMAGE_NAME) \
+	docker image build \
+		--tag "$(IMAGE_NAME)" \
 		--build-arg "GIT_COMMIT_REV=$(GIT_COMMIT_REV)" \
 		--build-arg "GIT_SCM_URL=$(GIT_SCM_URL)" \
 		--build-arg "BUILD_DATE=$(BUILD_DATE)" \
@@ -47,7 +47,7 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 		--label "org.label-schema.vcs-ref=$(GIT_COMMIT_REV)" \
 		--label "org.opencontainers.image.created=$(BUILD_DATE)" \
 		--label "org.label-schema.build-date=$(BUILD_DATE)" \
-		--platform $(IMAGE_PLATFORM) \
+		--platform "$(IMAGE_PLATFORM)" \
 		--file "$(call FixPath,$(IMAGE_DOCKERFILE))" \
 		"$(IMAGE_DIR)"
 	@echo "== Build succeeded"
@@ -65,8 +65,8 @@ test: ## Execute the test harness on the Docker Image
 ## This steps expects that you are logged to the Docker registry to push image into
 deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 	@echo "== Deploying $(IMAGE_NAME) to $(IMAGE_DEPLOY_NAME) with docker:"
-	docker tag $(IMAGE_NAME) $(IMAGE_DEPLOY_NAME)
-	docker push $(IMAGE_DEPLOY_NAME)
+	docker image tag "$(IMAGE_NAME)" "$(IMAGE_DEPLOY_NAME)"
+	docker image push "$(IMAGE_DEPLOY_NAME)"
 	@echo "== Deploy succeeded"
 
 .PHONY: all clean lint build test deploy
