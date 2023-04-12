@@ -34,7 +34,7 @@ lint: ## Lint the $(IMAGE_DOCKERFILE) content
 
 build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 	@echo "== Building $(IMAGE_NAME) from $(call FixPath,$(IMAGE_DOCKERFILE)) with docker:"
-	docker build \
+	docker image build \
 		--tag "$(IMAGE_NAME)" \
 		--build-arg "GIT_COMMIT_REV=$(GIT_COMMIT_REV)" \
 		--build-arg "GIT_SCM_URL=$(GIT_SCM_URL)" \
@@ -65,8 +65,8 @@ test: ## Execute the test harness on the Docker Image
 ## This steps expects that you are logged to the Docker registry to push image into
 deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 	@echo "== Deploying $(IMAGE_NAME) to $(IMAGE_DEPLOY_NAME) with docker:"
-	docker tag "$(IMAGE_NAME)" "$(IMAGE_DEPLOY_NAME)"
-	docker push "$(IMAGE_DEPLOY_NAME)"
+	docker image tag "$(IMAGE_NAME)" "$(IMAGE_DEPLOY_NAME)"
+	docker image push "$(IMAGE_DEPLOY_NAME)"
 	@echo "== Deploy succeeded"
 
 .PHONY: all clean lint build test deploy
