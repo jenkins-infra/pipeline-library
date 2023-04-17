@@ -80,4 +80,76 @@ class BuildPluginWithGradleStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('error', 'There were test failures'))
     assertJobStatusFailure()
   }
+
+  @Test
+  void test_buildPluginWithGradle_with_warnings_ng() throws Exception {
+    def script = loadScript(scriptName)
+    script.call()
+    printCallStack()
+
+    assertTrue(assertMethodCall('java'))
+    assertTrue(assertMethodCall('javaDoc'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tools=[java, javadoc], filters=[true], sourceCodeEncoding=UTF-8, skipBlames=true, trendChartType=TOOLS_ONLY}'))
+
+    assertTrue(assertMethodCall('spotBugs'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=spotbugs, sourceCodeEncoding=UTF-8, skipBlames=true, trendChartType=TOOLS_ONLY, qualityGates=[{threshold=1, type=NEW, unstable=true}]}'))
+
+    assertTrue(assertMethodCall('checkStyle'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=checkstyle, sourceCodeEncoding=UTF-8, skipBlames=true, trendChartType=TOOLS_ONLY, qualityGates=[{threshold=1, type=TOTAL, unstable=true}]}'))
+
+    assertTrue(assertMethodCallContainsPattern('taskScanner', '{includePattern=**/*.java, excludePattern=**/build/**, highTags=FIXME, normalTags=TODO}'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{enabledForFailure=true, tool=tasks, sourceCodeEncoding=UTF-8, skipBlames=true, trendChartType=NONE}'))
+  }
+
+  @Test
+  void test_buildPluginWithGradle_with_warnings_ng_and_thresholds() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(spotbugs: [
+      qualityGates      : [
+        [threshold: 3, type: 'TOTAL', unstable: true],
+        [threshold: 4, type: 'NEW', unstable: true],
+      ],
+      sourceCodeEncoding: 'UTF-16'])
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=spotbugs, sourceCodeEncoding=UTF-16, skipBlames=true, trendChartType=TOOLS_ONLY, qualityGates=[{threshold=3, type=TOTAL, unstable=true}, {threshold=4, type=NEW, unstable=true}]}'))
+  }
+
+  @Test
+  void test_buildPluginWithGradle_with_warnings_ng_and_checkstyle() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(checkstyle: [
+      qualityGates: [
+        [threshold: 3, type: 'TOTAL', unstable: true],
+        [threshold: 4, type: 'NEW', unstable: true],
+      ],
+      filters     : '[includeFile(\'MyFile.*.java\'), excludeCategory(\'WHITESPACE\')]'])
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=checkstyle, sourceCodeEncoding=UTF-8, skipBlames=true, trendChartType=TOOLS_ONLY, qualityGates=[{threshold=3, type=TOTAL, unstable=true}, {threshold=4, type=NEW, unstable=true}], filters=[includeFile(\'MyFile.*.java\'), excludeCategory(\'WHITESPACE\')]}'))
+  }
+
+  @Test
+  void test_buildPluginWithGradle_with_record_coverage_defaults() throws Exception {
+    def script = loadScript(scriptName)
+    script.call()
+    printCallStack()
+
+    assertTrue(assertMethodCall('recordCoverage'))
+    assertDefaultRecordCoverageWithJaCoCo()
+  }
+
+  private assertDefaultRecordCoverageWithJaCoCo() {
+    assertTrue(assertMethodCallContainsPattern('recordCoverage', '{tools=[{parser=JACOCO, pattern=**/build/reports/jacoco/**/*.xml}], sourceCodeRetention=MODIFIED}'))
+  }
+
+  @Test
+  void test_buildPluginWithGradle_with_record_coverage_custom() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(jacoco: [sourceCodeRetention: 'EVERY_BUILD', sourceDirectories: [[path: 'plugin/src/main/java']]])
+    printCallStack()
+
+    assertTrue(assertMethodCall('recordCoverage'))
+    assertTrue(assertMethodCallContainsPattern('recordCoverage', '{tools=[{parser=JACOCO, pattern=**/build/reports/jacoco/**/*.xml}], sourceCodeRetention=EVERY_BUILD, sourceDirectories=[{path=plugin/src/main/java}]}'))
+  }
 }
