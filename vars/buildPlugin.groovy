@@ -277,10 +277,9 @@ def call(Map params = [:]) {
                    * the result can be consumed by a Launchable build in the future. We do not
                    * attempt to record commits for non-incrementalified plugins because such
                    * plugins' PR builds could not be consumed by anything else anyway, and all
-                   * plugins currently in the BOM are incrementalified. We do not attempt to record
-                   * commits on Windows because our Windows agents do not have Python installed.
+                   * plugins currently in the BOM are incrementalified.
                    */
-                  if (incrementals && platform != 'windows' && currentBuild.currentResult == 'SUCCESS') {
+                  if (incrementals && currentBuild.currentResult == 'SUCCESS') {
                     launchable.install()
                     withCredentials([string(credentialsId: 'launchable-jenkins-bom', variable: 'LAUNCHABLE_TOKEN')]) {
                       launchable('verify')
