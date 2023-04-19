@@ -14,6 +14,7 @@ def call(Map params = [:]) {
     timeoutValue = 180
   }
 
+  def incrementals = params.containsKey('incrementals')
   boolean publishingIncrementals = false
   boolean archivedArtifacts = false
   Map tasks = [failFast: failFast]
@@ -38,7 +39,11 @@ def call(Map params = [:]) {
             infra.checkoutSCM(repo)
           }
 
+          String m2repo
+          String changelist
+
           stage("Build (${stageIdentifier})") {
+            m2repo = "${pwd tmp: true}/m2repo"
             if (config.containsKey('javaLevel')) {
               infra.publishDeprecationCheck('Remove javaLevel', 'Ignoring deprecated "javaLevel" parameter. This parameter should be removed from your "Jenkinsfile".')
             }
@@ -46,17 +51,31 @@ def call(Map params = [:]) {
             if (jenkinsVersion) {
               infra.publishDeprecationCheck('Remove jenkinsVersion', 'The "jenkinsVersion" parameter is not supported in buildPluginWithGradle(). It will be ignored.')
             }
-            infra.publishDeprecationCheck('Migrate from Gradle to Maven', 'The Jenkins project offers only partial support for building plugins with Gradle and "gradle-jpi-plugin". The Jenkins project offers full support only for building plugins with Maven and "maven-hpi-plugin".')
             List<String> gradleOptions = ['--no-daemon', 'cleanTest', 'build']
             if (skipTests) {
               gradleOptions += '--exclude-task test'
             }
-            String command = "gradlew ${gradleOptions.join(' ')}"
-            if (isUnix()) {
-              command = "./" + command
-            }
+
             try {
-              infra.runWithJava(command, jdk)
+              if (incrementals) {
+                def changelistF = "${pwd tmp: true}/changelist"
+                infra.runWithJava(infra.gradleCommand([
+                  '--no-daemon',
+                  'cleanTest',
+                  'generateGitVersion',
+                  "-PgitVersionFile=${changelistF}",
+                  '-PgitVersionFormat=rc-%d.%s',
+                  '-PgitVersionSanitize=true'
+                ]), jdk)
+
+                changelist = readFile(changelistF)
+
+                // assumes the project does not set its own version in build.gradle with `version=foo`, it can be set
+                // in gradle.properties though.
+                infra.runWithJava(infra.gradleCommand([*gradleOptions, 'publishToMavenLocal', "-Dmaven.repo.local=$m2repo", "-Pversion=$changelist"]), jdk)
+              } else {
+                infra.runWithJava(infra.gradleCommand(gradleOptions), jdk)
+              }
             } finally {
               if (!skipTests) {
                 junit('**/build/test-results/**/*.xml')
@@ -70,8 +89,19 @@ def call(Map params = [:]) {
             if (failFast && currentBuild.result == 'UNSTABLE') {
               error 'There were test failures; halting early'
             }
+
             if (doArchiveArtifacts) {
-              archiveArtifacts artifacts: '**/build/libs/*.hpi,**/build/libs/*.jpi', fingerprint: true, allowEmptyArchive: true
+              if (incrementals) {
+                dir(m2repo) {
+                  fingerprint '**/*-rc*.*/*-rc*.*' // includes any incrementals consumed
+                  archiveArtifacts artifacts: "**/*$changelist/*$changelist*",
+                  excludes: '**/*.lastUpdated',
+                  allowEmptyArchive: true // in case we forgot to reincrementalify
+                }
+                publishingIncrementals = true
+              } else {
+                archiveArtifacts artifacts: '**/build/libs/*.hpi,**/build/libs/*.jpi', fingerprint: true, allowEmptyArchive: true
+              }
             }
           }
         }
@@ -80,4 +110,7 @@ def call(Map params = [:]) {
   }
 
   parallel(tasks)
+  if (publishingIncrementals) {
+    infra.maybePublishIncrementals()
+  }
 }

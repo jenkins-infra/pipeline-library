@@ -80,4 +80,15 @@ class BuildPluginWithGradleStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('error', 'There were test failures'))
     assertJobStatusFailure()
   }
+
+  @Test
+  void test_buildPluginWithGradle_with_incrementals() throws Exception {
+    def mockInfra = new Infra()
+    binding.setProperty('infra', mockInfra)
+    def script = loadScript(scriptName)
+
+    script.call(incrementals: true)
+
+    assertTrue(assertMethodCallContainsPattern('fingerprint', '**/*-rc*.*/*-rc*.*'))
+  }
 }

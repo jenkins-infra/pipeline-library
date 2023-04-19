@@ -9,6 +9,7 @@ class Infra implements Serializable {
   private boolean release
   private boolean infra
   private boolean buildError
+  private String recordedCommand
 
   public void checkoutSCM(String repo = null) { }
 
@@ -33,8 +34,13 @@ class Infra implements Serializable {
     if (buildError) {
       throw new RuntimeException('build error')
     } else {
+      recordedCommand = command
       return command
     }
+  }
+
+  String gradleCommand(List<String> gradleOptions) {
+    return "gradlew ${gradleOptions.join(' ')}"
   }
 
   public boolean isTrusted() {
