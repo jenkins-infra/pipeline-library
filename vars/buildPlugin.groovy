@@ -62,6 +62,7 @@ def call(Map params = [:]) {
           label = 'linux'
       }
     }
+    label = label  + ' && doks'
 
     tasks[stageIdentifier] = {
       retry(count: 3, conditions: [kubernetesAgent(handleNonKubernetes: true), nonresumable()]) {
