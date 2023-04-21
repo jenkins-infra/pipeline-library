@@ -147,6 +147,11 @@ def agentTemplate(containerImage, body) {
       kind: Pod
       spec:
         automountServiceAccountToken: false
+        tolerations:
+        - key: "jenkins"
+          operator: "Equal"
+          value: "infra.ci.jenkins.io"
+          effect: "NoSchedule"
       resources:
         limits:
           cpu: 2
