@@ -9,7 +9,6 @@ class Infra implements Serializable {
   private boolean release
   private boolean infra
   private boolean buildError
-  private String recordedCommand
 
   public void checkoutSCM(String repo = null) { }
 
@@ -34,7 +33,6 @@ class Infra implements Serializable {
     if (buildError) {
       throw new RuntimeException('build error')
     } else {
-      recordedCommand = command
       return command
     }
   }
