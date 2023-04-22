@@ -155,6 +155,10 @@ def agentTemplate(containerImage, body) {
           operator: "Equal"
           value: "infra.ci.jenkins.io"
           effect: "NoSchedule"
+        - key: "kubernetes.azure.com/scalesetpriority"
+          operator: "Equal"
+          value: "spot"
+          effect: "NoSchedule"
       resources:
         limits:
           cpu: 2
