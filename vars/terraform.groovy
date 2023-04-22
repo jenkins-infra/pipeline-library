@@ -147,6 +147,9 @@ def agentTemplate(containerImage, body) {
       kind: Pod
       spec:
         automountServiceAccountToken: false
+        nodeSelector:
+          kubernetes.azure.com/agentpool: infracipool
+          kubernetes.io/os: linux
         tolerations:
         - key: "jenkins"
           operator: "Equal"
