@@ -14,7 +14,7 @@ def call(Map params = [:]) {
     timeoutValue = 180
   }
 
-  def incrementals = params.containsKey('incrementals')
+  def incrementals = !params.containsKey('noIncrementals')
   boolean publishingIncrementals = false
   boolean archivedArtifacts = false
   Map tasks = [failFast: failFast]
@@ -56,20 +56,11 @@ def call(Map params = [:]) {
               gradleOptions += '--exclude-task test'
             }
 
+            if (incrementals) {
+              changelist = tryGenerateVersion(jdk)
+            }
             try {
-              if (incrementals) {
-                def changelistF = "${pwd tmp: true}/changelist"
-                infra.runWithJava(infra.gradleCommand([
-                  '--no-daemon',
-                  'cleanTest',
-                  'generateGitVersion',
-                  "-PgitVersionFile=${changelistF}",
-                  '-PgitVersionFormat=rc-%d.%s',
-                  '-PgitVersionSanitize=true'
-                ]), jdk)
-
-                changelist = readFile(changelistF)
-
+              if (changelist) {
                 // assumes the project does not set its own version in build.gradle with `version=foo`, it can be set
                 // in gradle.properties though.
                 infra.runWithJava(infra.gradleCommand([*gradleOptions, 'publishToMavenLocal', "-Dmaven.repo.local=$m2repo", "-Pversion=$changelist"]), jdk)
@@ -91,7 +82,7 @@ def call(Map params = [:]) {
             }
 
             if (doArchiveArtifacts) {
-              if (incrementals) {
+              if (changelist) {
                 dir(m2repo) {
                   fingerprint '**/*-rc*.*/*-rc*.*' // includes any incrementals consumed
                   archiveArtifacts artifacts: "**/*$changelist/*$changelist*",
@@ -112,5 +103,24 @@ def call(Map params = [:]) {
   parallel(tasks)
   if (publishingIncrementals) {
     infra.maybePublishIncrementals()
+  }
+}
+
+def tryGenerateVersion(String jdk) {
+  try {
+    def changelistF = "${pwd tmp: true}/changelist"
+    infra.runWithJava(infra.gradleCommand([
+      '--no-daemon',
+      'cleanTest',
+      'generateGitVersion',
+      "-PgitVersionFile=${changelistF}",
+      "-PgitVersionFormat=rc-%d.%s",
+      '-PgitVersionSanitize=true'
+    ]), jdk)
+    def version = readFile(changelistF)
+    return version ==~ /rc-[0-9]+\..*/ ? version : null
+  } catch (Exception e) {
+    echo "Could not generate incremental version, proceeding with non incremental version build."
+    return null
   }
 }

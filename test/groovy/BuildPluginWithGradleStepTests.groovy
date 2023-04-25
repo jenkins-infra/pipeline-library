@@ -82,13 +82,42 @@ class BuildPluginWithGradleStepTests extends BaseTest {
   }
 
   @Test
-  void test_buildPluginWithGradle_with_incrementals() throws Exception {
+  void test_buildPluginWithGradle_with_incrementals_by_default() throws Exception {
+    def mockInfra = new Infra()
+    binding.setProperty('infra', mockInfra)
+    helper.addReadFileMock('/bar/changelist', 'rc-1.123')
+    def script = loadScript(scriptName)
+
+    script.call()
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('fingerprint', '**/*-rc*.*/*-rc*.*'))
+  }
+
+  @Test
+  void test_buildPluginWithGradle_with_no_incrementals() throws Exception {
     def mockInfra = new Infra()
     binding.setProperty('infra', mockInfra)
     def script = loadScript(scriptName)
 
-    script.call(incrementals: true)
+    script.call(noIncrementals: true)
+    printCallStack()
 
-    assertTrue(assertMethodCallContainsPattern('fingerprint', '**/*-rc*.*/*-rc*.*'))
+    assertFalse(assertMethodCallContainsPattern('fingerprint', '**/*-rc*.*/*-rc*.*'))
+  }
+
+  @Test
+  void test_buildPluginWithGradle_with_not_incremental_version() throws Exception {
+    def mockInfra = new Infra()
+    binding.setProperty('infra', mockInfra)
+    // Can happen with Gradle JPI plugin 0.48.0
+    helper.addReadFileMock('/bar/changelist', '123')
+
+    def script = loadScript(scriptName)
+
+    script.call()
+    printCallStack()
+
+    assertFalse(assertMethodCallContainsPattern('fingerprint', '**/*-rc*.*/*-rc*.*'))
   }
 }
