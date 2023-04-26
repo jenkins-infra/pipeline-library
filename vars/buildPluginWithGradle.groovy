@@ -114,11 +114,11 @@ def tryGenerateVersion(String jdk) {
       'cleanTest',
       'generateGitVersion',
       "-PgitVersionFile=${changelistF}",
-      "-PgitVersionFormat=rc-%d.%s",
+      "-PgitVersionFormat=rc%d.%s",
       '-PgitVersionSanitize=true'
     ]), jdk)
     def version = readFile(changelistF)
-    return version ==~ /rc-[0-9]+\..*/ ? version : null
+    return version ==~ /(.*-)?(rc[0-9]+\..*)/ ? version : null
   } catch (Exception e) {
     echo "Could not generate incremental version, proceeding with non incremental version build."
     return null
