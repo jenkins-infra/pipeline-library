@@ -63,7 +63,13 @@ def call(Map params = [:]) {
               if (changelist) {
                 // assumes the project does not set its own version in build.gradle with `version=foo`, it can be set
                 // in gradle.properties though.
-                infra.runWithJava(infra.gradleCommand([*gradleOptions, 'publishToMavenLocal', "-Dmaven.repo.local=$m2repo", "-Pversion=$changelist"]), jdk)
+                infra.runWithJava(infra.gradleCommand([
+                  *gradleOptions,
+                  'publishToMavenLocal',
+                  "-Dmaven.repo.local=$m2repo",
+                  "-Pversion=${changelist[0]}",
+                  "-PscmTag=${changelist[1]}"
+                ]), jdk)
               } else {
                 infra.runWithJava(infra.gradleCommand(gradleOptions), jdk)
               }
@@ -117,8 +123,9 @@ def tryGenerateVersion(String jdk) {
       "-PgitVersionFormat=rc%d.%s",
       '-PgitVersionSanitize=true'
     ]), jdk)
-    def version = readFile(changelistF)
-    return version ==~ /(.*-)?(rc[0-9]+\..*)/ ? version : null
+    def version = readFile(changelistF).readLines()
+    // We have a formatted version and a full git hash
+    return version.size() == 2 && version[0] ==~ /(.*-)?(rc[0-9]+\..*)/ && version[1] ==~ /[a-f0-9]{40}/ ? version : null
   } catch (Exception e) {
     echo "Could not generate incremental version, proceeding with non incremental version build."
     return null
