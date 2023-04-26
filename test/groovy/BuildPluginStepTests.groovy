@@ -125,14 +125,42 @@ class BuildPluginStepTests extends BaseTest {
     // when running without any parameters
     script.call([:])
     printCallStack()
-    // then it runs in a linux node
-    assertTrue(assertMethodCallContainsPattern('node', 'linux'))
-    // then it runs in a windows node
-    assertTrue(assertMethodCallContainsPattern('node', 'windows'))
+    // then it runs a stage in a linux VM by default
+    assertTrue(assertMethodCallContainsPattern('node', 'vm && linux'))
+    // then it runs a stage in a Windows VM by default
+    assertTrue(assertMethodCallContainsPattern('node', 'docker-windows'))
     // then it runs the junit step by default
     assertTrue(assertMethodCall('junit'))
     // then it runs the junit step with the maven test format
     assertTrue(assertMethodCallContainsPattern('junit', '**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_container_agents() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with useContainerAgent set to true
+    script.call([useContainerAgent: true])
+    printCallStack()
+    // then it runs a stage in a linux container by default
+    assertTrue(assertMethodCallContainsPattern('node', 'maven'))
+    // then it runs a stage in a Windows container by default
+    assertTrue(assertMethodCallContainsPattern('node', 'maven-windows'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_customplatforms() throws Exception {
+    def script = loadScript(scriptName)
+    // when running with useContainerAgent set to true
+    script.call(platforms: ['openbsd', 'maven-windows-experimental'])
+    printCallStack()
+    // then it runs a stage in an openbsd node with a warning message
+    assertTrue(assertMethodCallContainsPattern('node', 'openbsd'))
+    assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: Unknown Virtual Machine platform \'openbsd\''))
+    // then it runs a stage in a maven-windows-experimental node with a warning message
+    assertTrue(assertMethodCallContainsPattern('node', 'maven-windows-experimental'))
+    assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: Unknown Virtual Machine platform \'maven-windows-experimental\''))
     assertJobStatusSuccess()
   }
 
