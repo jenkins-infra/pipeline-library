@@ -9,7 +9,7 @@ def call(userConfig = [:]) {
     stagingCredentials: [], // No custom secrets for staging by default
     productionCredentials: [], // No custom secrets for production by default
     productionBranch: 'main', // Defaults to the principal branch
-    agentContainerImage: 'jenkinsciinfra/hashicorp-tools:0.5.161', // Version managed by updatecli
+    agentContainerImage: 'jenkinsciinfra/hashicorp-tools:0.5.162', // Version managed by updatecli
     runTests: false, // Executes the tests provided by the "calling" project, which should provide a tests/Makefile
     runCommonTests: true, // Executes the default test suite from the shared tools repository (terratest)
   ]
@@ -147,6 +147,18 @@ def agentTemplate(containerImage, body) {
       kind: Pod
       spec:
         automountServiceAccountToken: false
+        nodeSelector:
+          kubernetes.azure.com/agentpool: infracipool
+          kubernetes.io/os: linux
+        tolerations:
+        - key: "jenkins"
+          operator: "Equal"
+          value: "infra.ci.jenkins.io"
+          effect: "NoSchedule"
+        - key: "kubernetes.azure.com/scalesetpriority"
+          operator: "Equal"
+          value: "spot"
+          effect: "NoSchedule"
       resources:
         limits:
           cpu: 2
