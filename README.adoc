@@ -118,6 +118,11 @@ buildPluginWithGradle(/*...*/, configurations: [
 
 * `tests`: (default: `null`) - a map of parameters to run tests during the build
 ** `skip` - If `true`, skip all the tests.
+* `jacoco`: (default: `null`) - a map of parameters to change the default configuration of the `recordCoverage` step of the https://github.com/jenkinsci/code-coverage-api-plugin[Code Coverage Plugin]. This step is called after a plugin build to record the code coverage results of JaCoCo. See https://www.jenkins.io/doc/pipeline/steps/code-coverage-api/#recordcoverage-record-code-coverage-results[recordCoverage step documentation] for a list of available configuration parameters.
+* `spotbugs`, `checkstyle`: (default: `null`) - a map of parameters to archive SpotBugs or CheckStyle warnings, respectively.
+These values can replace or amend the default configuration for the `recordIssues` step of the https://github.com/jenkinsci/warnings-ng-plugin[Warnings NG Plugin].
+See https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration[Warnings NG Plugin documentation]
+for a list of available configuration parameters.
 * `timeout`: (default: `60`) - the number of minutes for build timeout, cannot be bigger than 180, i.e. 3 hours.
 
 ==== Limitations
@@ -126,7 +131,6 @@ Not all features of `buildPlugin()` for Maven are supported in the gradle flow.
 Examples of not supported features:
 
 * Deployment of incremental versions (link:https://github.com/jenkinsci/jep/tree/master/jep/305[JEP-305])
-* Publishing of static analysis and coverage reports (Checkstyle, SpotBugs, JaCoCo)
 * Configuring `jenkinsVersion` for the build flow (as standalone arguments or as `configurations`)
 * Usage of link:https://azure.microsoft.com/en-us/services/container-instances/[Azure Container Instances] as agents (only Maven agents are configured)
 
