@@ -40,7 +40,7 @@ def call(Map params = [:]) {
           }
 
           String m2repo
-          String changelist
+          List<String> changelist
 
           stage("Build (${stageIdentifier})") {
             m2repo = "${pwd tmp: true}/m2repo"
@@ -112,7 +112,7 @@ def call(Map params = [:]) {
   }
 }
 
-def tryGenerateVersion(String jdk) {
+List<String> tryGenerateVersion(String jdk) {
   try {
     def changelistF = "${pwd tmp: true}/changelist"
     infra.runWithJava(infra.gradleCommand([
@@ -125,7 +125,7 @@ def tryGenerateVersion(String jdk) {
     ]), jdk)
     def version = readFile(changelistF).readLines()
     // We have a formatted version and a full git hash
-    return version.size() == 2 && version[0] ==~ /(.*-)?(rc[0-9]+\..*)/ && version[1] ==~ /[a-f0-9]{40}/ ? version : null
+    return (version.size() == 2 && version[0] ==~ /(.*-)?(rc[0-9]+\..*)/ && version[1] ==~ /[a-f0-9]{40}/) ? version : null
   } catch (Exception e) {
     echo "Could not generate incremental version, proceeding with non incremental version build."
     return null

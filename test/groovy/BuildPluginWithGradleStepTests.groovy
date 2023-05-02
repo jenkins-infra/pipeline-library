@@ -85,7 +85,7 @@ class BuildPluginWithGradleStepTests extends BaseTest {
   void test_buildPluginWithGradle_with_incrementals_by_default() throws Exception {
     def mockInfra = new Infra()
     binding.setProperty('infra', mockInfra)
-    helper.addReadFileMock('/bar/changelist', 'rc1.f31b_e011f24d\nf31be011f24dd9d36d918c1f8314a6b2400a6b18')
+    helper.addReadFileMock('/bar/changelist', String.format("rc1.f31b_e011f24d%nf31be011f24dd9d36d918c1f8314a6b2400a6b18"))
     def script = loadScript(scriptName)
 
     script.call()
