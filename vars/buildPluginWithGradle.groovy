@@ -24,6 +24,7 @@ def call(Map params = [:]) {
     String jenkinsVersion = config.jenkins
 
     String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
+    boolean first = tasks.size() == 1
     boolean skipTests = params?.tests?.skip
 
     tasks[stageIdentifier] = {
@@ -84,72 +85,76 @@ def call(Map params = [:]) {
             if (failFast && currentBuild.result == 'UNSTABLE') {
               error 'There were test failures; halting early'
             }
-            echo "Recording static analysis results on '${stageIdentifier}'"
+            if (first) {
+              echo "Recording static analysis results on '${stageIdentifier}'"
 
-            recordIssues(
-                enabledForFailure: true,
-                tools: [java(), javaDoc()],
-                filters: [excludeFile('.*Assert.java')],
+              recordIssues(
+                  enabledForFailure: true,
+                  tools: [java(), javaDoc()],
+                  filters: [excludeFile('.*Assert.java')],
+                  sourceCodeEncoding: 'UTF-8',
+                  skipBlames: true,
+                  trendChartType: 'TOOLS_ONLY'
+                  )
+
+              // Default configuration for SpotBugs can be overwritten using a `spotbugs`, `checkstyle', etc. parameter (map).
+              // Configuration see: https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration
+              Map spotbugsArguments = [tool: spotBugs(pattern: '**/build/reports/spotbugs/*.xml'),
                 sourceCodeEncoding: 'UTF-8',
                 skipBlames: true,
-                trendChartType: 'TOOLS_ONLY'
-                )
-
-            // Default configuration for SpotBugs can be overwritten using a `spotbugs`, `checkstyle', etc. parameter (map).
-            // Configuration see: https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration
-            Map spotbugsArguments = [tool: spotBugs(pattern: '**/build/reports/spotbugs/*.xml'),
-              sourceCodeEncoding: 'UTF-8',
-              skipBlames: true,
-              trendChartType: 'TOOLS_ONLY',
-              qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]]
-            if (params?.spotbugs) {
-              spotbugsArguments.putAll(params.spotbugs as Map)
-            }
-            recordIssues spotbugsArguments
-
-            Map checkstyleArguments = [tool: checkStyle(pattern: '**/build/reports/checkstyle/*.xml'),
-              sourceCodeEncoding: 'UTF-8',
-              skipBlames: true,
-              trendChartType: 'TOOLS_ONLY',
-              qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]]]
-            if (params?.checkstyle) {
-              checkstyleArguments.putAll(params.checkstyle as Map)
-            }
-            recordIssues checkstyleArguments
-
-            Map jacocoArguments = [tools: [[parser: 'JACOCO', pattern: '**/build/reports/jacoco/**/*.xml']], sourceCodeRetention: 'MODIFIED']
-            if (params?.jacoco) {
-              jacocoArguments.putAll(params.jacoco as Map)
-            }
-            recordCoverage jacocoArguments
-
-
-            recordIssues(
-                enabledForFailure: true, tool: taskScanner(
-                includePattern:'**/*.java',
-                excludePattern:'**/build/**',
-                highTags:'FIXME',
-                normalTags:'TODO'),
-                sourceCodeEncoding: 'UTF-8',
-                skipBlames: true,
-                trendChartType: 'NONE'
-                )
-            if (failFast && currentBuild.result == 'UNSTABLE') {
-              error 'Static analysis quality gates not passed; halting early'
-            }
-
-            if (doArchiveArtifacts) {
-              if (changelist) {
-                dir(m2repo) {
-                  fingerprint '**/*-rc*.*/*-rc*.*' // includes any incrementals consumed
-                  archiveArtifacts artifacts: "**/*${changelist[0]}/*${changelist[0]}*",
-                  excludes: '**/*.lastUpdated',
-                  allowEmptyArchive: true // in case we forgot to reincrementalify
-                }
-                publishingIncrementals = true
-              } else {
-                archiveArtifacts artifacts: '**/build/libs/*.hpi,**/build/libs/*.jpi', fingerprint: true, allowEmptyArchive: true
+                trendChartType: 'TOOLS_ONLY',
+                qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]]
+              if (params?.spotbugs) {
+                spotbugsArguments.putAll(params.spotbugs as Map)
               }
+              recordIssues spotbugsArguments
+
+              Map checkstyleArguments = [tool: checkStyle(pattern: '**/build/reports/checkstyle/*.xml'),
+                sourceCodeEncoding: 'UTF-8',
+                skipBlames: true,
+                trendChartType: 'TOOLS_ONLY',
+                qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]]]
+              if (params?.checkstyle) {
+                checkstyleArguments.putAll(params.checkstyle as Map)
+              }
+              recordIssues checkstyleArguments
+
+              Map jacocoArguments = [tools: [[parser: 'JACOCO', pattern: '**/build/reports/jacoco/**/*.xml']], sourceCodeRetention: 'MODIFIED']
+              if (params?.jacoco) {
+                jacocoArguments.putAll(params.jacoco as Map)
+              }
+              recordCoverage jacocoArguments
+
+
+              recordIssues(
+                  enabledForFailure: true, tool: taskScanner(
+                  includePattern:'**/*.java',
+                  excludePattern:'**/build/**',
+                  highTags:'FIXME',
+                  normalTags:'TODO'),
+                  sourceCodeEncoding: 'UTF-8',
+                  skipBlames: true,
+                  trendChartType: 'NONE'
+                  )
+              if (failFast && currentBuild.result == 'UNSTABLE') {
+                error 'Static analysis quality gates not passed; halting early'
+              }
+
+              if (doArchiveArtifacts) {
+                if (changelist) {
+                  dir(m2repo) {
+                    fingerprint '**/*-rc*.*/*-rc*.*' // includes any incrementals consumed
+                    archiveArtifacts artifacts: "**/*${changelist[0]}/*${changelist[0]}*",
+                    excludes: '**/*.lastUpdated',
+                    allowEmptyArchive: true // in case we forgot to reincrementalify
+                  }
+                  publishingIncrementals = true
+                } else {
+                  archiveArtifacts artifacts: '**/build/libs/*.hpi,**/build/libs/*.jpi', fingerprint: true, allowEmptyArchive: true
+                }
+              }
+            } else {
+              echo "Skipping static analysis results for ${stageIdentifier}"
             }
           }
         }
