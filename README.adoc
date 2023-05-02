@@ -124,8 +124,7 @@ These values can replace or amend the default configuration for the `recordIssue
 See https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration[Warnings NG Plugin documentation]
 for a list of available configuration parameters.
 * `timeout`: (default: `60`) - the number of minutes for build timeout, cannot be bigger than 180, i.e. 3 hours.
-* `incrementals`: (default: `false`) - activates incremental versions publication. It requires Gradle JPI Plugin 0.49.0 and to not
-have set a version in `build.gradle` (having it in gradle.properties is fine), so it can be overridden.
+* `noIncrementals`: (default: `false`) - de-activates incremental version publication (by default generating a Git version based will be attempted).
 
 ==== Limitations
 
