@@ -91,7 +91,7 @@ def call(Map params = [:]) {
               if (changelist) {
                 dir(m2repo) {
                   fingerprint '**/*-rc*.*/*-rc*.*' // includes any incrementals consumed
-                  archiveArtifacts artifacts: "**/*$changelist/*$changelist*",
+                  archiveArtifacts artifacts: "**/*${changelist[0]}/*${changelist[0]}*",
                   excludes: '**/*.lastUpdated',
                   allowEmptyArchive: true // in case we forgot to reincrementalify
                 }
