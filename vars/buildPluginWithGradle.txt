@@ -4,7 +4,7 @@
 <p>
     The implementation follows the standard build/test/archive pattern. 
     Note that the Gradle flow for Jenkins plugins offers less functionality than the Maven flow,
-    some key features are not supported: Incrementals - JEP-305, standard static analysis flows, etc.
+    some key features are not supported: Incrementals - JEP-305, etc.
     The current version also does not allow configuring the <code>jenkinsVersion</code>.
 </p>
 
