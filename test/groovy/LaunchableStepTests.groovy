@@ -36,7 +36,7 @@ class LaunchableStepTests extends BaseTest {
         python.exe -m pip --no-cache-dir install --upgrade setuptools wheel pip
         python.exe -m pip --no-cache-dir install launchable
         '''.stripIndent())
-    )
+        )
 
     // swallowing any errors that might occur
     assertTrue(assertMethodCall('catchError'))
@@ -66,7 +66,7 @@ class LaunchableStepTests extends BaseTest {
         python.exe -m pip --no-cache-dir install --upgrade setuptools wheel pip
         python.exe -m pip --no-cache-dir install launchable
         '''.stripIndent())
-    )
+        )
 
     // swallowing any errors that might occur
     assertTrue(assertMethodCall('catchError'))
