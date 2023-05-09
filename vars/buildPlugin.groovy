@@ -280,7 +280,6 @@ def call(Map params = [:]) {
                    * plugins currently in the BOM are incrementalified.
                    */
                   if (incrementals && currentBuild.currentResult == 'SUCCESS') {
-                    launchable.install()
                     withCredentials([string(credentialsId: 'launchable-jenkins-bom', variable: 'LAUNCHABLE_TOKEN')]) {
                       launchable('verify')
                       launchable('record commit')
