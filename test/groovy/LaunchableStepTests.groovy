@@ -41,7 +41,7 @@ class LaunchableStepTests extends BaseTest {
     // swallowing any errors that might occur
     assertTrue(assertMethodCall('catchError'))
     // then it notices that Launchable is already installed
-    assertTrue(assertMethodCallContainsPattern('echo', 'NOTICE: Launchable is already installed.'))
+    assertTrue(assertMethodCallContainsPattern('echo', 'DEPRECATION NOTICE: Launchable is already installed, no need to run "launchable.install"'))
     assertJobStatusSuccess()
   }
 
@@ -71,7 +71,7 @@ class LaunchableStepTests extends BaseTest {
     // swallowing any errors that might occur
     assertTrue(assertMethodCall('catchError'))
     // then it does not notice that Launchable is already installed
-    assertFalse(assertMethodCallContainsPattern('echo', 'NOTICE: Launchable is already installed.'))
+    assertFalse(assertMethodCallContainsPattern('echo', 'DEPRECATION NOTICE: Launchable is already installed, no need to run "launchable.install"'))
     assertJobStatusSuccess()
   }
 

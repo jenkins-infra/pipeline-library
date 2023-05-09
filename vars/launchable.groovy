@@ -14,7 +14,7 @@ def install() {
     }
   } else {
     catchError(buildResult: 'SUCCESS', catchInterruptions: false, message: 'Failed to install Launchable; continuing build.') {
-      if (bat(script: 'launchable --version 2>NUL || echo "NOT_INSTALLED"', returnStdout: true) == 'NOT_INSTALLED') {
+      if (bat(script: 'python -m launchable -version 2>NUL || echo "NOT_INSTALLED"', returnStdout: true) == 'NOT_INSTALLED') {
         bat '''
             python.exe -m pip --no-cache-dir install --upgrade setuptools wheel pip
             python.exe -m pip --no-cache-dir install launchable
@@ -24,7 +24,7 @@ def install() {
     }
   }
   if (alreadyInstalled) {
-    echo 'NOTICE: Launchable is already installed.'
+    echo 'DEPRECATION NOTICE: Launchable is already installed, no need to run "launchable.install"'
   }
 }
 
@@ -35,7 +35,9 @@ def call(String args) {
     }
   } else {
     catchError(buildResult: 'SUCCESS', catchInterruptions: false, message: 'Failed to run Launchable; continuing build.') {
-      bat 'launchable ' + args
+      // Avoid logging the errors due to Nano server used in docker-inbound-agent
+      // TODO remove ' 2>NUL' when switching to Windows Server images instead of Nano Server images
+      bat 'python -m launchable ' + args + ' 2>NUL'
     }
   }
 }
