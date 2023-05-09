@@ -58,8 +58,8 @@ def call(Map params = [:]) {
           label = 'vm && linux'
           break
         default:
-          echo "WARNING: Unknown platform '${platform}'. Agent label set to fallback value 'linux'"
-          label = 'linux'
+          echo "WARNING: Unknown Virtual Machine platform '${platform}'. Set useContainerAgent to 'true' unless you want to be in uncharted territory."
+          label = platform
       }
     }
 
