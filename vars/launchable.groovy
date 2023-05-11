@@ -45,6 +45,9 @@ def call(String args) {
       echo 'Failed to run Launchable; continuing build.'
     } finally {
       def errorsCount = Integer.parseInt(pwsh(script: "(Get-Content $launchableStderrFile).Length", returnStdout: true).trim())
+      // Log only if there are more than the two errors "pythoncom error: CoInitializeEx failed (0x80004001)" & "pythoncom error: OLE initialization failed! (0x80004005)"
+      // due to Nano Server used in docker-inbound-agent
+      // TODO rework when switching to Windows Server images instead of Nano Server images
       if (errorsCount > 2) {
         echo 'Launchable errors log below; continuing build.'
         pwsh "(Get-Content launchable.stderr | Select-Object -Skip 2)"
