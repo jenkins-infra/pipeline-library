@@ -37,6 +37,10 @@ class Infra implements Serializable {
     }
   }
 
+  String gradleCommand(List<String> gradleOptions) {
+    return "gradlew ${gradleOptions.join(' ')}"
+  }
+
   public boolean isTrusted() {
     return trusted
   }
