@@ -44,8 +44,8 @@ def call(String args) {
       currentBuild.result = 'SUCCESS'
       echo 'Failed to run Launchable; continuing build.'
     } finally {
-      def errorsCount = pwsh(script: "(Get-Content $launchableStderrFile).Length", returnStdout: true)
-      echo "laucnhable errors count: $errorsCount"
+      def errorsCount = Integer.parseInt(pwsh(script: "(Get-Content $launchableStderrFile | Select-Object -Skip 2) | Set-Content $launchableStderrFile; (Get-Content $launchableStderrFile).Length", returnStdout: true))
+      echo "launchable errors count: $errorsCount"
       if (errorsCount > 2) {
         echo 'Launchable errors log (please ignore the two first lines); continuing build.'
         bat 'type ' + launchableStderrFile
