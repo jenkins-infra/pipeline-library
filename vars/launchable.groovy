@@ -34,10 +34,22 @@ def call(String args) {
       sh 'launchable ' + args
     }
   } else {
-    catchError(buildResult: 'SUCCESS', catchInterruptions: false, message: 'Failed to run Launchable; continuing build.') {
+    def launchableStderrFile = 'launchable.stderr'
+    try {
       // Avoid logging the errors due to Nano server used in docker-inbound-agent
-      // TODO remove ' 2>NUL' when switching to Windows Server images instead of Nano Server images
-      bat 'python -m launchable ' + args + ' 2>NUL'
+      // TODO remove the error redirection and the use of python to run launchable when switching to Windows Server images instead of Nano Server images
+      bat 'python -m launchable ' + args + ' 2>' + launchableStderrFile
+    } catch (err) {
+      echo "Caught: ${err}"
+      currentBuild.result = 'SUCCESS'
+      echo 'Failed to run Launchable; continuing build.'
+    } finally {
+      def errorsCount = bat(script: 'type ' + launchableStderrFile + ' | find /c /v ""', returnStdout: true)
+      echo "laucnhable errors count: $errorsCount"
+      if (errorsCount > 2) {
+        echo 'Launchable errors log (please ignore the two first lines); continuing build.'
+        bat 'type ' + launchableStderrFile
+      }
     }
   }
 }
