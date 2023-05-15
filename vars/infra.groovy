@@ -277,6 +277,14 @@ Object runWithJava(String command, String jdk = '8', List<String> extraEnv = nul
   }
 }
 
+String gradleCommand(List<String> gradleOptions) {
+  String command = "gradlew ${gradleOptions.join(' ')}"
+  if (isUnix()) {
+    command = "./" + command
+  }
+  return command
+}
+
 /**
  * Make sure the code block is run in a node with the all the specified nodeLabels as labels, if already running in that
  * it simply executes the code block, if not allocates the desired node and runs the code inside it
