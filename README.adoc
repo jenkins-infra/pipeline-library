@@ -124,13 +124,13 @@ These values can replace or amend the default configuration for the `recordIssue
 See https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration[Warnings NG Plugin documentation]
 for a list of available configuration parameters.
 * `timeout`: (default: `60`) - the number of minutes for build timeout, cannot be bigger than 180, i.e. 3 hours.
+* `noIncrementals`: (default: `false`) - de-activates incremental version publication.
 
 ==== Limitations
 
 Not all features of `buildPlugin()` for Maven are supported in the gradle flow.
 Examples of not supported features:
 
-* Deployment of incremental versions (link:https://github.com/jenkinsci/jep/tree/master/jep/305[JEP-305])
 * Configuring `jenkinsVersion` for the build flow (as standalone arguments or as `configurations`)
 * Usage of link:https://azure.microsoft.com/en-us/services/container-instances/[Azure Container Instances] as agents (only Maven agents are configured)
 

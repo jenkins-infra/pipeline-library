@@ -14,6 +14,7 @@ def call(Map params = [:]) {
     timeoutValue = 180
   }
 
+  def incrementals = !params.containsKey('noIncrementals')
   boolean publishingIncrementals = false
   boolean archivedArtifacts = false
   Map tasks = [failFast: failFast]
@@ -23,6 +24,7 @@ def call(Map params = [:]) {
     String jenkinsVersion = config.jenkins
 
     String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
+    boolean first = tasks.size() == 1
     boolean skipTests = params?.tests?.skip
 
     tasks[stageIdentifier] = {
@@ -38,7 +40,11 @@ def call(Map params = [:]) {
             infra.checkoutSCM(repo)
           }
 
+          String m2repo
+          List<String> changelist
+
           stage("Build (${stageIdentifier})") {
+            m2repo = "${pwd tmp: true}/m2repo"
             if (config.containsKey('javaLevel')) {
               infra.publishDeprecationCheck('Remove javaLevel', 'Ignoring deprecated "javaLevel" parameter. This parameter should be removed from your "Jenkinsfile".')
             }
@@ -46,17 +52,28 @@ def call(Map params = [:]) {
             if (jenkinsVersion) {
               infra.publishDeprecationCheck('Remove jenkinsVersion', 'The "jenkinsVersion" parameter is not supported in buildPluginWithGradle(). It will be ignored.')
             }
-            infra.publishDeprecationCheck('Migrate from Gradle to Maven', 'The Jenkins project offers only partial support for building plugins with Gradle and "gradle-jpi-plugin". The Jenkins project offers full support only for building plugins with Maven and "maven-hpi-plugin".')
             List<String> gradleOptions = ['--no-daemon', 'cleanTest', 'build']
             if (skipTests) {
               gradleOptions += '--exclude-task test'
             }
-            String command = "gradlew ${gradleOptions.join(' ')}"
-            if (isUnix()) {
-              command = "./" + command
+
+            if (incrementals) {
+              changelist = tryGenerateVersion(jdk)
             }
             try {
-              infra.runWithJava(command, jdk)
+              if (changelist) {
+                // assumes the project does not set its own version in build.gradle with `version=foo`, it can be set
+                // in gradle.properties though.
+                infra.runWithJava(infra.gradleCommand([
+                  *gradleOptions,
+                  'publishToMavenLocal',
+                  "-Dmaven.repo.local=$m2repo",
+                  "-Pversion=${changelist[0]}",
+                  "-PscmTag=${changelist[1]}"
+                ]), jdk)
+              } else {
+                infra.runWithJava(infra.gradleCommand(gradleOptions), jdk)
+              }
             } finally {
               if (!skipTests) {
                 junit('**/build/test-results/**/*.xml')
@@ -68,62 +85,76 @@ def call(Map params = [:]) {
             if (failFast && currentBuild.result == 'UNSTABLE') {
               error 'There were test failures; halting early'
             }
-            echo "Recording static analysis results on '${stageIdentifier}'"
+            if (first) {
+              echo "Recording static analysis results on '${stageIdentifier}'"
 
-            recordIssues(
-                enabledForFailure: true,
-                tools: [java(), javaDoc()],
-                filters: [excludeFile('.*Assert.java')],
+              recordIssues(
+                  enabledForFailure: true,
+                  tools: [java(), javaDoc()],
+                  filters: [excludeFile('.*Assert.java')],
+                  sourceCodeEncoding: 'UTF-8',
+                  skipBlames: true,
+                  trendChartType: 'TOOLS_ONLY'
+                  )
+
+              // Default configuration for SpotBugs can be overwritten using a `spotbugs`, `checkstyle', etc. parameter (map).
+              // Configuration see: https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration
+              Map spotbugsArguments = [tool: spotBugs(pattern: '**/build/reports/spotbugs/*.xml'),
                 sourceCodeEncoding: 'UTF-8',
                 skipBlames: true,
-                trendChartType: 'TOOLS_ONLY'
-                )
+                trendChartType: 'TOOLS_ONLY',
+                qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]]
+              if (params?.spotbugs) {
+                spotbugsArguments.putAll(params.spotbugs as Map)
+              }
+              recordIssues spotbugsArguments
 
-            // Default configuration for SpotBugs can be overwritten using a `spotbugs`, `checkstyle', etc. parameter (map).
-            // Configuration see: https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration
-            Map spotbugsArguments = [tool: spotBugs(pattern: '**/build/reports/spotbugs/*.xml'),
-              sourceCodeEncoding: 'UTF-8',
-              skipBlames: true,
-              trendChartType: 'TOOLS_ONLY',
-              qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]]
-            if (params?.spotbugs) {
-              spotbugsArguments.putAll(params.spotbugs as Map)
-            }
-            recordIssues spotbugsArguments
-
-            Map checkstyleArguments = [tool: checkStyle(pattern: '**/build/reports/checkstyle/*.xml'),
-              sourceCodeEncoding: 'UTF-8',
-              skipBlames: true,
-              trendChartType: 'TOOLS_ONLY',
-              qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]]]
-            if (params?.checkstyle) {
-              checkstyleArguments.putAll(params.checkstyle as Map)
-            }
-            recordIssues checkstyleArguments
-
-            Map jacocoArguments = [tools: [[parser: 'JACOCO', pattern: '**/build/reports/jacoco/**/*.xml']], sourceCodeRetention: 'MODIFIED']
-            if (params?.jacoco) {
-              jacocoArguments.putAll(params.jacoco as Map)
-            }
-            recordCoverage jacocoArguments
-
-
-            recordIssues(
-                enabledForFailure: true, tool: taskScanner(
-                includePattern:'**/*.java',
-                excludePattern:'**/build/**',
-                highTags:'FIXME',
-                normalTags:'TODO'),
+              Map checkstyleArguments = [tool: checkStyle(pattern: '**/build/reports/checkstyle/*.xml'),
                 sourceCodeEncoding: 'UTF-8',
                 skipBlames: true,
-                trendChartType: 'NONE'
-                )
-            if (failFast && currentBuild.result == 'UNSTABLE') {
-              error 'Static analysis quality gates not passed; halting early'
-            }
+                trendChartType: 'TOOLS_ONLY',
+                qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]]]
+              if (params?.checkstyle) {
+                checkstyleArguments.putAll(params.checkstyle as Map)
+              }
+              recordIssues checkstyleArguments
 
-            if (doArchiveArtifacts) {
-              archiveArtifacts artifacts: '**/build/libs/*.hpi,**/build/libs/*.jpi', fingerprint: true, allowEmptyArchive: true
+              Map jacocoArguments = [tools: [[parser: 'JACOCO', pattern: '**/build/reports/jacoco/**/*.xml']], sourceCodeRetention: 'MODIFIED']
+              if (params?.jacoco) {
+                jacocoArguments.putAll(params.jacoco as Map)
+              }
+              recordCoverage jacocoArguments
+
+
+              recordIssues(
+                  enabledForFailure: true, tool: taskScanner(
+                  includePattern:'**/*.java',
+                  excludePattern:'**/build/**',
+                  highTags:'FIXME',
+                  normalTags:'TODO'),
+                  sourceCodeEncoding: 'UTF-8',
+                  skipBlames: true,
+                  trendChartType: 'NONE'
+                  )
+              if (failFast && currentBuild.result == 'UNSTABLE') {
+                error 'Static analysis quality gates not passed; halting early'
+              }
+
+              if (doArchiveArtifacts) {
+                if (changelist) {
+                  dir(m2repo) {
+                    fingerprint '**/*-rc*.*/*-rc*.*' // includes any incrementals consumed
+                    archiveArtifacts artifacts: "**/*${changelist[0]}/*${changelist[0]}*",
+                    excludes: '**/*.lastUpdated',
+                    allowEmptyArchive: true // in case we forgot to reincrementalify
+                  }
+                  publishingIncrementals = true
+                } else {
+                  archiveArtifacts artifacts: '**/build/libs/*.hpi,**/build/libs/*.jpi', fingerprint: true, allowEmptyArchive: true
+                }
+              }
+            } else {
+              echo "Skipping static analysis results for ${stageIdentifier}"
             }
           }
         }
@@ -132,4 +163,27 @@ def call(Map params = [:]) {
   }
 
   parallel(tasks)
+  if (publishingIncrementals) {
+    infra.maybePublishIncrementals()
+  }
+}
+
+List<String> tryGenerateVersion(String jdk) {
+  try {
+    def changelistF = "${pwd tmp: true}/changelist"
+    infra.runWithJava(infra.gradleCommand([
+      '--no-daemon',
+      'cleanTest',
+      'generateGitVersion',
+      "-PgitVersionFile=${changelistF}",
+      "-PgitVersionFormat=rc%d.%s",
+      '-PgitVersionSanitize=true'
+    ]), jdk)
+    def version = readFile(changelistF).readLines()
+    // We have a formatted version and a full git hash
+    return (version.size() == 2 && version[0] ==~ /(.*-)?(rc[0-9]+\..*)/ && version[1] ==~ /[a-f0-9]{40}/) ? version : null
+  } catch (Exception e) {
+    echo "Could not generate incremental version, proceeding with non incremental version build."
+    return null
+  }
 }
