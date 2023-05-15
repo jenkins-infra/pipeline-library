@@ -62,7 +62,7 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>scm-api</artifactId>
-      <version>631.v9143df5b_e4a_a</version>
+      <version>667.v8b_6e07cdc7f2</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
