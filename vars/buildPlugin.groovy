@@ -279,10 +279,14 @@ def call(Map params = [:]) {
                    * plugins' PR builds could not be consumed by anything else anyway, and all
                    * plugins currently in the BOM are incrementalified.
                    */
-                  if (incrementals && currentBuild.currentResult == 'SUCCESS') {
+                  if (incrementals && currentBuild.currentResult == 'SUCCESS' && useContainerAgent) {
                     withCredentials([string(credentialsId: 'launchable-jenkins-bom', variable: 'LAUNCHABLE_TOKEN')]) {
-                      launchable('verify')
-                      launchable('record commit')
+                      if (isUnix()) {
+                        sh 'launchable verify && launchable record commit'
+                      } else {
+                        // TODO launchable.exe still not working for some reason
+                        bat 'python -m launchable verify && python -m launchable record commit'
+                      }
                     }
                   }
                 } else {
