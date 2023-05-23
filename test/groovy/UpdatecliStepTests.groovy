@@ -65,25 +65,6 @@ class UpdatecliStepTests extends BaseTest {
   }
 
   @Test
-  void itRunSuccessfullyWithCustomActionAndDebugOptionActivated() throws Exception {
-    def script = loadScript(scriptName)
-
-    // when calling the "updatecli" function with a custom action "eat"
-    script.call(action: 'eat', debug: true)
-    printCallStack()
-
-    // Then we expect a successful build
-    assertJobStatusSuccess()
-
-    // And the repository checkouted
-    assertTrue(assertMethodCallContainsPattern('checkout',''))
-
-    // And only the custom command called with default values
-    assertFalse(assertMethodCallContainsPattern('sh','updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml --debug'))
-    assertTrue(assertMethodCallContainsPattern('sh','updatecli eat --config ./updatecli/updatecli.d --values ./updatecli/values.yaml --debug'))
-  }
-
-  @Test
   void itRunSuccessfullyWithCustomConfigAndEmptyValues() throws Exception {
     def script = loadScript(scriptName)
 
@@ -162,5 +143,23 @@ class UpdatecliStepTests extends BaseTest {
 
     // And the custom credentialsId is taken in account
     assertTrue(assertMethodCallContainsPattern('usernamePassword', "credentialsId=${anotherCredentialsId}"))
+  }
+
+  @Test
+  void itRunSuccessfullyWithDebugActivated() throws Exception {
+    def script = loadScript(scriptName)
+
+    // when calling the "updatecli" function with "debug" set to true
+    script.call(debug: true)
+    printCallStack()
+
+    // Then we expect a successful build
+    assertJobStatusSuccess()
+
+    // And the repository checkouted
+    assertTrue(assertMethodCallContainsPattern('checkout',''))
+
+    // And only the custom command called with default values and the debug flag
+    assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml --debug'))
   }
 }
