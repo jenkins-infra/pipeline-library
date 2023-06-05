@@ -1,4 +1,3 @@
----
 name: Bump `hashicorp-tools` docker image
 
 scms:
@@ -47,9 +46,9 @@ targets:
         'jenkinsciinfra/hashicorp-tools:{{ source `dockerHashicorpToolsImageVersion` }}'
     scmid: default
 
-pullrequests:
+actions:
   default:
-    kind: github
+    kind: github/pullrequest
     scmid: default
     title: Bump `hashicorp-tools` docker image to {{ source "dockerHashicorpToolsImageVersion" }}
     spec:

@@ -56,9 +56,9 @@ targets:
       replacepattern: jenkinsciinfra/helmfile:{{ source `lastVersion` }}"
     scmid: default
 
-pullrequests:
+actions:
   default:
-    kind: github
+    kind: github/pullrequest
     title: Bump `docker-helmfile` version to {{ source "lastVersion" }}
     scmid: default
     spec:
