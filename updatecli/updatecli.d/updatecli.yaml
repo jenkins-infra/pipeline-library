@@ -1,4 +1,3 @@
----
 name: Update updatecli version
 
 scms:
@@ -43,9 +42,9 @@ targets:
       key: "jobs.updatecli.steps[1].env.UPDATECLI_VERSION"
     scmid: default
 
-pullrequests:
+actions:
   default:
-    kind: github
+    kind: github/pullrequest
     scmid: default
     title: Update updatecli version to {{ source "latestUpdatecliVersion" }}
     spec:
