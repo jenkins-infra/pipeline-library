@@ -12,8 +12,6 @@ Check link:https://github.com/jenkins-infra/documentation/blob/master/ci.adoc[th
 
 === buildPlugin
 
-WARNING: Gradle support in `buildPlugin()` is deprecated and will be eventually removed. Please use `buildPluginWithGradle()`
-
 Applies the appropriate defaults for building a Maven-based plugin project on
 Linux and Windows.
 
