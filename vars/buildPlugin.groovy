@@ -277,8 +277,7 @@ def call(Map params = [:]) {
                     publishingIncrementals = true
                   } else {
                     String artifacts
-                    artifacts = '**/target/*.hpi,**/target/*.jpi,**/target/*.jar'
-                    archiveArtifacts artifacts: artifacts, fingerprint: true
+                    archiveArtifacts artifacts: '**/target/*.hpi,**/target/*.jpi,**/target/*.jar', fingerprint: true
                   }
                 }
               }
