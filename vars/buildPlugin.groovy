@@ -384,10 +384,3 @@ List<Map<String, String>> getConfigurations(Map params) {
   }
   return ret
 }
-
-/**
- * @deprecated no longer recommended
- */
-static List<Map<String, String>> recommendedConfigurations() {
-  null
-}
