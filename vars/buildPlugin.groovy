@@ -15,10 +15,6 @@ def call(Map params = [:]) {
   def useArtifactCachingProxy = params.containsKey('useArtifactCachingProxy') ? params.useArtifactCachingProxy : true
 
   def useContainerAgent = params.containsKey('useContainerAgent') ? params.useContainerAgent : false
-  if (params.containsKey('useAci')) {
-    infra.publishDeprecationCheck('Replace useAci with useContainerAgent', 'The parameter "useAci" is deprecated. Please use "useContainerAgent" instead as per https://issues.jenkins.io/browse/INFRA-2918.')
-    useContainerAgent = params.containsKey('useAci')
-  }
   if (timeoutValue > 180) {
     echo "Timeout value requested was $timeoutValue, lowering to 180 to avoid Jenkins project's resource abusive consumption"
     timeoutValue = 180
