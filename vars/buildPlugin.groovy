@@ -28,9 +28,6 @@ def call(Map params = [:]) {
     String platform = config.platform
     String jdk = config.jdk
     String jenkinsVersion = config.jenkins
-    if (config.containsKey('javaLevel')) {
-      infra.publishDeprecationCheck('Remove javaLevel', 'Ignoring deprecated "javaLevel" parameter. This parameter should be removed from your "Jenkinsfile".')
-    }
 
     String stageIdentifier = "${platform}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
     boolean first = tasks.size() == 1
