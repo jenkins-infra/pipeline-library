@@ -342,6 +342,14 @@ void prepareToPublishIncrementals() {
  */
 void maybePublishIncrementals() {
   if (new InfraConfig(env).isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
+    if (env.CHANGE_ID == null) {
+      catchError(message: 'Could not check whether repo has enabled CD', buildResult: 'SUCCESS', stageResult: 'UNSTABLE', catchInterruptions: false) {
+        if (readTrusted('.mvn/maven.config').contains('changelist.format')) {
+          echo 'Skipping Incrementals deployment for branch build of CD-enabled repo (helpdesk#3687)'
+          return
+        }
+      }
+    }
     stage('Deploy') {
       withCredentials([string(credentialsId: 'incrementals-publisher-token', variable: 'FUNCTION_TOKEN')]) {
         httpRequest url: 'https://incrementals.jenkins.io/',
