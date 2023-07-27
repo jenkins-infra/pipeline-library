@@ -343,11 +343,13 @@ void prepareToPublishIncrementals() {
 void maybePublishIncrementals() {
   if (new InfraConfig(env).isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
     if (env.CHANGE_ID == null) {
+      def skip
       catchError(message: 'Could not check whether repo has enabled CD', buildResult: 'SUCCESS', stageResult: 'UNSTABLE', catchInterruptions: false) {
-        if (readTrusted('.mvn/maven.config').contains('changelist.format')) {
-          echo 'Skipping Incrementals deployment for branch build of CD-enabled repo (helpdesk#3687)'
-          return
-        }
+        skip = readTrusted('.mvn/maven.config').contains('changelist.format')
+      }
+      if (skip) {
+        echo 'Skipping Incrementals deployment for branch build of CD-enabled repo (helpdesk#3687)'
+        return
       }
     }
     stage('Deploy') {
