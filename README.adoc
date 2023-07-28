@@ -34,6 +34,7 @@ buildPlugin(
 * `repo` (default: `null`  inherit from Multibranch) - custom Git repository to check out
 * `useContainerAgent` (default: `false`) - uses a link:https://github.com/jenkins-infra/documentation/blob/main/ci.adoc#container-agents[Container agent] instead of a Virtual Machine: usually faster to start and generates less costs for the project
 ** Please note that the implementation of "containers" can be changed over time
+* `forkCount` (default: null) - Execute tests with `forkCount` Java virtual machines. Common values include `0.45C`, `1`, `2`, and `1C`.
 * `failFast` (default: `true`) - instruct Maven tests to fail fast
 * `platforms` (default: `['linux', 'windows']`) - Labels matching platforms to
   execute the steps against in parallel
