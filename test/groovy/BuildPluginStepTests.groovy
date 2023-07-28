@@ -149,6 +149,28 @@ class BuildPluginStepTests extends BaseTest {
   }
 
   @Test
+  void test_buildPlugin_with_forkCount() throws Exception {
+    def script = loadScript(scriptName)
+    // Run with forkCount=1C
+    script.call([forkCount: '1C'])
+    printCallStack()
+    // and confirm expected message is output
+    assertTrue(assertMethodCallContainsPattern('echo', 'Running parallel tests with forkCount'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_without_forkCount() throws Exception {
+    def script = loadScript(scriptName)
+    // Run without forkCount
+    script.call()
+    printCallStack()
+    // and confirm forkCount message is not output
+    assertFalse(assertMethodCallContainsPattern('echo', 'Running parallel tests with forkCount'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
   void test_buildPlugin_with_customplatforms() throws Exception {
     def script = loadScript(scriptName)
     // when running with useContainerAgent set to true
