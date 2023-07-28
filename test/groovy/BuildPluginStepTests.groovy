@@ -81,7 +81,7 @@ class BuildPluginStepTests extends BaseTest {
     def script = loadScript(scriptName)
     def configurations = script.getConfigurations(platforms: ['bar', 'foo'])
     println configurations
-    assertEquals(configurations.size, 2)
+    assertEquals(configurations.size(), 2)
     assertNotNull(configurations.find {it.platform.equals('bar')})
     assertNotNull(configurations.find {it.platform.equals('foo')})
     printCallStack()
@@ -92,7 +92,7 @@ class BuildPluginStepTests extends BaseTest {
   void test_getConfigurations_implicit_with_jenkinsVersions() throws Exception {
     def script = loadScript(scriptName)
     def configurations = script.getConfigurations(jenkinsVersions: ['1.x', '2.x'])
-    assertEquals(configurations.size, 4)
+    assertEquals(configurations.size(), 4)
     assertNotNull(configurations.find{it.jenkins.equals('1.x')})
     assertNotNull(configurations.find{it.jenkins.equals('2.x')})
     printCallStack()
@@ -103,7 +103,7 @@ class BuildPluginStepTests extends BaseTest {
   void test_getConfigurations_implicit_with_jdkVersions() throws Exception {
     def script = loadScript(scriptName)
     def configurations = script.getConfigurations(jdkVersions: ['1.4', '1.3'])
-    assertEquals(configurations.size, 4)
+    assertEquals(configurations.size(), 4)
     assertNotNull(configurations.find{it.jdk.equals('1.4')})
     assertNotNull(configurations.find{it.jdk.equals('1.3')})
     printCallStack()
