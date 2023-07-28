@@ -15,6 +15,10 @@ def call(Map params = [:]) {
   def useArtifactCachingProxy = params.containsKey('useArtifactCachingProxy') ? params.useArtifactCachingProxy : true
 
   def useContainerAgent = params.containsKey('useContainerAgent') ? params.useContainerAgent : false
+  def forkCount = params.containsKey('forkCount') ? params.forkCount : null
+  if (forkCount) {
+    echo "Running parallel tests with forkCount=${forkCount}"
+  }
   if (timeoutValue > 180) {
     echo "Timeout value requested was $timeoutValue, lowering to 180 to avoid Jenkins project's resource abusive consumption"
     timeoutValue = 180
@@ -127,6 +131,9 @@ def call(Map params = [:]) {
                 }
                 if (skipTests) {
                   mavenOptions += '-DskipTests'
+                }
+                if (forkCount) {
+                  mavenOptions += "-DforkCount=${forkCount}"
                 }
                 mavenOptions += 'clean install'
                 def pit = params?.pit as Map ?: [:]
