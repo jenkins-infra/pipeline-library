@@ -384,15 +384,15 @@ void updateDockerHubReadme(String repository, String fullDescription, String sho
     String token
     if (isUnix()) {
     // Retrieve a token
-      token = sh(script: "curl --silent -X POST 'https://hub.docker.com/v2/users/login/' -H 'Content-Type: application/json' -d '{\"username\":\"$DOCKER_CONFIG_USR\",\"password\":\"$DOCKER_CONFIG_PSW\"}' | jq -r '.token'", returnStdout: true).trim()
+      token = sh(script: "curl --silent -X POST 'https://hub.docker.com/v2/users/login/' --header 'Content-Type: application/json' --data '{\"username\":\"$DOCKER_CONFIG_USR\",\"password\":\"$DOCKER_CONFIG_PSW\"}' | jq -r '.token'", returnStdout: true).trim()
       // Update Docker Hub README
-      sh "curl -X PATCH 'https://hub.docker.com/v2/repositories/${repository}/' -H 'Authorization: JWT ${token}' -H 'Content-Type: application/json' --data '${data}'"
+      sh "curl -X PATCH 'https://hub.docker.com/v2/repositories/${repository}/' --header 'Authorization: JWT ${token}' --header 'Content-Type: application/json' --data '${data}'"
 
     } else {
       // Retrieve a token
-      token = powershell(script: "curl --silent -X POST 'https://hub.docker.com/v2/users/login/' -H 'Content-Type: application/json' -d '{\"username\":\"$env:DOCKER_CONFIG_USR\",\"password\":\"$env:DOCKER_CONFIG_PSW\"}' | jq -r '.token'", returnStdout: true).trim()
+      token = powershell(script: "curl --silent -X POST 'https://hub.docker.com/v2/users/login/' --header 'Content-Type: application/json' --data '{\"username\":\"$env:DOCKER_CONFIG_USR\",\"password\":\"$env:DOCKER_CONFIG_PSW\"}' | jq -r '.token'", returnStdout: true).trim()
       // Update Docker Hub README
-      powershell "curl -X PATCH 'https://hub.docker.com/v2/repositories/${repository}/' -H 'Authorization: JWT ${token}' -H 'Content-Type: application/json' --data '${data}'"
+      powershell "curl -X PATCH 'https://hub.docker.com/v2/repositories/${repository}/' --header 'Authorization: JWT ${token}' --header 'Content-Type: application/json' --data '${data}'"
     }
   }
 }
