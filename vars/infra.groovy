@@ -375,11 +375,17 @@ void publishDeprecationCheck(String deprecationSummary, String deprecationMessag
 }
 
 void updateDockerHubReadme(String repository, String fullDescription, String shortDescription = '') {
-  if (shortDescription.lenght > 100) {
-    error("The short description provided is more than 100 characters long.")
+  final FULL_DESCRIPTION_MAX_BYTES = 25000
+  final SHORT_DESCRIPTION_MAX_BYTES = 100
+  if (fullDescription.lenght > FULL_DESCRIPTION_MAX_BYTES) {
+    error("The full description provided is more than the Docker Hub limit of ${FULL_DESCRIPTION_MAX_BYTES} characters long.")
   }
-  String data = "{\"full_description\": \"${fullDescription}\""
-  data += shortDescription ? ", \"description\": \"${shortDescription}\"}" : "}"
+  if (shortDescription.lenght > SHORT_DESCRIPTION_MAX_BYTES) {
+    error("The short description provided is more than the Docker Hub limit of ${SHORT_DESCRIPTION_MAX_BYTES} characters long.")
+  }
+  // Pass the short description in data only if defined
+  String data = '{"full_description": "' + fullDescription + '"'
+  data += shortDescription ? ', "description": "' + shortDescription + '"}' : '}'
   withDockerPushCredentials {
     String token
     if (isUnix()) {
