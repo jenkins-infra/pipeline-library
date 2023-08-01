@@ -374,23 +374,25 @@ void publishDeprecationCheck(String deprecationSummary, String deprecationMessag
   publishChecks name: 'pipeline-library', summary: deprecationSummary, conclusion: 'NEUTRAL', text: deprecationMessage
 }
 
-void updateDockerHubReadme(String repository, String fullDescription, String shortDescription) {
-  // TODO: check short description lenght
+void updateDockerHubReadme(String repository, String fullDescription, String shortDescription = '') {
+  if (shortDescription.lenght > 100) {
+    error("The short description provided is more than 100 characters long.")
+  }
+  String data = "{\"full_description\": \"${fullDescription}\""
+  data += shortDescription ? ", \"description\": \"${shortDescription}\"}" : "}"
   withDockerPushCredentials {
     String token
     if (isUnix()) {
     // Retrieve a token
-      token = sh(script: "curl -s -X POST 'https://hub.docker.com/v2/users/login/' -H 'Content-Type: application/json' -d '{\"username\":\"$DOCKER_CONFIG_USR\",\"password\":\"$DOCKER_CONFIG_PSW\"}' | jq -r '.token'", returnStdout: true).trim()
+      token = sh(script: "curl --silent -X POST 'https://hub.docker.com/v2/users/login/' -H 'Content-Type: application/json' -d '{\"username\":\"$DOCKER_CONFIG_USR\",\"password\":\"$DOCKER_CONFIG_PSW\"}' | jq -r '.token'", returnStdout: true).trim()
       // Update Docker Hub README
-      // TODO: only set the short description if it's provided and not empty
-      sh "curl -X PATCH 'https://hub.docker.com/v2/repositories/${repository}/' -H 'Authorization: JWT ${token}' -H 'Content-Type: application/json' -d '{\"full_description\": \"${fullDescription}\", \"description\": \"${shortDescription}\"}'"
+      sh "curl -X PATCH 'https://hub.docker.com/v2/repositories/${repository}/' -H 'Authorization: JWT ${token}' -H 'Content-Type: application/json' --data '${data}'"
 
     } else {
       // Retrieve a token
-      token = powershell(script: "curl -s -X POST 'https://hub.docker.com/v2/users/login/' -H 'Content-Type: application/json' -d '{\"username\":\"$env:DOCKER_CONFIG_USR\",\"password\":\"$env:DOCKER_CONFIG_PSW\"}' | jq -r '.token'", returnStdout: true).trim()
+      token = powershell(script: "curl --silent -X POST 'https://hub.docker.com/v2/users/login/' -H 'Content-Type: application/json' -d '{\"username\":\"$env:DOCKER_CONFIG_USR\",\"password\":\"$env:DOCKER_CONFIG_PSW\"}' | jq -r '.token'", returnStdout: true).trim()
       // Update Docker Hub README
-      // TODO: only set the short description if it's provided and not empty
-      powershell "curl -X PATCH 'https://hub.docker.com/v2/repositories/${repository}/' -H 'Authorization: JWT ${token}' -H 'Content-Type: application/json' -d '{\"full_description\": \"${fullDescription}\", \"description\": \"${shortDescription}\"}'"
+      powershell "curl -X PATCH 'https://hub.docker.com/v2/repositories/${repository}/' -H 'Authorization: JWT ${token}' -H 'Content-Type: application/json' --data '${data}'"
     }
   }
 }
