@@ -373,3 +373,21 @@ void publishDeprecationCheck(String deprecationSummary, String deprecationMessag
   echo "WARNING: ${deprecationMessage}"
   publishChecks name: 'pipeline-library', summary: deprecationSummary, conclusion: 'NEUTRAL', text: deprecationMessage
 }
+
+void updateDockerHubReadme(String repository, String fullDescription, String shortDescription) {
+  withDockerPushCredentials {
+    String token
+    if (isUnix()) {
+    // Retrieve a token
+      token = sh(script: "curl -s -X POST 'https://hub.docker.com/v2/users/login/' -H 'Content-Type: application/json' -d '{\"username\":\"$DOCKER_CONFIG_USR\",\"password\":\"$DOCKER_CONFIG_PSW\"}' | jq -r '.token'", returnStdout: true).trim()
+      // Update Docker Hub README
+      sh "curl -X PATCH 'https://hub.docker.com/v2/repositories/${repository}/' -H 'Authorization: JWT ${token}' -H 'Content-Type: application/json' -d '{\"full_description\": \"${fullDescription}\", \"description\": \"${shortDescription}\"}'"
+
+    } else {
+      // Retrieve a token
+      token = powershell(script: "curl -s -X POST 'https://hub.docker.com/v2/users/login/' -H 'Content-Type: application/json' -d '{\"username\":\"$env:DOCKER_CONFIG_USR\",\"password\":\"$env:DOCKER_CONFIG_PSW\"}' | jq -r '.token'", returnStdout: true).trim()
+      // Update Docker Hub README
+      powershell "curl -X PATCH 'https://hub.docker.com/v2/repositories/${repository}/' -H 'Authorization: JWT ${token}' -H 'Content-Type: application/json' -d '{\"full_description\": \"${fullDescription}\", \"description\": \"${shortDescription}\"}'"
+    }
+  }
+}
