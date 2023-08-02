@@ -10,7 +10,7 @@ def call(String imageShortName, Map userConfig=[:]) {
     includeImageNameInTag: false, // Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
     dockerfile: 'Dockerfile', // Obvious default
     platform: 'linux/amd64', // Intel/AMD 64 Bits, following Docker platform identifiers
-    platforms: [:], // Docker platform identifiers
+    platforms: [], // Docker platform identifiers
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
@@ -38,27 +38,31 @@ def call(String imageShortName, Map userConfig=[:]) {
     echo "INFO: Using platforms from the pipeline configuration"
   } else {
     echo "INFO: Using platform from the pipeline configuration"
-    finalConfig.platforms[finalConfig.platform]=finalConfig.platform
+    finalConfig.platforms = [finalConfig.platform]
   }
 
-  platforms.each {platform ->
+
+  final InfraConfig infraConfig = new InfraConfig(env)
+  final String defaultRegistryNamespace = infraConfig.getDockerRegistryNamespace()
+  final String registryNamespace = finalConfig.registryNamespace ?: defaultRegistryNamespace
+  final String imageName = registryNamespace + '/' + imageShortName
+  finalConfig.platforms.each {oneplatform ->
+
+    echo "DEBUG platform in build '${oneplatform}'."
+
     // Warn about potential Linux/Windows contradictions between platform & agentLabels, and set the Windows config suffix for CST files
     String cstConfigSuffix = ''
-    if (finalConfig.agentLabels.contains('windows') || platform.contains('windows')) {
-      if (finalConfig.agentLabels.contains('windows') && !platform.contains('windows')) {
-        echo "WARNING: A 'windows' agent is requested, but the 'platform' is set to '${platform}'."
+    if (finalConfig.agentLabels.contains('windows') || oneplatform.contains('windows')) {
+      if (finalConfig.agentLabels.contains('windows') && !oneplatform.contains('windows')) {
+        echo "WARNING: A 'windows' agent is requested, but the 'platform' is set to '${oneplatform}'."
       }
-      if (!finalConfig.agentLabels.contains('windows') && platform.contains('windows')) {
-        echo "WARNING: The 'platform' is set to '${platform}', but there isn't any 'windows' agent requested."
+      if (!finalConfig.agentLabels.contains('windows') && oneplatform.contains('windows')) {
+        echo "WARNING: The 'platform' is set to '${oneplatform}', but there isn't any 'windows' agent requested."
       }
       cstConfigSuffix = '-windows'
     }
-    String operatingSystem = platform.split('/')[0]
+    String operatingSystem = oneplatform.split('/')[0]
 
-    final InfraConfig infraConfig = new InfraConfig(env)
-    final String defaultRegistryNamespace = infraConfig.getDockerRegistryNamespace()
-    final String registryNamespace = finalConfig.registryNamespace ?: defaultRegistryNamespace
-    final String imageName = registryNamespace + '/' + imageShortName
     echo "INFO: Resolved Container Image Name: ${imageName}"
 
     node(finalConfig.agentLabels) {
@@ -67,7 +71,7 @@ def call(String imageShortName, Map userConfig=[:]) {
         "IMAGE_NAME=${imageName}",
         "IMAGE_DIR=${finalConfig.imageDir}",
         "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
-        "IMAGE_PLATFORM=${platform}",
+        "IMAGE_PLATFORM=${oneplatform}",
       ]) {
         infra.withDockerPullCredentials{
           String nextVersion = ''

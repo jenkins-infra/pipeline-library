@@ -562,4 +562,38 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
+  @Test
+  void itBuildsAndDeploysWithPlatformsSpecificOnPrincipalBranch() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+    withMocks{
+      script.call(testImageName, [
+        dockerfile: 'build.Dockerfile',
+        imageDir: 'docker/',
+        platforms: ['linux/amd64','linux/arm64'],
+        automaticSemanticVersioning: true,
+        gitCredentials: 'git-creds',
+        registryNamespace: 'jenkins',
+      ])
+    }
+    printCallStack()
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+    // With the common workflow run as expected
+    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
+    // And the expected environment variables set to their default values
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/amd64'))
+    // And generated reports recorded
+    assertTrue(assertRecordIssues())
+    // And the deploy step called
+    assertTrue(assertMakeDeploy())
+    // But no release created automatically
+    assertFalse(assertTagPushed(defaultGitTag))
+    // And all mocked/stubbed methods been called
+    verifyMocks()
+  }
 }
