@@ -571,7 +571,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       script.call(testImageName, [
         dockerfile: 'build.Dockerfile',
         imageDir: 'docker/',
-        platforms: ['linux/amd64','linux/arm64'],
+        platforms: ['linux/amd64', 'linux/arm64'],
         automaticSemanticVersioning: true,
         gitCredentials: 'git-creds',
         registryNamespace: 'jenkins',
