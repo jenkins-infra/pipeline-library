@@ -46,6 +46,7 @@ def call(String imageShortName, Map userConfig=[:]) {
   final String defaultRegistryNamespace = infraConfig.getDockerRegistryNamespace()
   final String registryNamespace = finalConfig.registryNamespace ?: defaultRegistryNamespace
   final String imageName = registryNamespace + '/' + imageShortName
+  final String mygetTime = now.getTime().toString()
   finalConfig.platforms.each {oneplatform ->
 
     echo "DEBUG platform in build '${oneplatform}'."
@@ -131,7 +132,7 @@ def call(String imageShortName, Map userConfig=[:]) {
 
           stage("Lint ${imageName}") {
             // Define the image name as prefix to support multi images per pipeline
-            String hadolintReportId = "${imageName.replaceAll(':','-').replaceAll('/','-')}-hadolint-${now.getTime()}"
+            String hadolintReportId = "${imageName.replaceAll(':','-').replaceAll('/','-')}-hadolint-${mygetTime}"
             String hadoLintReportFile = "${hadolintReportId}.json"
             withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
               try {

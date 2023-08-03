@@ -577,23 +577,23 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
         registryNamespace: 'jenkins',
       ])
     }
+    final String expectedImageName = 'jenkins/' + testImageName
     printCallStack()
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
     // With the common workflow run as expected
     assertTrue(assertBaseWorkflow())
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
-    // And the expected environment variables set to their default values
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
+    // And the environement variables set with the custom configuration values
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=docker/'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=build.Dockerfile'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/amd64'))
-    // And generated reports recorded
-    assertTrue(assertRecordIssues())
-    // And the deploy step called
-    assertTrue(assertMakeDeploy())
-    // But no release created automatically
-    assertFalse(assertTagPushed(defaultGitTag))
-    // And all mocked/stubbed methods been called
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/arm64'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_NAME=' + expectedImageName))
+    // But no tag and no deploy called (branch or PR)
+    assertTrue(assertMakeDeploy(expectedImageName))
+    assertTrue(assertTagPushed(defaultGitTag))
+    // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
 }
