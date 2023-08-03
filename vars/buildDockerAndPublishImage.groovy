@@ -33,9 +33,10 @@ def call(String imageShortName, Map userConfig=[:]) {
   final Date now = new Date()
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
   final String buildDate = dateFormat.format(now)
-
+  boolean flagmultiplatforms = false
   if (finalConfig.platforms.size() > 0) {
     echo "INFO: Using platforms from the pipeline configuration"
+    flagmultiplatforms = true
   } else {
     echo "INFO: Using platform from the pipeline configuration"
     finalConfig.platforms = [finalConfig.platform]
@@ -45,8 +46,9 @@ def call(String imageShortName, Map userConfig=[:]) {
   final InfraConfig infraConfig = new InfraConfig(env)
   final String defaultRegistryNamespace = infraConfig.getDockerRegistryNamespace()
   final String registryNamespace = finalConfig.registryNamespace ?: defaultRegistryNamespace
-  final String imageName = registryNamespace + '/' + imageShortName
+  String imageName = registryNamespace + '/' + imageShortName
   final String mygetTime = now.getTime().toString()
+
   finalConfig.platforms.each {oneplatform ->
 
     echo "DEBUG platform in build '${oneplatform}'."
@@ -63,6 +65,11 @@ def call(String imageShortName, Map userConfig=[:]) {
       cstConfigSuffix = '-windows'
     }
     String operatingSystem = oneplatform.split('/')[0]
+
+    // in case of multi plafforms, we need to add the platform to the image name to be able to amend the image build
+    if (flagmultiplatforms) {
+      imageName = imageName + '-' + oneplatform.split('/')[1].replace('/','-')
+    }
 
     echo "INFO: Resolved Container Image Name: ${imageName}"
 
@@ -292,4 +299,26 @@ def call(String imageShortName, Map userConfig=[:]) {
       } // withEnv
     } // node
   } // each platform
+  if (flagmultiplatforms) {
+    stage('Multiplatforms Amend') {
+      infra.withDockerPushCredentials {
+        if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
+          if (env.TAG_NAME) {
+            dockertag = env.TAG_NAME
+          } else {
+            dockertag = 'latest'
+          }
+          imageName = registryNamespace + '/' + imageShortName
+          String shcommand = 'docker manifest create \\'
+          shcommand += '"${imageName}":"${dockertag}" \\'
+          finalConfig.platforms.each {eachplatform ->
+            specificImageName = imageName + ':' + eachplatform.split('/')[1].replace('/','-')
+            shcommand += '--amend "${specificImageName}" \\'
+          }
+          sh shcommand
+          sh 'docker manifest push "${imageName}":"${dockertag}"'
+        } // amend manifest only for primary branch or tags
+      } // need docker credential to push
+    } // stage
+  } // if
 } // call
