@@ -208,4 +208,9 @@ buildDockerImage_k8s('plugins-site-api')
 * (Open)JDK v8
 * Maven 3.6.x
 
-===
+=== Testing a pull request
+
+By adding `@Library('pipeline-library@pull/<your-pr-number>/head') _` at the top of a Jenkinsfile from a repository built on one of the *.ci.jenkins.io instances, you can test your pipeline library pull request on ci.jenkins.io.
+
+A repository is dedicated for these kind of tests: https://github.com/jenkinsci/jenkins-infra-test-plugin/
+
