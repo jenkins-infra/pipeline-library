@@ -191,7 +191,7 @@ def call(String imageShortName, Map userConfig=[:]) {
 
           // Automatic tagging on principal branch is not enabled by default
           // not on multiplatforms builds
-          if (semVerEnabledOnPrimaryBranch and ! flagmultiplatforms) {
+          if (semVerEnabledOnPrimaryBranch && !flagmultiplatforms) {
             stage("Semantic Release of ${defaultImageName}") {
               echo "Configuring credential.helper"
               // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
