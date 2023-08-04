@@ -33,6 +33,7 @@ def call(String imageShortName, Map userConfig=[:]) {
   final Date now = new Date()
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
   final String buildDate = dateFormat.format(now)
+  String nextVersion = '' //global
   boolean flagmultiplatforms = false
   if (finalConfig.platforms.size() > 0) {
     echo "INFO: Using platforms from the pipeline configuration"
@@ -84,7 +85,7 @@ def call(String imageShortName, Map userConfig=[:]) {
         "IMAGE_PLATFORM=${oneplatform}",
       ]) {
         infra.withDockerPullCredentials{
-          String nextVersion = ''
+          nextVersion = '' // reset for each turn
           stage("Prepare ${imageName}") {
             checkout scm
             if (finalConfig.unstash != '') {
@@ -304,6 +305,41 @@ def call(String imageShortName, Map userConfig=[:]) {
   } // each platform
   if (flagmultiplatforms) {
     node(finalConfig.agentLabels) {
+      stage("Multiplatform Semantic Release of ${defaultImageName}") {
+        echo "Configuring credential.helper"
+        // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
+        if (isUnix()) {
+          sh 'git config --local credential.helper "!set -u; echo username=\\$GIT_USERNAME && echo password=\\$GIT_PASSWORD && echo"'
+        } else {
+          // Using 'bat' here instead of 'powershell' to avoid variable interpolation problem with $
+          bat 'git config --local credential.helper "!sh.exe -c \'set -u; echo username=$GIT_USERNAME && echo password=$GIT_PASSWORD && echo"\''
+        }
+
+        withCredentials([
+          usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
+        ]) {
+          withEnv(["NEXT_VERSION=${nextVersion}"]) {
+            echo "Tagging and pushing the new version: ${nextVersion}"
+            if (isUnix()) {
+              sh '''
+              git config user.name "${GIT_USERNAME}"
+              git config user.email "jenkins-infra@googlegroups.com"
+
+              git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
+              git push origin --tags
+              '''
+            } else {
+              powershell '''
+              git config user.email "jenkins-infra@googlegroups.com"
+              git config user.password $env:GIT_PASSWORD
+
+              git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"
+              git push origin --tags
+              '''
+            }
+          } // withEnv
+        } // withCredentials
+      } // stage
       stage('Multiplatforms Amend') {
         infra.withDockerPushCredentials {
           if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
