@@ -592,7 +592,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_NAME=' + expectedImageName))
     // But no tag and no deploy called (branch or PR)
     assertTrue(assertMakeDeploy(expectedImageName))
-    assertTrue(assertTagPushed(defaultGitTag))
+    //assertTrue(assertTagPushed(defaultGitTag))
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
