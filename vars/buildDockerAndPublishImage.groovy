@@ -312,11 +312,11 @@ def call(String imageShortName, Map userConfig=[:]) {
             } else {
               dockertag = 'latest'
             }
-            String shcommand = 'docker manifest create \ ' + "\n"
-            shcommand += '"${defaultImageName}":"${dockertag}" \ '  + "\n"
+            String shcommand = 'docker manifest create \\ ' + "\n"
+            shcommand += '"${defaultImageName}":"${dockertag}" \\ '  + "\n"
             finalConfig.platforms.each {eachplatform ->
               specificImageName = defaultImageName + ':' + eachplatform.split('/')[1].replace('/','-')
-              shcommand += '--amend "${specificImageName}" \ ' + "\n"
+              shcommand += '--amend "${specificImageName}" \\ ' + "\n"
             }
             sh shcommand
             sh 'docker manifest push "${defaultImageName}":"${dockertag}"'
