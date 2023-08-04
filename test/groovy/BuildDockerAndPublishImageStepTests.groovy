@@ -122,7 +122,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   // Return if the usual static checks had been recorded with the usual pattern
-  Boolean assertRecordIssues(String imageName = fullTestImageName, String platform = 'linux/amd64') {
+  Boolean assertRecordIssues(String imageName = fullTestImageName) {
     final String reportId = "${imageName}-hadolint-${mockedTimestamp}".replaceAll('/','-').replaceAll(':', '-')
     return assertMethodCallContainsPattern(
         'recordIssues',
