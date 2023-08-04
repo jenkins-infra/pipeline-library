@@ -68,7 +68,7 @@ def call(String imageShortName, Map userConfig=[:]) {
 
     // in case of multi plafforms, we need to add the platform to the image name to be able to amend the image build
     if (flagmultiplatforms) {
-      imageName = imageName + '-' + oneplatform.split('/')[1].replace('/','-')
+      imageName = imageName + ':' + oneplatform.split('/')[1].replace('/','-')
     }
 
     echo "INFO: Resolved Container Image Name: ${imageName}"
