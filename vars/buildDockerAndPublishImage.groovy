@@ -190,7 +190,8 @@ def call(String imageShortName, Map userConfig=[:]) {
           } // each
 
           // Automatic tagging on principal branch is not enabled by default
-          if (semVerEnabledOnPrimaryBranch) {
+          // not on multiplatforms builds
+          if (semVerEnabledOnPrimaryBranch and ! flagmultiplatforms) {
             stage("Semantic Release of ${defaultImageName}") {
               echo "Configuring credential.helper"
               // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
@@ -302,24 +303,26 @@ def call(String imageShortName, Map userConfig=[:]) {
     } // node
   } // each platform
   if (flagmultiplatforms) {
-    stage('Multiplatforms Amend') {
-      infra.withDockerPushCredentials {
-        if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
-          if (env.TAG_NAME) {
-            dockertag = env.TAG_NAME
-          } else {
-            dockertag = 'latest'
-          }
-          String shcommand = 'docker manifest create \\'
-          shcommand += '"${defaultImageName}":"${dockertag}" \\'
-          finalConfig.platforms.each {eachplatform ->
-            specificImageName = defaultImageName + ':' + eachplatform.split('/')[1].replace('/','-')
-            shcommand += '--amend "${specificImageName}" \\'
-          }
-          sh shcommand
-          sh 'docker manifest push "${defaultImageName}":"${dockertag}"'
-        } // amend manifest only for primary branch or tags
-      } // need docker credential to push
-    } // stage
+    node(finalConfig.agentLabels) {
+      stage('Multiplatforms Amend') {
+        infra.withDockerPushCredentials {
+          if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
+            if (env.TAG_NAME) {
+              dockertag = env.TAG_NAME
+            } else {
+              dockertag = 'latest'
+            }
+            String shcommand = 'docker manifest create \\'
+            shcommand += '"${defaultImageName}":"${dockertag}" \\'
+            finalConfig.platforms.each {eachplatform ->
+              specificImageName = defaultImageName + ':' + eachplatform.split('/')[1].replace('/','-')
+              shcommand += '--amend "${specificImageName}" \\'
+            }
+            sh shcommand
+            sh 'docker manifest push "${defaultImageName}":"${dockertag}"'
+          } // amend manifest only for primary branch or tags
+        } // need docker credential to push
+      } // stage
+    } // node
   } // if
 } // call
