@@ -46,7 +46,7 @@ def call(String imageShortName, Map userConfig=[:]) {
   final InfraConfig infraConfig = new InfraConfig(env)
   final String defaultRegistryNamespace = infraConfig.getDockerRegistryNamespace()
   final String registryNamespace = finalConfig.registryNamespace ?: defaultRegistryNamespace
-  String imageName = registryNamespace + '/' + imageShortName
+  final String defaultImageName = registryNamespace + '/' + imageShortName
   final String mygetTime = now.getTime().toString()
 
   finalConfig.platforms.each {oneplatform ->
@@ -68,7 +68,9 @@ def call(String imageShortName, Map userConfig=[:]) {
 
     // in case of multi plafforms, we need to add the platform to the image name to be able to amend the image build
     if (flagmultiplatforms) {
-      imageName = imageName + ':' + oneplatform.split('/')[1].replace('/','-')
+      imageName = defaultImageName + ':' + oneplatform.split('/')[1].replace('/','-')
+    } else {
+      imageName = defaultImageName
     }
 
     echo "INFO: Resolved Container Image Name: ${imageName}"
@@ -96,14 +98,14 @@ def call(String imageShortName, Map userConfig=[:]) {
 
           // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
           if (finalConfig.automaticSemanticVersioning) {
-            stage("Get Next Version of ${imageName}") {
-              String imageInTag = '-' + imageName.replace('-','').replace(':','').toLowerCase()
+            stage("Get Next Version of ${defaultImageName}") {
+              String imageInTag = '-' + defaultImageName.replace('-','').replace(':','').toLowerCase()
               if (isUnix()) {
                 sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
                 if (!finalConfig.includeImageNameInTag) {
                   nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
                 } else {
-                  echo "Including the image name '${imageName}' in the next version"
+                  echo "Including the image name '${defaultImageName}' in the next version"
                   // Retrieving the semver part from the last tag including the image name
                   String currentTagScript = 'git tag --list \"*' + imageInTag + '\" --sort=-v:refname | head -1'
                   String currentSemVerVersion = sh(script: currentTagScript, returnStdout: true).trim()
@@ -120,7 +122,7 @@ def call(String imageShortName, Map userConfig=[:]) {
                 if (!finalConfig.includeImageNameInTag) {
                   nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
                 } else {
-                  echo "Including the image name '${imageName}' in the next version"
+                  echo "Including the image name '${defaultImageName}' in the next version"
                   // Retrieving the semver part from the last tag including the image name
                   String currentTagScript = 'git tag --list \"*' + imageInTag + '\" --sort=-v:refname | head -1'
                   String currentSemVerVersion = powershell(script: currentTagScript, returnStdout: true).trim()
@@ -139,7 +141,7 @@ def call(String imageShortName, Map userConfig=[:]) {
 
           stage("Lint ${imageName}") {
             // Define the image name as prefix to support multi images per pipeline
-            String hadolintReportId = "${imageName.replaceAll(':','-').replaceAll('/','-')}-hadolint-${oneplatform.replaceAll('/','-')}-${mygetTime}"
+            String hadolintReportId = "${imageName.replaceAll(':','-').replaceAll('/','-')}-hadolint-${mygetTime}"
             String hadoLintReportFile = "${hadolintReportId}.json"
             withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
               try {
@@ -189,7 +191,7 @@ def call(String imageShortName, Map userConfig=[:]) {
 
           // Automatic tagging on principal branch is not enabled by default
           if (semVerEnabledOnPrimaryBranch) {
-            stage("Semantic Release of ${imageName}") {
+            stage("Semantic Release of ${defaultImageName}") {
               echo "Configuring credential.helper"
               // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
               if (isUnix()) {
@@ -308,15 +310,14 @@ def call(String imageShortName, Map userConfig=[:]) {
           } else {
             dockertag = 'latest'
           }
-          imageName = registryNamespace + '/' + imageShortName
           String shcommand = 'docker manifest create \\'
-          shcommand += '"${imageName}":"${dockertag}" \\'
+          shcommand += '"${defaultImageName}":"${dockertag}" \\'
           finalConfig.platforms.each {eachplatform ->
-            specificImageName = imageName + ':' + eachplatform.split('/')[1].replace('/','-')
+            specificImageName = defaultImageName + ':' + eachplatform.split('/')[1].replace('/','-')
             shcommand += '--amend "${specificImageName}" \\'
           }
           sh shcommand
-          sh 'docker manifest push "${imageName}":"${dockertag}"'
+          sh 'docker manifest push "${defaultImageName}":"${dockertag}"'
         } // amend manifest only for primary branch or tags
       } // need docker credential to push
     } // stage
