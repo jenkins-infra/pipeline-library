@@ -345,7 +345,7 @@ def call(String imageShortName, Map userConfig=[:]) {
         String manifestList = ''
         finalConfig.platforms.each {eachplatform ->
           specificImageName = defaultImageName + ':' + eachplatform.split('/')[1].replace('/','-')
-          manifestList += '--amend "' + specificImageName + '" '
+          manifestList += "--amend $specificImageName "
         }
         infra.withDockerPushCredentials {
           if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
