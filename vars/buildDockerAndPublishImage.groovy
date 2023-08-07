@@ -342,7 +342,12 @@ def call(String imageShortName, Map userConfig=[:]) {
         } // withCredentials
       } // stage
       stage('Multiplatforms Amend') {
-        withEnv(["NEXT_VERSION=${nextVersion}", "IMAGE_NAME=${defaultImageName}"]) {
+        String manifestList
+        finalConfig.platforms.each {eachplatform ->
+          specificImageName = defaultImageName + ':' + eachplatform.split('/')[1].replace('/','-')
+          manifestList += '--amend "${specificImageName}" '
+        }
+        withEnv(["NEXT_VERSION=${nextVersion}", "IMAGE_NAME=${defaultImageName}", "MANIFESTLIST=${manifestList}"]) {
           infra.withDockerPushCredentials {
             if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
               if (env.TAG_NAME) {
@@ -350,14 +355,11 @@ def call(String imageShortName, Map userConfig=[:]) {
               } else {
                 dockertag = 'latest'
               }
-              String shcommand = 'docker manifest create \\ ' + "\n"
-              shcommand += '"${IMAGE_NAME}":"${dockertag}" \\ '  + "\n"
-              finalConfig.platforms.each {eachplatform ->
-                specificImageName = defaultImageName + ':' + eachplatform.split('/')[1].replace('/','-')
-                shcommand += '--amend "${specificImageName}" \\ ' + "\n"
-              }
-              echo shcommand
-              sh shcommand
+              sh '''
+                docker manifest create \
+                "${IMAGE_NAME}":"${dockertag}" \
+                ${MANIFESTLIST}
+              '''
               sh 'docker manifest push "${IMAGE_NAME}":"${dockertag}"'
             } // amend manifest only for primary branch or tags
           } // need docker credential to push
