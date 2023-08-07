@@ -319,10 +319,7 @@ def call(String imageShortName, Map userConfig=[:]) {
         withCredentials([
           usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
         ]) {
-          withEnv([
-            "NEXT_VERSION=${nextVersion}",
-            "IMAGE_NAME=${defaultImageName}"
-          ]) {
+          withEnv(["NEXT_VERSION=${nextVersion}", "IMAGE_NAME=${defaultImageName}"]) {
             echo "Tagging and pushing the new version: ${nextVersion}"
             if (isUnix()) {
               sh '''
@@ -345,10 +342,7 @@ def call(String imageShortName, Map userConfig=[:]) {
         } // withCredentials
       } // stage
       stage('Multiplatforms Amend') {
-        withEnv([
-          "NEXT_VERSION=${nextVersion}",
-          "IMAGE_NAME=${defaultImageName}"
-        ]) {
+        withEnv(["NEXT_VERSION=${nextVersion}", "IMAGE_NAME=${defaultImageName}"]) {
           infra.withDockerPushCredentials {
             if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
               if (env.TAG_NAME) {
