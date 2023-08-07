@@ -319,7 +319,10 @@ def call(String imageShortName, Map userConfig=[:]) {
         withCredentials([
           usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
         ]) {
-          withEnv(["NEXT_VERSION=${nextVersion}"]) {
+          withEnv([
+            "NEXT_VERSION=${nextVersion}",
+            "IMAGE_NAME=${defaultImageName}"
+          ]) {
             echo "Tagging and pushing the new version: ${nextVersion}"
             if (isUnix()) {
               sh '''
@@ -342,23 +345,29 @@ def call(String imageShortName, Map userConfig=[:]) {
         } // withCredentials
       } // stage
       stage('Multiplatforms Amend') {
-        infra.withDockerPushCredentials {
-          if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
-            if (env.TAG_NAME) {
-              dockertag = env.TAG_NAME
-            } else {
-              dockertag = 'latest'
-            }
-            String shcommand = 'docker manifest create \\ ' + "\n"
-            shcommand += '"${defaultImageName}":"${dockertag}" \\ '  + "\n"
-            finalConfig.platforms.each {eachplatform ->
-              specificImageName = defaultImageName + ':' + eachplatform.split('/')[1].replace('/','-')
-              shcommand += '--amend "${specificImageName}" \\ ' + "\n"
-            }
-            sh shcommand
-            sh 'docker manifest push "${defaultImageName}":"${dockertag}"'
-          } // amend manifest only for primary branch or tags
-        } // need docker credential to push
+        withEnv([
+          "NEXT_VERSION=${nextVersion}",
+          "IMAGE_NAME=${defaultImageName}"
+        ]) {
+          infra.withDockerPushCredentials {
+            if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
+              if (env.TAG_NAME) {
+                dockertag = env.TAG_NAME
+              } else {
+                dockertag = 'latest'
+              }
+              String shcommand = 'docker manifest create \\ ' + "\n"
+              shcommand += '"${IMAGE_NAME}":"${dockertag}" \\ '  + "\n"
+              finalConfig.platforms.each {eachplatform ->
+                specificImageName = defaultImageName + ':' + eachplatform.split('/')[1].replace('/','-')
+                shcommand += '--amend "${specificImageName}" \\ ' + "\n"
+              }
+              echo shcommand
+              sh shcommand
+              sh 'docker manifest push "${IMAGE_NAME}":"${dockertag}"'
+            } // amend manifest only for primary branch or tags
+          } // need docker credential to push
+        } // withEnv
       } // stage
     } // node
   } // if
