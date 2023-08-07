@@ -306,6 +306,7 @@ def call(String imageShortName, Map userConfig=[:]) {
   if (flagmultiplatforms) {
     node(finalConfig.agentLabels) {
       stage("Multiplatform Semantic Release of ${defaultImageName}") {
+        checkout scm
         echo "Configuring credential.helper"
         // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
         if (isUnix()) {
