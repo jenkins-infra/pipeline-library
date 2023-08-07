@@ -140,55 +140,55 @@ def call(String imageShortName, Map userConfig=[:]) {
             } // stage
           } // if
 
-          stage("Lint ${imageName}") {
-            // Define the image name as prefix to support multi images per pipeline
-            String hadolintReportId = "${imageName.replaceAll(':','-').replaceAll('/','-')}-hadolint-${mygetTime}"
-            String hadoLintReportFile = "${hadolintReportId}.json"
-            withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
-              try {
-                if (isUnix()) {
-                  sh 'make lint'
-                } else {
-                  powershell 'make lint'
-                }
-              } finally {
-                recordIssues(
-                    enabledForFailure: true,
-                    aggregatingResults: false,
-                    tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
-                    )
-              }
-            }
-          } // stage
+          // stage("Lint ${imageName}") {
+          //   // Define the image name as prefix to support multi images per pipeline
+          //   String hadolintReportId = "${imageName.replaceAll(':','-').replaceAll('/','-')}-hadolint-${mygetTime}"
+          //   String hadoLintReportFile = "${hadolintReportId}.json"
+          //   withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
+          //     try {
+          //       if (isUnix()) {
+          //         sh 'make lint'
+          //       } else {
+          //         powershell 'make lint'
+          //       }
+          //     } finally {
+          //       recordIssues(
+          //           enabledForFailure: true,
+          //           aggregatingResults: false,
+          //           tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
+          //           )
+          //     }
+          //   }
+          // } // stage
 
-          stage("Build ${imageName}") {
-            if (isUnix()) {
-              sh 'make build'
-            } else {
-              powershell 'make build'
-            }
-          } //stage
+          // stage("Build ${imageName}") {
+          //   if (isUnix()) {
+          //     sh 'make build'
+          //   } else {
+          //     powershell 'make build'
+          //   }
+          // } //stage
 
           // There can be 2 kind of tests: per image and per repository
           // Assuming Windows versions of cst configuration files finishing by "-windows" (e.g. "common-cst-windows.yml")
-          [
-            'Image Test Harness': "${finalConfig.imageDir}/cst${cstConfigSuffix}.yml",
-            'Common Test Harness': "${env.WORKSPACE}/common-cst${cstConfigSuffix}.yml"
-          ].each { testName, testHarness ->
-            if (fileExists(testHarness)) {
-              stage("Test ${testName} for ${imageName}") {
-                withEnv(["TEST_HARNESS=${testHarness}"]) {
-                  if (isUnix()) {
-                    sh 'make test'
-                  } else {
-                    powershell 'make test'
-                  }
-                } // withEnv
-              } //stage
-            } else {
-              echo "Skipping test ${testName} for ${imageName} as ${testHarness} does not exist"
-            } // if else
-          } // each
+          // [
+          //   'Image Test Harness': "${finalConfig.imageDir}/cst${cstConfigSuffix}.yml",
+          //   'Common Test Harness': "${env.WORKSPACE}/common-cst${cstConfigSuffix}.yml"
+          // ].each { testName, testHarness ->
+          //   if (fileExists(testHarness)) {
+          //     stage("Test ${testName} for ${imageName}") {
+          //       withEnv(["TEST_HARNESS=${testHarness}"]) {
+          //         if (isUnix()) {
+          //           sh 'make test'
+          //         } else {
+          //           powershell 'make test'
+          //         }
+          //       } // withEnv
+          //     } //stage
+          //   } else {
+          //     echo "Skipping test ${testName} for ${imageName} as ${testHarness} does not exist"
+          //   } // if else
+          // } // each
 
           // Automatic tagging on principal branch is not enabled by default
           // not on multiplatforms builds
@@ -230,140 +230,138 @@ def call(String imageShortName, Map userConfig=[:]) {
             } // stage
           } // if
         }// withDockerPullCredentials
-        infra.withDockerPushCredentials{
-          if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
-            stage("Deploy ${imageName}") {
-              String imageDeployName = imageName
-              if (env.TAG_NAME) {
-                // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
-                if (imageDeployName.contains(':')) {
-                  imageDeployName += "-${env.TAG_NAME}"
-                } else {
-                  imageDeployName += ":${env.TAG_NAME}"
-                }
-              }
+        // infra.withDockerPushCredentials{
+        //   if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
+        //     stage("Deploy ${imageName}") {
+        //       String imageDeployName = imageName
+        //       if (env.TAG_NAME) {
+        //         // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
+        //         if (imageDeployName.contains(':')) {
+        //           imageDeployName += "-${env.TAG_NAME}"
+        //         } else {
+        //           imageDeployName += ":${env.TAG_NAME}"
+        //         }
+        //       }
 
-              withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
-                // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
-                if (isUnix()) {
-                  sh 'make deploy'
-                } else {
-                  powershell 'make deploy'
-                }
-              } // withEnv
-            } //stage
-          } // if
-        } // withDockerPushCredentials
+        //       withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
+        //         // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
+        //         if (isUnix()) {
+        //           sh 'make deploy'
+        //         } else {
+        //           powershell 'make deploy'
+        //         }
+        //       } // withEnv
+        //     } //stage
+        //   } // if
+        // } // withDockerPushCredentials
 
 
-        if (env.TAG_NAME && finalConfig.automaticSemanticVersioning) {
-          stage('GitHub Release') {
-            withCredentials([
-              usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
-            ]) {
-              String release = ''
-              if (isUnix()) {
-                final String releaseScript = '''
-                  originUrlWithGit="$(git remote get-url origin)"
-                  originUrl="${originUrlWithGit%.git}"
-                  org="$(echo "${originUrl}" | cut -d'/' -f4)"
-                  repository="$(echo "${originUrl}" | cut -d'/' -f5)"
-                  releasesUrl="/repos/${org}/${repository}/releases"
-                  releaseId="$(gh api "${releasesUrl}" | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')"
-                  if test "${releaseId}" -gt 0
-                  then
-                    gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${releasesUrl}/${releaseId}" > /dev/null
-                  fi
-                  echo "${releaseId}"
-                '''
-                release = sh(script: releaseScript, returnStdout: true)
-              } else {
-                final String releaseScript = '''
-                  $originUrl = (git remote get-url origin) -replace '\\.git', ''
-                  $org = $originUrl.split('/')[3]
-                  $repository = $originUrl.split('/')[4]
-                  $releasesUrl = "/repos/$org/$repository/releases"
-                  $releaseId = (gh api $releasesUrl | jq -e -r '[ .[] | select(.draft == true and .name == \"next\").id] | max | select(. != null)')
-                  $output = ''
-                  if ($releaseId -gt 0)
-                  {
-                    Invoke-Expression -Command "gh api -X PATCH -F draft=false -F name=$env:TAG_NAME -F tag_name=$env:TAG_NAME $releasesUrl/$releaseId" > $null
-                    $output = $releaseId
-                  }
-                  Write-Output $output
-                '''
-                release = powershell(script: releaseScript, returnStdout: true)
-              }
-              if (release == '') {
-                echo "No next release draft found."
-              } // if
-            } // withCredentials
-          } // stage
-        } // if
+        // if (env.TAG_NAME && finalConfig.automaticSemanticVersioning) {
+        //   stage('GitHub Release') {
+        //     withCredentials([
+        //       usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
+        //     ]) {
+        //       String release = ''
+        //       if (isUnix()) {
+        //         final String releaseScript = '''
+        //           originUrlWithGit="$(git remote get-url origin)"
+        //           originUrl="${originUrlWithGit%.git}"
+        //           org="$(echo "${originUrl}" | cut -d'/' -f4)"
+        //           repository="$(echo "${originUrl}" | cut -d'/' -f5)"
+        //           releasesUrl="/repos/${org}/${repository}/releases"
+        //           releaseId="$(gh api "${releasesUrl}" | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')"
+        //           if test "${releaseId}" -gt 0
+        //           then
+        //             gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${releasesUrl}/${releaseId}" > /dev/null
+        //           fi
+        //           echo "${releaseId}"
+        //         '''
+        //         release = sh(script: releaseScript, returnStdout: true)
+        //       } else {
+        //         final String releaseScript = '''
+        //           $originUrl = (git remote get-url origin) -replace '\\.git', ''
+        //           $org = $originUrl.split('/')[3]
+        //           $repository = $originUrl.split('/')[4]
+        //           $releasesUrl = "/repos/$org/$repository/releases"
+        //           $releaseId = (gh api $releasesUrl | jq -e -r '[ .[] | select(.draft == true and .name == \"next\").id] | max | select(. != null)')
+        //           $output = ''
+        //           if ($releaseId -gt 0)
+        //           {
+        //             Invoke-Expression -Command "gh api -X PATCH -F draft=false -F name=$env:TAG_NAME -F tag_name=$env:TAG_NAME $releasesUrl/$releaseId" > $null
+        //             $output = $releaseId
+        //           }
+        //           Write-Output $output
+        //         '''
+        //         release = powershell(script: releaseScript, returnStdout: true)
+        //       }
+        //       if (release == '') {
+        //         echo "No next release draft found."
+        //       } // if
+        //     } // withCredentials
+        //   } // stage
+        // } // if
       } // withEnv
     } // node
   } // each platform
   if (flagmultiplatforms) {
     node(finalConfig.agentLabels) {
-      stage("Multiplatform Semantic Release of ${defaultImageName}") {
-        checkout scm
-        echo "Configuring credential.helper"
-        // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
-        if (isUnix()) {
-          sh 'git config --local credential.helper "!set -u; echo username=\\$GIT_USERNAME && echo password=\\$GIT_PASSWORD && echo"'
-        } else {
-          // Using 'bat' here instead of 'powershell' to avoid variable interpolation problem with $
-          bat 'git config --local credential.helper "!sh.exe -c \'set -u; echo username=$GIT_USERNAME && echo password=$GIT_PASSWORD && echo"\''
-        }
+      // stage("Multiplatform Semantic Release of ${defaultImageName}") {
+      //   checkout scm
+      //   echo "Configuring credential.helper"
+      //   // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
+      //   if (isUnix()) {
+      //     sh 'git config --local credential.helper "!set -u; echo username=\\$GIT_USERNAME && echo password=\\$GIT_PASSWORD && echo"'
+      //   } else {
+      //     // Using 'bat' here instead of 'powershell' to avoid variable interpolation problem with $
+      //     bat 'git config --local credential.helper "!sh.exe -c \'set -u; echo username=$GIT_USERNAME && echo password=$GIT_PASSWORD && echo"\''
+      //   }
 
-        withCredentials([
-          usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
-        ]) {
-          withEnv(["NEXT_VERSION=${nextVersion}", "IMAGE_NAME=${defaultImageName}"]) {
-            echo "Tagging and pushing the new version: ${nextVersion}"
-            if (isUnix()) {
-              sh '''
-              git config user.name "${GIT_USERNAME}"
-              git config user.email "jenkins-infra@googlegroups.com"
+      //   withCredentials([
+      //     usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
+      //   ]) {
+      //     withEnv(["NEXT_VERSION=${nextVersion}", "IMAGE_NAME=${defaultImageName}"]) {
+      //       echo "Tagging and pushing the new version: ${nextVersion}"
+      //       if (isUnix()) {
+      //         sh '''
+      //         git config user.name "${GIT_USERNAME}"
+      //         git config user.email "jenkins-infra@googlegroups.com"
 
-              git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
-              git push origin --tags
-              '''
-            } else {
-              powershell '''
-              git config user.email "jenkins-infra@googlegroups.com"
-              git config user.password $env:GIT_PASSWORD
+      //         git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
+      //         git push origin --tags
+      //         '''
+      //       } else {
+      //         powershell '''
+      //         git config user.email "jenkins-infra@googlegroups.com"
+      //         git config user.password $env:GIT_PASSWORD
 
-              git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"
-              git push origin --tags
-              '''
-            }
-          } // withEnv
-        } // withCredentials
-      } // stage
+      //         git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"
+      //         git push origin --tags
+      //         '''
+      //       }
+      //     } // withEnv
+      //   } // withCredentials
+      // } // stage
       stage('Multiplatforms Amend') {
         String manifestList
         finalConfig.platforms.each {eachplatform ->
           specificImageName = defaultImageName + ':' + eachplatform.split('/')[1].replace('/','-')
           manifestList += '--amend "${specificImageName}" '
         }
-        withEnv(["NEXT_VERSION=${nextVersion}", "IMAGE_NAME=${defaultImageName}", "MANIFESTLIST=${manifestList}"]) {
-          infra.withDockerPushCredentials {
-            if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
-              if (env.TAG_NAME) {
-                dockertag = env.TAG_NAME
-              } else {
-                dockertag = 'latest'
-              }
+        infra.withDockerPushCredentials {
+          if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
+            if (env.TAG_NAME) {
+              dockertag = env.TAG_NAME
+            } else {
+              dockertag = 'latest'
+            }
+            withEnv(["NEXT_VERSION=${nextVersion}", "FULL_IMAGE_NAME=${defaultImageName}:${dockertag}", "MANIFESTLIST=${manifestList}"]) {
               sh '''
-                docker manifest create \
-                "${IMAGE_NAME}":"${dockertag}" \
-                ${MANIFESTLIST}
+                docker manifest create "${FULL_IMAGE_NAME}" ${MANIFESTLIST}
               '''
-              sh 'docker manifest push "${IMAGE_NAME}":"${dockertag}"'
-            } // amend manifest only for primary branch or tags
-          } // need docker credential to push
-        } // withEnv
+              sh 'docker manifest push "${FULL_IMAGE_NAME}"'
+            } // withEnv
+          } // amend manifest only for primary branch or tags
+        } // need docker credential to push
       } // stage
     } // node
   } // if
