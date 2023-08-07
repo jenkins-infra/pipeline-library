@@ -4,6 +4,7 @@ import java.util.Date
 import java.text.DateFormat
 
 def call(String imageShortName, Map userConfig=[:]) {
+  def parallelStages = [failFast:false]
   def defaultConfig = [
     agentLabels: 'docker || linux-amd64-docker', // String expression for the labels the agent must match
     automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
@@ -49,7 +50,7 @@ def call(String imageShortName, Map userConfig=[:]) {
   final String registryNamespace = finalConfig.registryNamespace ?: defaultRegistryNamespace
   final String defaultImageName = registryNamespace + '/' + imageShortName
   final String mygetTime = now.getTime().toString()
-  def ParrallelStages = [failFast:false]
+
 
   finalConfig.platforms.each {oneplatform ->
 
@@ -76,7 +77,7 @@ def call(String imageShortName, Map userConfig=[:]) {
     }
 
     echo "INFO: Resolved Container Image Name: ${imageName}"
-    ParallelStages["${imageName}"] = {
+    parallelStages["${imageName}"] = {
       node(finalConfig.agentLabels) {
         withEnv([
           "BUILD_DATE=${buildDate}",
@@ -303,12 +304,12 @@ def call(String imageShortName, Map userConfig=[:]) {
           } // if
         } // withEnv
       } // node
-    } //ParallelStages
+    } //parallelStages
   } // each platform
 
-  parallel(ParallelStages) // parallel
+  parallel(parallelStages) // parallel
 
-  //After ParallelStages
+  //After parallelStages
   if (flagmultiplatforms) {
     stage("Multiplatform Semantic Release of ${defaultImageName}") {
       //checkout scm // should not be necessary on main node
