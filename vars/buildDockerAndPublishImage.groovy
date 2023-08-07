@@ -88,7 +88,7 @@ def call(String imageShortName, Map userConfig=[:]) {
         ]) {
           infra.withDockerPullCredentials{
             nextVersion = '' // reset for each turn
-            stage("Prepare ${imageName}") {
+            stage("Prepare ${IMAGE_NAME}") {
               checkout scm
               if (finalConfig.unstash != '') {
                 unstash finalConfig.unstash
@@ -142,9 +142,9 @@ def call(String imageShortName, Map userConfig=[:]) {
               } // stage
             } // if
 
-            stage("Lint ${imageName}") {
+            stage("Lint ${IMAGE_NAME}") {
               // Define the image name as prefix to support multi images per pipeline
-              String hadolintReportId = "${imageName.replaceAll(':','-').replaceAll('/','-')}-hadolint-${mygetTime}"
+              String hadolintReportId = "${IMAGE_NAME.replaceAll(':','-').replaceAll('/','-')}-hadolint-${mygetTime}"
               String hadoLintReportFile = "${hadolintReportId}.json"
               withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
                 try {
@@ -163,7 +163,7 @@ def call(String imageShortName, Map userConfig=[:]) {
               }
             } // stage
 
-            stage("Build ${imageName}") {
+            stage("Build ${IMAGE_NAME}") {
               if (isUnix()) {
                 sh 'make build'
               } else {
@@ -178,7 +178,7 @@ def call(String imageShortName, Map userConfig=[:]) {
               'Common Test Harness': "${env.WORKSPACE}/common-cst${cstConfigSuffix}.yml"
             ].each { testName, testHarness ->
               if (fileExists(testHarness)) {
-                stage("Test ${testName} for ${imageName}") {
+                stage("Test ${testName} for ${IMAGE_NAME}") {
                   withEnv(["TEST_HARNESS=${testHarness}"]) {
                     if (isUnix()) {
                       sh 'make test'
@@ -188,7 +188,7 @@ def call(String imageShortName, Map userConfig=[:]) {
                   } // withEnv
                 } //stage
               } else {
-                echo "Skipping test ${testName} for ${imageName} as ${testHarness} does not exist"
+                echo "Skipping test ${testName} for ${IMAGE_NAME} as ${testHarness} does not exist"
               } // if else
             } // each
 
@@ -234,8 +234,8 @@ def call(String imageShortName, Map userConfig=[:]) {
           }// withDockerPullCredentials
           infra.withDockerPushCredentials{
             if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
-              stage("Deploy ${imageName}") {
-                String imageDeployName = imageName
+              stage("Deploy ${IMAGE_NAME}") {
+                String imageDeployName = IMAGE_NAME
                 if (env.TAG_NAME) {
                   // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
                   if (imageDeployName.contains(':')) {
