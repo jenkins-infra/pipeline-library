@@ -145,15 +145,15 @@ def call(String imageShortName, Map userConfig=[:]) {
         } // stage
 
         //finalConfig.platforms.each {oneplatform ->
-          stage("Build ${imageName} for ${finalConfig.platforms}") {
-            withEnv(["IMAGE_PLATFORM=${finalConfig.platforms.join(',')}"]) {
-              if (isUnix()) {
-                sh 'make build'
-              } else {
-                powershell 'make build'
-              }
-            } // withEnv
-          } // stage
+        stage("Build ${imageName} for ${finalConfig.platforms}") {
+          withEnv(["IMAGE_PLATFORM=${finalConfig.platforms.join(',')}"]) {
+            if (isUnix()) {
+              sh 'make build'
+            } else {
+              powershell 'make build'
+            }
+          } // withEnv
+        } // stage
         //} // each platform
 
         // There can be 2 kind of tests: per image and per repository
