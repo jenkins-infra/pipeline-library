@@ -34,7 +34,10 @@ lint: ## Lint the $(IMAGE_DOCKERFILE) content
 
 build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 	@echo "== Building $(IMAGE_NAME) from $(call FixPath,$(IMAGE_DOCKERFILE)) with docker:"
-	docker image build \
+	docker buildx ls
+	docker context ls
+	docker buildx build \
+		--platform "$(IMAGE_PLATFORM)" \
 		--tag "$(IMAGE_NAME)" \
 		--build-arg "GIT_COMMIT_REV=$(GIT_COMMIT_REV)" \
 		--build-arg "GIT_SCM_URL=$(GIT_SCM_URL)" \
@@ -47,7 +50,6 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 		--label "org.label-schema.vcs-ref=$(GIT_COMMIT_REV)" \
 		--label "org.opencontainers.image.created=$(BUILD_DATE)" \
 		--label "org.label-schema.build-date=$(BUILD_DATE)" \
-		--platform "$(IMAGE_PLATFORM)" \
 		--file "$(call FixPath,$(IMAGE_DOCKERFILE))" \
 		"$(IMAGE_DIR)"
 	@echo "== Build succeeded"
