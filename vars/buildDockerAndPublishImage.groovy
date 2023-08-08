@@ -10,7 +10,7 @@ def call(String imageShortName, Map userConfig=[:]) {
     includeImageNameInTag: false, // Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
     dockerfile: 'Dockerfile', // Obvious default
     platform: 'linux/amd64', // Intel/AMD 64 Bits, following Docker platform identifiers
-    platforms: '',
+    platforms: [],
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
@@ -34,7 +34,7 @@ def call(String imageShortName, Map userConfig=[:]) {
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
   final String buildDate = dateFormat.format(now)
 
-  if (finalConfig.platforms == '') {
+  if (finalConfig.platforms.isEmpty()) {
     finalConfig.platforms = [finalConfig.platform]
   }
 
@@ -146,7 +146,7 @@ def call(String imageShortName, Map userConfig=[:]) {
 
         //finalConfig.platforms.each {oneplatform ->
           stage("Build ${imageName} for ${finalConfig.platforms}") {
-            withEnv(["IMAGE_PLATFORM=${finalConfig.platforms}"]) {
+            withEnv(["IMAGE_PLATFORM=${finalConfig.platforms.join(',')}"]) {
               if (isUnix()) {
                 sh 'make build'
               } else {
