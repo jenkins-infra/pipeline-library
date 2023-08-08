@@ -144,9 +144,9 @@ def call(String imageShortName, Map userConfig=[:]) {
           }
         } // stage
 
-        finalConfig.platforms.each {oneplatform ->
-          stage("Build ${imageName} for ${oneplatform}") {
-            withEnv(["IMAGE_PLATFORM=${oneplatform}"]) {
+        //finalConfig.platforms.each {oneplatform ->
+          stage("Build ${imageName} for ${finalConfig.platforms}") {
+            withEnv(["IMAGE_PLATFORM=${finalConfig.platforms}"]) {
               if (isUnix()) {
                 sh 'make build'
               } else {
@@ -154,7 +154,7 @@ def call(String imageShortName, Map userConfig=[:]) {
               }
             } // withEnv
           } // stage
-        } // each platform
+        //} // each platform
 
         // There can be 2 kind of tests: per image and per repository
         // Assuming Windows versions of cst configuration files finishing by "-windows" (e.g. "common-cst-windows.yml")
