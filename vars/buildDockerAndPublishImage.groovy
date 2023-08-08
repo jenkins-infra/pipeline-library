@@ -10,6 +10,7 @@ def call(String imageShortName, Map userConfig=[:]) {
     includeImageNameInTag: false, // Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
     dockerfile: 'Dockerfile', // Obvious default
     platform: 'linux/amd64', // Intel/AMD 64 Bits, following Docker platform identifiers
+    platforms: '',
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
@@ -33,18 +34,24 @@ def call(String imageShortName, Map userConfig=[:]) {
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
   final String buildDate = dateFormat.format(now)
 
-  // Warn about potential Linux/Windows contradictions between platform & agentLabels, and set the Windows config suffix for CST files
-  String cstConfigSuffix = ''
-  if (finalConfig.agentLabels.contains('windows') || finalConfig.platform.contains('windows')) {
-    if (finalConfig.agentLabels.contains('windows') && !finalConfig.platform.contains('windows')) {
-      echo "WARNING: A 'windows' agent is requested, but the 'platform' is set to '${finalConfig.platform}'."
-    }
-    if (!finalConfig.agentLabels.contains('windows') && finalConfig.platform.contains('windows')) {
-      echo "WARNING: The 'platform' is set to '${finalConfig.platform}', but there isn't any 'windows' agent requested."
-    }
-    cstConfigSuffix = '-windows'
+  if (finalConfig.platforms == '') {
+    finalConfig.platforms = [finalConfig.platform]
   }
-  String operatingSystem = finalConfig.platform.split('/')[0]
+
+  String cstConfigSuffix = ''
+  finalConfig.platforms.each {oneplatform ->
+    // Warn about potential Linux/Windows contradictions between platform & agentLabels, and set the Windows config suffix for CST files
+    if (finalConfig.agentLabels.contains('windows') || oneplatform.contains('windows')) {
+      if (finalConfig.agentLabels.contains('windows') && !finalConfig.platform.contains('windows')) {
+        echo "WARNING: A 'windows' agent is requested, but the 'platform' is set to '${oneplatform}'."
+      }
+      if (!finalConfig.agentLabels.contains('windows') && oneplatform.contains('windows')) {
+        echo "WARNING: The 'platform' is set to '${oneplatform}', but there isn't any 'windows' agent requested."
+      }
+      cstConfigSuffix = '-windows'
+    }
+    //String operatingSystem = oneplatform.split('/')[0]
+  }
 
   final InfraConfig infraConfig = new InfraConfig(env)
   final String defaultRegistryNamespace = infraConfig.getDockerRegistryNamespace()
@@ -58,7 +65,7 @@ def call(String imageShortName, Map userConfig=[:]) {
       "IMAGE_NAME=${imageName}",
       "IMAGE_DIR=${finalConfig.imageDir}",
       "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
-      "IMAGE_PLATFORM=${finalConfig.platform}",
+      //"IMAGE_PLATFORM=${finalConfig.platform}",
     ]) {
       infra.withDockerPullCredentials{
         String nextVersion = ''
@@ -137,13 +144,17 @@ def call(String imageShortName, Map userConfig=[:]) {
           }
         } // stage
 
-        stage("Build ${imageName}") {
-          if (isUnix()) {
-            sh 'make build'
-          } else {
-            powershell 'make build'
-          }
-        } //stage
+        finalConfig.platforms.each {oneplatform ->
+          stage("Build ${imageName} for ${oneplatform}") {
+            withEnv(["IMAGE_PLATFORM=${oneplatform}"]) {
+              if (isUnix()) {
+                sh 'make build'
+              } else {
+                powershell 'make build'
+              }
+            } // withEnv
+          } // stage
+        } // each platform
 
         // There can be 2 kind of tests: per image and per repository
         // Assuming Windows versions of cst configuration files finishing by "-windows" (e.g. "common-cst-windows.yml")
