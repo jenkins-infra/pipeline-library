@@ -587,8 +587,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And the environement variables set with the custom configuration values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=docker/'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=build.Dockerfile'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/amd64'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/arm64'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/amd64,linux/arm64'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_NAME=' + expectedImageName))
     // But no tag and no deploy called (branch or PR)
     assertTrue(assertMakeDeploy(expectedImageName))
