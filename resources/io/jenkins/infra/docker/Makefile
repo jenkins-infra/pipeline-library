@@ -68,7 +68,7 @@ test: ## Execute the test harness on the Docker Image
 deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 	@echo "== Deploying $(IMAGE_NAME) to $(IMAGE_DEPLOY_NAME) with docker:"
 	docker image tag "$(IMAGE_NAME)" "$(IMAGE_DEPLOY_NAME)"
-	docker image push --all-tags "$(IMAGE_DEPLOY_NAME)"
+	docker image push "$(IMAGE_DEPLOY_NAME)"
 	@echo "== Deploy succeeded"
 
 .PHONY: all clean lint build test deploy
