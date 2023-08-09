@@ -36,7 +36,6 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 	@echo "== Building $(IMAGE_NAME) from $(call FixPath,$(IMAGE_DOCKERFILE)) with docker:"
 		docker buildx create --name multiplatform --use
 		docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-		docker buildx rm multiplatform --force
 		docker buildx build \
 		--platform "$(IMAGE_PLATFORM)" \
 		--tag "$(IMAGE_NAME)" \
@@ -52,6 +51,7 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 		--label "org.opencontainers.image.created=$(BUILD_DATE)" \
 		--label "org.label-schema.build-date=$(BUILD_DATE)" \
 		--file "$(call FixPath,$(IMAGE_DOCKERFILE))" \
+		--load \
 		"$(IMAGE_DIR)"
 	@echo "== Build succeeded"
 
@@ -68,7 +68,9 @@ test: ## Execute the test harness on the Docker Image
 ## This steps expects that you are logged to the Docker registry to push image into
 deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 	@echo "== Deploying $(IMAGE_NAME) to $(IMAGE_DEPLOY_NAME) with docker:"
+	docker image ls
 	docker image tag "$(IMAGE_NAME)" "$(IMAGE_DEPLOY_NAME)"
+	docker image ls
 	docker image push "$(IMAGE_DEPLOY_NAME)"
 	@echo "== Deploy succeeded"
 
