@@ -34,8 +34,9 @@ lint: ## Lint the $(IMAGE_DOCKERFILE) content
 
 build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 	@echo "== Building $(IMAGE_NAME) from $(call FixPath,$(IMAGE_DOCKERFILE)) with docker:"
-		docker buildx create --use
+		docker buildx create --name multiplatform --use
 		docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+		docker buildx rm multiplatform --force
 		docker buildx build \
 		--platform "$(IMAGE_PLATFORM)" \
 		--tag "$(IMAGE_NAME)" \
