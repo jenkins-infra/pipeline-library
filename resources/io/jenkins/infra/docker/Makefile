@@ -34,9 +34,9 @@ lint: ## Lint the $(IMAGE_DOCKERFILE) content
 
 build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 	@echo "== Building $(IMAGE_NAME) from $(call FixPath,$(IMAGE_DOCKERFILE)) with docker:"
-	docker buildx create --use
-    docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-	docker buildx build \
+		docker buildx create --use
+		docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+		docker buildx build \
 		--platform "$(IMAGE_PLATFORM)" \
 		--tag "$(IMAGE_NAME)" \
 		--build-arg "GIT_COMMIT_REV=$(GIT_COMMIT_REV)" \
