@@ -309,63 +309,65 @@ def call(String imageShortName, Map userConfig=[:]) {
 
   //After parallelStages
   if (flagmultiplatforms) {
-    stage("Multiplatform Semantic Release of ${defaultImageName}") {
-      //checkout scm // should not be necessary on main node
-      echo "Configuring credential.helper"
-      // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
-      if (isUnix()) {
-        sh 'git config --local credential.helper "!set -u; echo username=\\$GIT_USERNAME && echo password=\\$GIT_PASSWORD && echo"'
-      } else {
-        // Using 'bat' here instead of 'powershell' to avoid variable interpolation problem with $
-        bat 'git config --local credential.helper "!sh.exe -c \'set -u; echo username=$GIT_USERNAME && echo password=$GIT_PASSWORD && echo"\''
-      }
+    node(finalConfig.agentLabels) {
+      stage("Multiplatform Semantic Release of ${defaultImageName}") {
+        checkout scm // should not be necessary on main node
+        echo "Configuring credential.helper"
+        // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
+        if (isUnix()) {
+          sh 'git config --local credential.helper "!set -u; echo username=\\$GIT_USERNAME && echo password=\\$GIT_PASSWORD && echo"'
+        } else {
+          // Using 'bat' here instead of 'powershell' to avoid variable interpolation problem with $
+          bat 'git config --local credential.helper "!sh.exe -c \'set -u; echo username=$GIT_USERNAME && echo password=$GIT_PASSWORD && echo"\''
+        }
 
-      withCredentials([
-        usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
-      ]) {
-        withEnv(["NEXT_VERSION=${nextVersion}", "IMAGE_NAME=${defaultImageName}"]) {
-          echo "Tagging and pushing the new version: ${nextVersion}"
-          if (isUnix()) {
-            sh '''
-            git config user.name "${GIT_USERNAME}"
-            git config user.email "jenkins-infra@googlegroups.com"
+        withCredentials([
+          usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
+        ]) {
+          withEnv(["NEXT_VERSION=${nextVersion}", "IMAGE_NAME=${defaultImageName}"]) {
+            echo "Tagging and pushing the new version: ${nextVersion}"
+            if (isUnix()) {
+              sh '''
+              git config user.name "${GIT_USERNAME}"
+              git config user.email "jenkins-infra@googlegroups.com"
 
-            git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
-            git push origin --tags
-            '''
-          } else {
-            powershell '''
-            git config user.email "jenkins-infra@googlegroups.com"
-            git config user.password $env:GIT_PASSWORD
+              git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
+              git push origin --tags
+              '''
+            } else {
+              powershell '''
+              git config user.email "jenkins-infra@googlegroups.com"
+              git config user.password $env:GIT_PASSWORD
 
-            git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"
-            git push origin --tags
-            '''
-          }
-        } // withEnv
-      } // withCredentials
-    } // stage
-    stage('Multiplatforms Amend') {
-      String manifestList = ''
-      finalConfig.platforms.each {eachplatform ->
-        specificImageName = defaultImageName + ':' + eachplatform.split('/')[1].replace('/','-')
-        manifestList += "--amend $specificImageName "
-      }
-      infra.withDockerPushCredentials {
-        if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
-          if (env.TAG_NAME) {
-            dockertag = env.TAG_NAME
-          } else {
-            dockertag = 'latest'
-          }
-          withEnv(["FULL_IMAGE_NAME=${defaultImageName}:${dockertag}", "MANIFESTLIST=${manifestList}"]) {
-            sh '''
-              docker manifest create "${FULL_IMAGE_NAME}" ${MANIFESTLIST}
-            '''
-            sh 'docker manifest push "${FULL_IMAGE_NAME}"'
+              git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"
+              git push origin --tags
+              '''
+            }
           } // withEnv
-        } // amend manifest only for primary branch or tags
-      } // need docker credential to push
-    } // stage
+        } // withCredentials
+      } // stage
+      stage('Multiplatforms Amend') {
+        String manifestList = ''
+        finalConfig.platforms.each {eachplatform ->
+          specificImageName = defaultImageName + ':' + eachplatform.split('/')[1].replace('/','-')
+          manifestList += "--amend $specificImageName "
+        }
+        infra.withDockerPushCredentials {
+          if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
+            if (env.TAG_NAME) {
+              dockertag = env.TAG_NAME
+            } else {
+              dockertag = 'latest'
+            }
+            withEnv(["FULL_IMAGE_NAME=${defaultImageName}:${dockertag}", "MANIFESTLIST=${manifestList}"]) {
+              sh '''
+                docker manifest create "${FULL_IMAGE_NAME}" ${MANIFESTLIST}
+              '''
+              sh 'docker manifest push "${FULL_IMAGE_NAME}"'
+            } // withEnv
+          } // amend manifest only for primary branch or tags
+        } // need docker credential to push
+      } // stage
+    } // node
   } // if
 } // call
