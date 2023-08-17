@@ -52,6 +52,11 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 		"$(IMAGE_DIR)"
 	@echo "== Build succeeded"
 
+buildbake: ## Build the Docker Image(s) with dockerbake file
+	@echo "== Building from DockerBake file"
+	docker buildx create --use
+	docker buildx bake --load
+
 clean: ## Delete any file generated during the build steps
 	@echo "== Cleaning working directory $(IMAGE_DIR) from generated artefacts:"
 	rm -f "$(call FixPath,$(IMAGE_DIR)/*.tar)" "$(HADOLINT_REPORT)"
@@ -68,5 +73,9 @@ deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 	docker image tag "$(IMAGE_NAME)" "$(IMAGE_DEPLOY_NAME)"
 	docker image push "$(IMAGE_DEPLOY_NAME)"
 	@echo "== Deploy succeeded"
+
+deploybake:  ## Tag and push the built image as specified by docker bake file
+	@echo "== Deploying with docker bake file"
+	docker buildx bake --push
 
 .PHONY: all clean lint build test deploy
