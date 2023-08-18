@@ -21,6 +21,9 @@ def call(String imageShortName, Map userConfig=[:]) {
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
   final Map finalConfig = defaultConfig << userConfig
 
+  // DEBUG ONLY FOR PUSH
+  TAG_NAME = "0.0.1-beta"
+
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
   final boolean semVerEnabledOnPrimaryBranch = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
@@ -142,7 +145,6 @@ def call(String imageShortName, Map userConfig=[:]) {
         stage("Build ${imageName}") {
           if (isUnix()) {
             if (finalConfig.dockerBakeFile != '') {
-              //sh 'docker run --rm --privileged multiarch/qemu-user-static --reset -p yes'
               sh 'make buildbake'
             } else {
               sh 'make build'
@@ -233,7 +235,6 @@ def call(String imageShortName, Map userConfig=[:]) {
               // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
               if (isUnix()) {
                 if (finalConfig.dockerBakeFile != '') {
-                  sh 'docker run --rm --privileged multiarch/qemu-user-static --reset -p yes'
                   sh 'make deploybake'
                 } else {
                   sh 'make deploy'
