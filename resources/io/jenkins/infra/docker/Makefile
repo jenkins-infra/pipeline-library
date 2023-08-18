@@ -22,6 +22,8 @@ GIT_SCM_URL ?= $(shell git config --get remote.origin.url)
 SCM_URI ?= $(subst git@github.com:,https://github.com/,"$(GIT_SCM_URL)")
 BUILD_DATE ?= $(shell date --utc '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || gdate --utc '+%Y-%m-%dT%H:%M:%S')
 
+RUN_PLAFORM ?= $(shell dpkg --print-architecture)
+
 help: ## Show this Makefile's help
 	@echo "Help:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -57,7 +59,7 @@ buildbake: ## Build the Docker Image(s) with dockerbake file
 	@echo "== Building from DockerBake file"
 	docker buildx create --use
 	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))"
-	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --set "*.platform=linux/$(dpkg --print-architecture)"  --load
+	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --set "*.platform=linux/$(RUN_PLAFORM)"  --load
 
 clean: ## Delete any file generated during the build steps
 	@echo "== Cleaning working directory $(IMAGE_DIR) from generated artefacts:"
