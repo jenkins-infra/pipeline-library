@@ -22,7 +22,7 @@ def call(String imageShortName, Map userConfig=[:]) {
   final Map finalConfig = defaultConfig << userConfig
 
   // DEBUG ONLY FOR PUSH
-  env.TAG_NAME = "0.0.1-beta"
+  env.TAG_NAME = "0.0.1"
 
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
