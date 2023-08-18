@@ -10,6 +10,8 @@ endif
 IMAGE_NAME ?= helloworld
 IMAGE_DEPLOY_NAME ?= "$(IMAGE_NAME)"
 IMAGE_PLATFORM ?= linux/amd64
+DOCKER_BAKE_FILE ?= "docker-bake.hcl"
+
 # Paths
 IMAGE_DOCKERFILE ?= "$(IMAGE_DIR)"/Dockerfile
 HADOLINT_REPORT ?= "$(IMAGE_DIR)"/hadolint.json
@@ -55,7 +57,7 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 buildbake: ## Build the Docker Image(s) with dockerbake file
 	@echo "== Building from DockerBake file"
 	docker buildx create --use
-	docker buildx bake --load
+	docker buildx bake -f ${DOCKER_BAKE_FILE} --load
 
 clean: ## Delete any file generated during the build steps
 	@echo "== Cleaning working directory $(IMAGE_DIR) from generated artefacts:"
@@ -76,6 +78,6 @@ deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 
 deploybake:  ## Tag and push the built image as specified by docker bake file
 	@echo "== Deploying with docker bake file"
-	docker buildx bake --push
+	docker buildx bake -f ${DOCKER_BAKE_FILE} --push
 
 .PHONY: all clean lint build test deploy
