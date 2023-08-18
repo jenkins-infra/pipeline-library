@@ -57,7 +57,7 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 buildbake: ## Build the Docker Image(s) with dockerbake file
 	@echo "== Building from DockerBake file"
 	docker buildx create --use
-	docker buildx bake -f ${DOCKER_BAKE_FILE}
+	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --load
 
 clean: ## Delete any file generated during the build steps
 	@echo "== Cleaning working directory $(IMAGE_DIR) from generated artefacts:"
@@ -78,6 +78,6 @@ deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 
 deploybake:  ## Tag and push the built image as specified by docker bake file
 	@echo "== Deploying with docker bake file"
-	docker buildx bake -f ${DOCKER_BAKE_FILE} --push
+	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --push
 
 .PHONY: all clean lint build test deploy
