@@ -15,7 +15,7 @@ def call(String imageShortName, Map userConfig=[:]) {
     imageDir: '.', // Relative path to the context directory for the Docker build
     registryNamespace: '', // Empty by default (means "autodiscover based on the current controller")
     unstash: '', // Allow to unstash files if not empty
-    dockerBakeFile: false, // Allow to build from a bake file instead
+    dockerBakeFile: '', // Allow to build from a bake file instead
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -140,13 +140,14 @@ def call(String imageShortName, Map userConfig=[:]) {
 
         stage("Build ${imageName}") {
           if (isUnix()) {
-            if (finalConfig.dockerBakeFile) {
+            if (finalConfig.dockerBakeFile != '') {
+              sh 'docker run --rm --privileged multiarch/qemu-user-static --reset -p yes'
               sh 'make buildbake'
             } else {
               sh 'make build'
             }
           } else {
-            if (finalConfig.dockerBakeFile) {
+            if (finalConfig.dockerBakeFile != '') {
               powershell 'make buildbake'
             } else {
               powershell 'make build'
@@ -230,13 +231,14 @@ def call(String imageShortName, Map userConfig=[:]) {
             withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
               // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
               if (isUnix()) {
-                if (finalConfig.dockerBakeFile) {
+                if (finalConfig.dockerBakeFile != '') {
+                  sh 'docker run --rm --privileged multiarch/qemu-user-static --reset -p yes'
                   sh 'make deploybake'
                 } else {
                   sh 'make deploy'
                 }
               } else {
-                if (finalConfig.dockerBakeFile) {
+                if (finalConfig.dockerBakeFile != '') {
                   powershell 'make deploybake'
                 } else {
                   powershell 'make deploy'
