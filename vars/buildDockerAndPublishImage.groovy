@@ -60,6 +60,7 @@ def call(String imageShortName, Map userConfig=[:]) {
       "IMAGE_DIR=${finalConfig.imageDir}",
       "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
       "IMAGE_PLATFORM=${finalConfig.platform}",
+      "DOCKER_BAKE_FILE=${finalConfig.dockerBakeFile}",
     ]) {
       infra.withDockerPullCredentials{
         String nextVersion = ''
