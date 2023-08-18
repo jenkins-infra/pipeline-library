@@ -10,12 +10,11 @@ endif
 IMAGE_NAME ?= helloworld
 IMAGE_DEPLOY_NAME ?= "$(IMAGE_NAME)"
 IMAGE_PLATFORM ?= linux/amd64
-DOCKER_BAKE_FILE ?= "docker-bake.hcl"
-
 # Paths
 IMAGE_DOCKERFILE ?= "$(IMAGE_DIR)"/Dockerfile
 HADOLINT_REPORT ?= "$(IMAGE_DIR)"/hadolint.json
 TEST_HARNESS ?= "$(IMAGE_DIR)"/cst.yml
+DOCKER_BAKE_FILE ?= "$(IMAGE_DIR)"/docker-bake.hcl
 
 ## Image metadatas
 GIT_COMMIT_REV ?= $(shell git log -n 1 --pretty=format:'%h')
