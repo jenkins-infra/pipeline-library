@@ -57,7 +57,7 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 buildbake: ## Build the Docker Image(s) with dockerbake file
 	@echo "== Building from DockerBake file"
 	docker buildx create --use
-	docker buildx bake -f ${DOCKER_BAKE_FILE} --load
+	docker buildx bake -f ${DOCKER_BAKE_FILE}
 
 clean: ## Delete any file generated during the build steps
 	@echo "== Cleaning working directory $(IMAGE_DIR) from generated artefacts:"
