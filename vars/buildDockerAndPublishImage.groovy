@@ -231,7 +231,7 @@ def call(String imageShortName, Map userConfig=[:]) {
               }
             }
 
-            withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
+            withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}", "TAG_NAME=${env.TAG_NAME}"]) {
               // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
               if (isUnix()) {
                 if (finalConfig.dockerBakeFile != '') {
