@@ -142,7 +142,7 @@ def call(String imageShortName, Map userConfig=[:]) {
         stage("Build ${imageName}") {
           if (isUnix()) {
             if (finalConfig.dockerBakeFile != '') {
-              sh 'docker run --rm --privileged multiarch/qemu-user-static --reset -p yes'
+              //sh 'docker run --rm --privileged multiarch/qemu-user-static --reset -p yes'
               sh 'make buildbake'
             } else {
               sh 'make build'
