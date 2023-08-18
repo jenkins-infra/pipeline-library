@@ -80,6 +80,6 @@ deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 
 deploybake:  ## Tag and push the built image as specified by docker bake file
 	@echo "== Deploying with docker bake file"
-	TAG = ${env.TAG_NAME}" docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))"  --push
+	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))"  --push
 
 .PHONY: all clean lint build test deploy
