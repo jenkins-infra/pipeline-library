@@ -151,7 +151,7 @@ def call(String imageShortName, Map userConfig=[:]) {
               if (cstConfigSuffix == "") {
                 //linux ==> generated docker bake
                 withEnv (["PLATFORMS=$finalConfig.platform", "DOCKER_BAKE_FILE=$overrideDockerBakeFile"]) {
-                  sh 'make buildbake'
+                  sh 'env && make buildbake'
                 }
               } else {
                 // still used for windows
