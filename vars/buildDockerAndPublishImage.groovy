@@ -21,9 +21,6 @@ def call(String imageShortName, Map userConfig=[:]) {
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
   final Map finalConfig = defaultConfig << userConfig
 
-  // DEBUG ONLY FOR PUSH
-  env.TAG_NAME = "0.0.2"
-
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
   final boolean semVerEnabledOnPrimaryBranch = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
