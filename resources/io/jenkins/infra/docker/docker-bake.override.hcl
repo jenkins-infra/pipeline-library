@@ -21,7 +21,7 @@ target "default" {
     full_image_name("latest"),
     full_image_name(TAG_NAME)
   ]
-  platforms = "$(PLATFORMS)"
+  platforms = ["$(PLATFORMS)"]
   args = {
     GIT_COMMIT_REV="$(GIT_COMMIT_REV)",
     GIT_SCM_URL="$(GIT_SCM_URL)",
