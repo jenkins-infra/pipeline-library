@@ -145,7 +145,7 @@ def call(String imageShortName, Map userConfig=[:]) {
         stage("Build ${imageName}") {
           if (isUnix()) {
             if (finalConfig.dockerBakeFile != '') {
-              sh 'env && make buildbake'
+              sh 'make buildbake'
             } else {
               sh 'make build'
             }
@@ -235,7 +235,7 @@ def call(String imageShortName, Map userConfig=[:]) {
               // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
               if (isUnix()) {
                 if (finalConfig.dockerBakeFile != '') {
-                  sh 'env && make deploybake'
+                  sh 'make deploybake'
                 } else {
                   sh 'make deploy'
                 }
