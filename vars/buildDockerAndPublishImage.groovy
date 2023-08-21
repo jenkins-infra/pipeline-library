@@ -23,7 +23,8 @@ def call(String imageShortName, Map userConfig=[:]) {
 
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
-  final String bakefileContent = libraryResource 'io/jenkins/infra/docker/docker-bake.override.hcl'
+  final String overrideDockerBakeFile = 'docker-bake.override.hcl'
+  final String bakefileContent = libraryResource 'io/jenkins/infra/docker/$overrideDockerBakeFile'
   final boolean semVerEnabledOnPrimaryBranch = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
 
   // Only run 1 build at a time on primary branch to ensure builds won't use the same tag when semantic versionning is activated
@@ -75,7 +76,7 @@ def call(String imageShortName, Map userConfig=[:]) {
           // Even though we have mitigation through the multibranch job config allowing to build PRs only from the repository contributors
           writeFile file: 'Makefile', text: makefileContent
 
-          writeFile file: 'docker-bake.override.hcl', text: bakefileContent
+          writeFile file: '$overrideDockerBakeFile', text: bakefileContent
         } // stage
 
         // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
@@ -149,9 +150,11 @@ def call(String imageShortName, Map userConfig=[:]) {
             } else {
               if (cstConfigSuffix == "") {
                 //linux ==> generated docker bake
-                env.PLATFORMS=finalConfig.platform
-                env.DOCKER_BAKE_FILE='docker-bake.override.hcl'
-                sh 'env && make buildbake'
+                env.
+                env.
+                withEnv (["PLATFORMS=$finalConfig.platform", "DOCKER_BAKE_FILE=$overrideDockerBakeFile"]) {
+                  sh 'make buildbake'
+                }
               } else {
                 // still used for windows
                 sh 'make build'
