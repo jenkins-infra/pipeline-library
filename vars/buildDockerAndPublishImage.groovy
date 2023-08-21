@@ -76,7 +76,7 @@ def call(String imageShortName, Map userConfig=[:]) {
           // Even though we have mitigation through the multibranch job config allowing to build PRs only from the repository contributors
           writeFile file: 'Makefile', text: makefileContent
 
-          writeFile file: '$overrideDockerBakeFile', text: bakefileContent
+          writeFile file: overrideDockerBakeFile, text: bakefileContent
 
           sh 'ls -lta' //DEBUG
         } // stage
