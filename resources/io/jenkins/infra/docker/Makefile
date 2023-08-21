@@ -57,6 +57,7 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 
 buildbake: ## Build the Docker Image(s) with dockerbake file
 	@echo "== Building from DockerBake file"
+	env
 	docker buildx create --use
 	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --print
 	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))"
