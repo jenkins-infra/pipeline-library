@@ -77,6 +77,8 @@ def call(String imageShortName, Map userConfig=[:]) {
           writeFile file: 'Makefile', text: makefileContent
 
           writeFile file: '$overrideDockerBakeFile', text: bakefileContent
+
+          sh 'ls -lta' //DEBUG
         } // stage
 
         // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
@@ -151,6 +153,7 @@ def call(String imageShortName, Map userConfig=[:]) {
               if (cstConfigSuffix == "") {
                 //linux ==> generated docker bake
                 withEnv (["PLATFORMS=$finalConfig.platform", "DOCKER_BAKE_FILE=$overrideDockerBakeFile"]) {
+                  sh 'ls -lta' //DEBUG
                   sh 'make buildbake'
                 }
               } else {
