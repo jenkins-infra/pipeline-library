@@ -8,6 +8,10 @@ variable "TAG_NAME" {
   default = ""
 }
 
+variable "PLATFORMS" {
+  default = "linux/arm64"
+}
+
 # return the full image name
 function "full_image_name" {
   params = [tag]
@@ -21,7 +25,7 @@ target "default" {
     full_image_name("latest"),
     full_image_name(TAG_NAME)
   ]
-  platforms = ["$(PLATFORMS)"]
+  platforms = [PLATFORMS]
   args = {
     GIT_COMMIT_REV="$(GIT_COMMIT_REV)",
     GIT_SCM_URL="$(GIT_SCM_URL)",
