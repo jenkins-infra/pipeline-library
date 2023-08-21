@@ -24,7 +24,7 @@ def call(String imageShortName, Map userConfig=[:]) {
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
   final String overrideDockerBakeFile = 'docker-bake.override.hcl'
-  final String bakefileContent = libraryResource 'io/jenkins/infra/docker/' + $overrideDockerBakeFile
+  final String bakefileContent = libraryResource 'io/jenkins/infra/docker/' + overrideDockerBakeFile
   final boolean semVerEnabledOnPrimaryBranch = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
 
   // Only run 1 build at a time on primary branch to ensure builds won't use the same tag when semantic versionning is activated
