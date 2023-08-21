@@ -56,7 +56,7 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 	@echo "== Build succeeded"
 
 buildbake: ## Build the Docker Image(s) with dockerbake file
-	@echo "== Building from DockerBake file"
+	@echo "== Building from DockerBake file with $(TAG_NAME)"
 	env
 	docker buildx create --use
 	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --print
@@ -81,7 +81,7 @@ deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 	@echo "== Deploy succeeded"
 
 deploybake:  ## Tag and push the built image as specified by docker bake file
-	@echo "== Deploying with docker bake file"
+	@echo "== Deploying with docker bake file with $(TAG_NAME)"
 	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --print
 	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --push
 
