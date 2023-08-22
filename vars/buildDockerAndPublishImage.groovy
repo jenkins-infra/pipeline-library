@@ -148,17 +148,18 @@ def call(String imageShortName, Map userConfig=[:]) {
             if (finalConfig.dockerBakeFile != '') {
               sh 'make buildbake'
             } else {
-              if (cstConfigSuffix == "") {
+              if (operatingSystem == "linux") {
                 //linux ==> generated docker bake
                 withEnv (["PLATFORMS=$finalConfig.platform", "DOCKER_BAKE_FILE=$overrideDockerBakeFile"]) {
-                  sh 'env && make buildbake'
+                  sh 'make buildbake'
                 }
               } else {
-                // still used for windows
+                // old process still used for windows
                 sh 'make build'
               }
             }
           } else {
+            // the agent is a windows agent so we do not force bakefile
             if (finalConfig.dockerBakeFile != '') {
               powershell 'make buildbake'
             } else {
