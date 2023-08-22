@@ -12,6 +12,14 @@ variable "PLATFORMS" {
   default = "linux/arm64"
 }
 
+variable "DOCKERFILE" {
+  default = "Dockerfile"
+}
+
+variable "IMAGE_DIR" {
+  default = "."
+}
+
 # return the full image name
 function "full_image_name" {
   params = [tag]
@@ -19,8 +27,8 @@ function "full_image_name" {
 }
 
 target "default" {
-  dockerfile = "Dockerfile"
-  context = "."
+  dockerfile = "$(DOCKERFILE)"
+  context = "$(IMAGE_DIR)"
   tags = [
     full_image_name("latest"),
     full_image_name(TAG_NAME)
