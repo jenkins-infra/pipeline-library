@@ -28,7 +28,7 @@ function "full_image_name" {
 
 target "default" {
   dockerfile = "$(IMAGE_DOCKERFILE)"
-  context = "$(IMAGE_DIR)"
+  context = IMAGE_DIR
   tags = [
     full_image_name("latest"),
     full_image_name(TAG_NAME)
