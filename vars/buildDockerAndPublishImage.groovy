@@ -260,7 +260,6 @@ def call(String imageShortName, Map userConfig=[:]) {
               } else {
                 powershell 'make deploy'
               } // unix agent
-
             } // withEnv
           } //stage
         } // if
