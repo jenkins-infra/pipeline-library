@@ -562,4 +562,37 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
+  @Test
+  void itBuildsAndDeploysImageWithCustomPlatformOnPrincipalBranch() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+    withMocks{
+      script.call(testImageName, [
+        dockerfile: 'build.Dockerfile',
+        imageDir: 'docker/',
+        platform: 'linux/amd64,linux/arm64,linux/s390x',
+        automaticSemanticVersioning: true,
+        gitCredentials: 'git-creds',
+        registryNamespace: 'jenkins',
+      ])
+    }
+    final String expectedImageName = 'jenkins/' + testImageName
+    printCallStack()
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+    // With the common workflow run as expected
+    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
+    // And the environement variables set with the custom configuration values
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=docker/'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=build.Dockerfile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'PLATFORMS=linux/amd64,linux/arm64,linux/s390x'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_NAME=' + expectedImageName))
+    // But no tag and no deploy called (branch or PR)
+    assertTrue(assertMakeDeploy(expectedImageName))
+    assertTrue(assertTagPushed(defaultGitTag))
+    // And all mocked/stubbed methods have to be called
+    verifyMocks()
+  }
 }
