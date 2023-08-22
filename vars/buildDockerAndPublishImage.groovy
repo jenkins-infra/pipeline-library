@@ -247,15 +247,19 @@ def call(String imageShortName, Map userConfig=[:]) {
                 if (finalConfig.dockerBakeFile != '') {
                   sh 'make deploybake'
                 } else {
-                  sh 'make deploy'
+                  if (operatingSystem == "linux") {
+                    //linux ==> generated docker bake
+                    withEnv (["PLATFORMS=$finalConfig.platform", "DOCKER_BAKE_FILE=$overrideDockerBakeFile"]) {
+                      sh 'make deploybake'
+                    }
+                  } else {
+                    // old process still used for windows
+                    sh 'make deploy'
+                  }
                 }
               } else {
-                if (finalConfig.dockerBakeFile != '') {
-                  powershell 'make deploybake'
-                } else {
-                  powershell 'make deploy'
-                }
-              }
+                powershell 'make deploy'
+              } // unix agent
 
             } // withEnv
           } //stage
