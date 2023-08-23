@@ -9,7 +9,8 @@ def call(String imageShortName, Map userConfig=[:]) {
     automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
     includeImageNameInTag: false, // Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
     dockerfile: 'Dockerfile', // Obvious default
-    platform: 'linux/amd64', // Intel/AMD 64 Bits, following Docker platform identifiers
+    platform: '', // Kept for backward compatibility
+    platforms: '', // Allow to override the platform for multi-arch builds see default line 46
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
@@ -36,18 +37,31 @@ def call(String imageShortName, Map userConfig=[:]) {
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
   final String buildDate = dateFormat.format(now)
 
+  // only one platform parameter is supported for now either platform or platforms
+  if (finalConfig.platforms != '' && finalConfig.platform != '') {
+    throw new Exception("Only one platform parameter is supported for now either platform or platforms, prefer platforms")
+  } else if (finalConfig.platform != '') {
+    finalConfig.platforms = finalConfig.platform
+  } else {
+    finalConfig.platforms = 'linux/amd64'
+  }
+
   // Warn about potential Linux/Windows contradictions between platform & agentLabels, and set the Windows config suffix for CST files
+  // for now only one platform possible per windows build !
   String cstConfigSuffix = ''
-  if (finalConfig.agentLabels.contains('windows') || finalConfig.platform.contains('windows')) {
-    if (finalConfig.agentLabels.contains('windows') && !finalConfig.platform.contains('windows')) {
-      echo "WARNING: A 'windows' agent is requested, but the 'platform' is set to '${finalConfig.platform}'."
+  if (finalConfig.agentLabels.contains('windows') || finalConfig.platforms.contains('windows')) {
+    if (finalConfig.platforms.split(',').length > 1) {
+      throw new Exception("with windows, only one platform can be specified within 'platforms'")
     }
-    if (!finalConfig.agentLabels.contains('windows') && finalConfig.platform.contains('windows')) {
-      echo "WARNING: The 'platform' is set to '${finalConfig.platform}', but there isn't any 'windows' agent requested."
+    if (finalConfig.agentLabels.contains('windows') && !finalConfig.platforms.contains('windows')) {
+      echo "WARNING: A 'windows' agent is requested, but the 'platform(s)' is set to '${finalConfig.platforms}'."
+    }
+    if (!finalConfig.agentLabels.contains('windows') && finalConfig.platforms.contains('windows')) {
+      echo "WARNING: The 'platforms' is set to '${finalConfig.platforms}', but there isn't any 'windows' agent requested."
     }
     cstConfigSuffix = '-windows'
   }
-  String operatingSystem = finalConfig.platform.split('/')[0]
+  String operatingSystem = finalConfig.platforms.split('/')[0]
 
   final InfraConfig infraConfig = new InfraConfig(env)
   final String defaultRegistryNamespace = infraConfig.getDockerRegistryNamespace()
@@ -61,7 +75,7 @@ def call(String imageShortName, Map userConfig=[:]) {
       "IMAGE_NAME=${imageName}",
       "IMAGE_DIR=${finalConfig.imageDir}",
       "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
-      "IMAGE_PLATFORM=${finalConfig.platform}",
+      "IMAGE_PLATFORMS=${finalConfig.platforms}",
       "DOCKER_BAKE_FILE=${finalConfig.dockerBakeFile}",
     ]) {
       infra.withDockerPullCredentials{
@@ -150,7 +164,7 @@ def call(String imageShortName, Map userConfig=[:]) {
             } else {
               if (operatingSystem == "linux") {
                 //linux ==> generated docker bake
-                withEnv (["PLATFORMS=$finalConfig.platform", "DOCKER_BAKE_FILE=$overrideDockerBakeFile"]) {
+                withEnv (["PLATFORMS=$finalConfig.platforms", "DOCKER_BAKE_FILE=$overrideDockerBakeFile"]) {
                   sh 'make buildbake'
                 }
               } else {
@@ -249,7 +263,7 @@ def call(String imageShortName, Map userConfig=[:]) {
                 } else {
                   if (operatingSystem == "linux") {
                     //linux ==> generated docker bake
-                    withEnv (["PLATFORMS=$finalConfig.platform", "DOCKER_BAKE_FILE=$overrideDockerBakeFile"]) {
+                    withEnv (["PLATFORMS=$finalConfig.platforms", "DOCKER_BAKE_FILE=$overrideDockerBakeFile"]) {
                       sh 'make deploybake'
                     }
                   } else {
