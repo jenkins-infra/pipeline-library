@@ -39,10 +39,13 @@ def call(String imageShortName, Map userConfig=[:]) {
 
   // only one platform parameter is supported for now either platform or platforms
   if (finalConfig.platforms != '' && finalConfig.platform != '') {
+    // both platform and platforms cannot be set at the same time
     throw new Exception("Only one platform parameter is supported for now either platform or platforms, prefer platforms")
   } else if (finalConfig.platform != '') {
+    // if platform is set, I override platforms with it
     finalConfig.platforms = finalConfig.platform
-  } else {
+  } else if (finalConfig.platforms == '') {
+    // if platforms is not set, I set it to linux/amd64 by default
     finalConfig.platforms = 'linux/amd64'
   }
 
