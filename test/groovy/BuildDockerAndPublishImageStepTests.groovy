@@ -173,7 +173,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And the expected environment variable defined to their defaults
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/amd64'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORMS=linux/amd64'))
 
     // And generated reports are recorded
     assertTrue(assertRecordIssues())
@@ -297,7 +297,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And the environement variables set with the custom configuration values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=docker/'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=build.Dockerfile'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/s390x'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORMS=linux/s390x'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_NAME=' + expectedImageName))
     // But no tag and no deploy called (branch or PR)
     assertTrue(assertMakeDeploy(expectedImageName))
@@ -481,7 +481,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And the expected environment variables set to their default values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/amd64'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORMS=linux/amd64'))
     // And generated reports recorded
     assertTrue(assertRecordIssues())
     // And the deploy step called
@@ -510,7 +510,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And the expected environment variables set to their default values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/amd64'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORMS=linux/amd64'))
     // And generated reports recorded
     assertTrue(assertRecordIssues())
     // But no deploy step called (not on principal branch)
@@ -545,7 +545,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And the expected environment variable defined to their defaults
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORM=linux/amd64'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORMS=linux/amd64'))
 
     // And generated reports are recorded
     assertTrue(assertRecordIssues())
