@@ -9,7 +9,7 @@ endif
 
 IMAGE_NAME ?= helloworld
 IMAGE_DEPLOY_NAME ?= "$(IMAGE_NAME)"
-IMAGE_PLATFORMS ?= linux/amd64
+BUILD_TARGETPLATFORM ?= linux/amd64
 # Paths
 IMAGE_DOCKERFILE ?= "$(IMAGE_DIR)"/Dockerfile
 HADOLINT_REPORT ?= "$(IMAGE_DIR)"/hadolint.json
@@ -48,12 +48,12 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 		--label "org.label-schema.vcs-ref=$(GIT_COMMIT_REV)" \
 		--label "org.opencontainers.image.created=$(BUILD_DATE)" \
 		--label "org.label-schema.build-date=$(BUILD_DATE)" \
-		--platform "$(IMAGE_PLATFORMS)" \
+		--platform "$(BUILD_TARGETPLATFORM)" \
 		--file "$(call FixPath,$(IMAGE_DOCKERFILE))" \
 		"$(IMAGE_DIR)"
 	@echo "== Build succeeded"
 
-buildbake: ## Build the Docker Image(s) with dockerbake file
+bake-build: ## Build the Docker Image(s) with dockerbake file
 	@echo "== Building from DockerBake file"
 	docker buildx create --use
 	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --print
@@ -77,7 +77,7 @@ deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 	docker image push "$(IMAGE_DEPLOY_NAME)"
 	@echo "== Deploy succeeded"
 
-deploybake:  ## Tag and push the built image as specified by docker bake file
+bake-deploy:  ## Tag and push the built image as specified by docker bake file
 	@echo "== Deploying with docker bake file"
 	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --print
 	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --push

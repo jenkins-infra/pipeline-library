@@ -117,7 +117,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   Boolean assertBaseWorkflow() {
     return assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile') \
       && (assertMethodCallContainsPattern('sh','make lint') || assertMethodCallContainsPattern('powershell','make lint')) \
-      && (assertMethodCallContainsPattern('sh','make build') || assertMethodCallContainsPattern('powershell','make build')) \
+      && (assertMethodCallContainsPattern('sh','make build') || assertMethodCallContainsPattern('sh','make bake-build') || assertMethodCallContainsPattern('powershell','make build')) \
       && assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}")
   }
 
@@ -132,7 +132,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
   // return if the "make deploy" was detected with the provided argument as image name
   Boolean assertMakeDeploy(String expectedImageName = fullTestImageName) {
-    return (assertMethodCallContainsPattern('sh','make deploy') || assertMethodCallContainsPattern('powershell','make deploy')) \
+    return (assertMethodCallContainsPattern('sh','make deploy') || assertMethodCallContainsPattern('sh','make bake-deploy') || assertMethodCallContainsPattern('powershell','make deploy')) \
       && assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=${expectedImageName}")
   }
 
@@ -173,7 +173,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And the expected environment variable defined to their defaults
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORMS=linux/amd64'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'BAKE_TARGETPLATFORMS=linux/amd64'))
 
     // And generated reports are recorded
     assertTrue(assertRecordIssues())
@@ -297,7 +297,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And the environement variables set with the custom configuration values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=docker/'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=build.Dockerfile'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORMS=linux/s390x'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'BAKE_TARGETPLATFORMS=linux/s390x'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_NAME=' + expectedImageName))
     // But no tag and no deploy called (branch or PR)
     assertTrue(assertMakeDeploy(expectedImageName))
@@ -481,7 +481,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And the expected environment variables set to their default values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORMS=linux/amd64'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'BAKE_TARGETPLATFORMS=linux/amd64'))
     // And generated reports recorded
     assertTrue(assertRecordIssues())
     // And the deploy step called
@@ -510,7 +510,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And the expected environment variables set to their default values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORMS=linux/amd64'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'BAKE_TARGETPLATFORMS=linux/amd64'))
     // And generated reports recorded
     assertTrue(assertRecordIssues())
     // But no deploy step called (not on principal branch)
@@ -545,7 +545,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And the expected environment variable defined to their defaults
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_PLATFORMS=linux/amd64'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'BAKE_TARGETPLATFORMS=linux/amd64'))
 
     // And generated reports are recorded
     assertTrue(assertRecordIssues())
@@ -569,15 +569,10 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     mockPrincipalBranch()
     withMocks{
       script.call(testImageName, [
-        dockerfile: 'build.Dockerfile',
-        imageDir: 'docker/',
         platform: 'linux/amd64,linux/arm64,linux/s390x',
         automaticSemanticVersioning: true,
-        gitCredentials: 'git-creds',
-        registryNamespace: 'jenkins',
       ])
     }
-    final String expectedImageName = 'jenkins/' + testImageName
     printCallStack()
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
@@ -585,14 +580,105 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertBaseWorkflow())
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And the environement variables set with the custom configuration values
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=docker/'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=build.Dockerfile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'PLATFORMS=linux/amd64,linux/arm64,linux/s390x'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_NAME=' + expectedImageName))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_NAME=jenkinsciinfra/bitcoinMinerImage'))
     // But no tag and no deploy called (branch or PR)
-    assertTrue(assertMakeDeploy(expectedImageName))
+    assertTrue(assertMakeDeploy())
     assertTrue(assertTagPushed(defaultGitTag))
     // And all mocked/stubbed methods have to be called
     verifyMocks()
+  }
+
+  @Test
+  void itBuildsAndDeploysImageWithSpecifiedBakeFileOnPrincipalBranch() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+    withMocks{
+      script.call(testImageName, [
+        dockerBakeFile: 'bake.yml',
+      ])
+    }
+
+    //final String expectedImageName = 'jenkins/' + testImageName
+    printCallStack()
+
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+
+    // // With the common workflow run as expected
+    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('sh', 'make bake-build'))
+    assertFalse(assertMethodCallContainsPattern('sh', 'make build'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'make bake-deploy'))
+    assertFalse(assertMethodCallContainsPattern('sh', 'make deploy'))
+    // // And the environement variables set with the custom configuration values
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'BAKE_TARGETPLATFORMS=linux/amd64'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'DOCKER_BAKE_FILE=bake.yml'))
+    // // And all mocked/stubbed methods have to be called
+    verifyMocks()
+  }
+
+  @Test
+  void itFailWithBothPlatformAndPlatforms() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+    withMocks{
+      script.call(testImageName, [
+        platform: 'linux/amd64',
+        platforms: 'linux/arm64',
+      ])
+    }
+
+    printCallStack()
+
+    // Then we expect a failing build
+    assertJobStatusFailure()
+
+    // And the error message is shown
+    assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: Only one platform parameter is supported for now either platform or platforms, prefer platforms.'))
+  }
+
+  @Test
+  void itFailWithWindowsAndMoreThanOnePlatform() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+    withMocks{
+      script.call(testImageName, [
+        agentLabels: 'docker-windows',
+        platforms: 'linux/arm64,linux/amd64',
+      ])
+    }
+
+    printCallStack()
+
+    // Then we expect a failing build
+    assertJobStatusFailure()
+
+    // And the error message is shown
+    assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: with windows, only one platform can be specified within platforms.'))
+  }
+
+  @Test
+  void itDontBuildsAndDeploysImageWithWindowsAndBakeOnPrincipalBranch() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+    withMocks{
+      script.call(testImageName, [
+        dockerBakeFile: 'bake.yml',
+        platforms: 'windows/1804',
+        agentLabels: 'docker-windows',
+      ])
+    }
+
+    printCallStack()
+
+    // Then we expect a failing build
+    assertJobStatusFailure()
+
+    // And the error message is shown
+    assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: dockerBakeFile is not supported on windows.'))
   }
 }

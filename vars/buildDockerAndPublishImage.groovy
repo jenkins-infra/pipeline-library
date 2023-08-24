@@ -9,8 +9,8 @@ def call(String imageShortName, Map userConfig=[:]) {
     automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
     includeImageNameInTag: false, // Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
     dockerfile: 'Dockerfile', // Obvious default
-    platform: '', // Kept for backward compatibility
-    platforms: '', // Allow to override the platform for multi-arch builds see default line 46
+    platform: '', // Kept for backward compatibility to be deprecated
+    platforms: '', // Allow to override the platform for multi-arch builds see default line 40
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
@@ -24,8 +24,8 @@ def call(String imageShortName, Map userConfig=[:]) {
 
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
-  final String overrideDockerBakeFile = 'docker-bake.override.hcl'
-  final String bakefileContent = libraryResource 'io/jenkins/infra/docker/' + overrideDockerBakeFile
+  final String jenkinsInfraBakeFile = 'jenkinsinfrabakefile.hcl'
+  final String bakefileContent = libraryResource 'io/jenkins/infra/docker/' + jenkinsInfraBakeFile
   final boolean semVerEnabledOnPrimaryBranch = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
 
   // Only run 1 build at a time on primary branch to ensure builds won't use the same tag when semantic versionning is activated
@@ -40,7 +40,9 @@ def call(String imageShortName, Map userConfig=[:]) {
   // only one platform parameter is supported for now either platform or platforms
   if (finalConfig.platforms != '' && finalConfig.platform != '') {
     // both platform and platforms cannot be set at the same time
-    throw new Exception("Only one platform parameter is supported for now either platform or platforms, prefer platforms")
+    echo 'ERROR: Only one platform parameter is supported for now either platform or platforms, prefer platforms.'
+    currentBuild.result = 'FAILURE'
+    return
   } else if (finalConfig.platform != '') {
     // if platform is set, I override platforms with it
     finalConfig.platforms = finalConfig.platform
@@ -54,7 +56,9 @@ def call(String imageShortName, Map userConfig=[:]) {
   String cstConfigSuffix = ''
   if (finalConfig.agentLabels.contains('windows') || finalConfig.platforms.contains('windows')) {
     if (finalConfig.platforms.split(',').length > 1) {
-      throw new Exception("with windows, only one platform can be specified within 'platforms'")
+      echo 'ERROR: with windows, only one platform can be specified within platforms.'
+      currentBuild.result = 'FAILURE'
+      return
     }
     if (finalConfig.agentLabels.contains('windows') && !finalConfig.platforms.contains('windows')) {
       echo "WARNING: A 'windows' agent is requested, but the 'platform(s)' is set to '${finalConfig.platforms}'."
@@ -65,6 +69,12 @@ def call(String imageShortName, Map userConfig=[:]) {
     cstConfigSuffix = '-windows'
   }
   String operatingSystem = finalConfig.platforms.split('/')[0]
+
+  if (operatingSystem == 'windows' && finalConfig.dockerBakeFile != '') {
+    echo 'ERROR: dockerBakeFile is not supported on windows.'
+    currentBuild.result = 'FAILURE'
+    return
+  }
 
   final InfraConfig infraConfig = new InfraConfig(env)
   final String defaultRegistryNamespace = infraConfig.getDockerRegistryNamespace()
@@ -78,8 +88,9 @@ def call(String imageShortName, Map userConfig=[:]) {
       "IMAGE_NAME=${imageName}",
       "IMAGE_DIR=${finalConfig.imageDir}",
       "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
-      "IMAGE_PLATFORMS=${finalConfig.platforms}",
-      "DOCKER_BAKE_FILE=${finalConfig.dockerBakeFile}",
+      "BUILD_TARGETPLATFORM=${finalConfig.platforms}",
+      "BAKE_TARGETPLATFORMS=${finalConfig.platforms}",
+      "DOCKER_BAKE_FILE=${finalConfig.dockerBakeFile ?: jenkinsInfraBakeFile}",
     ]) {
       infra.withDockerPullCredentials{
         String nextVersion = ''
@@ -93,7 +104,7 @@ def call(String imageShortName, Map userConfig=[:]) {
           // Even though we have mitigation through the multibranch job config allowing to build PRs only from the repository contributors
           writeFile file: 'Makefile', text: makefileContent
 
-          writeFile file: overrideDockerBakeFile, text: bakefileContent
+
         } // stage
 
         // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
@@ -161,28 +172,24 @@ def call(String imageShortName, Map userConfig=[:]) {
         } // stage
 
         stage("Build ${imageName}") {
-          if (isUnix()) {
-            if (finalConfig.dockerBakeFile != '') {
-              sh 'make buildbake'
-            } else {
-              if (operatingSystem == "linux") {
-                //linux ==> generated docker bake
-                withEnv (["PLATFORMS=$finalConfig.platforms", "DOCKER_BAKE_FILE=$overrideDockerBakeFile"]) {
-                  sh 'make buildbake'
-                }
+          withEnv(["IMAGE_DEPLOY_NAME=${imageName}"]) {
+            if (isUnix()) {
+              if (finalConfig.dockerBakeFile != '') {
+                sh 'make bake-build'
               } else {
-                // old process still used for windows
-                sh 'make build'
+                if (operatingSystem == "linux") {
+                  //linux ==> generated docker bake
+                  writeFile file: jenkinsInfraBakeFile, text: bakefileContent
+                  sh 'make bake-build'
+                } else {
+                  // old process still used for windows
+                  sh 'make build'
+                }
               }
-            }
-          } else {
-            // the agent is a windows agent so we do not force bakefile
-            if (finalConfig.dockerBakeFile != '') {
-              powershell 'make buildbake'
             } else {
               powershell 'make build'
             }
-          }
+          } // withEnv
         } //stage
 
         // There can be 2 kind of tests: per image and per repository
@@ -257,27 +264,25 @@ def call(String imageShortName, Map userConfig=[:]) {
                 imageDeployName += ":${env.TAG_NAME}"
               }
             }
-
-            withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}", "TAG_NAME=${env.TAG_NAME}"]) {
-              // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
-              if (isUnix()) {
+            if (isUnix()) {
+              withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
+                // Please note that "make deploy" and the generated bake deploy file uses the environment variable "IMAGE_DEPLOY_NAME"
                 if (finalConfig.dockerBakeFile != '') {
-                  sh 'make deploybake'
+                  sh 'make bake-deploy'
                 } else {
                   if (operatingSystem == "linux") {
                     //linux ==> generated docker bake
-                    withEnv (["PLATFORMS=$finalConfig.platforms", "DOCKER_BAKE_FILE=$overrideDockerBakeFile"]) {
-                      sh 'make deploybake'
-                    }
+                    sh 'make bake-deploy'
                   } else {
                     // old process still used for windows
                     sh 'make deploy'
                   }
                 }
-              } else {
-                powershell 'make deploy'
-              } // unix agent
-            } // withEnv
+              } // withEnv
+            } else {
+              powershell 'make deploy'
+            } // unix agent
+
           } //stage
         } // if
       } // withDockerPushCredentials
