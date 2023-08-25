@@ -117,7 +117,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   Boolean assertBaseWorkflow() {
     return assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile') \
       && (assertMethodCallContainsPattern('sh','make lint') || assertMethodCallContainsPattern('powershell','make lint')) \
-      && (assertMethodCallContainsPattern('sh','make build') || assertMethodCallContainsPattern('sh','make bake-build') || assertMethodCallContainsPattern('powershell','make build')) \
+      && (assertMethodCallContainsPattern('sh','make $action') || assertMethodCallContainsPattern('sh','make bake-$action') || assertMethodCallContainsPattern('powershell','make $action')) \
       && assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}")
   }
 
@@ -132,7 +132,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
   // return if the "make deploy" was detected with the provided argument as image name
   Boolean assertMakeDeploy(String expectedImageName = fullTestImageName) {
-    return (assertMethodCallContainsPattern('sh','make deploy') || assertMethodCallContainsPattern('sh','make bake-deploy') || assertMethodCallContainsPattern('powershell','make deploy')) \
+    return (assertMethodCallContainsPattern('sh','make $action') || assertMethodCallContainsPattern('sh','make bake-$action') || assertMethodCallContainsPattern('powershell','make $action')) \
       && assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=${expectedImageName}")
   }
 
@@ -622,13 +622,32 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   @Test
-  void itFailWithBothPlatformAndPlatforms() throws Exception {
+  void itBuildWithWarningWithPlatform() throws Exception {
     def script = loadScript(scriptName)
     mockPrincipalBranch()
     withMocks{
       script.call(testImageName, [
         platform: 'linux/amd64',
-        platforms: 'linux/arm64',
+      ])
+    }
+
+    printCallStack()
+
+    // Then we expect a failing build
+    assertJobStatusSuccess()
+
+    // And the error message is shown
+    assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: `platform` is deprecated, use `targetplatforms` instead.'))
+  }
+
+  @Test
+  void itFailWithBothPlatformAndTargetplatforms() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+    withMocks{
+      script.call(testImageName, [
+        platform: 'linux/amd64',
+        targetplatforms: 'linux/arm64',
       ])
     }
 
@@ -638,7 +657,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusFailure()
 
     // And the error message is shown
-    assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: Only one platform parameter is supported for now either platform or platforms, prefer platforms.'))
+    assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: Only one platform parameter is supported for now either platform or targetplatforms, prefer `targetplatforms`.'))
   }
 
   @Test
@@ -648,7 +667,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     withMocks{
       script.call(testImageName, [
         agentLabels: 'docker-windows',
-        platforms: 'linux/arm64,linux/amd64',
+        targetplatforms: 'linux/arm64,linux/amd64',
       ])
     }
 
@@ -658,7 +677,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusFailure()
 
     // And the error message is shown
-    assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: with windows, only one platform can be specified within platforms.'))
+    assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: with windows, only one platform can be specified within targetplatforms.'))
   }
 
   @Test
@@ -668,7 +687,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     withMocks{
       script.call(testImageName, [
         dockerBakeFile: 'bake.yml',
-        platforms: 'windows/1804',
+        targetplatforms: 'windows/1804',
         agentLabels: 'docker-windows',
       ])
     }
