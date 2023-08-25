@@ -9,8 +9,7 @@ def call(String imageShortName, Map userConfig=[:]) {
     automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
     includeImageNameInTag: false, // Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
     dockerfile: 'Dockerfile', // Obvious default
-    platform: '', // Kept for backward compatibility to be deprecated
-    platforms: '', // Allow to override the platform for multi-arch builds see default line 40
+    targetplatforms: '', // defined the platforms to build as TARGET
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
@@ -37,38 +36,41 @@ def call(String imageShortName, Map userConfig=[:]) {
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
   final String buildDate = dateFormat.format(now)
 
+
   // only one platform parameter is supported for now either platform or platforms
-  if (finalConfig.platforms != '' && finalConfig.platform != '') {
+  if (finalConfig.platform && finalConfig.targetplatforms) {
     // both platform and platforms cannot be set at the same time
-    echo 'ERROR: Only one platform parameter is supported for now either platform or platforms, prefer platforms.'
+    echo 'ERROR: Only one platform parameter is supported for now either platform or targetplatforms, prefer targetplatforms.'
     currentBuild.result = 'FAILURE'
     return
-  } else if (finalConfig.platform != '') {
+  } else if (finalConfig.platform) {
     // if platform is set, I override platforms with it
-    finalConfig.platforms = finalConfig.platform
-  } else if (finalConfig.platforms == '') {
-    // if platforms is not set, I set it to linux/amd64 by default
-    finalConfig.platforms = 'linux/amd64'
+    finalConfig.targetplatforms = finalConfig.platform
+  }
+
+  // Default Value if targetplatforms is not set, I set it to linux/amd64 by default
+  if (finalConfig.targetplatforms == '') {
+    finalConfig.targetplatforms = 'linux/amd64'
   }
 
   // Warn about potential Linux/Windows contradictions between platform & agentLabels, and set the Windows config suffix for CST files
   // for now only one platform possible per windows build !
   String cstConfigSuffix = ''
-  if (finalConfig.agentLabels.contains('windows') || finalConfig.platforms.contains('windows')) {
-    if (finalConfig.platforms.split(',').length > 1) {
+  if (finalConfig.agentLabels.contains('windows') || finalConfig.targetplatforms.contains('windows')) {
+    if (finalConfig.targetplatforms.split(',').length > 1) {
       echo 'ERROR: with windows, only one platform can be specified within platforms.'
       currentBuild.result = 'FAILURE'
       return
     }
-    if (finalConfig.agentLabels.contains('windows') && !finalConfig.platforms.contains('windows')) {
-      echo "WARNING: A 'windows' agent is requested, but the 'platform(s)' is set to '${finalConfig.platforms}'."
+    if (finalConfig.agentLabels.contains('windows') && !finalConfig.targetplatforms.contains('windows')) {
+      echo "WARNING: A 'windows' agent is requested, but the 'platform(s)' is set to '${finalConfig.targetplatforms}'."
     }
-    if (!finalConfig.agentLabels.contains('windows') && finalConfig.platforms.contains('windows')) {
-      echo "WARNING: The 'platforms' is set to '${finalConfig.platforms}', but there isn't any 'windows' agent requested."
+    if (!finalConfig.agentLabels.contains('windows') && finalConfig.targetplatforms.contains('windows')) {
+      echo "WARNING: The 'targetplatforms' is set to '${finalConfig.targetplatforms}', but there isn't any 'windows' agent requested."
     }
     cstConfigSuffix = '-windows'
   }
-  String operatingSystem = finalConfig.platforms.split('/')[0]
+  String operatingSystem = finalConfig.targetplatforms.split('/')[0]
 
   if (operatingSystem == 'windows' && finalConfig.dockerBakeFile != '') {
     echo 'ERROR: dockerBakeFile is not supported on windows.'
@@ -88,8 +90,8 @@ def call(String imageShortName, Map userConfig=[:]) {
       "IMAGE_NAME=${imageName}",
       "IMAGE_DIR=${finalConfig.imageDir}",
       "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
-      "BUILD_TARGETPLATFORM=${finalConfig.platforms}",
-      "BAKE_TARGETPLATFORMS=${finalConfig.platforms}",
+      "BUILD_TARGETPLATFORM=${finalConfig.targetplatforms}",
+      "BAKE_TARGETPLATFORMS=${finalConfig.targetplatforms}",
       "DOCKER_BAKE_FILE=${finalConfig.dockerBakeFile ?: jenkinsInfraBakeFile}",
     ]) {
       infra.withDockerPullCredentials{
