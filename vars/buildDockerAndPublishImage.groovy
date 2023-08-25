@@ -3,6 +3,49 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.text.DateFormat
 
+def makecall(String action, String imageDeployName, String targetOperationSystem, String SpecificDockerBakeFile) {
+  final String jenkinsInfraBakeFile = 'jenkinsinfrabakefile.hcl'
+  final String bakefileContent = libraryResource 'io/jenkins/infra/docker/' + jenkinsInfraBakeFile
+  if (action != 'build' && action != 'deploy'){
+    echo 'ERROR: makecall need an action parameter with value: `build` or `deploy`.'
+    currentBuild.result = 'FAILURE'
+    return
+  }
+  if (imageDeployName == '') {
+    echo 'ERROR: makecall need an action imageDeployName.'
+    currentBuild.result = 'FAILURE'
+    return
+  }
+  if (targetOperationSystem == '') {
+    echo 'ERROR: targetOperationSystem cannot be empty.'
+    currentBuild.result = 'FAILURE'
+    return
+  }
+  // Please note that "make deploy" and the generated bake deploy file uses the environment variable "IMAGE_DEPLOY_NAME"
+  withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
+    if (isUnix()) {
+      if (SpecificDockerBakeFile) {
+        withEnv(["DOCKER_BAKE_FILE=${SpecificDockerBakeFile}"]) {
+          sh 'make bake-$action'
+        }
+      } else {
+        if (targetOperationSystem == "linux") {
+          //linux ==> generated docker bake
+          writeFile file: jenkinsInfraBakeFile, text: bakefileContent
+          withEnv(["DOCKER_BAKE_FILE=${jenkinsInfraBakeFile}"]) {
+            sh 'make bake-$action'
+          }
+        } else {
+          // old process still used for windows
+          sh 'make $action'
+        }
+      }
+    } else {
+      powershell 'make $action'
+    } // unix agent
+  } // withEnv
+}
+
 def call(String imageShortName, Map userConfig=[:]) {
   def defaultConfig = [
     agentLabels: 'docker || linux-amd64-docker', // String expression for the labels the agent must match
@@ -17,14 +60,12 @@ def call(String imageShortName, Map userConfig=[:]) {
     unstash: '', // Allow to unstash files if not empty
     dockerBakeFile: '', // Allow to build from a bake file instead
   ]
-
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
   final Map finalConfig = defaultConfig << userConfig
 
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
-  final String jenkinsInfraBakeFile = 'jenkinsinfrabakefile.hcl'
-  final String bakefileContent = libraryResource 'io/jenkins/infra/docker/' + jenkinsInfraBakeFile
+
   final boolean semVerEnabledOnPrimaryBranch = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
 
   // Only run 1 build at a time on primary branch to ensure builds won't use the same tag when semantic versionning is activated
@@ -36,16 +77,16 @@ def call(String imageShortName, Map userConfig=[:]) {
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
   final String buildDate = dateFormat.format(now)
 
-
-  // only one platform parameter is supported for now either platform or platforms
-  if (finalConfig.platform && finalConfig.targetplatforms) {
-    // both platform and platforms cannot be set at the same time
-    echo 'ERROR: Only one platform parameter is supported for now either platform or targetplatforms, prefer targetplatforms.'
-    currentBuild.result = 'FAILURE'
-    return
-  } else if (finalConfig.platform) {
+  if (finalConfig.platform) {
+    if (finalConfig.targetplatforms) {
+      // only one platform parameter is supported both platform and platforms cannot be set at the same time
+      echo 'ERROR: Only one platform parameter is supported for now either platform or targetplatforms, prefer `targetplatforms`.'
+      currentBuild.result = 'FAILURE'
+      return
+    }
     // if platform is set, I override platforms with it
     finalConfig.targetplatforms = finalConfig.platform
+    echo "WARNING: `platform` is deprecated, use `targetplatforms` instead."
   }
 
   // Default Value if targetplatforms is not set, I set it to linux/amd64 by default
@@ -58,7 +99,7 @@ def call(String imageShortName, Map userConfig=[:]) {
   String cstConfigSuffix = ''
   if (finalConfig.agentLabels.contains('windows') || finalConfig.targetplatforms.contains('windows')) {
     if (finalConfig.targetplatforms.split(',').length > 1) {
-      echo 'ERROR: with windows, only one platform can be specified within platforms.'
+      echo 'ERROR: with windows, only one platform can be specified within targetplatforms.'
       currentBuild.result = 'FAILURE'
       return
     }
@@ -82,6 +123,7 @@ def call(String imageShortName, Map userConfig=[:]) {
   final String defaultRegistryNamespace = infraConfig.getDockerRegistryNamespace()
   final String registryNamespace = finalConfig.registryNamespace ?: defaultRegistryNamespace
   final String imageName = registryNamespace + '/' + imageShortName
+
   echo "INFO: Resolved Container Image Name: ${imageName}"
 
   node(finalConfig.agentLabels) {
@@ -92,7 +134,6 @@ def call(String imageShortName, Map userConfig=[:]) {
       "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
       "BUILD_TARGETPLATFORM=${finalConfig.targetplatforms}",
       "BAKE_TARGETPLATFORMS=${finalConfig.targetplatforms}",
-      "DOCKER_BAKE_FILE=${finalConfig.dockerBakeFile ?: jenkinsInfraBakeFile}",
     ]) {
       infra.withDockerPullCredentials{
         String nextVersion = ''
@@ -172,24 +213,7 @@ def call(String imageShortName, Map userConfig=[:]) {
         } // stage
 
         stage("Build ${imageName}") {
-          withEnv(["IMAGE_DEPLOY_NAME=${imageName}"]) {
-            if (isUnix()) {
-              if (finalConfig.dockerBakeFile != '') {
-                sh 'make bake-build'
-              } else {
-                if (operatingSystem == "linux") {
-                  //linux ==> generated docker bake
-                  writeFile file: jenkinsInfraBakeFile, text: bakefileContent
-                  sh 'make bake-build'
-                } else {
-                  // old process still used for windows
-                  sh 'make build'
-                }
-              }
-            } else {
-              powershell 'make build'
-            }
-          } // withEnv
+          makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile)
         } //stage
 
         // There can be 2 kind of tests: per image and per repository
@@ -264,25 +288,8 @@ def call(String imageShortName, Map userConfig=[:]) {
                 imageDeployName += ":${env.TAG_NAME}"
               }
             }
-            if (isUnix()) {
-              withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
-                // Please note that "make deploy" and the generated bake deploy file uses the environment variable "IMAGE_DEPLOY_NAME"
-                if (finalConfig.dockerBakeFile != '') {
-                  sh 'make bake-deploy'
-                } else {
-                  if (operatingSystem == "linux") {
-                    //linux ==> generated docker bake
-                    sh 'make bake-deploy'
-                  } else {
-                    // old process still used for windows
-                    sh 'make deploy'
-                  }
-                }
-              } // withEnv
-            } else {
-              powershell 'make deploy'
-            } // unix agent
-          } //stage
+            makecall('deploy', imageDeployName, operatingSystem, finalConfig.dockerBakeFile)
+          }
         } // if
       } // withDockerPushCredentials
 
