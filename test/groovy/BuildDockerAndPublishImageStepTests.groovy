@@ -117,7 +117,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   Boolean assertBaseWorkflow() {
     return assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile') \
       && (assertMethodCallContainsPattern('sh','make lint') || assertMethodCallContainsPattern('powershell','make lint')) \
-      && (assertMethodCallContainsPattern('sh','make $action') || assertMethodCallContainsPattern('sh','make bake-$action') || assertMethodCallContainsPattern('powershell','make $action')) \
+      && (assertMethodCallContainsPattern('sh','make build') || assertMethodCallContainsPattern('sh','make bake-build') || assertMethodCallContainsPattern('powershell','make build')) \
       && assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}")
   }
 
@@ -132,7 +132,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
   // return if the "make deploy" was detected with the provided argument as image name
   Boolean assertMakeDeploy(String expectedImageName = fullTestImageName) {
-    return (assertMethodCallContainsPattern('sh','make $action') || assertMethodCallContainsPattern('sh','make bake-$action') || assertMethodCallContainsPattern('powershell','make $action')) \
+    return (assertMethodCallContainsPattern('sh','make deploy') || assertMethodCallContainsPattern('sh','make bake-deploy') || assertMethodCallContainsPattern('powershell','make deploy')) \
       && assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=${expectedImageName}")
   }
 
