@@ -26,22 +26,22 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
     if (isUnix()) {
       if (SpecificDockerBakeFile) {
         withEnv(["DOCKER_BAKE_FILE=${SpecificDockerBakeFile}"]) {
-          sh 'make bake-$action'
+          sh "make bake-$action"
         }
       } else {
         if (targetOperationSystem == "linux") {
           //linux ==> generated docker bake
           writeFile file: jenkinsInfraBakeFile, text: bakefileContent
           withEnv(["DOCKER_BAKE_FILE=${jenkinsInfraBakeFile}"]) {
-            sh 'make bake-$action'
+            sh "make bake-$action"
           }
         } else {
           // old process still used for windows
-          sh 'make $action'
+          sh "make $action"
         }
       }
     } else {
-      powershell 'make $action'
+      powershell "make $action"
     } // unix agent
   } // withEnv
 }
