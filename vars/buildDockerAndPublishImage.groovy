@@ -295,7 +295,7 @@ def call(String imageShortName, Map userConfig=[:]) {
       infra.withDockerPushCredentials{
         if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
           stage("Deploy ${imageName}") {
-            makecall('deploy', imageDeployName, operatingSystem, finalConfig.dockerBakeFile)
+            makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile)
           }
         } // if
       } // withDockerPushCredentials
