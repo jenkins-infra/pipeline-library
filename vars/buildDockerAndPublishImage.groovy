@@ -93,6 +93,7 @@ def call(String imageShortName, Map userConfig=[:]) {
 
   // Default Value if targetplatforms is not set, I set it to linux/amd64 by default
   if (finalConfig.targetplatforms == '') {
+    echo "WARNING: `platform` is deprecated, use `targetplatforms` instead."
     finalConfig.targetplatforms = 'linux/amd64'
   }
 
