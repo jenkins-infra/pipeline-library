@@ -23,7 +23,6 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
   }
 
   if (action == 'deploy') {
-    String imageDeployName = imageName
     if (env.TAG_NAME) {
       if (imageDeployName.contains(env.TAG_NAME)) {
         // The tag is already within the image name to deploy no need to add it again
