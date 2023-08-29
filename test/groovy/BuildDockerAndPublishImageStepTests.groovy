@@ -130,12 +130,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
         )
   }
 
-  // return if the "make deploy" was detected with the provided argument as image name
-  Boolean assertMakeDeploy(String expectedImageName = fullTestImageName) {
-    return (assertMethodCallContainsPattern('sh','make deploy') || assertMethodCallContainsPattern('sh','make bake-deploy') || assertMethodCallContainsPattern('powershell','make deploy')) \
-      && assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=${expectedImageName}")
-  }
-
   Boolean assertTagPushed(String newVersion) {
     return assertMethodCallContainsPattern('echo','Configuring credential.helper') \
       && assertMethodCallContainsPattern('echo',"Tagging and pushing the new version: ${newVersion}") \
@@ -174,12 +168,13 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'BAKE_TARGETPLATFORMS=linux/amd64'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DEPLOY_NAME=' + fullTestImageName))
 
     // And generated reports are recorded
     assertTrue(assertRecordIssues())
 
     // And the deploy step called
-    assertTrue(assertMakeDeploy())
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
 
     // And `unstash` isn't called
     assertFalse(assertMethodCall('unstash'))
@@ -209,7 +204,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And generated reports are recorded with named without ':' but '-' instead
     assertTrue(assertRecordIssues(fullCustomImageName.replaceAll(':','-')))
     // With the deploy step called with the correct image name
-    assertTrue(assertMakeDeploy(fullCustomImageName))
+    assertMethodCallContainsPattern('sh','make bake-deploy')
+    assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=${fullCustomImageName}")
+
     // But no tag pushed
     assertFalse(assertTagPushed(defaultGitTag))
     // And all mocked/stubbed methods have to be called
@@ -235,7 +232,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And generated reports are recorded
     assertTrue(assertRecordIssues())
     // And the deploy step called
-    assertTrue(assertMakeDeploy())
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DEPLOY_NAME=' +fullTestImageName))
+
     // And the tag pushed
     assertTrue(assertTagPushed(defaultGitTag))
     // But no release created (no tag triggering the build)
@@ -264,7 +263,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And generated reports are recorded
     assertTrue(assertRecordIssues())
     // And the deploy step called
-    assertTrue(assertMakeDeploy())
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DEPLOY_NAME=' + fullTestImageName))
+
     // And the tag pushed
     assertTrue(assertTagPushed(defaultGitTagIncludingImageName))
     // But no release created (no tag triggering the build)
@@ -300,7 +301,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withEnv', 'BAKE_TARGETPLATFORMS=linux/s390x'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_NAME=' + expectedImageName))
     // But no tag and no deploy called (branch or PR)
-    assertTrue(assertMakeDeploy(expectedImageName))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DEPLOY_NAME=' + expectedImageName))
+
     assertTrue(assertTagPushed(defaultGitTag))
     // And all mocked/stubbed methods have to be called
     verifyMocks()
@@ -322,7 +325,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertBaseWorkflow())
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // But no deploy step called for latest
-    assertFalse(assertMakeDeploy())
+    assertFalse(assertMethodCallContainsPattern('sh','make bake-deploy'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'TAG_NAME=null'))
     // And no release (no tag)
     assertFalse(assertTagPushed(defaultGitTag))
     // And all mocked/stubbed methods have to be called
@@ -346,7 +350,10 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertBaseWorkflow())
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And the deploy step called for latest
-    assertTrue(assertMakeDeploy("${fullTestImageName}:${defaultGitTag}"))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DEPLOY_NAME=' + fullTestImageName))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'TAG_NAME=' + defaultGitTag))
+
     // And the release is created (tag triggering the build)
     assertTrue(assertReleaseCreated())
     // But no tag pushed
@@ -379,7 +386,10 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertBaseWorkflow())
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And the deploy step called for latest
-    assertTrue(assertMakeDeploy("${fullTestImageName}:${defaultGitTag}"))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DEPLOY_NAME=' + fullTestImageName))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'TAG_NAME=' + defaultGitTag))
+
     // And the release is not created as no next release draft exists
     assertFalse(assertReleaseCreated())
     // But no tag pushed
@@ -402,7 +412,10 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
     // With the deploy step called with the correct image name
-    assertTrue(assertMakeDeploy("${fullCustomImageName}-${customGitTag}"))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=${fullCustomImageName}"))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "TAG_NAME=${customGitTag}"))
+
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
@@ -466,33 +479,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   @Test
-  void itBuildsAndDeploysWithDockerEngineOnPrincipalBranch() throws Exception {
-    def script = loadScript(scriptName)
-    mockPrincipalBranch()
-    withMocks {
-      script.call(testImageName)
-    }
-    printCallStack()
-    // Then we expect a successful build with the code cloned
-    assertJobStatusSuccess()
-    // With the common workflow run as expected
-    assertTrue(assertBaseWorkflow())
-    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
-    // And the expected environment variables set to their default values
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'BAKE_TARGETPLATFORMS=linux/amd64'))
-    // And generated reports recorded
-    assertTrue(assertRecordIssues())
-    // And the deploy step called
-    assertTrue(assertMakeDeploy())
-    // But no release created automatically
-    assertFalse(assertTagPushed(defaultGitTag))
-    // And all mocked/stubbed methods been called
-    verifyMocks()
-  }
-
-  @Test
   void itBuildsOnlyOnChangeRequestWithWindowsContainers() throws Exception {
     helper.registerAllowedMethod('isUnix', [], { false })
     def script = loadScript(scriptName)
@@ -511,10 +497,13 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'BAKE_TARGETPLATFORMS=linux/amd64'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_NAME=' + fullTestImageName))
     // And generated reports recorded
     assertTrue(assertRecordIssues())
     // But no deploy step called (not on principal branch)
-    assertFalse(assertMakeDeploy())
+    assertFalse(assertMethodCallContainsPattern('sh','make deploy'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'TAG_NAME=null'))
+
     // But no release created automatically
     assertFalse(assertTagPushed(defaultGitTag))
     // And all mocked/stubbed methods been called
@@ -551,7 +540,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertRecordIssues())
 
     // And the deploy step called
-    assertTrue(assertMakeDeploy())
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DEPLOY_NAME=' + fullTestImageName))
 
     // And `unstash` is called
     assertTrue(assertMethodCallContainsPattern('unstash', 'stashName'))
@@ -583,9 +573,11 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'PLATFORMS=linux/amd64,linux/arm64,linux/s390x'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_NAME=jenkinsciinfra/bitcoinMinerImage'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_NAME=' + fullTestImageName))
     // But no tag and no deploy called (branch or PR)
-    assertTrue(assertMakeDeploy())
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DEPLOY_NAME=' + fullTestImageName))
+
     assertTrue(assertTagPushed(defaultGitTag))
     // And all mocked/stubbed methods have to be called
     verifyMocks()
