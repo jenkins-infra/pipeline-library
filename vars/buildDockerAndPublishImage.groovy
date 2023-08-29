@@ -4,8 +4,7 @@ import java.util.Date
 import java.text.DateFormat
 
 def makecall(String action, String imageDeployName, String targetOperationSystem, String SpecificDockerBakeFile) {
-  final String jenkinsInfraBakeFile = 'jenkinsinfrabakefile.hcl'
-  final String bakefileContent = libraryResource 'io/jenkins/infra/docker/' + jenkinsInfraBakeFile
+  final String bakefileContent = libraryResource 'io/jenkins/infra/docker/jenkinsinfrabakefile.hcl'
   if (action != 'build' && action != 'deploy'){
     echo 'ERROR: makecall need an action parameter with value: `build` or `deploy`.'
     currentBuild.result = 'FAILURE'
@@ -23,50 +22,24 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
   }
 
   // Please note that "make deploy" and the generated bake deploy file uses the environment variable "IMAGE_DEPLOY_NAME"
-  withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
+  withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}", "TAG_NAME=${env.TAG_NAME}"]) {
     if (isUnix()) {
-      if (SpecificDockerBakeFile) {
-        withEnv(["DOCKER_BAKE_FILE=${SpecificDockerBakeFile}"]) {
-          sh "make bake-$action"
-        }
-      } else {
-        if (targetOperationSystem == "linux") {
-          //linux ==> generated docker bake
-          writeFile file: jenkinsInfraBakeFile, text: bakefileContent
-          withEnv(["DOCKER_BAKE_FILE=${jenkinsInfraBakeFile}"]) {
-            sh "make bake-$action"
-          }
-        } else {
-          // old process still used for windows
-          if (action == 'deploy') {
-            if (env.TAG_NAME) {
-              if (imageDeployName.contains(env.TAG_NAME)) {
-                // The tag is already within the image name to deploy no need to add it again
-              } else {
-                // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
-                if (imageDeployName.contains(':')) {
-                  imageDeployName += "-${env.TAG_NAME}"
-                } else {
-                  imageDeployName += ":${env.TAG_NAME}"
-                }
-              }
-            }
-          }
-          sh "make $action"
-        }
+      if (! SpecificDockerBakeFile) {
+        SpecificDockerBakeFile = 'jenkinsinfrabakefile.hcl'
+        //linux ==> generated docker bake
+        writeFile file: SpecificDockerBakeFile, text: bakefileContent
+      }
+      withEnv(["DOCKER_BAKE_FILE=${SpecificDockerBakeFile}"]) {
+        sh "make bake-$action"
       }
     } else {
       if (action == 'deploy') {
         if (env.TAG_NAME) {
-          if (imageDeployName.contains(env.TAG_NAME)) {
-            // The tag is already within the image name to deploy no need to add it again
+          // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
+          if (imageDeployName.contains(':')) {
+            imageDeployName += "-${env.TAG_NAME}"
           } else {
-            // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
-            if (imageDeployName.contains(':')) {
-              imageDeployName += "-${env.TAG_NAME}"
-            } else {
-              imageDeployName += ":${env.TAG_NAME}"
-            }
+            imageDeployName += ":${env.TAG_NAME}"
           }
         }
       }
