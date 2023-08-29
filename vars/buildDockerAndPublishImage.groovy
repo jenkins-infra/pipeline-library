@@ -21,6 +21,23 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
     currentBuild.result = 'FAILURE'
     return
   }
+
+  if (action == 'deploy') {
+    String imageDeployName = imageName
+    if (env.TAG_NAME) {
+      if (imageDeployName.contains(env.TAG_NAME)) {
+        // The tag is already within the image name to deploy no need to add it again
+      } else {
+        // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
+        if (imageDeployName.contains(':')) {
+          imageDeployName += "-${env.TAG_NAME}"
+        } else {
+          imageDeployName += ":${env.TAG_NAME}"
+        }
+      }
+    }
+  }
+
   // Please note that "make deploy" and the generated bake deploy file uses the environment variable "IMAGE_DEPLOY_NAME"
   withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
     if (isUnix()) {
@@ -279,15 +296,6 @@ def call(String imageShortName, Map userConfig=[:]) {
       infra.withDockerPushCredentials{
         if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
           stage("Deploy ${imageName}") {
-            String imageDeployName = imageName
-            if (env.TAG_NAME) {
-              // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
-              if (imageDeployName.contains(':')) {
-                imageDeployName += "-${env.TAG_NAME}"
-              } else {
-                imageDeployName += ":${env.TAG_NAME}"
-              }
-            }
             makecall('deploy', imageDeployName, operatingSystem, finalConfig.dockerBakeFile)
           }
         } // if
