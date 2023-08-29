@@ -22,21 +22,6 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
     return
   }
 
-  if (action == 'deploy') {
-    if (env.TAG_NAME) {
-      if (imageDeployName.contains(env.TAG_NAME)) {
-        // The tag is already within the image name to deploy no need to add it again
-      } else {
-        // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
-        if (imageDeployName.contains(':')) {
-          imageDeployName += "-${env.TAG_NAME}"
-        } else {
-          imageDeployName += ":${env.TAG_NAME}"
-        }
-      }
-    }
-  }
-
   // Please note that "make deploy" and the generated bake deploy file uses the environment variable "IMAGE_DEPLOY_NAME"
   withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
     if (isUnix()) {
@@ -53,10 +38,38 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
           }
         } else {
           // old process still used for windows
+          if (action == 'deploy') {
+            if (env.TAG_NAME) {
+              if (imageDeployName.contains(env.TAG_NAME)) {
+                // The tag is already within the image name to deploy no need to add it again
+              } else {
+                // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
+                if (imageDeployName.contains(':')) {
+                  imageDeployName += "-${env.TAG_NAME}"
+                } else {
+                  imageDeployName += ":${env.TAG_NAME}"
+                }
+              }
+            }
+          }
           sh "make $action"
         }
       }
     } else {
+      if (action == 'deploy') {
+        if (env.TAG_NAME) {
+          if (imageDeployName.contains(env.TAG_NAME)) {
+            // The tag is already within the image name to deploy no need to add it again
+          } else {
+            // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
+            if (imageDeployName.contains(':')) {
+              imageDeployName += "-${env.TAG_NAME}"
+            } else {
+              imageDeployName += ":${env.TAG_NAME}"
+            }
+          }
+        }
+      }
       powershell "make $action"
     } // unix agent
   } // withEnv
