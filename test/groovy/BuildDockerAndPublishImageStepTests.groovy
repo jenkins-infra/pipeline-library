@@ -113,14 +113,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     addEnvVar('TAG_NAME', gitTag)
   }
 
-  // Return if the set of methods expected for ALL pipeline run have been detected in the callstack
-  Boolean assertBaseWorkflow() {
-    return assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile') \
-      && (assertMethodCallContainsPattern('sh','make lint') || assertMethodCallContainsPattern('powershell','make lint')) \
-      && (assertMethodCallContainsPattern('sh','make build') || assertMethodCallContainsPattern('sh','make bake-build') || assertMethodCallContainsPattern('powershell','make build')) \
-      && assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}")
-  }
-
   // Return if the usual static checks had been recorded with the usual pattern
   Boolean assertRecordIssues(String imageName = fullTestImageName) {
     final String reportId = "${imageName}-hadolint-${mockedTimestamp}".replaceAll('/','-').replaceAll(':', '-')
@@ -161,7 +153,11 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // With the common workflow run as expected
-    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}"))
+    assertTrue(assertMethodCallContainsPattern('sh','make lint'))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
+
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
 
     // And the expected environment variable defined to their defaults
@@ -199,7 +195,11 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
     // With the common workflow run as expected
-    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}"))
+    assertTrue(assertMethodCallContainsPattern('sh','make lint'))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
+
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And generated reports are recorded with named without ':' but '-' instead
     assertTrue(assertRecordIssues(fullCustomImageName.replaceAll(':','-')))
@@ -227,7 +227,10 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
     // With the common workflow run as expected
-    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}"))
+    assertTrue(assertMethodCallContainsPattern('sh','make lint'))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And generated reports are recorded
     assertTrue(assertRecordIssues())
@@ -258,7 +261,11 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
     // With the common workflow run as expected
-    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}"))
+    assertTrue(assertMethodCallContainsPattern('sh','make lint'))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
+
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And generated reports are recorded
     assertTrue(assertRecordIssues())
@@ -293,7 +300,11 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
     // With the common workflow run as expected
-    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}"))
+    assertTrue(assertMethodCallContainsPattern('sh','make lint'))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
+
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And the environement variables set with the custom configuration values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=docker/'))
@@ -322,7 +333,11 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Then we expect a successful build
     assertJobStatusSuccess()
     // With the common workflow run as expected
-    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}"))
+    assertTrue(assertMethodCallContainsPattern('sh','make lint'))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
+
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // But no deploy step called for latest
     assertFalse(assertMethodCallContainsPattern('sh','make bake-deploy'))
@@ -347,7 +362,11 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Then we expect a successful build
     assertJobStatusSuccess()
     // With the common workflow run as expected
-    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}"))
+    assertTrue(assertMethodCallContainsPattern('sh','make lint'))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
+
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And the deploy step called for latest
     assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
@@ -383,7 +402,11 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Then we expect a successful build
     assertJobStatusSuccess()
     // With the common workflow run as expected
-    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}"))
+    assertTrue(assertMethodCallContainsPattern('sh','make lint'))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
+
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And the deploy step called for latest
     assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
@@ -491,7 +514,12 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
     // With the common workflow run as expected
-    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}"))
+    assertTrue(assertMethodCallContainsPattern('powershell','make lint'))
+    assertTrue(assertMethodCallContainsPattern('powershell','make build'))
+
+
     assertTrue(assertMethodCallContainsPattern('node', 'docker-windows'))
     // And the expected environment variables set to their default values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
@@ -528,7 +556,11 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // With the common workflow run as expected
-    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}"))
+    assertTrue(assertMethodCallContainsPattern('sh','make lint'))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
+
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
 
     // And the expected environment variable defined to their defaults
@@ -567,7 +599,11 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
     // With the common workflow run as expected
-    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}"))
+    assertTrue(assertMethodCallContainsPattern('sh','make lint'))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
+
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // And the environement variables set with the custom configuration values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=.'))
@@ -600,7 +636,11 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // // With the common workflow run as expected
-    assertTrue(assertBaseWorkflow())
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}"))
+    assertTrue(assertMethodCallContainsPattern('sh','make lint'))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
+
     assertTrue(assertMethodCallContainsPattern('sh', 'make bake-build'))
     assertFalse(assertMethodCallContainsPattern('sh', 'make build'))
     assertTrue(assertMethodCallContainsPattern('sh', 'make bake-deploy'))
@@ -691,5 +731,42 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // And the error message is shown
     assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: dockerBakeFile is not supported on windows.'))
+  }
+
+  @Test
+  void itWarnIfWindowsAgentAndNotWindowsTarget() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+    withMocks{
+      script.call(testImageName, [
+        targetplatforms: 'linux/amd64',
+        agentLabels: 'docker-windows',
+      ])
+    }
+    printCallStack()
+
+    // Then we expect a failing build
+    assertJobStatusSuccess()
+
+    // And the error message is shown
+    assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: A \'windows\' agent is requested, but the \'platform(s)\' is set to'))
+  }
+
+  @Test
+  void itWarnIfNotWindowsAgentButWindowsTarget() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+    withMocks{
+      script.call(testImageName, [
+        targetplatforms: 'windows/1804',
+      ])
+    }
+    printCallStack()
+
+    // Then we expect a failing build
+    assertJobStatusSuccess()
+
+    // And the error message is shown
+    assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: The \'targetplatforms\' is set to \'windows/1804\', but there isn\'t any \'windows\' agent requested.'))
   }
 }
