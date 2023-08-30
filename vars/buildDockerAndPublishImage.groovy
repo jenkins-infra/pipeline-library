@@ -3,33 +3,19 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.text.DateFormat
 
-def makecall(String action, String imageDeployName, String targetOperationSystem, String SpecificDockerBakeFile) {
+// makecall is a function to concentrate all the call to 'make'
+def makecall(String action, String imageDeployName, String targetOperationSystem, String specificDockerBakeFile) {
   final String bakefileContent = libraryResource 'io/jenkins/infra/docker/jenkinsinfrabakefile.hcl'
-  if (action != 'build' && action != 'deploy'){
-    echo 'ERROR: makecall need an action parameter with value: `build` or `deploy`.'
-    currentBuild.result = 'FAILURE'
-    return
-  }
-  if (imageDeployName == '') {
-    echo 'ERROR: makecall need an action imageDeployName.'
-    currentBuild.result = 'FAILURE'
-    return
-  }
-  if (targetOperationSystem == '') {
-    echo 'ERROR: targetOperationSystem cannot be empty.'
-    currentBuild.result = 'FAILURE'
-    return
-  }
 
   // Please note that "make deploy" and the generated bake deploy file uses the environment variable "IMAGE_DEPLOY_NAME"
   withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}", "TAG_NAME=${env.TAG_NAME}"]) {
     if (isUnix()) {
-      if (! SpecificDockerBakeFile) {
-        SpecificDockerBakeFile = 'jenkinsinfrabakefile.hcl'
-        //linux ==> generated docker bake
-        writeFile file: SpecificDockerBakeFile, text: bakefileContent
+      if (! specificDockerBakeFile) {
+        specificDockerBakeFile = 'jenkinsinfrabakefile.hcl'
+        writeFile file: specificDockerBakeFile, text: bakefileContent
       }
-      withEnv(["DOCKER_BAKE_FILE=${SpecificDockerBakeFile}"]) {
+      withEnv(["DOCKER_BAKE_FILE=${specificDockerBakeFile}"]) {
+        sh 'docker buildx create --use'
         sh "make bake-$action"
       }
     } else {
@@ -54,13 +40,13 @@ def call(String imageShortName, Map userConfig=[:]) {
     automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
     includeImageNameInTag: false, // Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
     dockerfile: 'Dockerfile', // Obvious default
-    targetplatforms: '', // defined the platforms to build as TARGET
+    targetplatforms: '', // // Define the (comma separated) list of Docker supported platforms to build the image for. Defaults to `linux/amd64` when unspecified. Incompatible with the legacy `platform` attribute.
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
     registryNamespace: '', // Empty by default (means "autodiscover based on the current controller")
     unstash: '', // Allow to unstash files if not empty
-    dockerBakeFile: '', // Allow to build from a bake file instead
+    dockerBakeFile: '', // Specify the path to a custom Docker Bake file to use instead of the default one
   ]
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
   final Map finalConfig = defaultConfig << userConfig
@@ -93,7 +79,6 @@ def call(String imageShortName, Map userConfig=[:]) {
 
   // Default Value if targetplatforms is not set, I set it to linux/amd64 by default
   if (finalConfig.targetplatforms == '') {
-    echo "WARNING: `platform` is deprecated, use `targetplatforms` instead."
     finalConfig.targetplatforms = 'linux/amd64'
   }
 
@@ -228,11 +213,7 @@ def call(String imageShortName, Map userConfig=[:]) {
           if (fileExists(testHarness)) {
             stage("Test ${testName} for ${imageName}") {
               withEnv(["TEST_HARNESS=${testHarness}"]) {
-                if (isUnix()) {
-                  sh 'make test'
-                } else {
-                  powershell 'make test'
-                }
+                makecall('test', imageName, operatingSystem, finalConfig.dockerBakeFile)
               } // withEnv
             } //stage
           } else {
