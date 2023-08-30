@@ -11,12 +11,13 @@ The following arguments are available for this function:
   * Boolean **includeImageNameInTag**: (Optional, defaults to "false") Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
   * String **dockerfile**: (Optional, defaults to "Dockerfile") Relative path to the Dockerfile to use within the repository (Example: "build.dockerfile", "docker/Dockerfile").
   * String ~~**platform**~~: DEPRECATED (Optional, defaults to "linux/amd64") Name of the docker platform to use when building this image..
-  * String **targetplatforms**: (Optional, defaults to "linux/amd64") Name of the docker platforms separated by comma, to use as target when building this image. For multiple platforms use a comma separated list (Example: "linux/amd64,linux/arm64").
+  * String **targetplatforms**: (Optional, defaults to "linux/amd64") Define the (comma separated) list of Docker supported platforms to build the image for. Defaults to `linux/amd64` when unspecified. Incompatible with the legacy `platform` attribute.
   * String **nextVersionCommand** (Optional, defaults to "jx-release-version") If "automaticSemanticVersioning" is set, this is the command to retrieve the next version (to use for tagging and releasing)
   * String **gitCredentials**: (Optional, defaults to "") If "automaticSemanticVersioning" is set, name of the credential to use when tagging the git repository. Support user/password or GitHub App credential types.
   * String **imageDir**: (Optional, defaults to ".", the parent directory of the Dockerfile) Path to a directory to use as build context (Example: "docker/", "python/2.7") ref: https://docs.docker.com/engine/reference/commandline/build/#description.
   * String **registry**: (Optional, defaults to "" which defines the registry based on the current controller setup) Container registry to deploy this image to (Example: "ghcr.io", "python/2.7").
   * String **unstash**: (Optional, default to "") Allow to restore files from a previously saved stash if not empty, should contain the name of the last stashed as per https://www.jenkins.io/doc/pipeline/steps/workflow-basic-steps/#unstash-restore-files-previously-stashed.
+  * String **dockerBakeFile**: (Optionan, default to "") Specify the path to a custom Docker Bake file to use instead of the default one
 
 The lint phase generates a report when it fails, recorded by the hadolint tool in your Jenkins instance.
 
