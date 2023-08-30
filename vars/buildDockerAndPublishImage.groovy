@@ -15,7 +15,7 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
         writeFile file: specificDockerBakeFile, text: bakefileContent
       }
       withEnv(["DOCKER_BAKE_FILE=${specificDockerBakeFile}"]) {
-        sh 'docker buildx create --use'
+        sh 'export BUILDX_BUILDER_NAME=buildx-builder; docker buildx use "${BUILDX_BUILDER_NAME}" 2>/dev/null || docker buildx create --use --name="${BUILDX_BUILDER_NAME}"'
         sh "make bake-$action"
       }
     } else {
