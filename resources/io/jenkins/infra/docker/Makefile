@@ -55,10 +55,8 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 
 bake-build: ## Build the Docker Image(s) with dockerbake file
 	@echo "== Building from DockerBake file"
-	docker buildx create --use
-	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --print
-	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))"
-	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --set "*.platform=linux/$(shell dpkg --print-architecture)"  --load
+	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))"
+
 
 clean: ## Delete any file generated during the build steps
 	@echo "== Cleaning working directory $(IMAGE_DIR) from generated artefacts:"
@@ -66,6 +64,13 @@ clean: ## Delete any file generated during the build steps
 	@echo "== Cleanup succeeded"
 
 test: ## Execute the test harness on the Docker Image
+	@echo "== Test $(IMAGE_NAME) with $(call FixPath,$(TEST_HARNESS)) from $(IMAGE_NAME) with container-structure-test:"
+	container-structure-test test --driver=docker --image="$(IMAGE_NAME)" --config="$(call FixPath,$(TEST_HARNESS))"
+	@echo "== Test succeeded"
+
+bake-test: ## Execute the test harness on the Docker Image with load
+	@echo "== Load $(IMAGE_NAME) within docker engine from docker bake buildx engine"
+	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --set "*.platform=linux/$(shell dpkg --print-architecture)"  --load
 	@echo "== Test $(IMAGE_NAME) with $(call FixPath,$(TEST_HARNESS)) from $(IMAGE_NAME) with container-structure-test:"
 	container-structure-test test --driver=docker --image="$(IMAGE_NAME)" --config="$(call FixPath,$(TEST_HARNESS))"
 	@echo "== Test succeeded"
@@ -79,7 +84,6 @@ deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 
 bake-deploy:  ## Tag and push the built image as specified by docker bake file
 	@echo "== Deploying with docker bake file"
-	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --print
-	docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --push
+	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --push
 
 .PHONY: all clean lint build test deploy
