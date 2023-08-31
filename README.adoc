@@ -189,17 +189,44 @@ Supported parameters:
 `imageName`::
 Name of the docker image to build
 
-`configs`::
-(Optional) extra flags
+`config`::
+(Optional) map of extra flags
 
-registry: override the smart default of jenkinsciinfra/ or jenkins4eval/
-dockerfile: override the default dockerfile of Dockerfile
+* agentLabels: String expression for the labels the agent must match
+* automaticSemanticVersioning: Do not automagically increase semantic version by default
+* includeImageNameInTag: Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
+* dockerfile: override the default dockerfile of Dockerfile
+* targetplatforms: defined the platforms to build as TARGET
+* nextVersionCommand: Commmand line used to retrieve the next version (default 'jx-release-version')
+* gitCredentials: override Credential ID for tagging and creating release
+* imageDir: Relative path to the context directory for the Docker build
+* registryNamespace: empty = autodiscover based on the current controller, but can override the smart default of jenkinsciinfra/ or jenkins4eval/
+* unstash: Allow to unstash files if not empty
+* dockerBakeFile: Allow to build from a bake file instead
 
 ==== Example
 [source, groovy]
 ----
-buildDockerImage_k8s('plugins-site-api')
+buildDockerAndPublishImage('plugins-site-api')
+buildDockerAndPublishImage('inbound-agent-maven:jdk8-nanoserver', [
+      dockerfile: 'maven/jdk8/Dockerfile.nanoserver',
+      agentLabels: 'docker-windows-2019 && amd64',
+      targetplatforms: 'windows/amd64',
+      imageDir: 'maven/jdk8',
+    ])
 ----
+
+is also called from `parallelDockerUpdatecli` with `config` within `buildDockerConfig` like this :
+[source, groovy]
+----
+parallelDockerUpdatecli([
+  imageName: 'wiki',
+  rebuildImageOnPeriodicJob: false,
+  updatecliConfig: [containerMemory: '1G'],
+  buildDockerConfig : [targetplatforms: 'linux/amd64,linux/arm64,linux/s390x']
+])
+----
+
 
 == Contribute
 
@@ -213,4 +240,3 @@ buildDockerImage_k8s('plugins-site-api')
 By adding `@Library('pipeline-library@pull/<your-pr-number>/head') _` at the top of a Jenkinsfile from a repository built on one of the *.ci.jenkins.io instances, you can test your pipeline library pull request on ci.jenkins.io.
 
 A repository is dedicated for these kind of tests: https://github.com/jenkinsci/jenkins-infra-test-plugin/
-
