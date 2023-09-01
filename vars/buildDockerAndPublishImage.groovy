@@ -3,25 +3,56 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.text.DateFormat
 
+// makecall is a function to concentrate all the call to 'make'
+def makecall(String action, String imageDeployName, String targetOperationSystem, String specificDockerBakeFile) {
+  final String bakefileContent = libraryResource 'io/jenkins/infra/docker/jenkinsinfrabakefile.hcl'
+  // Please note that "make deploy" and the generated bake deploy file uses the environment variable "IMAGE_DEPLOY_NAME"
+  if (isUnix()) {
+    if (! specificDockerBakeFile) {
+      specificDockerBakeFile = 'jenkinsinfrabakefile.hcl'
+      writeFile file: specificDockerBakeFile, text: bakefileContent
+    }
+    withEnv(["DOCKER_BAKE_FILE=${specificDockerBakeFile}", "IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
+      sh 'export BUILDX_BUILDER_NAME=buildx-builder; docker buildx use "${BUILDX_BUILDER_NAME}" 2>/dev/null || docker buildx create --use --name="${BUILDX_BUILDER_NAME}"'
+      sh "make bake-$action"
+    }
+  } else {
+    if (action == 'deploy') {
+      if (env.TAG_NAME) {
+        // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
+        if (imageDeployName.contains(':')) {
+          imageDeployName += "-${env.TAG_NAME}"
+        } else {
+          imageDeployName += ":${env.TAG_NAME}"
+        }
+      }
+    }
+    withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
+      powershell "make $action"
+    } // withEnv
+  } // unix agent
+}
+
 def call(String imageShortName, Map userConfig=[:]) {
   def defaultConfig = [
     agentLabels: 'docker || linux-amd64-docker', // String expression for the labels the agent must match
     automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
     includeImageNameInTag: false, // Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
     dockerfile: 'Dockerfile', // Obvious default
-    platform: 'linux/amd64', // Intel/AMD 64 Bits, following Docker platform identifiers
+    targetplatforms: '', // // Define the (comma separated) list of Docker supported platforms to build the image for. Defaults to `linux/amd64` when unspecified. Incompatible with the legacy `platform` attribute.
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
     registryNamespace: '', // Empty by default (means "autodiscover based on the current controller")
     unstash: '', // Allow to unstash files if not empty
+    dockerBakeFile: '', // Specify the path to a custom Docker Bake file to use instead of the default one
   ]
-
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
   final Map finalConfig = defaultConfig << userConfig
 
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
+
   final boolean semVerEnabledOnPrimaryBranch = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
 
   // Only run 1 build at a time on primary branch to ensure builds won't use the same tag when semantic versionning is activated
@@ -33,23 +64,53 @@ def call(String imageShortName, Map userConfig=[:]) {
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
   final String buildDate = dateFormat.format(now)
 
-  // Warn about potential Linux/Windows contradictions between platform & agentLabels, and set the Windows config suffix for CST files
-  String cstConfigSuffix = ''
-  if (finalConfig.agentLabels.contains('windows') || finalConfig.platform.contains('windows')) {
-    if (finalConfig.agentLabels.contains('windows') && !finalConfig.platform.contains('windows')) {
-      echo "WARNING: A 'windows' agent is requested, but the 'platform' is set to '${finalConfig.platform}'."
+  if (finalConfig.platform) {
+    if (finalConfig.targetplatforms) {
+      // only one platform parameter is supported both platform and platforms cannot be set at the same time
+      echo 'ERROR: Only one platform parameter is supported for now either platform or targetplatforms, prefer `targetplatforms`.'
+      currentBuild.result = 'FAILURE'
+      return
     }
-    if (!finalConfig.agentLabels.contains('windows') && finalConfig.platform.contains('windows')) {
-      echo "WARNING: The 'platform' is set to '${finalConfig.platform}', but there isn't any 'windows' agent requested."
+    // if platform is set, I override platforms with it
+    finalConfig.targetplatforms = finalConfig.platform
+    echo "WARNING: `platform` is deprecated, use `targetplatforms` instead."
+  }
+
+  // Default Value if targetplatforms is not set, I set it to linux/amd64 by default
+  if (finalConfig.targetplatforms == '') {
+    finalConfig.targetplatforms = 'linux/amd64'
+  }
+
+  // Warn about potential Linux/Windows contradictions between platform & agentLabels, and set the Windows config suffix for CST files
+  // for now only one platform possible per windows build !
+  String cstConfigSuffix = ''
+  if (finalConfig.agentLabels.contains('windows') || finalConfig.targetplatforms.contains('windows')) {
+    if (finalConfig.targetplatforms.split(',').length > 1) {
+      echo 'ERROR: with windows, only one platform can be specified within targetplatforms.'
+      currentBuild.result = 'FAILURE'
+      return
+    }
+    if (finalConfig.agentLabels.contains('windows') && !finalConfig.targetplatforms.contains('windows')) {
+      echo "WARNING: A 'windows' agent is requested, but the 'platform(s)' is set to '${finalConfig.targetplatforms}'."
+    }
+    if (!finalConfig.agentLabels.contains('windows') && finalConfig.targetplatforms.contains('windows')) {
+      echo "WARNING: The 'targetplatforms' is set to '${finalConfig.targetplatforms}', but there isn't any 'windows' agent requested."
     }
     cstConfigSuffix = '-windows'
   }
-  String operatingSystem = finalConfig.platform.split('/')[0]
+  String operatingSystem = finalConfig.targetplatforms.split('/')[0]
+
+  if (operatingSystem == 'windows' && finalConfig.dockerBakeFile != '') {
+    echo 'ERROR: dockerBakeFile is not supported on windows.'
+    currentBuild.result = 'FAILURE'
+    return
+  }
 
   final InfraConfig infraConfig = new InfraConfig(env)
   final String defaultRegistryNamespace = infraConfig.getDockerRegistryNamespace()
   final String registryNamespace = finalConfig.registryNamespace ?: defaultRegistryNamespace
   final String imageName = registryNamespace + '/' + imageShortName
+
   echo "INFO: Resolved Container Image Name: ${imageName}"
 
   node(finalConfig.agentLabels) {
@@ -58,7 +119,8 @@ def call(String imageShortName, Map userConfig=[:]) {
       "IMAGE_NAME=${imageName}",
       "IMAGE_DIR=${finalConfig.imageDir}",
       "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
-      "IMAGE_PLATFORM=${finalConfig.platform}",
+      "BUILD_TARGETPLATFORM=${finalConfig.targetplatforms}",
+      "BAKE_TARGETPLATFORMS=${finalConfig.targetplatforms}",
     ]) {
       infra.withDockerPullCredentials{
         String nextVersion = ''
@@ -138,11 +200,7 @@ def call(String imageShortName, Map userConfig=[:]) {
         } // stage
 
         stage("Build ${imageName}") {
-          if (isUnix()) {
-            sh 'make build'
-          } else {
-            powershell 'make build'
-          }
+          makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile)
         } //stage
 
         // There can be 2 kind of tests: per image and per repository
@@ -154,11 +212,7 @@ def call(String imageShortName, Map userConfig=[:]) {
           if (fileExists(testHarness)) {
             stage("Test ${testName} for ${imageName}") {
               withEnv(["TEST_HARNESS=${testHarness}"]) {
-                if (isUnix()) {
-                  sh 'make test'
-                } else {
-                  powershell 'make test'
-                }
+                makecall('test', imageName, operatingSystem, finalConfig.dockerBakeFile)
               } // withEnv
             } //stage
           } else {
@@ -208,25 +262,8 @@ def call(String imageShortName, Map userConfig=[:]) {
       infra.withDockerPushCredentials{
         if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
           stage("Deploy ${imageName}") {
-            String imageDeployName = imageName
-            if (env.TAG_NAME) {
-              // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
-              if (imageDeployName.contains(':')) {
-                imageDeployName += "-${env.TAG_NAME}"
-              } else {
-                imageDeployName += ":${env.TAG_NAME}"
-              }
-            }
-
-            withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
-              // Please note that "make deploy" uses the environment variable "IMAGE_DEPLOY_NAME"
-              if (isUnix()) {
-                sh 'make deploy'
-              } else {
-                powershell 'make deploy'
-              }
-            } // withEnv
-          } //stage
+            makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile)
+          }
         } // if
       } // withDockerPushCredentials
 
