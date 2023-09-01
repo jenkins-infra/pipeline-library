@@ -689,6 +689,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
   @Test
   void itFailWithWindowsAndMoreThanOnePlatform() throws Exception {
+    helper.registerAllowedMethod('isUnix', [], { false })
     def script = loadScript(scriptName)
     mockPrincipalBranch()
     withMocks{
@@ -709,6 +710,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
   @Test
   void itFailsWithWindowsAndBakeOnPrincipalBranch() throws Exception {
+    helper.registerAllowedMethod('isUnix', [], { false })
     def script = loadScript(scriptName)
     mockPrincipalBranch()
     withMocks{
@@ -730,6 +732,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
   @Test
   void itWarnIfWindowsAgentAndNotWindowsTarget() throws Exception {
+    helper.registerAllowedMethod('isUnix', [], { false })
     def script = loadScript(scriptName)
     mockPrincipalBranch()
     withMocks{
@@ -749,6 +752,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
   @Test
   void itWarnIfNotWindowsAgentButWindowsTarget() throws Exception {
+    helper.registerAllowedMethod('isUnix', [], { false })
     def script = loadScript(scriptName)
     mockPrincipalBranch()
     withMocks{
