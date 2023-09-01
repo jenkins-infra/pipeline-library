@@ -708,7 +708,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   @Test
-  void itDontBuildsAndDeploysImageWithWindowsAndBakeOnPrincipalBranch() throws Exception {
+  void itFailsWithWindowsAndBakeOnPrincipalBranch() throws Exception {
     def script = loadScript(scriptName)
     mockPrincipalBranch()
     withMocks{
@@ -763,5 +763,72 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // And the error message is shown
     assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: The \'targetplatforms\' is set to \'windows/1804\', but there isn\'t any \'windows\' agent requested.'))
+  }
+
+  @Test
+  void itBuildsAndDeploysWithDefaultConfigAndTagInImageNameOnTagOnWindows() throws Exception {
+    helper.registerAllowedMethod('isUnix', [], { false })
+    def script = loadScript(scriptName)
+    def customImageNameWithTag = testImageName + ':jdk8-nanoserver'
+    def fullCustomImageName = 'jenkinsciinfra/' + customImageNameWithTag
+    mockPrincipalBranch()
+    mockTag()
+    withMocks{
+      script.call(customImageNameWithTag,[
+        agentLabels: 'docker-windows',
+        targetplatforms: 'windows/amd64',
+      ])
+    }
+    printCallStack()
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+    // With the common workflow run as expected
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}"))
+    assertTrue(assertMethodCallContainsPattern('powershell','make lint'))
+    assertTrue(assertMethodCallContainsPattern('powershell','make build'))
+
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
+    // And generated reports are recorded with named without ':' but '-' instead
+    assertTrue(assertRecordIssues(fullCustomImageName.replaceAll(':','-')))
+    // With the deploy step called with the correct image name
+    assertTrue(assertMethodCallContainsPattern('powershell','make deploy'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=jenkinsciinfra/bitcoinMinerImage:jdk8-nanoserver-1.0.0"))
+
+    // And all mocked/stubbed methods have to be called
+    verifyMocks()
+  }
+
+  @Test
+  void itBuildsAndDeploysWithDefaultConfigOnTagOnWindows() throws Exception {
+    helper.registerAllowedMethod('isUnix', [], { false })
+    def script = loadScript(scriptName)
+    def fullCustomImageName = 'jenkinsciinfra/' + testImageName
+    mockPrincipalBranch()
+    mockTag()
+    withMocks{
+      script.call(testImageName,[
+        agentLabels: 'docker-windows',
+        targetplatforms: 'windows/amd64',
+      ])
+    }
+    printCallStack()
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+    // With the common workflow run as expected
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}"))
+    assertTrue(assertMethodCallContainsPattern('powershell','make lint'))
+    assertTrue(assertMethodCallContainsPattern('powershell','make build'))
+
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
+    // And generated reports are recorded with named without ':' but '-' instead
+    assertTrue(assertRecordIssues(fullCustomImageName.replaceAll(':','-')))
+    // With the deploy step called with the correct image name
+    assertTrue(assertMethodCallContainsPattern('powershell','make deploy'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=jenkinsciinfra/bitcoinMinerImage:1.0.0"))
+
+    // And all mocked/stubbed methods have to be called
+    verifyMocks()
   }
 }
