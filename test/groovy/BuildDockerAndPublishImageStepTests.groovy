@@ -341,7 +341,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
     // But no deploy step called for latest
     assertFalse(assertMethodCallContainsPattern('sh','make bake-deploy'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'TAG_NAME=null'))
     // And no release (no tag)
     assertFalse(assertTagPushed(defaultGitTag))
     // And all mocked/stubbed methods have to be called
@@ -371,7 +370,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And the deploy step called for latest
     assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DEPLOY_NAME=' + fullTestImageName))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'TAG_NAME=' + defaultGitTag))
 
     // And the release is created (tag triggering the build)
     assertTrue(assertReleaseCreated())
@@ -411,7 +409,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And the deploy step called for latest
     assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DEPLOY_NAME=' + fullTestImageName))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'TAG_NAME=' + defaultGitTag))
 
     // And the release is not created as no next release draft exists
     assertFalse(assertReleaseCreated())
@@ -437,7 +434,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // With the deploy step called with the correct image name
     assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
     assertTrue(assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=${fullCustomImageName}"))
-    assertTrue(assertMethodCallContainsPattern('withEnv', "TAG_NAME=${customGitTag}"))
 
     // And all mocked/stubbed methods have to be called
     verifyMocks()
@@ -530,7 +526,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertRecordIssues())
     // But no deploy step called (not on principal branch)
     assertFalse(assertMethodCallContainsPattern('sh','make deploy'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'TAG_NAME=null'))
 
     // But no release created automatically
     assertFalse(assertTagPushed(defaultGitTag))

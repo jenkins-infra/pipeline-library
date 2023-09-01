@@ -8,7 +8,7 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
   final String bakefileContent = libraryResource 'io/jenkins/infra/docker/jenkinsinfrabakefile.hcl'
 
   // Please note that "make deploy" and the generated bake deploy file uses the environment variable "IMAGE_DEPLOY_NAME"
-  withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}", "TAG_NAME=${env.TAG_NAME}"]) {
+  withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
     if (isUnix()) {
       if (! specificDockerBakeFile) {
         specificDockerBakeFile = 'jenkinsinfrabakefile.hcl'
