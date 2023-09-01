@@ -716,7 +716,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     withMocks{
       script.call(testImageName, [
         dockerBakeFile: 'bake.yml',
-        targetplatforms: 'windows/1804',
+        targetplatforms: 'windows/amd64',
         agentLabels: 'docker-windows',
       ])
     }
@@ -757,7 +757,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     mockPrincipalBranch()
     withMocks{
       script.call(testImageName, [
-        targetplatforms: 'windows/1804',
+        targetplatforms: 'windows/amd64',
       ])
     }
     printCallStack()
@@ -766,7 +766,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
 
     // And the error message is shown
-    assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: The \'targetplatforms\' is set to \'windows/1804\', but there isn\'t any \'windows\' agent requested.'))
+    assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: The \'targetplatforms\' is set to \'windows/amd64\', but there isn\'t any \'windows\' agent requested.'))
   }
 
   @Test
