@@ -56,7 +56,9 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 bake-build: ## Build the Docker Image(s) with dockerbake file
 	@echo "== Building from DockerBake file "
 	@echo "== DEBUG : IMAGE_DIR $(IMAGE_DIR), IMAGE_DEPLOY_NAME $(IMAGE_DEPLOY_NAME), IMAGE_DOCKERFILE $(IMAGE_DOCKERFILE), BAKE_TARGETPLATFORMS $(BAKE_TARGETPLATFORMS)"
+	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --print
 	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))"
+	@echo "== Build succeeded"
 
 
 clean: ## Delete any file generated during the build steps
