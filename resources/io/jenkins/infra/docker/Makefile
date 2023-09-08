@@ -1,17 +1,28 @@
 # Detect Windows (only OS separating paths in $PATH with ";") to set specific variable and function to get compatible paths
+IMAGE_DIR ?= .
 ifeq '$(findstring ;,$(PATH))' ';'
 	FixPath = $(subst /,\,$1)
-	IMAGE_DIR ?= .
 else
 	FixPath = $1
-	IMAGE_DIR ?= $(PWD)
+	# need absolute path for docker bake
+	IMAGE_DIR := $(abspath $(PWD)/$(IMAGE_DIR))
 endif
 
 IMAGE_NAME ?= helloworld
 IMAGE_DEPLOY_NAME ?= "$(IMAGE_NAME)"
 BUILD_TARGETPLATFORM ?= linux/amd64
 # Paths
-IMAGE_DOCKERFILE ?= "$(IMAGE_DIR)"/Dockerfile
+# Detect Windows (only OS separating paths in $PATH with ";") to set specific absolute paths for linux (bake) only
+ifeq '$(findstring ;,$(PATH))' ';'
+	IMAGE_DOCKERFILE ?= "$(IMAGE_DIR)"/Dockerfile
+else
+	# need absolute path for docker bake
+	ifeq ($(IMAGE_DOCKERFILE),)
+		IMAGE_DOCKERFILE := $(abspath $(PWD)/Dockerfile)
+	else
+		IMAGE_DOCKERFILE := $(abspath $(PWD)/$(IMAGE_DOCKERFILE))
+	endif
+endif
 HADOLINT_REPORT ?= "$(IMAGE_DIR)"/hadolint.json
 TEST_HARNESS ?= "$(IMAGE_DIR)"/cst.yml
 DOCKER_BAKE_FILE ?= "$(IMAGE_DIR)"/docker-bake.hcl
@@ -21,6 +32,16 @@ GIT_COMMIT_REV ?= $(shell git log -n 1 --pretty=format:'%h')
 GIT_SCM_URL ?= $(shell git config --get remote.origin.url)
 SCM_URI ?= $(subst git@github.com:,https://github.com/,"$(GIT_SCM_URL)")
 BUILD_DATE ?= $(shell date --utc '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || gdate --utc '+%Y-%m-%dT%H:%M:%S')
+
+export 	IMAGE_DEPLOY_NAME \
+		TAG_NAME \
+		BAKE_TARGETPLATFORMS \
+		IMAGE_DOCKERFILE \
+		IMAGE_DIR \
+		GIT_COMMIT_REV \
+		GIT_SCM_URL \
+		BUILD_DATE \
+		SCM_URI
 
 help: ## Show this Makefile's help
 	@echo "Help:"
@@ -54,8 +75,9 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 	@echo "== Build succeeded"
 
 bake-build: ## Build the Docker Image(s) with dockerbake file
-	@echo "== Building from DockerBake file"
-	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))"
+	@echo "== Building from DockerBake file $(DOCKER_BAKE_FILE)"
+	@docker buildx bake -f "$(DOCKER_BAKE_FILE)"
+	@echo "== Build succeeded"
 
 
 clean: ## Delete any file generated during the build steps
