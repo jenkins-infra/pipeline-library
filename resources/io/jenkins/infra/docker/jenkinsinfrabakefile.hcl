@@ -20,6 +20,19 @@ variable "IMAGE_DIR" {
   default = "."
 }
 
+variable "GIT_COMMIT_REV" {
+  default = "${GIT_COMMIT_REV}"
+}
+variable "GIT_SCM_URL" {
+  default = "${GIT_SCM_URL}"
+}
+variable "BUILD_DATE" {
+  default = "${BUILD_DATE}"
+}
+variable "SCM_URI" {
+  default = "${SCM_URI}"
+}
+
 # return the full image name
 function "full_image_name" {
   params = [tag]
