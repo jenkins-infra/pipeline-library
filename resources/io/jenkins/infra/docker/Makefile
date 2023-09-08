@@ -12,13 +12,17 @@ IMAGE_NAME ?= helloworld
 IMAGE_DEPLOY_NAME ?= "$(IMAGE_NAME)"
 BUILD_TARGETPLATFORM ?= linux/amd64
 # Paths
-# need absolute path for docker bake
-ifeq ($(IMAGE_DOCKERFILE),)
-	IMAGE_DOCKERFILE := $(abspath $(PWD)/Dockerfile)
+# Detect Windows (only OS separating paths in $PATH with ";") to set specific absolute paths for linux (bake) only
+ifeq '$(findstring ;,$(PATH))' ';'
+	IMAGE_DOCKERFILE ?= "$(IMAGE_DIR)"/Dockerfile
 else
-	IMAGE_DOCKERFILE := $(abspath $(PWD)/$(IMAGE_DOCKERFILE))
+	# need absolute path for docker bake
+	ifeq ($(IMAGE_DOCKERFILE),)
+		IMAGE_DOCKERFILE := $(abspath $(PWD)/Dockerfile)
+	else
+		IMAGE_DOCKERFILE := $(abspath $(PWD)/$(IMAGE_DOCKERFILE))
+	endif
 endif
-
 HADOLINT_REPORT ?= "$(IMAGE_DIR)"/hadolint.json
 TEST_HARNESS ?= "$(IMAGE_DIR)"/cst.yml
 DOCKER_BAKE_FILE ?= "$(IMAGE_DIR)"/docker-bake.hcl

@@ -187,8 +187,6 @@ def call(String imageShortName, Map userConfig=[:]) {
               if (isUnix()) {
                 sh 'make lint'
               } else {
-                powershell "$pwd"
-                powershell 'dir c:\\maven\\jdk11'
                 powershell 'make lint'
               }
             } finally {
