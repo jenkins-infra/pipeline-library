@@ -29,14 +29,14 @@ GIT_SCM_URL ?= $(shell git config --get remote.origin.url)
 SCM_URI ?= $(subst git@github.com:,https://github.com/,"$(GIT_SCM_URL)")
 BUILD_DATE ?= $(shell date --utc '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || gdate --utc '+%Y-%m-%dT%H:%M:%S')
 
-export 	IMAGE_DEPLOY_NAME 		\
-		TAG_NAME 				\
-		BAKE_TARGETPLATFORMS 	\
-		IMAGE_DOCKERFILE 		\
-		IMAGE_DIR 				\
-		GIT_COMMIT_REV 			\
-		GIT_SCM_URL 			\
-		BUILD_DATE 				\
+export 	IMAGE_DEPLOY_NAME \
+		TAG_NAME \
+		BAKE_TARGETPLATFORMS \
+		IMAGE_DOCKERFILE \
+		IMAGE_DIR \
+		GIT_COMMIT_REV \
+		GIT_SCM_URL \
+		BUILD_DATE \
 		SCM_URI
 
 help: ## Show this Makefile's help
