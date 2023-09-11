@@ -20,6 +20,19 @@ variable "IMAGE_DIR" {
   default = "."
 }
 
+variable "GIT_COMMIT_REV" {
+  default = ""
+}
+variable "GIT_SCM_URL" {
+  default = ""
+}
+variable "BUILD_DATE" {
+  default = ""
+}
+variable "SCM_URI" {
+  default = ""
+}
+
 # return the full image name
 function "full_image_name" {
   params = [tag]
@@ -35,18 +48,18 @@ target "default" {
   ]
   platforms = [BAKE_TARGETPLATFORMS]
   args = {
-    GIT_COMMIT_REV="$(GIT_COMMIT_REV)",
-    GIT_SCM_URL="$(GIT_SCM_URL)",
-    BUILD_DATE="$(BUILD_DATE)",
+    GIT_COMMIT_REV="${GIT_COMMIT_REV}",
+    GIT_SCM_URL="${GIT_SCM_URL}",
+    BUILD_DATE="${BUILD_DATE}",
   }
   labels = {
-    "org.opencontainers.image.source"="$(GIT_SCM_URL)",
-    "org.label-schema.vcs-url"="$(GIT_SCM_URL)",
-    "org.opencontainers.image.url"="$(SCM_URI)",
-    "org.label-schema.url"="$(SCM_URI)",
-    "org.opencontainers.image.revision"="$(GIT_COMMIT_REV)",
-    "org.label-schema.vcs-ref"="$(GIT_COMMIT_REV)",
-    "org.opencontainers.image.created"="$(BUILD_DATE)",
-    "org.label-schema.build-date"="$(BUILD_DATE)",
+    "org.opencontainers.image.source"="${GIT_SCM_URL}",
+    "org.label-schema.vcs-url"="${GIT_SCM_URL}",
+    "org.opencontainers.image.url"="${SCM_URI}",
+    "org.label-schema.url"="${SCM_URI}",
+    "org.opencontainers.image.revision"="${GIT_COMMIT_REV}",
+    "org.label-schema.vcs-ref"="${GIT_COMMIT_REV}",
+    "org.opencontainers.image.created"="${BUILD_DATE}",
+    "org.label-schema.build-date"="${BUILD_DATE}",
   }
 }
