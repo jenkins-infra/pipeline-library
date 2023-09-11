@@ -21,16 +21,16 @@ variable "IMAGE_DIR" {
 }
 
 variable "GIT_COMMIT_REV" {
-  default = "${GIT_COMMIT_REV}"
+  default = ""
 }
 variable "GIT_SCM_URL" {
-  default = "${GIT_SCM_URL}"
+  default = ""
 }
 variable "BUILD_DATE" {
-  default = "${BUILD_DATE}"
+  default = ""
 }
 variable "SCM_URI" {
-  default = "${SCM_URI}"
+  default = ""
 }
 
 # return the full image name
