@@ -42,7 +42,15 @@ Object withDockerCredentials(Map orgAndCredentialsId, Closure body) {
         if (isUnix()) {
           sh 'echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin'
         } else {
-          powershell 'Write-Output ${env:DOCKER_CONFIG_PSW} | & ${Env:CONTAINER_BIN} login --username ${Env:DOCKER_CONFIG_USR} --password-stdin'
+          def tmpFolder = pwd(tmp:true)
+          powershell '''
+            Invoke-Expression "${Env:CONTAINER_BIN} login --username ${Env:DOCKER_CONFIG_USR} --password ${Env:DOCKER_CONFIG_PSW} 2>&1 > $tmpFolder/discarded_output.log"
+            if($lastExitCode -ne 0) {
+              exit $lastExitCode
+            } else {
+              Write-Host 'Docker login succeeded.'
+            }
+          '''
         }
 
         body.call()
