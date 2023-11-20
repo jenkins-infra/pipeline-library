@@ -65,6 +65,7 @@ class BaseTest extends DeclarativePipelineTest {
 
     helper.registerAllowedMethod('sh', [String.class], { s -> s })
     helper.registerAllowedMethod('powershell', [String.class], { s -> s })
+    helper.registerAllowedMethod('pwsh', [String.class], { s -> s })
     helper.registerAllowedMethod('stage', [String.class], { s -> s })
     helper.registerAllowedMethod('timeout', [String.class], { s -> s })
     helper.registerAllowedMethod('timeout', [Integer.class, Closure.class], { list, body -> body() })
