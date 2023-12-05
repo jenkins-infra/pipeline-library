@@ -12,14 +12,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install updatecli CLI
-        env:
-          UPDATECLI_VERSION: v0.68.0
-        run: |
-          curl --silent --location --show-error --output /tmp/updatecli.tgz \
-            "https://github.com/updatecli/updatecli/releases/download/${UPDATECLI_VERSION}/updatecli_$(uname -s)_$(uname -m).tar.gz"
-          tar xzf /tmp/updatecli.tgz -C /usr/local/bin/ updatecli
-          rm -f /tmp/updatecli.tgz
+      - name: Setup updatecli
+        uses: updatecli/updatecli-action@v2
       - name: Diff
         continue-on-error: true
         run: |
