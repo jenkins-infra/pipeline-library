@@ -21,11 +21,11 @@ You are advised to be using a link:https://github.com/jenkinsci/plugin-pom/blob/
 [source,groovy]
 ----
 buildPlugin(
-  useContainerAgent: true,
+  forkCount: '1C', // run this number of tests in parallel for faster feedback.  If the number terminates with a 'C', the value will be multiplied by the number of available CPU cores
+  useContainerAgent: true, // Set to `false` if you need to use Docker for containerized tests
   configurations: [
-    [platform: 'linux', jdk: 11],
-    [platform: 'linux', jdk: 17],
-    [platform: 'windows', jdk: 11],
+    [platform: 'linux', jdk: 21],
+    [platform: 'windows', jdk: 17],
 ])
 ----
 
@@ -52,9 +52,9 @@ buildPlugin(
 [source,groovy]
 ----
 buildPlugin(/*...*/, configurations: [
-  [ platform: "linux", jdk: "11", jenkins: null ],
-  [ platform: "windows", jdk: "11", jenkins: null ],
-  [ platform: "linux", jdk: "17", jenkins: "2.400" ]
+  [ platform: "linux", jdk: "17", jenkins: null ],
+  [ platform: "windows", jdk: "17", jenkins: null ],
+  [ platform: "linux", jdk: "21", jenkins: "2.436" ]
 ])
 ----
 
