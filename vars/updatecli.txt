@@ -8,9 +8,8 @@
       <li>String action: (Optional - Default: "diff") Updatecli action (e.g. subcommand) to execute.</li>
       <li>String config: (Optional - Default: "./updatecli/updatecli.d") path to the file or directory with the updatecli configuration (flag "--config").</li>
       <li>String values: (Optional - Default: "./updatecli/values.yaml") path to the file with the updatecli values (flag "--values").</li>
-      <li>String updatecliDockerImage: (Optional - Default: "jenkinsciinfra/helmfile:3.0.59") Docker Image of updatecli to be used in the process.</li>
+      <li>String updatecliAgentLabel: (Optional - Default: "jnlp-linux-arm64") agent to be used in the process.</li>
       <li>String cronTriggerExpression: (Optional - Default: "") Enable periodic execution by providing a cron-like expression.</li>
-      <li>String containerMemory: (Optional - Default: "512Mi") specify the amount of memory dedicated to the updatecli container.</li>
       <li>String credentialsId: (Optional - Default: "github-app-updatecli-on-jenkins-infra") specify the githubApp or usernamePassword credentials id to use to get an Access Token. The corresponding populated env vars are USERNAME_VALUE & UPDATECLI_GITHUB_TOKEN</li>
     </ul>
 
