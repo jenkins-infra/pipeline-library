@@ -10,6 +10,7 @@ def call(userConfig = [:]) {
     productionCredentials: [], // No custom secrets for production by default
     productionBranch: 'main', // Defaults to the principal branch
     agentContainerImage: 'jenkinsciinfra/hashicorp-tools:1.0.62', // Version managed by updatecli
+    agentLabel: 'jnlp-linux-arm64', // replace agentContainerImage
     runTests: false, // Executes the tests provided by the "calling" project, which should provide a tests/Makefile
     runCommonTests: true, // Executes the default test suite from the shared tools repository (terratest)
   ]
@@ -140,43 +141,14 @@ def call(userConfig = [:]) {
 }
 
 def agentTemplate(containerImage, body) {
-  podTemplate(
-      // Custom YAML definition to enforce no service account token (if Terraform uses kubernetes, it would grant it a wrong access)
-      yaml: '''
-      apiVersion: v1
-      kind: Pod
-      spec:
-        automountServiceAccountToken: false
-        nodeSelector:
-          kubernetes.azure.com/agentpool: infracipool
-          kubernetes.io/os: linux
-        tolerations:
-        - key: "jenkins"
-          operator: "Equal"
-          value: "infra.ci.jenkins.io"
-          effect: "NoSchedule"
-        - key: "kubernetes.azure.com/scalesetpriority"
-          operator: "Equal"
-          value: "spot"
-          effect: "NoSchedule"
-      resources:
-        limits:
-          cpu: 2
-          memory: 2Gi
-        requests:
-          cpu: 2
-          memory: 2Gi
-      ''',
-      // The Docker image here is aimed at "1 container per pod" and is embedding Jenkins agent tooling
-      containers: [containerTemplate(name: 'jnlp', image: containerImage)]) {
-        node(POD_LABEL) {
-          timeout(time: 1, unit: 'HOURS') {
-            ansiColor('xterm') {
-              body.call()
-            }
-          }
-        }
-      }
+  agent {
+    label 'agentLabel'
+  }
+  timeout(time: 1, unit: 'HOURS') {
+    ansiColor('xterm') {
+      body.call()
+    }
+  }
 }
 
 
