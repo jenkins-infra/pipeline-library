@@ -141,12 +141,11 @@ def call(userConfig = [:]) {
 }
 
 def agentTemplate(containerImage, body) {
-  agent {
-    label 'agentLabel'
-  }
-  timeout(time: 1, unit: 'HOURS') {
-    ansiColor('xterm') {
-      body.call()
+  node (agentLabel) {
+    timeout(time: 1, unit: 'HOURS') {
+      ansiColor('xterm') {
+        body.call()
+      }
     }
   }
 }
