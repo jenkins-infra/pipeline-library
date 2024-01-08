@@ -76,6 +76,7 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 
 bake-build: ## Build the Docker Image(s) with dockerbake file
 	@echo "== Building from DockerBake file $(DOCKER_BAKE_FILE)"
+	@docker buildx bake -f "$(DOCKER_BAKE_FILE)" --print
 	@docker buildx bake -f "$(DOCKER_BAKE_FILE)"
 	@echo "== Build succeeded"
 
