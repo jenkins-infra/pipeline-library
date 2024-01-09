@@ -51,7 +51,7 @@ def call(userConfig = [:]) {
     if (!isBuildCauseUser) {
       parallelStages['staging'] = {
         stage('Staging') {
-          agentTemplate(finalConfig.agentContainerImage, {
+          agentTemplate(finalConfig.agentLabel, {
             withCredentials(finalConfig.stagingCredentials) {
               stage('🔎 Validate Terraform for Staging Environment') {
                 getInfraSharedTools(sharedToolsSubDir)
@@ -76,7 +76,7 @@ def call(userConfig = [:]) {
 
     parallelStages['production'] = {
       stage('Production') {
-        agentTemplate(finalConfig.agentContainerImage, {
+        agentTemplate(finalConfig.agentLabel, {
           withCredentials(defaultConfig.productionCredentials) {
             final String planFileName = 'terraform-plan-for-humans.txt'
             def scmOutput
@@ -140,7 +140,7 @@ def call(userConfig = [:]) {
   }
 }
 
-def agentTemplate(containerImage, body) {
+def agentTemplate(agentLabel, body) {
   node (agentLabel) {
     timeout(time: 1, unit: 'HOURS') {
       ansiColor('xterm') {
