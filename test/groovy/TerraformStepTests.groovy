@@ -247,6 +247,5 @@ class TerraformStepTests extends BaseTest {
     // And 2 nodes with custom label are spawned
     assertTrue(assertMethodCallContainsPattern('node', customLabel))
     assertTrue(assertMethodCallOccurrences('node', 2))
-
   }
 }
