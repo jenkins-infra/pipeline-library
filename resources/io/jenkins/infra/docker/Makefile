@@ -95,11 +95,11 @@ test: ## Execute the test harness on the Docker Image
 	container-structure-test test --driver=docker --image="$(IMAGE_NAME)" --config="$(call FixPath,$(TEST_HARNESS))"
 	@echo "== Test succeeded"
 
-show:
+show: ## Show the output of docker buildx bake --print
 	@docker buildx bake -f "$(DOCKER_BAKE_FILE)" "$(DOCKER_BAKE_TARGET)" --print
 
-list:
-	@set -x; make --silent show | jq -r '.target | path(.. | select(.platforms[] | contains("linux/$(ARCH)"))?) | add'
+list: ## List the first tag of each target including the same platform than the current architecture, with "/" replaced by "#"
+	@set -x; make --silent show | jq -r '.target | to_entries[] | select(.value.platforms[] | contains("linux/$(ARCH)")) | .value.tags[0] | gsub("/"; "#")'
 
 bake-test: ## Execute the test harness on the Docker image(s) with load
 	@echo "== Load $(IMAGE_NAME) within docker engine from docker bake buildx engine"
@@ -109,8 +109,8 @@ bake-test: ## Execute the test harness on the Docker image(s) with load
 	@echo "== All tests succeeded"
 
 bake-test-%: ## Execute the test harness on the tag of an image
-	@echo "== Test $(IMAGE_NAME):latest-$* with $(call FixPath,$(TEST_HARNESS)) from $(IMAGE_NAME) with container-structure-test:"
-	container-structure-test test --driver=docker --image="$(IMAGE_NAME):latest-$*" --config="$(call FixPath,$(TEST_HARNESS))"
+	@echo "== Test $(subst #,/,$*) with $(call FixPath,$(TEST_HARNESS)) from $(IMAGE_NAME) with container-structure-test:"
+	container-structure-test test --driver=docker --image="$(subst #,/,$*)" --config="$(call FixPath,$(TEST_HARNESS))"
 	@echo "== Test succeeded"
 
 ## This steps expects that you are logged to the Docker registry to push image into
