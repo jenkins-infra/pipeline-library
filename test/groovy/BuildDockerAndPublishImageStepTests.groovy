@@ -24,6 +24,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   static final String defaultNextVersionCommand = 'jx-release-version'
   static final String defaultOrigin = 'https://github.com/org/repository.git'
   static final String defaultReleaseId = '12345'
+  static final String defaultDockerBakeFile = 'jenkinsinfrabakefile.hcl'
 
   def infraConfigMock
   def dateMock
@@ -644,6 +645,42 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withEnv', 'BAKE_TARGETPLATFORMS=linux/amd64'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'DOCKER_BAKE_FILE=bake.yml'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'DOCKER_BAKE_TARGET=default'))
+    // // And all mocked/stubbed methods have to be called
+    verifyMocks()
+  }
+
+  @Test
+  void itBuildsAndDeploysImageWithCustomDockerBakeTargetOnPrincipalBranch() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+    withMocks{
+      script.call(testImageName, [
+        dockerBakeTarget: 'another-target',
+      ])
+    }
+
+    //final String expectedImageName = 'jenkins/' + testImageName
+    printCallStack()
+
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+
+    // // With the common workflow run as expected
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}"))
+    assertTrue(assertMethodCallContainsPattern('sh','make lint'))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
+
+    assertTrue(assertMethodCallContainsPattern('sh', 'make bake-build'))
+    assertFalse(assertMethodCallContainsPattern('sh', 'make build'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'make bake-deploy'))
+    assertFalse(assertMethodCallContainsPattern('sh', 'make deploy'))
+    // // And the environement variables set with the custom configuration values
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'BAKE_TARGETPLATFORMS=linux/amd64'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "DOCKER_BAKE_FILE=${defaultDockerBakeFile}"))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'DOCKER_BAKE_TARGET=another-target'))
     // // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
@@ -727,7 +764,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusFailure()
 
     // And the error message is shown
-    assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: dockerBakeFile is not supported on windows.'))
+    assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: docker bake is not (yet) supported on windows.'))
   }
 
   @Test

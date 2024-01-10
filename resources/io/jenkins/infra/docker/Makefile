@@ -26,6 +26,7 @@ endif
 HADOLINT_REPORT ?= "$(IMAGE_DIR)"/hadolint.json
 TEST_HARNESS ?= "$(IMAGE_DIR)"/cst.yml
 DOCKER_BAKE_FILE ?= "$(IMAGE_DIR)"/docker-bake.hcl
+DOCKER_BAKE_TARGET ?= default
 
 ## Image metadatas
 GIT_COMMIT_REV ?= $(shell git log -n 1 --pretty=format:'%h')
@@ -75,9 +76,9 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 	@echo "== Build succeeded"
 
 bake-build: ## Build the Docker Image(s) with dockerbake file
-	@echo "== Building from DockerBake file $(DOCKER_BAKE_FILE)"
-	@docker buildx bake -f "$(DOCKER_BAKE_FILE)" --print
-	@docker buildx bake -f "$(DOCKER_BAKE_FILE)"
+	@echo "== Building ${DOCKER_BAKE_TARGET} target from DockerBake file $(DOCKER_BAKE_FILE)"
+	@docker buildx bake -f "$(DOCKER_BAKE_FILE)" "$(DOCKER_BAKE_TARGET)" --print
+	@docker buildx bake -f "$(DOCKER_BAKE_FILE)" "$(DOCKER_BAKE_TARGET)"
 	@echo "== Build succeeded"
 
 
@@ -93,7 +94,7 @@ test: ## Execute the test harness on the Docker Image
 
 bake-test: ## Execute the test harness on the Docker Image with load
 	@echo "== Load $(IMAGE_NAME) within docker engine from docker bake buildx engine"
-	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --set "*.platform=linux/$(shell dpkg --print-architecture)"  --load
+	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" "$(DOCKER_BAKE_TARGET)" --set "*.platform=linux/$(shell dpkg --print-architecture)"  --load
 	@echo "== Test $(IMAGE_NAME) with $(call FixPath,$(TEST_HARNESS)) from $(IMAGE_NAME) with container-structure-test:"
 	container-structure-test test --driver=docker --image="$(IMAGE_NAME)" --config="$(call FixPath,$(TEST_HARNESS))"
 	@echo "== Test succeeded"
@@ -106,7 +107,7 @@ deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 	@echo "== Deploy succeeded"
 
 bake-deploy:  ## Tag and push the built image as specified by docker bake file
-	@echo "== Deploying with docker bake file"
-	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" --push
+	@echo "== Deploying $(DOCKER_BAKE_TARGET) target with docker bake file"
+	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" "$(DOCKER_BAKE_TARGET)" --push
 
 .PHONY: all clean lint build test deploy
