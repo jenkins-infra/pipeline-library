@@ -8,6 +8,9 @@ else
 	IMAGE_DIR := $(abspath $(PWD)/$(IMAGE_DIR))
 endif
 
+current_arch := $(shell uname -m)
+export ARCH ?= $(shell case $(current_arch) in (x86_64) echo "amd64" ;; (i386) echo "386";; (aarch64|arm64) echo "arm64" ;; (armv6*) echo "arm/v6";; (armv7*) echo "arm/v7";; (s390*|riscv*|ppc64le) echo $(current_arch);; (*) echo "UNKNOWN-CPU";; esac)
+
 IMAGE_NAME ?= helloworld
 IMAGE_DEPLOY_NAME ?= "$(IMAGE_NAME)"
 BUILD_TARGETPLATFORM ?= linux/amd64
@@ -77,7 +80,7 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 
 bake-build: ## Build the Docker Image(s) with dockerbake file
 	@echo "== Building ${DOCKER_BAKE_TARGET} target from DockerBake file $(DOCKER_BAKE_FILE)"
-	@docker buildx bake -f "$(DOCKER_BAKE_FILE)" "$(DOCKER_BAKE_TARGET)" --print
+	@make show
 	@docker buildx bake -f "$(DOCKER_BAKE_FILE)" "$(DOCKER_BAKE_TARGET)"
 	@echo "== Build succeeded"
 
@@ -92,11 +95,22 @@ test: ## Execute the test harness on the Docker Image
 	container-structure-test test --driver=docker --image="$(IMAGE_NAME)" --config="$(call FixPath,$(TEST_HARNESS))"
 	@echo "== Test succeeded"
 
-bake-test: ## Execute the test harness on the Docker Image with load
+show:
+	@docker buildx bake -f "$(DOCKER_BAKE_FILE)" "$(DOCKER_BAKE_TARGET)" --print
+
+list:
+	@set -x; make --silent show | jq -r '.target | path(.. | select(.platforms[] | contains("linux/$(ARCH)"))?) | add'
+
+bake-test: ## Execute the test harness on the Docker image(s) with load
 	@echo "== Load $(IMAGE_NAME) within docker engine from docker bake buildx engine"
-	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" "$(DOCKER_BAKE_TARGET)" --set "*.platform=linux/$(shell dpkg --print-architecture)"  --load
-	@echo "== Test $(IMAGE_NAME) with $(call FixPath,$(TEST_HARNESS)) from $(IMAGE_NAME) with container-structure-test:"
-	container-structure-test test --driver=docker --image="$(IMAGE_NAME)" --config="$(call FixPath,$(TEST_HARNESS))"
+	@make show
+	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" "$(DOCKER_BAKE_TARGET)" --set "*.platform=linux/$(ARCH)"  --load
+	@make --silent list | while read image; do make --silent "bake-test-$${image}"; done
+	@echo "== All tests succeeded"
+
+bake-test-%: ## Execute the test harness on the tag of an image
+	@echo "== Test $(IMAGE_NAME):latest-$* with $(call FixPath,$(TEST_HARNESS)) from $(IMAGE_NAME) with container-structure-test:"
+	container-structure-test test --driver=docker --image="$(IMAGE_NAME):latest-$*" --config="$(call FixPath,$(TEST_HARNESS))"
 	@echo "== Test succeeded"
 
 ## This steps expects that you are logged to the Docker registry to push image into
