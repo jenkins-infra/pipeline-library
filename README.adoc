@@ -203,6 +203,7 @@ Name of the docker image to build
 * registryNamespace: empty = autodiscover based on the current controller, but can override the smart default of jenkinsciinfra/ or jenkins4eval/
 * unstash: Allow to unstash files if not empty
 * dockerBakeFile: Allow to build from a bake file instead
+* dockerBakeTarget: Allow to specify a docker bake target other than 'default'
 
 ==== Example
 [source, groovy]
