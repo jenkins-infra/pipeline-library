@@ -9,7 +9,6 @@ def call(userConfig = [:]) {
     stagingCredentials: [], // No custom secrets for staging by default
     productionCredentials: [], // No custom secrets for production by default
     productionBranch: 'main', // Defaults to the principal branch
-    agentContainerImage: 'jenkinsciinfra/hashicorp-tools:1.0.62', // Version managed by updatecli
     agentLabel: 'jnlp-linux-arm64', // replace agentContainerImage
     runTests: false, // Executes the tests provided by the "calling" project, which should provide a tests/Makefile
     runCommonTests: true, // Executes the default test suite from the shared tools repository (terratest)
