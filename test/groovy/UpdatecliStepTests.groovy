@@ -78,7 +78,6 @@ class UpdatecliStepTests extends BaseTest {
     // And only the default command called with custom config and NO values
     assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --config ./ops/config.yml'))
     assertFalse(assertMethodCallContainsPattern('sh','--values'))
-
   }
 
   @Test
