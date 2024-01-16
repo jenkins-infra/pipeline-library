@@ -31,8 +31,11 @@ class UpdatecliStepTests extends BaseTest {
     // Then we expect a successful build
     assertJobStatusSuccess()
 
-    // And the correct pod agent used
-    assertTrue(assertMethodCallContainsPattern('node', 'jnlp-linux-arm64'))
+    // And the correct pod template defined
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/helmfile:'))
+    // And the correct default container memory
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'resourceRequestMemory=512Mi'))
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'resourceLimitMemory=512Mi'))
 
     // And the repository checkouted
     assertTrue(assertMethodCallContainsPattern('checkout', ''))
@@ -72,6 +75,7 @@ class UpdatecliStepTests extends BaseTest {
     // Then we expect a successful build
     assertJobStatusSuccess()
 
+
     // And the repository checkouted
     assertTrue(assertMethodCallContainsPattern('checkout',''))
 
@@ -79,6 +83,9 @@ class UpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --config ./ops/config.yml'))
     assertFalse(assertMethodCallContainsPattern('sh','--values'))
 
+    // And the correct container memory
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'resourceRequestMemory=512Mi'))
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'resourceLimitMemory=512Mi'))
   }
 
   @Test
@@ -106,7 +113,7 @@ class UpdatecliStepTests extends BaseTest {
     def script = loadScript(scriptName)
 
     // when calling the "updatecli" function with a custom Docker image
-    script.call(updatecliAgentLabel: 'jnlp-linux-amd64')
+    script.call(updatecliDockerImage: 'golang:1.16-alpine')
     printCallStack()
 
     // Then we expect a successful build
@@ -116,7 +123,7 @@ class UpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('checkout',''))
 
     // And the correct pod template defined
-    assertTrue(assertMethodCallContainsPattern('node', 'jnlp-linux-amd64'))
+    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'golang:1.16-alpine'))
 
     // And only the diff command called with default values
     assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
