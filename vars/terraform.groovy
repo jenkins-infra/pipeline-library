@@ -59,6 +59,9 @@ def call(userConfig = [:]) {
               }
               if (finalConfig.runCommonTests) {
                 stage('✅ Commons Test Terraform Project') {
+                  sh 'pwd'
+                  sh "echo ${PATH}"
+                  sh 'go version'
                   sh makeCliCmd + ' common-tests'
                 }
               }
