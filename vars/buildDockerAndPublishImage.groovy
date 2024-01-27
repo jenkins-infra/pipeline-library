@@ -289,7 +289,19 @@ def call(String imageShortName, Map userConfig=[:]) {
                 releaseId="$(gh api "${releasesUrl}" | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')"
                 if test "${releaseId}" -gt 0
                 then
-                  gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${releasesUrl}/${releaseId}" > /dev/null
+                  body="$(gh api "${releasesUrl}/${releaseId}" | jq -e -r '.body')"
+                  body+='<hr><details><summary>Details:</summary>
+
+                  ```yaml'
+                  body+="$(make show | jq -r '.target')"
+                  body+='
+                  ```
+
+                  </details>'
+                  echo "-------- body ---------"
+                  echo "${body}"
+                  echo "------ end body -------"
+                  gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" -F body="${body}" "${releasesUrl}/${releaseId}" > /dev/null
                 fi
                 echo "${releaseId}"
               '''
