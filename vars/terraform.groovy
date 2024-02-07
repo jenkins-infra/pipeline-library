@@ -58,8 +58,12 @@ def call(userConfig = [:]) {
                 sh makeCliCmd + ' validate'
               }
               if (finalConfig.runCommonTests) {
-                stage('✅ Commons Test Terraform Project') {
-                  sh makeCliCmd + ' common-tests'
+                final String commonTestsFileName = 'common-tests.log'
+                withEnv(["COMMON_TESTS_FILE_NAME=${commonTestsFileName}",]) {
+                  stage('✅ Commons Test Terraform Project') {
+                    sh makeCliCmd + ' common-tests'
+                    archiveArtifacts commonTestsFileName
+                  }
                 }
               }
               if (finalConfig.runTests) {
