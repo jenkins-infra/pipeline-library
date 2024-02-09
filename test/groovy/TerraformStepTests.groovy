@@ -86,9 +86,9 @@ class TerraformStepTests extends BaseTest {
     // And a daily cron trigger for the job
     assertTrue(assertMethodCallContainsPattern('cron', '@daily'))
 
-    // And the correct pod templates defined
-    assertTrue(assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/hashicorp-tools:')) // Not tag as it's managed by updatecli
-    assertTrue(assertMethodCallOccurrences('containerTemplate', 2)) // Only 1 container per pod, but 2 pod spawn (staging and production)
+    // And 2 nodes with default label are spawned
+    assertTrue(assertMethodCallContainsPattern('node', 'jnlp-linux-arm64'))
+    assertTrue(assertMethodCallOccurrences('node', 2))
 
     // xterm color enabled (easier to read Terraform plans)
     assertTrue(assertMethodCallContainsPattern('ansiColor', 'xterm'))
@@ -221,14 +221,14 @@ class TerraformStepTests extends BaseTest {
   @Test
   void itRunSuccessfullyWithCustomParameters() throws Exception {
     def script = loadScript(scriptName)
-    final String customImage = 'hashicorp/terraform-full:0.13.0'
+    final String customLabel = 'jnlp-windows-amd64'
 
     // When calling the shared library global function with custom parameters
     script.call(
         cronTriggerExpression: '@weekly',
         stagingCredentials: stagingCustomCreds,
         productionCredentials: productionCustomCreds,
-        agentContainerImage: customImage,
+        agentLabel: customLabel,
         )
     printCallStack()
 
@@ -244,9 +244,8 @@ class TerraformStepTests extends BaseTest {
     // And the custom cron trigger
     assertTrue(assertMethodCallContainsPattern('cron', '@weekly'))
 
-    // And the custom agent container template defined
-    assertFalse(assertMethodCallContainsPattern('containerTemplate', 'jenkinsciinfra/terraform:'))
-    assertTrue(assertMethodCallContainsPattern('containerTemplate', customImage))
-    assertTrue(assertMethodCallOccurrences('containerTemplate', 2))
+    // And 2 nodes with custom label are spawned
+    assertTrue(assertMethodCallContainsPattern('node', customLabel))
+    assertTrue(assertMethodCallOccurrences('node', 2))
   }
 }
