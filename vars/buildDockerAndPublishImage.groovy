@@ -271,7 +271,7 @@ def call(String imageShortName, Map userConfig=[:]) {
           if (!finalConfig.disablePublication) {
             infra.withDockerPushCredentials{
               makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
-            } // withDockerPushCredentials
+            }
           } else {
             echo 'INFO: publication disabled.'
           } // else
