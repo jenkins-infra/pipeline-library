@@ -274,7 +274,9 @@ def call(String imageShortName, Map userConfig=[:]) {
             }
           } // if
         } // withDockerPushCredentials
-      } // if
+      } else {
+        echo 'INFO: publication disabled.'
+      } // else
 
       if (env.TAG_NAME && finalConfig.automaticSemanticVersioning) {
         stage('GitHub Release') {
