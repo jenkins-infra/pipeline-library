@@ -204,6 +204,7 @@ Name of the docker image to build
 * unstash: Allow to unstash files if not empty
 * dockerBakeFile: Allow to build from a bake file instead
 * dockerBakeTarget: Allow to specify a docker bake target other than 'default'
+* disablePublication: (Optional, default to false) Allow to disable tagging and publication of container image and GitHub release
 
 ==== Example
 [source, groovy]
