@@ -266,17 +266,17 @@ def call(String imageShortName, Map userConfig=[:]) {
         } // if
       }// withDockerPullCredentials
 
-      if (!finalConfig.disablePublication) {
-        infra.withDockerPushCredentials{
-          if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
-            stage("Deploy ${imageName}") {
+      if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
+        stage("Deploy ${imageName}") {
+          if (!finalConfig.disablePublication) {
+            infra.withDockerPushCredentials{
               makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
-            }
-          } // if
-        } // withDockerPushCredentials
-      } else {
-        echo 'INFO: publication disabled.'
-      } // else
+            } // withDockerPushCredentials
+          } else {
+            echo 'INFO: publication disabled.'
+          } // else
+        } // stage
+      } // if
 
       if (env.TAG_NAME && finalConfig.automaticSemanticVersioning) {
         stage('GitHub Release') {
