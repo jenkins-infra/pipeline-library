@@ -302,7 +302,7 @@ def call(String imageShortName, Map userConfig=[:]) {
 
 <details>
 
-```yaml
+```json
 '
                     body+="${MAKE_SHOW_CONTENT}"
                     body+='
