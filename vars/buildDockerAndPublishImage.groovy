@@ -297,14 +297,16 @@ def call(String imageShortName, Map userConfig=[:]) {
                   then
                     body="$(gh api "${releasesUrl}/${releaseId}" | jq -e -r '.body')"
                     body+='
-                    <hr><details><summary>Details:</summary>
+<details><summary>Settings used for this release:</summary>
 
-                    ```yaml'
+```yaml
+'
                     body+="${MAKE_SHOW_CONTENT}"
                     body+='
-                    ```
+```
 
-                    </details>'
+</details>
+'
                     echo "-------- body ---------"
                     echo "${body}"
                     echo "------ end body -------"
