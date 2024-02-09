@@ -297,7 +297,10 @@ def call(String imageShortName, Map userConfig=[:]) {
                   then
                     body="$(gh api "${releasesUrl}/${releaseId}" | jq -e -r '.body')"
                     body+='
-<details><summary>Settings used for this release:</summary>
+
+## :memo: Release settings
+
+<details>
 
 ```yaml
 '
@@ -307,9 +310,6 @@ def call(String imageShortName, Map userConfig=[:]) {
 
 </details>
 '
-                    echo "-------- body ---------"
-                    echo "${body}"
-                    echo "------ end body -------"
                     gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" -F body="${body}" "${releasesUrl}/${releaseId}" > /dev/null
                   fi
                   echo "${releaseId}"
