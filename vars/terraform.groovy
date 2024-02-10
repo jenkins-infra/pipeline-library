@@ -129,7 +129,12 @@ def call(userConfig = [:]) {
                   sh makeCliCmd + ' deploy'
                 } catch(Exception e) {
                   // If the deploy failed, keep the pod until a user catch the problem (cloud be an errored state, or many reason to keep the workspace)
-                  input message: 'An error happened while applying the terraform plan. Keeping the agent up and running. Delete the agent?'
+                  final String msg = 'An error happened while applying the terraform plan. Keeping the agent up and running. Delete the agent?'
+                  input message: msg
+                  publishChecks name: 'deploy-error',
+                  title: 'An error happened while applying the terraform plan',
+                  summary: msg,
+                  detailsURL: "${env.BUILD_URL}/console"
                 }
               }
             }
