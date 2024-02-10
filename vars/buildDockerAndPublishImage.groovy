@@ -304,7 +304,7 @@ def call(String imageShortName, Map userConfig=[:]) {
 
 ```yaml
 '
-                    body+="$(echo ${MAKE_SHOW_CONTENT} | yq --prettyPrint"
+                    body+="$(echo ${MAKE_SHOW_CONTENT} | yq --prettyPrint)"
                     body+='
 ```
 
