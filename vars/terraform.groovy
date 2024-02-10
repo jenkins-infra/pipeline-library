@@ -127,6 +127,10 @@ def call(userConfig = [:]) {
               stage('🚢 Shipping Changes') {
                 try {
                   sh makeCliCmd + ' deploy'
+                  final String output = sh(script: makeCliCmd + ' output', returnStdout: true).trim()
+                  publishChecks name: 'shipped-output',
+                  title: 'terraform output after apply',
+                  text: output
                 } catch(Exception e) {
                   // If the deploy failed, keep the pod until a user catch the problem (cloud be an errored state, or many reason to keep the workspace)
                   input message: 'An error happened while applying the terraform plan. Keeping the agent up and running. Delete the agent?'
