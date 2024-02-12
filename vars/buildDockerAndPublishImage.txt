@@ -19,6 +19,7 @@ The following arguments are available for this function:
   * String **unstash**: (Optional, default to "") Allow to restore files from a previously saved stash if not empty, should contain the name of the last stashed as per https://www.jenkins.io/doc/pipeline/steps/workflow-basic-steps/#unstash-restore-files-previously-stashed.
   * String **dockerBakeFile**: (Optionan, default to "") Specify the path to a custom Docker Bake file to use instead of the default one
   * String **dockerBakeTarget**: (Optional, default to "default") Specify the target of a custom Docker Bake file to work with
+  * Boolean **disablePublication**: (Optional, default to false) Allow to disable tagging and publication of container image and GitHub release
 
 The lint phase generates a report when it fails, recorded by the hadolint tool in your Jenkins instance.
 

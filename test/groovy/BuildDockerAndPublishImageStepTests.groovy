@@ -248,6 +248,39 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   @Test
+  void itBuildsButDontDeploysWithAutomaticSemanticTagAndReleaseAndEnabledPublicationFalseOnPrincipalBranch() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+    withMocks{
+      script.call(testImageName, [
+        automaticSemanticVersioning: true,
+        gitCredentials: 'git-itbuildsanddeployswithautomaticsemantictagandreleaseonprincipalbranch',
+        disablePublication: true,
+      ])
+    }
+    printCallStack()
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+    // With the common workflow run as expected
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "BUILD_DATE=${mockedSimpleDate}"))
+    assertTrue(assertMethodCallContainsPattern('sh','make lint'))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
+    // And generated reports are recorded
+    assertTrue(assertRecordIssues())
+    // But the deploy step is not called
+    assertFalse(assertMethodCallContainsPattern('sh','make bake-deploy'))
+
+    // And the tag is not pushed
+    assertFalse(assertTagPushed(defaultGitTag))
+    // And no release created (no tag triggering the build)
+    assertFalse(assertReleaseCreated())
+    // And all mocked/stubbed methods have to be called
+    verifyMocks()
+  }
+
+  @Test
   void itBuildsAndDeploysWithAutomaticSemanticTagAndincludeImageNameInTagAndReleaseOnPrincipalBranch() throws Exception {
     def script = loadScript(scriptName)
     mockPrincipalBranch()
