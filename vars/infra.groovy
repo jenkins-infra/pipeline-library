@@ -71,23 +71,33 @@ Object withDockerPullCredentials(Closure body) {
 /**
  * Execute the body passed as closure with an Azure File Share URL
  * signed with a SAS token with an expiry date of 10 minutes by default,
- * stored in a pass-through file named "signed_fileshare_url" by default
+ * stored in FILESHARE_SIGNED_URL environment variable
  * @param options.servicePrincipalCredentialsId Azure Service Principal credentials id to use (must has Storage Account Contributor on the File Share Storage Account)
  * @param options.fileShare Azure File Share name to use
  * @param options.fileShareStorageAccount Storage Account name of the Azure File Share to use (needed to generate the SAS token)
  * @param options.durationInMinute duration in minutes of the SAS token before expiration (default value: 10)
  * @param options.permissions SAS token permissions (default value: "dlrw")
- * @param options.passthroughFilename name of the file where the signed file share URL will be stored, serving as pass-through until the closure is executed (default value: "signed_fileshare_url")
  * @param body closure to execute
  */
 Object withFileShareServicePrincipal(Map options, Closure body) {
+  String issue = ''
   // Only on infra.ci.jenkins.io or trusted.ci.jenkins.io
   if (!isInfra() && !isTrusted()) {
-    error 'Cannot be run outside of infra.ci.jenkins.io or trusted.ci.jenkins.io'
+    issue += "ERROR: Cannot be used outside of infra.ci.jenkins.io or trusted.ci.jenkins.io\n"
+  }
+  // Only Unix for now
+  if (!isUnix()) {
+    issue += "ERROR: no Windows implementation yet, skipping.\n"
   }
   // Check required options
   if (!options.servicePrincipalCredentialsId || !options.fileShare || !options.fileShareStorageAccount) {
-    error 'At least one of these required options is missing: servicePrincipalCredentialsId, fileShare, fileShareStorageAccount'
+    issue += "ERROR: At least one of these required options is missing: servicePrincipalCredentialsId, fileShare, fileShareStorageAccount\n"
+  }
+  // Return early if there is an issue
+  if (issue) {
+    echo issue
+    currentBuild.result = 'FAILURE'
+    return
   }
   // Default values
   if (!options.durationInMinute) {
@@ -96,51 +106,44 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
   if (!options.permissions) {
     options.permissions = 'dlrw'
   }
-  if (!options.passthroughFilename) {
-    options.passthroughFilename = 'signed_fileshare_url'
-  }
-  // Only Unix for now
-  if (!isUnix()) {
-    echo 'WARNING: no Windows implementation yet, skipping.'
-  } else {
-    withCredentials([azureServicePrincipal(credentialsId: options.servicePrincipalCredentialsId)]){
-      withEnv([
-        "STORAGE_NAME=${options.fileShareStorageAccount}",
-        "STORAGE_FILESHARE=${options.fileShare}",
-        "STORAGE_DURATION_IN_MINUTE=${options.durationInMinute}",
-        "STORAGE_PERMISSIONS=${options.permissions}",
-        "PASSTHROUGH_FILENAME=${options.passthroughFilename}",
-      ]) {
-        // Generate SAS token with the Service Principal for the File Share
-        sh '''
-        # Login without showing JSON output from az
-        az login --service-principal --user "${AZURE_CLIENT_ID}" --password "${AZURE_CLIENT_SECRET}" --tenant "${AZURE_TENANT_ID}" > /dev/null
+  withCredentials([azureServicePrincipal(credentialsId: options.servicePrincipalCredentialsId)]){
+    withEnv([
+      "STORAGE_NAME=${options.fileShareStorageAccount}",
+      "STORAGE_FILESHARE=${options.fileShare}",
+      "STORAGE_DURATION_IN_MINUTE=${options.durationInMinute}",
+      "STORAGE_PERMISSIONS=${options.permissions}",
+    ]) {
+      echo "INFO: generating a signed URL for the ${options.fileShare} file share..."
 
-        # Generate a token with 10 minutes expiry date
-        expiry=$(date -u -d "$current_date + ${STORAGE_DURATION_IN_MINUTE} minutes" +"%Y-%m-%dT%H:%MZ")
-        base_url="https://${STORAGE_NAME}.file.core.windows.net/${STORAGE_FILESHARE}"
+      // Generate SAS token with the Service Principal for the File Share and return the file share signed URL
+      getSignedUrlScript = '''
+      # Don't print any command
+      set +x
 
-        # Don't show the command
-        set +x
-        token=$(az storage share generate-sas \
-          --name "${STORAGE_FILESHARE}" \
-          --account-name "${STORAGE_NAME}" \
-          --https-only \
-          --permissions "${STORAGE_PERMISSIONS}" \
-          --expiry "${expiry}" \
-          --only-show-errors)
-        az logout
+      # Login without the JSON output from az
+      az login --service-principal --user "${AZURE_CLIENT_ID}" --password "${AZURE_CLIENT_SECRET}" --tenant "${AZURE_TENANT_ID}" > /dev/null
 
-        url="${base_url}?$(echo ${token} | sed 's/\"//g')"
-        
-        # Store the signed file share URL in the pass-through file
-        echo "${url}" > "${PASSTHROUGH_FILENAME}"
-        '''
-        try {
-          body.call()
-        } finally {
-          sh 'rm "${PASSTHROUGH_FILENAME}"'
-        }
+      # Generate a SAS token
+      expiry=$(date -u -d "$current_date + ${STORAGE_DURATION_IN_MINUTE} minutes" +"%Y-%m-%dT%H:%MZ")
+      token=$(az storage share generate-sas \
+        --name "${STORAGE_FILESHARE}" \
+        --account-name "${STORAGE_NAME}" \
+        --https-only \
+        --permissions "${STORAGE_PERMISSIONS}" \
+        --expiry "${expiry}" \
+        --only-show-errors \
+        | sed 's/\"//g')
+
+      az logout
+
+      echo "https://${STORAGE_NAME}.file.core.windows.net/${STORAGE_FILESHARE}?${token}"
+      '''
+
+      signedUrl = sh(script: getSignedUrlScript, returnStdout: true).trim()
+
+      withEnv(["FILESHARE_SIGNED_URL=${signedUrl}"]) {
+        echo "INFO: ${options.fileShare} file share signed URL expiring in ${options.durationInMinute} minute(s) available in \$FILESHARE_SIGNED_URL"
+        body.call()
       }
     }
   }
