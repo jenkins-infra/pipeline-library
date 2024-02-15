@@ -106,7 +106,14 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
   if (!options.permissions) {
     options.permissions = 'dlrw'
   }
-  withCredentials([azureServicePrincipal(credentialsId: options.servicePrincipalCredentialsId)]){
+  withCredentials([
+    azureServicePrincipal(
+    credentialsId: options.servicePrincipalCredentialsId,
+    clientIdVariable: 'JENKINS_INFRA_FILESHARE_CLIENT_ID',
+    clientSecretVariable: 'JENKINS_INFRA_FILESHARE_CLIENT_SECRET',
+    tenantIdVariable: 'JENKINS_INFRA_FILESHARE_TENANT_ID'
+    )
+  ]){
     withEnv([
       "STORAGE_NAME=${options.fileShareStorageAccount}",
       "STORAGE_FILESHARE=${options.fileShare}",
@@ -115,31 +122,13 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
     ]) {
       echo "INFO: generating a signed URL for the ${options.fileShare} file share..."
 
-      // Generate SAS token with the Service Principal for the File Share and return the file share signed URL
-      getSignedUrlScript = '''
-      # Don't print any command
-      set +x
+      // Retrieve the script to generate a SAS token with the Service Principal for the File Share and return the file share signed URL
+      final String scriptTmpPath = pwd(tmp: true) + '/get-fileshare-signed-url.sh'
+      final String getSignedUrlScript = libraryResource 'get-fileshare-signed-url.sh'
+      writeFile file: scriptTmpPath, text: getSignedUrlScript
 
-      # Login without the JSON output from az
-      az login --service-principal --user "${AZURE_CLIENT_ID}" --password "${AZURE_CLIENT_SECRET}" --tenant "${AZURE_TENANT_ID}" > /dev/null
-
-      # Generate a SAS token
-      expiry=$(date -u -d "$current_date + ${STORAGE_DURATION_IN_MINUTE} minutes" +"%Y-%m-%dT%H:%MZ")
-      token=$(az storage share generate-sas \
-        --name "${STORAGE_FILESHARE}" \
-        --account-name "${STORAGE_NAME}" \
-        --https-only \
-        --permissions "${STORAGE_PERMISSIONS}" \
-        --expiry "${expiry}" \
-        --only-show-errors \
-        | sed 's/\"//g')
-
-      az logout
-
-      echo "https://${STORAGE_NAME}.file.core.windows.net/${STORAGE_FILESHARE}?${token}"
-      '''
-
-      signedUrl = sh(script: getSignedUrlScript, returnStdout: true).trim()
+      // Call the script and retrieve the signed URL
+      signedUrl = sh(script: scriptTmpPath, returnStdout: true).trim()
 
       withEnv(["FILESHARE_SIGNED_URL=${signedUrl}"]) {
         echo "INFO: ${options.fileShare} file share signed URL expiring in ${options.durationInMinute} minute(s) available in \$FILESHARE_SIGNED_URL"
