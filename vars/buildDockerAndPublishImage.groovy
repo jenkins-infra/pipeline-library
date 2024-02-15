@@ -51,6 +51,7 @@ def call(String imageShortName, Map userConfig=[:]) {
     unstash: '', // Allow to unstash files if not empty
     dockerBakeFile: '', // Specify the path to a custom Docker Bake file to use instead of the default one
     dockerBakeTarget: 'default', // Specify the target of a custom Docker Bake file to work with
+    disablePublication: false, // Allow to disable tagging and publication of container image and GitHub release (true by default)
   ]
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
   final Map finalConfig = defaultConfig << userConfig
@@ -58,7 +59,7 @@ def call(String imageShortName, Map userConfig=[:]) {
   // Retrieve Library's Static File Resources
   final String makefileContent = libraryResource 'io/jenkins/infra/docker/Makefile'
 
-  final boolean semVerEnabledOnPrimaryBranch = finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY
+  final boolean semVerEnabledOnPrimaryBranch = finalConfig.automaticSemanticVersioning && !finalConfig.disablePublication && env.BRANCH_IS_PRIMARY
 
   // Only run 1 build at a time on primary branch to ensure builds won't use the same tag when semantic versionning is activated
   if (env.BRANCH_IS_PRIMARY) {
@@ -225,7 +226,7 @@ def call(String imageShortName, Map userConfig=[:]) {
           } // if else
         } // each
 
-        // Automatic tagging on principal branch is not enabled by default
+        // Automatic tagging on principal branch is not enabled by default, and disabled if disablePublication is set to true
         if (semVerEnabledOnPrimaryBranch) {
           stage("Semantic Release of ${imageName}") {
             echo "Configuring credential.helper"
@@ -264,14 +265,18 @@ def call(String imageShortName, Map userConfig=[:]) {
           } // stage
         } // if
       }// withDockerPullCredentials
-      infra.withDockerPushCredentials{
-        if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
-          stage("Deploy ${imageName}") {
-            makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
-          }
-        } // if
-      } // withDockerPushCredentials
 
+      if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
+        stage("Deploy ${imageName}") {
+          if (!finalConfig.disablePublication) {
+            infra.withDockerPushCredentials{
+              makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
+            }
+          } else {
+            echo 'INFO: publication disabled.'
+          } // else
+        } // stage
+      } // if
 
       if (env.TAG_NAME && finalConfig.automaticSemanticVersioning) {
         stage('GitHub Release') {
