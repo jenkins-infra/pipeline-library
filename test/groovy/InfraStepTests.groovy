@@ -493,6 +493,9 @@ class InfraStepTests extends BaseTest {
   void testWithFileShareServicePrincipal() throws Exception {
     // When used on infra.ci.jenkins.io
     helper.registerAllowedMethod('isInfra', [], { true })
+    helper.registerAllowedMethod('sh', [Map.class], { m ->
+      return "https://${defaultFileShareStorageAccount}.file.core.windows.net/${defaultFileShare}?sas-token"
+    })
     def script = loadScript(scriptName)
     def isOK = false
     def options = [
@@ -511,7 +514,7 @@ class InfraStepTests extends BaseTest {
     // then a script to get a file share signed URL is called
     assertTrue(assertMethodCallOccurrences('sh', 1))
     // then it sets $FILESHARE_SIGNED_URL to the signed file share URL
-    assertTrue(assertMethodCallContainsPattern('withEnv', "FILESHARE_SIGNED_URL="))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "FILESHARE_SIGNED_URL=https://${defaultFileShareStorageAccount}.file.core.windows.net/${defaultFileShare}?sas-token"))
     // then it inform about the URL expiring in the default amount of minutes
     assertTrue(assertMethodCallContainsPattern('echo', "INFO: ${defaultFileShare} file share signed URL expiring in ${defaultTokenDuration} minute(s) available in \$FILESHARE_SIGNED_URL"))
     // then the body closure is executed
