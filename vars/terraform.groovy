@@ -86,13 +86,13 @@ def call(userConfig = [:]) {
             stage('🦅 Generate Terraform Plan') {
               // When the job is triggered by the daily cron timer, then the plan succeed only if there is no changes found (e.g. no config drift)
               // For all other triggers, the plan succeed either there are changes or not
-              String tfCliArsPlan = ''
+              String tfCliArgsPlan = ''
               if (isBuildCauseTimer) {
-                tfCliArsPlan = '-detailed-exitcode'
+                tfCliArgsPlan = '-detailed-exitcode'
               }
               withEnv([
                 // https://www.terraform.io/docs/cli/config/environment-variables.html#tf_cli_args-and-tf_cli_args_name
-                "TF_CLI_ARGS_plan=${tfCliArsPlan}",
+                "TF_CLI_ARGS_plan=${tfCliArgsPlan}",
                 "PLAN_FILE_NAME=${planFileName}",
               ]) {
                 scmOutput = getInfraSharedTools(sharedToolsSubDir)
