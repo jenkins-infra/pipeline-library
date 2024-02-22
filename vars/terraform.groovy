@@ -136,6 +136,7 @@ def call(userConfig = [:]) {
                     summary: msg,
                     detailsURL: "${env.BUILD_URL}/console"
                   } finally {
+                    currentBuild.result = 'FAILURE'
                     input message: msg
                   }
                 }
