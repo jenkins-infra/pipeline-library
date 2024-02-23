@@ -22,4 +22,4 @@ token=$(az storage share generate-sas \
 
 az logout
 
-echo "https://${STORAGE_NAME}.file.core.windows.net/${STORAGE_FILESHARE}?${token}"
+echo "https://${STORAGE_NAME}.file.core.windows.net/${STORAGE_FILESHARE}/?${token}"
