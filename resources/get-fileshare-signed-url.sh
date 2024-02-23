@@ -18,7 +18,7 @@ token=$(az storage share generate-sas \
 --permissions "${STORAGE_PERMISSIONS}" \
 --expiry "${expiry}" \
 --only-show-errors \
-| sed 's/\"//g'
+| sed 's/\"//g' \
 | sed 's|/|%2F|g')
 
 az logout
