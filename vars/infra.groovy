@@ -68,6 +68,76 @@ Object withDockerPullCredentials(Closure body) {
   return withDockerCredentials(orgAndCredentialsId, body)
 }
 
+/**
+ * Execute the body passed as closure with an Azure File Share URL
+ * signed with a SAS token with an expiry date of 10 minutes by default,
+ * stored in FILESHARE_SIGNED_URL environment variable
+ * @param options.servicePrincipalCredentialsId Azure Service Principal credentials id to use (must has Storage Account Contributor on the File Share Storage Account)
+ * @param options.fileShare Azure File Share name to use
+ * @param options.fileShareStorageAccount Storage Account name of the Azure File Share to use (needed to generate the SAS token)
+ * @param options.durationInMinute duration in minutes of the SAS token before expiration (default value: 10)
+ * @param options.permissions SAS token permissions (default value: "dlrw")
+ * @param body closure to execute
+ */
+Object withFileShareServicePrincipal(Map options, Closure body) {
+  String issue = ''
+  // Only on infra.ci.jenkins.io or trusted.ci.jenkins.io
+  if (!isInfra() && !isTrusted()) {
+    issue += "ERROR: Cannot be used outside of infra.ci.jenkins.io or trusted.ci.jenkins.io\n"
+  }
+  // Only Unix for now
+  if (!isUnix()) {
+    issue += "ERROR: no Windows implementation yet, skipping.\n"
+  }
+  // Check required options
+  if (!options.servicePrincipalCredentialsId || !options.fileShare || !options.fileShareStorageAccount) {
+    issue += "ERROR: At least one of these required options is missing: servicePrincipalCredentialsId, fileShare, fileShareStorageAccount\n"
+  }
+  // Return early if there is an issue
+  if (issue) {
+    echo issue
+    currentBuild.result = 'FAILURE'
+    return
+  }
+  // Default values
+  if (!options.durationInMinute) {
+    options.durationInMinute = 10
+  }
+  if (!options.permissions) {
+    options.permissions = 'dlrw'
+  }
+  withCredentials([
+    azureServicePrincipal(
+    credentialsId: options.servicePrincipalCredentialsId,
+    clientIdVariable: 'JENKINS_INFRA_FILESHARE_CLIENT_ID',
+    clientSecretVariable: 'JENKINS_INFRA_FILESHARE_CLIENT_SECRET',
+    tenantIdVariable: 'JENKINS_INFRA_FILESHARE_TENANT_ID'
+    )
+  ]){
+    withEnv([
+      "STORAGE_NAME=${options.fileShareStorageAccount}",
+      "STORAGE_FILESHARE=${options.fileShare}",
+      "STORAGE_DURATION_IN_MINUTE=${options.durationInMinute}",
+      "STORAGE_PERMISSIONS=${options.permissions}",
+    ]) {
+      echo "INFO: generating a signed URL for the ${options.fileShare} file share..."
+
+      // Retrieve the script to generate a SAS token with the Service Principal for the File Share and return the file share signed URL
+      final String scriptTmpPath = pwd(tmp: true) + '/get-fileshare-signed-url.sh'
+      final String getSignedUrlScript = libraryResource 'get-fileshare-signed-url.sh'
+      writeFile file: scriptTmpPath, text: getSignedUrlScript
+
+      // Call the script and retrieve the signed URL
+      signedUrl = sh(script: "bash ${scriptTmpPath}", returnStdout: true).trim()
+
+      withEnv(["FILESHARE_SIGNED_URL=${signedUrl}"]) {
+        echo "INFO: ${options.fileShare} file share signed URL expiring in ${options.durationInMinute} minute(s) available in \$FILESHARE_SIGNED_URL"
+        body.call()
+      }
+    }
+  }
+}
+
 Object checkoutSCM(String repo = null) {
   // Enable long paths to avoid problems with tests on Windows agents
   if (!isUnix()) {
