@@ -303,7 +303,7 @@ def call(String imageShortName, Map userConfig=[:]) {
                     body="$(gh api "${releasesUrl}/${releaseId}" | jq -e -r '.body')"
                     body+='
 
-## :memo: Release settings
+## :memo: What's in this release
 
 <details>
 
