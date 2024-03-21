@@ -5,7 +5,9 @@
 # and returns the file share URL composed of the storage resource URI and the SAS token.
 # Ref: https://learn.microsoft.com/en-us/azure/storage/common/storage-sas-overview
 # --
-# Usage: ./get-fileshare-signed-url.sh
+# Usage:
+# - Return a file share signed URL: ./get-fileshare-signed-url.sh
+# - Interact with a file share and azcopy: azcopy list "$(./get-fileshare-signed-url.sh)"
 # --
 # Required parameters defined as environment variables:
 # - STORAGE_FILESHARE: the file share name
@@ -45,7 +47,7 @@ else
 fi
 
 # date(1) isn't GNU compliant on MacOS, using gdate(1) in that case
-[[ $(uname  || true) == "Darwin" ]] && dateCmd="gdate" || dateCmd="date"
+[[ "$(uname  || true)" == "Darwin" ]] && dateCmd="gdate" || dateCmd="date"
 expiry="$("${dateCmd}" --utc --date "+ ${STORAGE_DURATION_IN_MINUTE} minutes" +"%Y-%m-%dT%H:%MZ")"
 
 # Generate a SAS token, remove double quotes around it and replace potential '/' by '%2F'
