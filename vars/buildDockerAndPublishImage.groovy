@@ -77,12 +77,11 @@ def call(String imageShortName, Map userConfig=[:]) {
       currentBuild.result = 'FAILURE'
       return
     }
-    // if platform is set, I override platforms with it
     finalConfig.targetplatforms = finalConfig.platform
     echo "WARNING: `platform` is deprecated, use `targetplatforms` instead."
   }
 
-  // Default Value if targetplatforms is not set, I set it to linux/amd64 by default
+  // Defaults to 'linux/amd64' if targetplatforms is not set
   if (finalConfig.targetplatforms == '') {
     finalConfig.targetplatforms = 'linux/amd64'
   }
@@ -125,7 +124,7 @@ def call(String imageShortName, Map userConfig=[:]) {
       "IMAGE_NAME=${imageName}",
       "IMAGE_DIR=${finalConfig.imageDir}",
       "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
-      "BUILD_TARGETPLATFORM=${finalConfig.targetplatforms}",
+      "BUILD_TARGETPLATFORM=${finalConfig.targetplatforms.split(',')[0]}",
       "BAKE_TARGETPLATFORMS=${finalConfig.targetplatforms}",
     ]) {
       infra.withDockerPullCredentials{

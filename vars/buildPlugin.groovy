@@ -205,7 +205,7 @@ def call(Map params = [:]) {
                   }
                   recordIssues spotbugsArguments
 
-                  Map checkstyleArguments = [tool: checkStyle(pattern: '**/target/checkstyle-result.xml'),
+                  Map checkstyleArguments = [tool: checkStyle(pattern: '**/target/**/checkstyle-result.xml'),
                     sourceCodeEncoding: 'UTF-8',
                     skipBlames: true,
                     trendChartType: 'TOOLS_ONLY',
@@ -215,7 +215,7 @@ def call(Map params = [:]) {
                   }
                   recordIssues checkstyleArguments
 
-                  Map pmdArguments = [tool: pmdParser(pattern: '**/target/pmd.xml'),
+                  Map pmdArguments = [tool: pmdParser(pattern: '**/target/**/pmd.xml'),
                     sourceCodeEncoding: 'UTF-8',
                     skipBlames: true,
                     trendChartType: 'NONE']

@@ -92,7 +92,7 @@ clean: ## Delete any file generated during the build steps
 
 test: ## Execute the test harness on the Docker Image
 	@echo "== Test $(IMAGE_NAME) with $(call FixPath,$(TEST_HARNESS)) from $(IMAGE_NAME) with container-structure-test:"
-	container-structure-test test --driver=docker --image="$(IMAGE_NAME)" --config="$(call FixPath,$(TEST_HARNESS))"
+	container-structure-test test --driver=docker --image="$(IMAGE_NAME)" --config="$(call FixPath,$(TEST_HARNESS))" --platform=$(BUILD_TARGETPLATFORM)
 	@echo "== Test succeeded"
 
 show: ## Show the output of docker buildx bake --print
@@ -104,13 +104,13 @@ list: ## List the first tag of each target including the same platform than the 
 bake-test: ## Execute the test harness on the Docker image(s) with load
 	@echo "== Load $(IMAGE_NAME) within docker engine from docker bake buildx engine"
 	@make show
-	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" "$(DOCKER_BAKE_TARGET)" --set "*.platform=linux/$(ARCH)"  --load
+	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" "$(DOCKER_BAKE_TARGET)" --set "*.platform=linux/$(ARCH)" --load
 	@make --silent list | while read image; do make --silent "bake-test-$${image}"; done
 	@echo "== All tests succeeded"
 
 bake-test-%: ## Execute the test harness on the tag of an image
 	@echo "== Test $(subst #,/,$*) with $(call FixPath,$(TEST_HARNESS)) from $(IMAGE_NAME) with container-structure-test:"
-	container-structure-test test --driver=docker --image="$(subst #,/,$*)" --config="$(call FixPath,$(TEST_HARNESS))"
+	container-structure-test test --driver=docker --image="$(subst #,/,$*)" --config="$(call FixPath,$(TEST_HARNESS))" --platform=$(BUILD_TARGETPLATFORM)
 	@echo "== Test succeeded"
 
 ## This steps expects that you are logged to the Docker registry to push image into
@@ -120,7 +120,7 @@ deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 	docker image push "$(IMAGE_DEPLOY_NAME)"
 	@echo "== Deploy succeeded"
 
-bake-deploy:  ## Tag and push the built image as specified by docker bake file
+bake-deploy: ## Tag and push the built image as specified by docker bake file
 	@echo "== Deploying $(DOCKER_BAKE_TARGET) target with docker bake file"
 	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" "$(DOCKER_BAKE_TARGET)" --push
 
