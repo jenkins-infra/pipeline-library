@@ -56,12 +56,12 @@ class PublishReportsStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withEnv', 'TIMEOUT=60'))
     assertTrue(assertMethodCallContainsPattern('withEnv', "FILENAME=${file}"))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'UPLOADFLAGS=--content-type="text/html"'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${TIMEOUT} --file=${FILENAME} --name=${FILENAME} ${UPLOADFLAGS} --overwrite'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout="${TIMEOUT}" --file="${FILENAME}" --name="${FILENAME}" "${UPLOADFLAGS}" --overwrite'))
     // another filename manipulations is in place
     assertTrue(assertMethodCallContainsPattern('withEnv', 'SOURCE_DIRNAME=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'DESTINATION_PATH=/'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'PATTERN=foo.html'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'az storage file upload-batch --account-name prodjenkinsreports --destination reports --source ${SOURCE_DIRNAME} --destination-path ${DESTINATION_PATH} --pattern ${PATTERN} ${UPLOADFLAGS}'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'az storage file upload-batch --account-name prodjenkinsreports --destination reports --source "${SOURCE_DIRNAME}" --destination-path "${DESTINATION_PATH}" --pattern "${PATTERN}" "${UPLOADFLAGS}"'))
     assertJobStatusSuccess()
   }
 
@@ -76,12 +76,12 @@ class PublishReportsStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withEnv', 'TIMEOUT=60'))
     assertTrue(assertMethodCallContainsPattern('withEnv', "FILENAME=${file}"))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'UPLOADFLAGS=--content-type="text/css"'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${TIMEOUT} --file=${FILENAME} --name=${FILENAME} ${UPLOADFLAGS} --overwrite'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout="${TIMEOUT}" --file="${FILENAME}" --name="${FILENAME}" "${UPLOADFLAGS}" --overwrite'))
     // another filename manipulations is in place
     assertTrue(assertMethodCallContainsPattern('withEnv', 'SOURCE_DIRNAME=/bar'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'DESTINATION_PATH=/bar'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'PATTERN=foo.css'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'az storage file upload-batch --account-name prodjenkinsreports --destination reports --source ${SOURCE_DIRNAME} --destination-path ${DESTINATION_PATH} --pattern ${PATTERN} ${UPLOADFLAGS}'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'az storage file upload-batch --account-name prodjenkinsreports --destination reports --source "${SOURCE_DIRNAME}" --destination-path "${DESTINATION_PATH}" --pattern "${PATTERN}" "${UPLOADFLAGS}"'))
     assertJobStatusSuccess()
   }
 }
