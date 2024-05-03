@@ -29,7 +29,7 @@ set +x
 
 : "${STORAGE_FILESHARE?}" "${STORAGE_NAME?}" "${STORAGE_DURATION_IN_MINUTE?}" "${STORAGE_PERMISSIONS?}"
 
-# Ensure the script is re-entrant by using different `az` configuration dir for each call
+# Ensure the script is re-entrant by using unique temporary `az` configuration directory for each call
 # Ref. https://learn.microsoft.com/en-us/cli/azure/use-azure-cli-successfully?tabs=bash%2Cbash2#concurrent-execution
 AZURE_CONFIG_DIR="$(mktemp -d)"
 export AZURE_CONFIG_DIR
