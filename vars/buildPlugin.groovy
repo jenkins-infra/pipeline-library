@@ -112,6 +112,7 @@ def call(Map params = [:]) {
                   '-Dspotbugs.failOnError=false',
                   '-Dcheckstyle.failOnViolation=false',
                   '-Dcheckstyle.failsOnError=false',
+                  '-Dpmd.failOnViolation=false',
                 ]
                 // jacoco had file locking issues on Windows, so only running on linux
                 if (isUnix()) {
