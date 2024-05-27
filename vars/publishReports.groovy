@@ -6,8 +6,6 @@
  * See https://issues.jenkins-ci.org/browse/INFRA-947 for more
  */
 def call(List<String> files, Map params = [:]) {
-  def timeout = params.get('timeout') ?: '60'
-
   if (!infra.isTrusted() && !infra.isInfra()) {
     error 'Can only call publishReports from within the trusted.ci environment'
   }
@@ -45,16 +43,12 @@ def call(List<String> files, Map params = [:]) {
         def dirname = Arrays.copyOfRange(directory, 0, directory.size()-1 ).join("/")
 
         withEnv([
-          "TIMEOUT=${timeout}",
           "FILENAME=${filename}",
           "UPLOADFLAGS=${uploadFlags}",
           "SOURCE_DIRNAME=${dirname ?: '.'}",
           "DESTINATION_PATH=${dirname ?: '/'}",
           "PATTERN=${ basename ?: '*' }",
         ]) {
-          // Blob container can be removed once files are uploaded on the azure file storage
-          sh 'az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${TIMEOUT} --file=${FILENAME} --name=${FILENAME} ${UPLOADFLAGS} --overwrite'
-
           // `az storage file upload` doesn't support file uploaded in a remote directory that doesn't exist but upload-batch yes. Unfortunately the cli syntax is a bit different and requires filename and directory name to be set differently.
           sh 'az storage file upload-batch --account-name prodjenkinsreports --destination reports --source ${SOURCE_DIRNAME} --destination-path ${DESTINATION_PATH} --pattern ${PATTERN} ${UPLOADFLAGS}'
         }

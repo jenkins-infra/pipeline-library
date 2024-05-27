@@ -52,8 +52,7 @@ class PublishReportsStepTests extends BaseTest {
     // when running with a html filename
     script.call([file])
     printCallStack()
-    // then timeout is default and filename manipulations is in place
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'TIMEOUT=60'))
+    // then filename manipulations is in place
     assertTrue(assertMethodCallContainsPattern('withEnv', "FILENAME=${file}"))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'UPLOADFLAGS=--content-type="text/html"'))
     assertTrue(assertMethodCallContainsPattern('sh', 'az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${TIMEOUT} --file=${FILENAME} --name=${FILENAME} ${UPLOADFLAGS} --overwrite'))
@@ -72,8 +71,7 @@ class PublishReportsStepTests extends BaseTest {
     def file = '/bar/foo.css'
     script.call([file])
     printCallStack()
-    // then timeout is default and filename manipulations is in place
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'TIMEOUT=60'))
+    // then filename manipulations is in place
     assertTrue(assertMethodCallContainsPattern('withEnv', "FILENAME=${file}"))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'UPLOADFLAGS=--content-type="text/css"'))
     assertTrue(assertMethodCallContainsPattern('sh', 'az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${TIMEOUT} --file=${FILENAME} --name=${FILENAME} ${UPLOADFLAGS} --overwrite'))
