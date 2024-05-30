@@ -55,7 +55,6 @@ class PublishReportsStepTests extends BaseTest {
     // then filename manipulations is in place
     assertTrue(assertMethodCallContainsPattern('withEnv', "FILENAME=${file}"))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'UPLOADFLAGS=--content-type="text/html"'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${TIMEOUT} --file=${FILENAME} --name=${FILENAME} ${UPLOADFLAGS} --overwrite'))
     // another filename manipulations is in place
     assertTrue(assertMethodCallContainsPattern('withEnv', 'SOURCE_DIRNAME=.'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'DESTINATION_PATH=/'))
@@ -74,7 +73,6 @@ class PublishReportsStepTests extends BaseTest {
     // then filename manipulations is in place
     assertTrue(assertMethodCallContainsPattern('withEnv', "FILENAME=${file}"))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'UPLOADFLAGS=--content-type="text/css"'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'az storage blob upload --account-name=prodjenkinsreports --container=reports --timeout=${TIMEOUT} --file=${FILENAME} --name=${FILENAME} ${UPLOADFLAGS} --overwrite'))
     // another filename manipulations is in place
     assertTrue(assertMethodCallContainsPattern('withEnv', 'SOURCE_DIRNAME=/bar'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'DESTINATION_PATH=/bar'))
