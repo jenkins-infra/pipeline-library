@@ -1,7 +1,7 @@
 #!/usr/bin/env groovy
 pipeline {
   agent {
-    label 'maven-11'
+    label 'maven-21'
   }
   options {
     timestamps()
