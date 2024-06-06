@@ -141,7 +141,7 @@ def call(userConfig = [:]) {
                     input message: msg
                   }
                 }
-                if(finalConfig.publishReports && finalConfig.publishReports.size > 0) {
+                if (finalConfig.publishReports && finalConfig.publishReports.size > 0) {
                   publishReports(finalConfig.publishReports)
                 }
               }
