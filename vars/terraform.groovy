@@ -12,6 +12,7 @@ def call(userConfig = [:]) {
     agentLabel: 'jnlp-linux-arm64', // replace agentContainerImage
     runTests: false, // Executes the tests provided by the "calling" project, which should provide a tests/Makefile
     runCommonTests: true, // Executes the default test suite from the shared tools repository (terratest)
+    publishReports: [],
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -139,6 +140,9 @@ def call(userConfig = [:]) {
                     currentBuild.result = 'FAILURE'
                     input message: msg
                   }
+                }
+                if(finalConfig.publishReports && finalConfig.publishReports.size > 0) {
+                  publishReports(finalConfig.publishReports)
                 }
               }
             }
