@@ -102,9 +102,9 @@ def call(userConfig = [:]) {
                 // Note: always run after call to getInfraSharedTools() (or it will be overridden)
                 if(finalConfig.publishReports && finalConfig.publishReports.size > 0) {
                   for (int i = 0; i < finalConfig.publishReports.size; i++) {
-                    final String fileRelPath = finalConfig.publishReports[i]
-                    file_text = new URL ("https://reports.jenkins.io/${fileRelPath}").getText()
-                    writeFile(file: fileRelPath, text: file_text)
+                    final String relativeFilePath = finalConfig.publishReports[i]
+                    file_text = new URL ("https://reports.jenkins.io/${relativeFilePath}").getText()
+                    writeFile(file: relativeFilePath, text: file_text)
                   }
                 }
                 try {
