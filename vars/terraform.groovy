@@ -108,7 +108,6 @@ def call(userConfig = [:]) {
                   }
                 }
                 try {
-                  sh 'ls -l jenkins-infra-data-reports/azure-net.json'
                   sh makeCliCmd + ' plan'
                 }
                 finally {
