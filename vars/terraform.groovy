@@ -98,6 +98,15 @@ def call(userConfig = [:]) {
               ]) {
                 scmOutput = getInfraSharedTools(sharedToolsSubDir)
 
+                // Retrieve published reports for idempotency (otherwise Terraform's "local_file" will be marked as always re-created as ignored from the SCM)
+                // Note: always run after call to getInfraSharedTools() (or it will be overridden)
+                if(finalConfig.publishReports && finalConfig.publishReports.size > 0) {
+                  for (int i = 0; i < finalConfig.publishReports.size; i++) {
+                    final String relativeFilePath = finalConfig.publishReports[i]
+                    file_text = new URL ("https://reports.jenkins.io/${relativeFilePath}").getText()
+                    writeFile(file: relativeFilePath, text: file_text)
+                  }
+                }
                 try {
                   sh makeCliCmd + ' plan'
                 }
@@ -165,7 +174,6 @@ def agentTemplate(agentLabel, body) {
     }
   }
 }
-
 
 // Retrieves the shared tooling
 def getInfraSharedTools(String sharedToolsSubDir) {
