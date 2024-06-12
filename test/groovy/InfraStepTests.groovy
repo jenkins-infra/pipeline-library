@@ -13,7 +13,7 @@ class InfraStepTests extends BaseTest {
   static final String defaultArtifactCachingProxyProvider = 'azure'
   static final String anotherArtifactCachingProxyProvider = 'azure-aks-internal'
   static final String invalidArtifactCachingProxyProvider = 'foo'
-  static final String artifactCachingProxyProvidersWithoutAnotherProvider = 'azure,azure-aks-internal'
+  static final String artifactCachingProxyProvidersWithoutAnotherProvider = 'azure'
   static final String healthCheckScriptSh = 'curl --fail --silent --show-error --location $HEALTHCHECK'
   static final String healthCheckScriptBat = 'curl --fail --silent --show-error --location %HEALTHCHECK%'
   static final String changeUrl = 'https://github.com/jenkins-infra/pipeline-library/pull/123'
