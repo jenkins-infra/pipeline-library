@@ -145,6 +145,7 @@ def call(userConfig = [:]) {
                     title: 'An error happened while applying the terraform plan',
                     summary: msg,
                     detailsURL: "${env.BUILD_URL}/console"
+                    conclusion: 'FAILURE'
                   } finally {
                     currentBuild.result = 'FAILURE'
                     input message: msg
