@@ -34,8 +34,8 @@ def call(userConfig = [:]) {
     boolean runUpdatecli = true
     stage("Check if ${finalConfig.config} folder exists: ${finalConfig.action}") {
       checkout scm
-      if (!fileExists(finalConfig.action)) {
-        echo "WARNING: no ${finalConfig.action} folder."
+      if (!fileExists(finalConfig.config)) {
+        echo "WARNING: no ${finalConfig.config} folder."
         runUpdatecli = false
         org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional(updatecliRunStage)
       }
