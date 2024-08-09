@@ -103,7 +103,13 @@ def call(userConfig = [:]) {
                 if (finalConfig.publishReports && finalConfig.publishReports.size > 0) {
                   for (int i = 0; i < finalConfig.publishReports.size; i++) {
                     final String relativeFilePath = finalConfig.publishReports[i]
-                    fileText = new URL ("https://reports.jenkins.io/${relativeFilePath}").getText()
+                    String fileText = ""
+                    try {
+                      fileText = new URL ("https://reports.jenkins.io/${relativeFilePath}").getText()
+                    }
+                    catch (Exception e) {
+                      echo "No file found at the provided URL: using an empty file instead."
+                    }
                     writeFile(file: relativeFilePath, text: fileText)
                   }
                 }
