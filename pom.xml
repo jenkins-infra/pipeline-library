@@ -24,7 +24,7 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <!-- Dependency versions -->
-    <jenkins-pipeline-unit.version>1.20</jenkins-pipeline-unit.version>
+    <jenkins-pipeline-unit.version>1.22</jenkins-pipeline-unit.version>
     <groovy-eclipse-compiler.version>3.7.0</groovy-eclipse-compiler.version>
   </properties>
 
@@ -62,7 +62,7 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>scm-api</artifactId>
-      <version>690.vfc8b_54395023</version>
+      <version>696.v778d637b_a_762</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -160,7 +160,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.3.0</version>
+        <version>3.3.1</version>
       </plugin>
     </plugins>
     <testSourceDirectory>.</testSourceDirectory>

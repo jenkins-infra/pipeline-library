@@ -155,54 +155,35 @@ Object checkoutSCM(String repo = null) {
 
 /**
  * Execute the body passed as closure with a Maven settings file using the
- * Artifact Caching Proxy provider corresponding to the requested one defined
- * via the agent's env.ARTIFACT_CACHING_PROXY variable, or 'azure' if not defined.
- * This allows decreasing JFrog Artifactory bandwidth consumption, and increase reliability.
- * There are currently two providers:
- * "azure" (publick8s cluster) and "azure-internal" (ci.jenkins.io-agents-1 cluster).
- * The available providers can be restricted by setting a global ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS
- * variable on the Jenkins controller, with providers separated by a comma. Ex: 'azure,<other>' if the Azure provider is unavailable.
+ * Artifact Caching Proxy server defined in agent's env.ARTIFACT_CACHING_PROXY_SERVERID variable.
+ * It allows decreasing JFrog Artifactory bandwidth consumption and increase reliability.
  * A 'skip-artifact-caching-proxy' label can be added to pull request in order to punctually disable it.
  * @param useArtifactCachingProxy (default: true) if possible, use an artifact caching proxy in front of repo.jenkins-ci.org to decrease JFrog Artifactory bandwidth usage and to increase reliability
  */
 Object withArtifactCachingProxy(boolean useArtifactCachingProxy = true, Closure body) {
-  // As the env var ARTIFACT_CACHING_PROXY_PROVIDER can't be set on Azure VM agents,
-  // we're specifying a default provider if none is specified.
-  final String requestedProxyProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER ?: 'azure'
-  final String[] validProxyProviders = ['azure', 'azure-aks-internal']
-  // Useful when a provider is in maintenance (or similar cases), add a global env var in Jenkins controller settings to restrict them.
-  // To completely disable the artifact caching proxies, this value can be set to a value absent of validProxyProviders like "none" for example.
-  final String configuredAvailableProxyProviders = env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS ?: validProxyProviders.join(',')
-  final String[] availableProxyProviders = configuredAvailableProxyProviders.split(',')
+  final String acpServerId = env.ARTIFACT_CACHING_PROXY_SERVERID
 
-  // Check if the requested provider is invalid or unavailable
-  if (useArtifactCachingProxy && (!validProxyProviders.contains(requestedProxyProvider) || !availableProxyProviders.contains(requestedProxyProvider))) {
-    echo "WARNING: invalid or unavailable artifact caching proxy provider '${requestedProxyProvider}' requested by the agent, will use repo.jenkins-ci.org"
+  if (useArtifactCachingProxy && !acpServerId) {
+    echo "WARNING: artifact caching proxy is enabled but the provided 'ARTIFACT_CACHING_PROXY_SERVERID' setup on the agent is empty, will use repo.jenkins-ci.org."
     useArtifactCachingProxy = false
   }
 
   // If the build concerns a pull request, check if there is "skip-artifact-caching-proxy" label applied in case the user doesn't want ACP
+  // Note: the pullRequest object is provided by https://github.com/jenkinsci/pipeline-github-plugin
   if (useArtifactCachingProxy && env.CHANGE_URL && pullRequest != null) {
     final String skipACPLabel = 'skip-artifact-caching-proxy'
-    // Note: the pullRequest object is provided by https://github.com/jenkinsci/pipeline-github-plugin
     if (pullRequest.labels.contains(skipACPLabel)) {
-      echo "INFO: the label '$skipACPLabel' has been applied to the pull request, will use repo.jenkins-ci.org"
+      echo "INFO: the label '${skipACPLabel}' has been applied to the pull request, will use repo.jenkins-ci.org"
       useArtifactCachingProxy = false
     }
   }
 
-  // Check if the artifact caching proxy provider is unreachable
+  // Check if the artifact caching proxy server is available
   if (useArtifactCachingProxy) {
     boolean healthCheckFailed = false
-    String artifactCachingProxyUrl = "https://repo.${requestedProxyProvider}.jenkins.io/health"
-    // The (.*)Kubernetes-hosted ACP marked as internal uses the Kubernetes internal SVC domain name and custom port as there are no ingress
-    // TODO: retrieve the value from the settings.xml to avoid spreading the URLs here and in puppet:
-    // https://github.com/jenkins-infra/jenkins-infra/blob/15967f693d1845843204d981168e9a847a090ecb/hieradata/common.yaml#L249
-    if(requestedProxyProvider.contains('ks-internal')) {
-      // defined in https://github.com/jenkins-infra/jenkins-infra/blob/15967f693d1845843204d981168e9a847a090ecb/dist/profile/templates/jenkinscontroller/casc/artifact-caching-proxy.yaml.erb#L13
-      artifactCachingProxyUrl = 'http://artifact-caching-proxy.artifact-caching-proxy:8080/health'
-    }
-    withEnv(["HEALTHCHECK=${artifactCachingProxyUrl}"]) {
+    // Remove trailing slash if any, and add the URI to healtcheck endpoint (expect HTTP/200 with OK in the body)
+    final String artifactCachingProxyHealthcheckUrl = "${acpServerId.substring(0,acpServerId.lastIndexOf("/"))}/health"
+    withEnv(["HEALTHCHECK=${artifactCachingProxyHealthcheckUrl}"]) {
       if (isUnix()) {
         healthCheckFailed = sh(script: 'curl --fail --silent --show-error --location $HEALTHCHECK', returnStatus: true) != 0
       } else {
@@ -210,16 +191,16 @@ Object withArtifactCachingProxy(boolean useArtifactCachingProxy = true, Closure 
       }
     }
     if (healthCheckFailed) {
-      echo "WARNING: the artifact caching proxy from '${requestedProxyProvider}' provider isn't reachable, will use repo.jenkins-ci.org"
+      echo "WARNING: the artifact caching proxy server '${acpServerId}' isn't reachable, will use repo.jenkins-ci.org."
       useArtifactCachingProxy = false
     }
   }
 
   // Use the Maven settings with artifact caching proxy config and private auth if everything is still OK
   if (useArtifactCachingProxy) {
-    echo "INFO: using artifact caching proxy from '${requestedProxyProvider}' provider."
+    echo "INFO: using artifact caching proxy server '${acpServerId}'."
     configFileProvider(
-        [configFile(fileId: "artifact-caching-proxy-${requestedProxyProvider}", variable: 'MAVEN_SETTINGS')]) {
+        [configFile(fileId: acpServerId, variable: 'MAVEN_SETTINGS')]) {
           withEnv(["MAVEN_ARGS=-s $env.MAVEN_SETTINGS"]) {
             body()
           }
