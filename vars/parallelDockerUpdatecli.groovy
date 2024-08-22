@@ -7,7 +7,7 @@ def call(userConfig = [:]) {
     imageName: '',
     rebuildImageOnPeriodicJob: true,
     updatecliCredentialsId: 'github-app-updatecli-on-jenkins-infra',
-    buildDockerAndPublishImageCredentialsId: 'github-app-infra',
+    buildDockerAndPublishImageCredentialsId: 'github-app-infra.ci.jenkins.io-docker-deploy',
     updatecliApplyCronTriggerExpression: '@weekly',
     updatecliConfig: [:],
     buildDockerConfig: [:],
