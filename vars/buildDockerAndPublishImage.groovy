@@ -45,7 +45,7 @@ def call(String imageShortName, Map userConfig=[:]) {
     dockerfile: 'Dockerfile', // Obvious default
     targetplatforms: '', // // Define the (comma separated) list of Docker supported platforms to build the image for. Defaults to `linux/amd64` when unspecified. Incompatible with the legacy `platform` attribute.
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
-    gitCredentials: 'github-app-infra', // Credential ID for tagging and creating release
+    gitCredentials: 'github-app-infra.ci.jenkins.io-docker-deploy', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
     registryNamespace: '', // Empty by default (means "autodiscover based on the current controller")
     unstash: '', // Allow to unstash files if not empty
