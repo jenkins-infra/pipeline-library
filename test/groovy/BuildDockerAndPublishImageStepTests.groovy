@@ -119,7 +119,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     final String reportId = "${imageName}-hadolint-${mockedTimestamp}".replaceAll('/','-').replaceAll(':', '-')
     return assertMethodCallContainsPattern(
         'recordIssues',
-        "{enabledForFailure=true, aggregatingResults=false, tool={id=${reportId}, pattern=${reportId}.json}}",
+        "{skipPublishingChecks=${env.BRANCH_IS_PRIMARY}, enabledForFailure=true, aggregatingResults=false, tool={id=${reportId}, pattern=${reportId}.json}}",
         )
   }
 

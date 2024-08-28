@@ -196,6 +196,7 @@ def call(String imageShortName, Map userConfig=[:]) {
               }
             } finally {
               recordIssues(
+                  skipPublishingChecks: (env.BRANCH_IS_PRIMARY),
                   enabledForFailure: true,
                   aggregatingResults: false,
                   tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
