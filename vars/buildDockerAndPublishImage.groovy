@@ -195,8 +195,12 @@ def call(String imageShortName, Map userConfig=[:]) {
                 powershell 'make lint'
               }
             } finally {
+              boolean skipChecks = false
+              if (env.BRANCH_IS_PRIMARY) {
+                skipChecks = true
+              }
               recordIssues(
-                  skipPublishingChecks: env.BRANCH_IS_PRIMARY,
+                  skipPublishingChecks: skipChecks,
                   enabledForFailure: true,
                   aggregatingResults: false,
                   tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
