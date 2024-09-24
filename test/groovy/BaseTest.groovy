@@ -49,6 +49,7 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('pwd', [Map.class], { '/bar' })
     helper.registerAllowedMethod('discoverGitReferenceBuild', [Map.class], { true })
     helper.registerAllowedMethod('recordIssues', [Map.class], { true })
+    helper.registerAllowedMethod('esLint', [Map.class], { 'esLint' })
     helper.registerAllowedMethod('mavenConsole', [], { 'maven' })
     helper.registerAllowedMethod('java', [], { 'java' })
     helper.registerAllowedMethod('javaDoc', [], { 'javadoc' })

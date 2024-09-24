@@ -186,6 +186,13 @@ def call(Map params = [:]) {
                       trendChartType: 'TOOLS_ONLY'
                       )
                   recordIssues(
+                      qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]],
+                      tools: [esLint(pattern: '**/target/eslint-warnings.xml')],
+                      enabledForFailure: true,
+                      sourceCodeEncoding: 'UTF-8',
+                      skipBlames: true,
+                      trendChartType: 'TOOLS_ONLY')
+                  recordIssues(
                       enabledForFailure: true,
                       tools: [java(), javaDoc()],
                       filters: [excludeFile('.*Assert.java')],
