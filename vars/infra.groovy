@@ -317,7 +317,7 @@ Object runWithJava(String command, String jdk = '8', List<String> extraEnv = nul
 
     // Define the environment to ensure that the correct JDK is used
     javaEnv += "JAVA_HOME=${javaHome}"
-    javaEnv += 'PATH+JAVA=${JAVA_HOME}/bin'
+    javaEnv += "PATH+JAVA=${javaHome}/bin"
 
     echo "INFO: Using JAVA_HOME=${javaHome} as default JDK home."
   }
