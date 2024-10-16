@@ -5,7 +5,6 @@
 
 def call(userConfig = [:]) {
   def defaultConfig = [
-    cronTriggerExpression: '@daily', // Defaults to run once a day (to detect configuration drift)
     stagingCredentials: [], // No custom secrets for staging by default
     productionCredentials: [], // No custom secrets for production by default
     productionBranch: 'main', // Defaults to the principal branch
@@ -28,11 +27,6 @@ def call(userConfig = [:]) {
 
   final String sharedToolsSubDir = '.shared-tools'
   final String makeCliCmd = "make --directory=${sharedToolsSubDir}/terraform/"
-
-  // Only define a cron trigger on the primary branch
-  if (isBuildOnProductionBranch && finalConfig.cronTriggerExpression) {
-    properties([pipelineTriggers([cron(finalConfig.cronTriggerExpression)])])
-  }
 
   properties([
     // Only run 1 build at a time, on a given branch, to ensure that infrastructure changes are sequentials (easier to audit)
