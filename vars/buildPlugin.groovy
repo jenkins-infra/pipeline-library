@@ -232,7 +232,7 @@ def call(Map params = [:]) {
                   }
                   recordIssues pmdArguments
 
-                  Map cpdArguments = [tool: cpd(pattern: '**/target/cpd.xml'),
+                  Map cpdArguments = [tool: cpd(pattern: '**/target/**/cpd.xml'),
                     sourceCodeEncoding: 'UTF-8',
                     skipBlames: true,
                     trendChartType: 'NONE']
