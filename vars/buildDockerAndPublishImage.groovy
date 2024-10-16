@@ -18,7 +18,11 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
       "IMAGE_DEPLOY_NAME=${imageDeployName}"
     ]) {
       sh 'export BUILDX_BUILDER_NAME=buildx-builder; docker buildx use "${BUILDX_BUILDER_NAME}" 2>/dev/null || docker buildx create --use --name="${BUILDX_BUILDER_NAME}"'
-      sh "make bake-$action"
+      if (action == 'retrieve-make-show') {
+        return sh(script: 'make show', returnStdout: true)
+      } else {
+        sh "make bake-$action"
+      }
     }
   } else {
     if (action == 'deploy') {
@@ -289,20 +293,38 @@ def call(String imageShortName, Map userConfig=[:]) {
           ]) {
             String release = ''
             if (isUnix()) {
-              final String releaseScript = '''
-                originUrlWithGit="$(git remote get-url origin)"
-                originUrl="${originUrlWithGit%.git}"
-                org="$(echo "${originUrl}" | cut -d'/' -f4)"
-                repository="$(echo "${originUrl}" | cut -d'/' -f5)"
-                releasesUrl="/repos/${org}/${repository}/releases"
-                releaseId="$(gh api "${releasesUrl}" | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')"
-                if test "${releaseId}" -gt 0
-                then
-                  gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${releasesUrl}/${releaseId}" > /dev/null
-                fi
-                echo "${releaseId}"
-              '''
-              release = sh(script: releaseScript, returnStdout: true)
+              final String makeShowContent = makecall('retrieve-make-show', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
+              withEnv(["MAKE_SHOW_CONTENT=${makeShowContent}"]) {
+                final String releaseScript = '''
+                  originUrlWithGit="$(git remote get-url origin)"
+                  originUrl="${originUrlWithGit%.git}"
+                  org="$(echo "${originUrl}" | cut -d'/' -f4)"
+                  repository="$(echo "${originUrl}" | cut -d'/' -f5)"
+                  releasesUrl="/repos/${org}/${repository}/releases"
+                  releaseId="$(gh api "${releasesUrl}" | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')"
+                  if test "${releaseId}" -gt 0
+                  then
+                    body="$(gh api "${releasesUrl}/${releaseId}" | jq -e -r '.body')"
+                    body+='
+
+## :memo: What's in this release
+
+<details>
+
+```yaml
+'
+                    body+="$(echo ${MAKE_SHOW_CONTENT} | yq --prettyPrint)"
+                    body+='
+```
+
+</details>
+'
+                    gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" -F body="${body}" "${releasesUrl}/${releaseId}" > /dev/null
+                  fi
+                  echo "${releaseId}"
+                '''
+                release = sh(script: releaseScript, returnStdout: true)
+              }
             } else {
               final String releaseScript = '''
                 $originUrl = (git remote get-url origin) -replace '\\.git', ''
