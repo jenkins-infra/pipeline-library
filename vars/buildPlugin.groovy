@@ -146,7 +146,10 @@ def call(Map params = [:]) {
                   infra.runMaven(mavenOptions, jdk, null, addToolEnv, useArtifactCachingProxy)
                 } finally {
                   if (!skipTests) {
-                    junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
+                    junit(
+                        testResults: '**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml',
+                        testDataPublishers: [attachments()],
+                        )
                     if (first) {
                       discoverReferenceBuild()
                       // Default configuration for JaCoCo can be overwritten using a `jacoco` parameter (map).
