@@ -38,7 +38,7 @@ buildPlugin(
 * `failFast` (default: `true`) - instruct Maven tests to fail fast
 * `platforms` (default: `['linux', 'windows']`) - Labels matching platforms to
   execute the steps against in parallel
-* `jdkVersions` (default: `[8]`) - JDK version numbers, must match a version
+* `jdkVersions` (default: `[11]`) - JDK version numbers, must match a version
   number jdk tool installed
 * `jenkinsVersions`: (default: `[null]`) - a matrix of Jenkins baseline versions to build/test against in parallel (null means default,
   only available for Maven projects)

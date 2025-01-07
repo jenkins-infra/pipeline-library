@@ -68,8 +68,8 @@ class BuildPluginStepTests extends BaseTest {
     def configurations = script.getConfigurations([:])
 
     def expected = [
-      ['platform': 'linux', 'jdk': '8', 'jenkins': null],
-      ['platform': 'windows', 'jdk': '8', 'jenkins': null],
+      ['platform': 'linux', 'jdk': '11', 'jenkins': null],
+      ['platform': 'windows', 'jdk': '11', 'jenkins': null],
     ]
     assertEquals(expected, configurations)
     printCallStack()
@@ -142,9 +142,9 @@ class BuildPluginStepTests extends BaseTest {
     script.call([useContainerAgent: true])
     printCallStack()
     // then it runs a stage in a linux container by default
-    assertTrue(assertMethodCallContainsPattern('node', 'maven'))
+    assertTrue(assertMethodCallContainsPattern('node', 'maven-11'))
     // then it runs a stage in a Windows container by default
-    assertTrue(assertMethodCallContainsPattern('node', 'maven-windows'))
+    assertTrue(assertMethodCallContainsPattern('node', 'maven-11-windows'))
     assertJobStatusSuccess()
   }
 
