@@ -44,7 +44,7 @@ def call(Map params = [:]) {
         if (platform == 'windows') {
           agentContainerLabel += '-windows'
           // TODO: Remove when Azure Container (ACI) outage is resolved
-          // https://status.jenkins.io/issues/2025-01-08-ci.jenkins.io-azure-outage/
+          // https://github.com/jenkins-infra/helpdesk/issues/4490
           echo "Using Windows virtual machines during Azure ACI outage https://status.jenkins.io/issues/2025-01-08-ci.jenkins.io-azure-outage/"
           agentContainerLabel = 'docker-windows'
         }
