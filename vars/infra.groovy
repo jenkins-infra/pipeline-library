@@ -142,6 +142,8 @@ Object checkoutSCM(String repo = null) {
   // Enable long paths to avoid problems with tests on Windows agents
   if (!isUnix()) {
     bat 'git config --global core.longpaths true'
+    // TODO: Remove when https://github.com/jenkins-infra/helpdesk/issues/3865 is resolved
+    bat 'git config --global core.eol lf'
   }
 
   if (env.BRANCH_NAME) {
