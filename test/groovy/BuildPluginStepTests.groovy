@@ -144,7 +144,12 @@ class BuildPluginStepTests extends BaseTest {
     // then it runs a stage in a linux container by default
     assertTrue(assertMethodCallContainsPattern('node', 'maven'))
     // then it runs a stage in a Windows container by default
-    assertTrue(assertMethodCallContainsPattern('node', 'maven-windows'))
+    // TODO: Restore this assertion when ACI outage is resolved
+    // https://status.jenkins.io/issues/2025-01-08-ci.jenkins.io-azure-outage/
+    // assertTrue(assertMethodCallContainsPattern('node', 'maven-windows'))
+    // TODO: Delete this assertion when ACI outage is resolved
+    // https://status.jenkins.io/issues/2025-01-08-ci.jenkins.io-azure-outage/
+    assertTrue(assertMethodCallContainsPattern('node', 'docker-windows'))
     assertJobStatusSuccess()
   }
 
