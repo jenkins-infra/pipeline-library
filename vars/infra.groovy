@@ -140,8 +140,12 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
 
 Object checkoutSCM(String repo = null) {
   // Enable long paths to avoid problems with tests on Windows agents
+  // Fix https://github.com/jenkins-infra/helpdesk/issues/3865 with autocrlf
   if (!isUnix()) {
-    bat 'git config --global core.longpaths true'
+    bat '''
+        git config --global core.autocrlf true
+        git config --global core.longpaths true
+        '''
   }
 
   if (env.BRANCH_NAME) {
