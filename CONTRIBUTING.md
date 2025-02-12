@@ -108,7 +108,7 @@ An IDE or text editor of your choice, like [Vim](https://www.vim.org/), [Emacs](
 
 ### Add a `pre-push` git hook to check the lint before pushing
 
-By adding the following file `pre-push` (without extension) into your local git repository `.git/hooks` folder, the command `mvn spotless:chek` will run before every push you'll make to check if your code is still correctly linted, and will prevent pushing malformatted code which would fail your build anyway.
+By adding the following file `pre-push` (without extension) into your local git repository `.git/hooks` folder, the command `mvn spotless:check` will run before every push you'll make to check if your code is still correctly linted, and will prevent pushing malformatted code which would fail your build anyway.
 
 ```bash
 #!/bin/sh
