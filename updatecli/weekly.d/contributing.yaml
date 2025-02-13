@@ -1,13 +1,6 @@
 name: Update Technical Requirements in CONTRIBUTING.md
 
 sources:
-  getMavenLabel:
-    kind: file
-    name: Get Maven label from Jenkinsfile
-    spec:
-      file: Jenkinsfile
-      marker: 'label '''
-      pattern: '(maven-[0-9]+)'
 
   getPackerImageVersion:
     kind: yaml
