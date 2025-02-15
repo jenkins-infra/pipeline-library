@@ -34,6 +34,7 @@ targets:
               In order to work with that repository you will need:
 
               - JDK {{ source "getToolVersions" "jdk.version" }}: Check [Temurin releases](https://adoptium.net/temurin/releases/v{{ source "getToolVersions" "jdk.version" }})
+              - Maven version {{ source "getToolVersions" "maven.version" }}: Check https://maven.apache.org/download.cgi
 
     scmid: default
 
