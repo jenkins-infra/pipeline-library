@@ -1,0 +1,26 @@
+github:
+  user: "jenkins-infra-updatecli"
+  email: "178728+jenkins-infra-updatecli[bot]@users.noreply.github.com"
+  token: "UPDATECLI_GITHUB_TOKEN"
+  branch: "main"
+  owner: "jenkins-infra"
+  repository: "helm-charts"
+
+---
+if (env.BRANCH_IS_PRIMARY) {
+    updatecli(action: 'apply', cronTriggerExpression: '@hourly')
+} else {
+    updatecli(action: 'diff')
+}
+
+---
+children:
+  contributing-yaml-update:
+    jenkinsfilePath: Jenkinsfile_updatecli
+    disableTagDiscovery: true
+    name: "Update Technical Requirements"
+    description: "Updates technical requirements in CONTRIBUTING.md"
+    credentials:
+      github-access-token:
+        description: "GitHub access token for Updatecli"
+        secret: "${UPDATECLI_GITHUB_TOKEN}"
