@@ -137,7 +137,7 @@ class UpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('usernamePassword', "credentialsId=${anotherCredentialsId}"))
   }
 
-   // --- New Test Cases for Custom Version Functionality ---
+  // --- New Test Cases for Custom Version Functionality ---
 
   // Test that when a custom version is specified, the pipeline includes the download steps.
   @Test
@@ -146,12 +146,14 @@ class UpdatecliStepTests extends BaseTest {
     helper.registerAllowedMethod('sh', [Map.class], { Map args ->
       if (args.script.contains("uname -m")) {
         return "x86_64\n"  // simulate CPU detection
-      } else if (args.script.contains("curl -fL")) {
-        return 0  // simulate a successful download
-      } else if (args.script.contains("chmod +x updatecli")) {
-        return 0
-      } else if (args.script.contains("./updatecli version") || args.script.contains("updatecli.exe version")) {
-        return 0
+      } else if (args.script.contains("curl -sL")) {
+        return 0  // simulate a successful download of the .deb package
+      } else if (args.script.contains("dpkg-deb -x")) {
+        return 0  // simulate successful extraction
+      } else if (args.script.contains("chmod +x updatecli/usr/bin/updatecli")) {
+        return 0  // simulate making the binary executable
+      } else if (args.script.contains("./updatecli/usr/bin/updatecli version")) {
+        return 0  // simulate checking the version of the downloaded binary
       }
       return 0
     })
@@ -162,10 +164,10 @@ class UpdatecliStepTests extends BaseTest {
     assertJobStatusSuccess()
     // Verify that the download stage is triggered: echo should mention "Downloading updatecli version 0.92.0 from"
     assertTrue(assertMethodCallContainsPattern('echo', 'Downloading updatecli version 0.92.0 from'))
-    // Verify that the pipeline attempted to download via curl
-    assertTrue(assertMethodCallContainsPattern('sh', 'curl -fL'))
-    // Verify that after download the command uses the downloaded binary (indicated by "./updatecli diff")
-    assertTrue(assertMethodCallContainsPattern('sh', './updatecli diff'))
+    // Verify that the pipeline attempted to download using curl with the expected output file for amd64
+    assertTrue(assertMethodCallContainsPattern('sh', 'curl -sL -o updatecli_amd64.deb'))
+    // Verify that after download, the command uses the locally extracted binary (located at ./updatecli/usr/bin/updatecli)
+    assertTrue(assertMethodCallContainsPattern('sh', './updatecli/usr/bin/updatecli diff'))
   }
 
   // Test that when no version is specified, there is no call to download updatecli.
@@ -177,8 +179,10 @@ class UpdatecliStepTests extends BaseTest {
     assertJobStatusSuccess()
     // There should be no echo message about downloading updatecli
     assertFalse(assertMethodCallContainsPattern('echo', 'Downloading updatecli version'))
-    // And no shell step attempting to download via curl
-    assertFalse(assertMethodCallContainsPattern('sh', 'curl -fL'))
+    // And no shell step attempting to download via curl should be present
+    assertFalse(assertMethodCallContainsPattern('sh', 'curl -sL'))
+    // And no extraction command should be found
+    assertFalse(assertMethodCallContainsPattern('sh', 'dpkg-deb -x'))
   }
 
   // Test that if the custom version download fails, the pipeline errors immediately.
@@ -187,7 +191,7 @@ class UpdatecliStepTests extends BaseTest {
     helper.registerAllowedMethod('sh', [Map.class], { Map args ->
       if (args.script.contains("uname -m")) {
         return "x86_64\n"
-      } else if (args.script.contains("curl -fL")) {
+      } else if (args.script.contains("curl -sL")) {
         return 1  // simulate download failure
       }
       return 0
