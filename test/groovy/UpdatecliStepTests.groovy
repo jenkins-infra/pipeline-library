@@ -136,4 +136,69 @@ class UpdatecliStepTests extends BaseTest {
     // And the custom credentialsId is taken in account
     assertTrue(assertMethodCallContainsPattern('usernamePassword', "credentialsId=${anotherCredentialsId}"))
   }
+
+   // --- New Test Cases for Custom Version Functionality ---
+
+  // Test that when a custom version is specified, the pipeline includes the download steps.
+  @Test
+  void itRunSuccessfullyWithCustomVersion() throws Exception {
+    // Simulate system calls:
+    helper.registerAllowedMethod('sh', [Map.class], { Map args ->
+      if (args.script.contains("uname -m")) {
+        return "x86_64\n"  // simulate CPU detection
+      } else if (args.script.contains("curl -fL")) {
+        return 0  // simulate a successful download
+      } else if (args.script.contains("chmod +x updatecli")) {
+        return 0
+      } else if (args.script.contains("./updatecli version") || args.script.contains("updatecli.exe version")) {
+        return 0
+      }
+      return 0
+    })
+
+    def script = loadScript(scriptName)
+    script.call(version: '0.92.0')
+    printCallStack()
+    assertJobStatusSuccess()
+    // Verify that the download stage is triggered: echo should mention "Downloading updatecli version 0.92.0 from"
+    assertTrue(assertMethodCallContainsPattern('echo', 'Downloading updatecli version 0.92.0 from'))
+    // Verify that the pipeline attempted to download via curl
+    assertTrue(assertMethodCallContainsPattern('sh', 'curl -fL'))
+    // Verify that after download the command uses the downloaded binary (indicated by "./updatecli diff")
+    assertTrue(assertMethodCallContainsPattern('sh', './updatecli diff'))
+  }
+
+  // Test that when no version is specified, there is no call to download updatecli.
+  @Test
+  void itDoesNotDownloadUpdatecliWhenNoCustomVersionSpecified() throws Exception {
+    def script = loadScript(scriptName)
+    script.call() // no version attribute provided
+    printCallStack()
+    assertJobStatusSuccess()
+    // There should be no echo message about downloading updatecli
+    assertFalse(assertMethodCallContainsPattern('echo', 'Downloading updatecli version'))
+    // And no shell step attempting to download via curl
+    assertFalse(assertMethodCallContainsPattern('sh', 'curl -fL'))
+  }
+
+  // Test that if the custom version download fails, the pipeline errors immediately.
+  @Test
+  void itFailsWhenCustomVersionNotFound() throws Exception {
+    helper.registerAllowedMethod('sh', [Map.class], { Map args ->
+      if (args.script.contains("uname -m")) {
+        return "x86_64\n"
+      } else if (args.script.contains("curl -fL")) {
+        return 1  // simulate download failure
+      }
+      return 0
+    })
+
+    def script = loadScript(scriptName)
+    try {
+      script.call(version: '0.99.99')
+      fail("Expected error due to custom version not found")
+    } catch (Exception e) {
+      assertTrue(e.message.contains("Specified updatecli version 0.99.99 not found"))
+    }
+  }
 }
