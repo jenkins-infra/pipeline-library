@@ -1,25 +1,55 @@
 name: Update Technical Requirements in CONTRIBUTING.md
 
-sources:
+scms:
+  default:
+    kind: github
+    spec:
+      user: "{{ .github.user }}"
+      email: "{{ .github.email }}"
+      owner: "{{ .github.owner }}"
+      repository: "{{ .github.repository }}"
+      token: "{{ requiredEnv .github.token }}"
+      username: "{{ .github.username }}"
+      branch: "{{ .github.branch }}"
 
+sources:
+  getAgentLabelJDKmajor:
+    kind: file
+    spec:
+      file: Jenkinsfile
+      matchpattern: "label 'maven-(.*)'"
+    transformers:
+      - findsubmatch:
+          pattern: "label 'maven-(.*)'"
+          captureindex: 1
   getPackerImageVersion:
     kind: yaml
     name: Get Packer image version from jenkins-infra
     spec:
-      file: hieradata/common.yaml
+      file: https://raw.githubusercontent.com/jenkins-infra/jenkins-infra/production/hieradata/common.yaml
       key: $.profile::jenkinscontroller::jcasc.agent_images.azure_vms_gallery_image.version
-
-  getToolVersions:
+  getJDKVersion:
+    kind: yaml
+    name: Get jdk version from packer-images
+    dependson:
+      - getAgentLabelJDKmajor
+      - getPackerImageVersion
+    spec:
+      file: https://raw.githubusercontent.com/jenkins-infra/packer-images/{{ source "getPackerImageVersion" }}/provisioning/tools-versions.yml
+      key: $.jdk{{ source "getAgentLabelJDKmajor"}}_version
+  getMavenVersion:
     kind: yaml
     name: Get tool versions from packer-images
     dependson:
       - getPackerImageVersion
     spec:
       file: https://raw.githubusercontent.com/jenkins-infra/packer-images/{{ source "getPackerImageVersion" }}/provisioning/tools-versions.yml
+      key: $.maven_version
 
 targets:
   updateTechnicalRequirements:
     name: Update Technical Requirements section in CONTRIBUTING.md
+    disablesourceinput: true
     kind: file
     spec:
       file: CONTRIBUTING.md
@@ -33,8 +63,8 @@ targets:
 
               In order to work with that repository you will need:
 
-              - JDK {{ source "getToolVersions" "jdk.version" }}: Check [Temurin releases](https://adoptium.net/temurin/releases/v{{ source "getToolVersions" "jdk.version" }})
-              - Maven version {{ source "getToolVersions" "maven.version" }}: Check https://maven.apache.org/download.cgi
+              - JDK {{ source "getJDKVersion" }}: Check [Temurin releases](https://adoptium.net/temurin/releases/v{{ source "getJDKVersion" }})
+              - Maven version {{ source "getMavenVersion" }}: Check https://maven.apache.org/download.cgi
 
     scmid: default
 
