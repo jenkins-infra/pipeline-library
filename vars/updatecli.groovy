@@ -42,37 +42,39 @@ def call(userConfig = [:]) {
       }
     }
 
-    // If a custom version is provided, download and install that version of updatecli
+    // If a custom version is provided, download and install that version of updatecli using tar files in a single sh step
     if (runUpdatecli && finalConfig.version) {
       stage("Download updatecli version ${finalConfig.version}") {
-        def versionTag = "v${finalConfig.version}"
-        // Determine CPU architecture (Unix only)
-        def cpu = sh(script: "uname -m", returnStdout: true).trim()
-        // Normalize CPU names to expected values
-        if (cpu == "x86_64" || cpu == "AMD64") {
-          cpu = "amd64"
-        } else if (cpu == "aarch64" || cpu == "arm64") {
-          cpu = "arm64"
+        withEnv(["UPDATECLI_VERSION=${finalConfig.version}"]) {
+          sh '''
+            versionTag="v${UPDATECLI_VERSION}"
+            cpu="$(uname -m)"
+            # Construct the tar file name based on the CPU architecture.
+            tarFileName="updatecli_Linux_${cpu}.tar.gz" 
+            downloadUrl="https://github.com/updatecli/updatecli/releases/download/${versionTag}/${tarFileName}"
+            echo "Downloading updatecli version ${UPDATECLI_VERSION} from ${downloadUrl}"
+            curl --silent --location --output ${tarFileName} ${downloadUrl}
+            if [ $? -ne 0 ]; then
+              echo "Updatecli custom download failed"
+              exit 1
+            fi
+            # Create destination directory for extraction.
+            mkdir -p /tmp/custom_updatecli
+            # Extract the updatecli binary from the tar file.
+            tar --extract --gzip --file="\${tarFileName}" --directory="/tmp/custom_updatecli" updatecli
+            # Remove the tar file leaving only the executable binary.
+            rm -f ${tarFileName}
+            # To use the downloaded updatecli version, update the PATH.
+            echo "Using updatecli version: $(updatecli version)"
+          '''
         }
-        // Construct the Debian package filename based on CPU architecture
-        def debFileName = "updatecli_${cpu}.deb"
-        def downloadUrl = "https://github.com/updatecli/updatecli/releases/download/${versionTag}/${debFileName}"
-        echo "Downloading updatecli version ${finalConfig.version} from ${downloadUrl}"
-        // Download the .deb package using curl with silent and location-following flags
-        def downloadResult = sh(script: "curl -sL -o ${debFileName} ${downloadUrl}", returnStatus: true)
-        if (downloadResult != 0) {
-          error "Specified updatecli version ${finalConfig.version} not found at ${downloadUrl}"
-        }
-        // Extract the .deb package into a local directory named 'updatecli'
-        sh "dpkg-deb -x ${debFileName} updatecli"
-        // Make the extracted binary executable
-        sh "chmod +x updatecli/usr/bin/updatecli"
-        // Build the command to use the locally extracted binary
-        updatecliCommand = "./updatecli/usr/bin/updatecli ${finalConfig.action}"
+        // Build the command to use the locally extracted binary using its absolute path.
+        def destPath = "/tmp/custom_updatecli"
+        updatecliCommand = "${destPath}/updatecli ${finalConfig.action}"
         updatecliCommand += finalConfig.config ? " --config ${finalConfig.config}" : ""
         updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
         // Optionally, verify the downloaded binary's version
-        sh "./updatecli/usr/bin/updatecli version"
+        sh "${destPath}/updatecli version"
       }
     }
 
@@ -85,7 +87,7 @@ def call(userConfig = [:]) {
             passwordVariable: 'UPDATECLI_GITHUB_TOKEN'
           )
         ]) {
-          // For the default case (no custom version), check the existing updatecli version
+          // For the default case (no custom version), check the existing updatecli version.
           if (!finalConfig.version) {
             sh 'updatecli version'
           }
