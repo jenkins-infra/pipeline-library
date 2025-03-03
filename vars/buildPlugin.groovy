@@ -103,7 +103,6 @@ def call(Map params = [:]) {
               String m2repo
 
               stage("Build (${stageIdentifier})") {
-                String command
                 m2repo = "${pwd tmp: true}/m2repo"
                 List<String> mavenOptions = [
                   '--update-snapshots',
@@ -146,7 +145,10 @@ def call(Map params = [:]) {
                   infra.runMaven(mavenOptions, jdk, null, addToolEnv, useArtifactCachingProxy)
                 } finally {
                   if (!skipTests) {
-                    junit('**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml')
+                    junit(
+                        testResults: '**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml',
+                        testDataPublishers: [attachments()],
+                        )
                     if (first) {
                       discoverReferenceBuild()
                       // Default configuration for JaCoCo can be overwritten using a `jacoco` parameter (map).
@@ -185,6 +187,13 @@ def call(Map params = [:]) {
                       skipBlames: true,
                       trendChartType: 'TOOLS_ONLY'
                       )
+                  recordIssues(
+                      qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]],
+                      tools: [esLint(pattern: '**/target/eslint-warnings.xml')],
+                      enabledForFailure: true,
+                      sourceCodeEncoding: 'UTF-8',
+                      skipBlames: true,
+                      trendChartType: 'TOOLS_ONLY')
                   recordIssues(
                       enabledForFailure: true,
                       tools: [java(), javaDoc()],
@@ -225,7 +234,7 @@ def call(Map params = [:]) {
                   }
                   recordIssues pmdArguments
 
-                  Map cpdArguments = [tool: cpd(pattern: '**/target/cpd.xml'),
+                  Map cpdArguments = [tool: cpd(pattern: '**/target/**/cpd.xml'),
                     sourceCodeEncoding: 'UTF-8',
                     skipBlames: true,
                     trendChartType: 'NONE']

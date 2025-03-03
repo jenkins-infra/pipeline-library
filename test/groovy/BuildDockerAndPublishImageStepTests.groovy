@@ -117,9 +117,13 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   // Return if the usual static checks had been recorded with the usual pattern
   Boolean assertRecordIssues(String imageName = fullTestImageName) {
     final String reportId = "${imageName}-hadolint-${mockedTimestamp}".replaceAll('/','-').replaceAll(':', '-')
+    boolean skipChecks = false
+    if (env.BRANCH_IS_PRIMARY) {
+      skipChecks = true
+    }
     return assertMethodCallContainsPattern(
         'recordIssues',
-        "{enabledForFailure=true, aggregatingResults=false, tool={id=${reportId}, pattern=${reportId}.json}}",
+        "{skipPublishingChecks=${skipChecks}, enabledForFailure=true, aggregatingResults=false, tool={id=${reportId}, pattern=${reportId}.json}}",
         )
   }
 

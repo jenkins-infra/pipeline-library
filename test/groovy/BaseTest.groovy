@@ -20,6 +20,7 @@ class BaseTest extends DeclarativePipelineTest {
     binding.setProperty('mvnSettingsFile', 'settings.xml')
 
     helper.registerAllowedMethod('archiveArtifacts', [Map.class], { true })
+    helper.registerAllowedMethod('attachments', [])
     helper.registerAllowedMethod('checkout', [String.class], { 'OK' })
     helper.registerAllowedMethod('configFile', [Map.class], { 'OK' })
     helper.registerAllowedMethod('configFileProvider', [List.class, Closure.class], { l, body -> body() })
@@ -36,6 +37,7 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('git', [String.class], { 'OK' })
     helper.registerAllowedMethod('hasDockerLabel', [], { true })
     helper.registerAllowedMethod('isUnix', [], { true })
+    helper.registerAllowedMethod('junit', [Map.class])
     helper.registerAllowedMethod('lock', [String.class, Closure.class], { s, body -> body() })
     helper.registerAllowedMethod('node', [String.class, Closure.class], { s, body -> body() })
     helper.registerAllowedMethod('retry', [Map.class, Closure.class], { m, body ->body() })
@@ -49,6 +51,7 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('pwd', [Map.class], { '/bar' })
     helper.registerAllowedMethod('discoverGitReferenceBuild', [Map.class], { true })
     helper.registerAllowedMethod('recordIssues', [Map.class], { true })
+    helper.registerAllowedMethod('esLint', [Map.class], { 'esLint' })
     helper.registerAllowedMethod('mavenConsole', [], { 'maven' })
     helper.registerAllowedMethod('java', [], { 'java' })
     helper.registerAllowedMethod('javaDoc', [], { 'javadoc' })

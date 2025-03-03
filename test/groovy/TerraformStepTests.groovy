@@ -83,9 +83,6 @@ class TerraformStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('withCredentials','PRODUCTION_USR'))
     assertFalse(assertMethodCallContainsPattern('withCredentials','COMMON_SECRET'))
 
-    // And a daily cron trigger for the job
-    assertTrue(assertMethodCallContainsPattern('cron', '@daily'))
-
     // And 2 nodes with default label are spawned
     assertTrue(assertMethodCallContainsPattern('node', 'jnlp-linux-arm64'))
     assertTrue(assertMethodCallOccurrences('node', 2))
@@ -138,8 +135,6 @@ class TerraformStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('stage', 'Shipping Changes'))
     assertFalse(assertMethodCallContainsPattern('sh', 'make --directory=.shared-tools/terraform/ deploy'))
 
-    // No daily cron trigger for the PR jobs
-    assertFalse(assertMethodCallContainsPattern('cron', '@daily'))
     // Only 5 builds per PR to keep
     assertTrue(assertMethodCallContainsPattern('logRotator', 'numToKeepStr=5'))
   }
@@ -181,9 +176,6 @@ class TerraformStepTests extends BaseTest {
 
     // Ensure that drift-detection is disabled
     assertFalse(assertMethodCallContainsPattern('withEnv','TF_CLI_ARGS_plan=-detailed-exitcode'))
-
-    // And a daily cron trigger for the job
-    assertFalse(assertMethodCallContainsPattern('cron', '@daily'))
   }
 
   @Test
@@ -225,7 +217,6 @@ class TerraformStepTests extends BaseTest {
 
     // When calling the shared library global function with custom parameters
     script.call(
-        cronTriggerExpression: '@weekly',
         stagingCredentials: stagingCustomCreds,
         productionCredentials: productionCustomCreds,
         agentLabel: customLabel,
@@ -240,9 +231,6 @@ class TerraformStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withCredentials','STAGING_PSW'))
     assertTrue(assertMethodCallContainsPattern('withCredentials','PRODUCTION_USR'))
     assertTrue(assertMethodCallContainsPattern('withCredentials','COMMON_SECRET'))
-
-    // And the custom cron trigger
-    assertTrue(assertMethodCallContainsPattern('cron', '@weekly'))
 
     // And 2 nodes with custom label are spawned
     assertTrue(assertMethodCallContainsPattern('node', customLabel))

@@ -22,7 +22,7 @@
 # - JENKINS_INFRA_FILESHARE_CLIENT_SECRET: the service principal client secret
 # - JENKINS_INFRA_FILESHARE_TENANT_ID: the file share tenant id
 # --------------------------------------------------------------------------------
-set -eu -o pipefail
+set -Eeu -o pipefail
 
 # Don't print any trace
 set +x
