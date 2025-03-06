@@ -88,10 +88,8 @@ def call(userConfig = [:]) {
             passwordVariable: 'UPDATECLI_GITHUB_TOKEN'
           )
         ]) {
-          // For the default case (no custom version), check the existing updatecli version.
-          if (!finalConfig.version) {
-            sh 'updatecli version'
-          }
+          // check the existing updatecli version.
+          sh 'updatecli version'
           sh updatecliCommand
         }
       } // withCredentials
