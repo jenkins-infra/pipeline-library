@@ -150,8 +150,10 @@ class UpdatecliStepTests extends BaseTest {
         return "x86_64\n"  // simulate CPU detection as "x86_64"
       } else if (args.script.contains("curl --silent --location --output") && args.script.contains("updatecli_Linux_x86_64.tar.gz")) {
         return 0  // simulate a successful tar file download
+      } else if (args.script.contains("mkdir -p /tmp/custom_updatecli")) {
+        return 0  // simulate creation of the extraction directory
       } else if (args.script.contains("tar --extract --gzip --file=") &&
-                args.script.contains("--directory=\"/tmp/custom_updatecli\"") &&
+                args.script.contains("--directory=/tmp/custom_updatecli") &&
                 args.script.contains("updatecli")) {
         return 0  // simulate successful extraction of the tar archive
       } else if (args.script.contains("rm -f") && args.script.contains("updatecli_Linux_x86_64.tar.gz")) {
@@ -168,32 +170,31 @@ class UpdatecliStepTests extends BaseTest {
     script.call(version: '0.92.0')
     printCallStack()
     assertJobStatusSuccess()
-    // Verify that the download stage is triggered: echo should mention "Downloading updatecli version ${UPDATECLI_VERSION} from ${downloadUrl}"
+
+    // Verify that the download stage is triggered
     assertTrue(assertMethodCallContainsPattern('sh', 'echo "Downloading updatecli version ${UPDATECLI_VERSION} from ${downloadUrl}'))
-    // Verify that the pipeline attempted to download using curl with the expected tar file name for x86_64.
     assertTrue(assertMethodCallContainsPattern('sh', 'curl --silent --location --output ${tarFileName} ${downloadUrl}'))
-    // Verify that the pipeline extracted the tar file.
-    assertTrue(assertMethodCallContainsPattern('sh', 'tar --extract --gzip --file="${tarFileName}" --directory="/tmp/custom_updatecli" updatecli'))
-    // Verify that the final command uses the locally extracted binary.
+    assertTrue(assertMethodCallContainsPattern('sh', 'mkdir -p ${customUpdatecliPath}'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'tar --extract --gzip --file="${tarFileName}" --directory=${customUpdatecliPath} updatecli'))
     assertTrue(assertMethodCallContainsPattern('sh', '/tmp/custom_updatecli/updatecli diff'))
   }
 
-  // Test that when no version is specified, there is no call to download updatecli.
   @Test
   void itDoesNotDownloadUpdatecliWhenNoCustomVersionSpecified() throws Exception {
     def script = loadScript(scriptName)
     script.call() // no version attribute provided
     printCallStack()
     assertJobStatusSuccess()
-    // There should be no echo message about downloading updatecli.
-    assertFalse(assertMethodCallContainsPattern('echo', 'Downloading updatecli version'))
-    // And no shell step with curl for a tar file should be present.
+
+    // Ensure no download happens
     assertFalse(assertMethodCallContainsPattern('sh', 'curl --silent --location --output'))
-    // And no extraction command using tar should be found.
     assertFalse(assertMethodCallContainsPattern('sh', 'tar --extract'))
+    
+    // Ensure it still runs updatecli
+    assertTrue(assertMethodCallContainsPattern('sh', 'updatecli version'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'updatecli diff'))
   }
 
-  // Test that if the custom version download fails, the pipeline errors immediately.
   @Test
   void itFailsWhenCustomVersionNotFound() throws Exception {
     helper.registerAllowedMethod('sh', [Map.class], { Map args ->
@@ -211,7 +212,7 @@ class UpdatecliStepTests extends BaseTest {
       script.call(version: '0.99.99')
       fail("Expected error due to custom version not found")
     } catch (Exception e) {
-      assertTrue(assertMethodCallContainsPattern('sh', 'echo "Updatecli custom download failed"'))
+      assertTrue(assertMethodCallContainsPattern('sh', 'echo "Download failed"'))
     }
   }
 }

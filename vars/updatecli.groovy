@@ -15,14 +15,16 @@ def call(userConfig = [:]) {
 
   // Merge userConfig into defaultConfig (userConfig overrides defaults)
   final Map finalConfig = defaultConfig << userConfig
+  final String customUpdatecliPath = "/tmp/custom_updatecli" // Factorized custom path
 
-  // Build the updatecli command if no custom version is provided
-  def updatecliCommand = ""
-  if (!finalConfig.version) {
-    updatecliCommand = "updatecli ${finalConfig.action}"
-    updatecliCommand += finalConfig.config ? " --config ${finalConfig.config}" : ""
-    updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
-  }
+
+  // // Build the updatecli command if no custom version is provided
+  // def updatecliCommand = ""
+  // if (!finalConfig.version) {
+  //   updatecliCommand = "updatecli ${finalConfig.action}"
+  //   updatecliCommand += finalConfig.config ? " --config ${finalConfig.config}" : ""
+  //   updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
+  // }
 
   // Set cron trigger if requested
   if (finalConfig.cronTriggerExpression) {
@@ -45,7 +47,7 @@ def call(userConfig = [:]) {
     // If a custom version is provided, download and install that version of updatecli using tar files in a single sh step
     if (runUpdatecli && finalConfig.version) {
       stage("Download updatecli version ${finalConfig.version}") {
-        withEnv(["UPDATECLI_VERSION=${finalConfig.version}"]) {
+        withEnv(["UPDATECLI_VERSION=${finalConfig.version}", "PATH+UPDATECLI=${customUpdatecliPath}"]) { //Extend PATH dynamically
           sh '''
             versionTag="v${UPDATECLI_VERSION}"
             cpu="$(uname -m)"
@@ -53,30 +55,30 @@ def call(userConfig = [:]) {
             tarFileName="updatecli_Linux_${cpu}.tar.gz" 
             downloadUrl="https://github.com/updatecli/updatecli/releases/download/${versionTag}/${tarFileName}"
             echo "Downloading updatecli version ${UPDATECLI_VERSION} from ${downloadUrl}"
-            curl --silent --location --output ${tarFileName} ${downloadUrl}
-            if [ $? -ne 0 ]; then
-              echo "Updatecli custom download failed"
-              exit 1
-            fi
+            curl --silent --location --output ${tarFileName} ${downloadUrl} || { echo "Download failed"; exit 1; }
             # Create destination directory for extraction.
-            mkdir -p /tmp/custom_updatecli
+            mkdir -p ${customUpdatecliPath}
             # Extract the updatecli binary from the tar file.
-            tar --extract --gzip --file="\${tarFileName}" --directory="/tmp/custom_updatecli" updatecli
+            tar --extract --gzip --file="${tarFileName}" --directory=${customUpdatecliPath} updatecli
             # Remove the tar file leaving only the executable binary.
             rm -f ${tarFileName}
-            # To use the downloaded updatecli version, update the PATH.
-            echo "Using updatecli version: $(updatecli version)"
+            # Debugging: Verify PATH and the resolved updatecli binary
+            echo "Updated PATH: $PATH"
+            echo "Resolved updatecli path: $(which updatecli)"
           '''
         }
-        // Build the command to use the locally extracted binary using its absolute path.
-        def destPath = "/tmp/custom_updatecli"
-        updatecliCommand = "${destPath}/updatecli ${finalConfig.action}"
+        updatecliCommand = "${customUpdatecliPath}/updatecli ${finalConfig.action}"
         updatecliCommand += finalConfig.config ? " --config ${finalConfig.config}" : ""
         updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
-        // Optionally, verify the downloaded binary's version
-        sh "${destPath}/updatecli version"
       }
     }
+
+    // **Factorized updatecli command builder - defined once, after installation**
+    def updatecliCommand = finalConfig.version ? "${customUpdatecliPath}/updatecli" : "updatecli"
+    updatecliCommand += " ${finalConfig.action}"
+    updatecliCommand += finalConfig.config ? " --config ${finalConfig.config}" : ""
+    updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
+
 
     stage(updatecliRunStage) {
       if (runUpdatecli) {
