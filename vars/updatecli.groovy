@@ -67,9 +67,6 @@ def call(userConfig = [:]) {
             echo "Resolved updatecli path: $(which updatecli)"
           '''
         }
-        updatecliCommand = "${customUpdatecliPath}/updatecli ${finalConfig.action}"
-        updatecliCommand += finalConfig.config ? " --config ${finalConfig.config}" : ""
-        updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
       }
     }
 
