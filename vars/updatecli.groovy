@@ -13,8 +13,8 @@ def call(userConfig = [:]) {
     version: ''                               // New: custom updatecli version (e.g. '0.92.0' or '0.86.0-rc.1')
   ]
 
-  // Merge userConfig into defaultConfig (userConfig overrides defaults)
-  final Map finalConfig = defaultConfig << userConfig
+  // TODO: use isInfra() to set a default githubApp credentials id for infra & for ci
+  // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html  final Map finalConfig = defaultConfig << userConfig
   final String customUpdatecliPath = "/tmp/custom_updatecli" // Factorized custom path
 
 
@@ -76,7 +76,9 @@ def call(userConfig = [:]) {
     // **Factorized updatecli command builder - defined once, after installation**
     def updatecliCommand = finalConfig.version ? "${customUpdatecliPath}/updatecli" : "updatecli"
     updatecliCommand += " ${finalConfig.action}"
+    // Do not add the flag "--config" if the provided value is "empty string"
     updatecliCommand += finalConfig.config ? " --config ${finalConfig.config}" : ""
+    // Do not add the flag "--values" if the provided value is "empty string"
     updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
 
 
@@ -85,7 +87,7 @@ def call(userConfig = [:]) {
         withCredentials([
           usernamePassword(
             credentialsId: finalConfig.credentialsId,
-            usernameVariable: 'USERNAME_VALUE',
+            usernameVariable: 'USERNAME_VALUE', // Setting this variable is mandatory, even if of not used when the credentials is a githubApp one
             passwordVariable: 'UPDATECLI_GITHUB_TOKEN'
           )
         ]) {
@@ -95,7 +97,7 @@ def call(userConfig = [:]) {
           }
           sh updatecliCommand
         }
-      }
-    }
-  }
+      } // withCredentials
+    } // if (runUpdateCli)
+  } // stage
 }
