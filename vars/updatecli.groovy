@@ -57,6 +57,7 @@ def call(userConfig = [:]) {
             downloadUrl="https://github.com/updatecli/updatecli/releases/download/${versionTag}/${tarFileName}"
             echo "Downloading updatecli version ${UPDATECLI_VERSION} from ${downloadUrl}"
             curl --silent --location --output ${tarFileName} ${downloadUrl} || { echo "Download failed"; exit 1; }
+            echo "customUpdatecliPath is: ${customUpdatecliPath}"
             # Create destination directory for extraction.
             mkdir -p ${customUpdatecliPath}
             # Extract the updatecli binary from the tar file.
