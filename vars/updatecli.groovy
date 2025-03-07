@@ -10,7 +10,7 @@ def call(userConfig = [:]) {
     updatecliAgentLabel: 'jnlp-linux-arm64',  // Label to select the Jenkins node (agent)
     cronTriggerExpression: '',                // When specified, it enables cron trigger for the calling pipeline
     credentialsId: 'github-app-updatecli-on-jenkins-infra', // Credentials for GitHub access
-    version: ''                               // New: custom updatecli version (e.g. '0.92.0' or '0.86.0-rc.1')
+    version: '0.92.0'                               // New: custom updatecli version (e.g. '0.92.0' or '0.86.0-rc.1')
   ]
 
   // TODO: use isInfra() to set a default githubApp credentials id for infra & for ci
