@@ -53,7 +53,7 @@ def call(userConfig = [:]) {
           sh 'echo $PATH'
           sh '''
             versionTag="v${UPDATECLI_VERSION}"
-            cpu="$(uname -m)"
+            cpu="$(uname -p)"
             # Construct the tar file name based on the CPU architecture.
             tarFileName="updatecli_Linux_${cpu}.tar.gz" 
             downloadUrl="https://github.com/updatecli/updatecli/releases/download/${versionTag}/${tarFileName}"
