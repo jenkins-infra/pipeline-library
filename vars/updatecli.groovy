@@ -70,20 +70,20 @@ def call(userConfig = [:]) {
       }
     }
 
-    // **Factorized updatecli command builder - defined once, after installation**
-    def updatecliCommand = finalConfig.version ? "${customUpdatecliPath}/updatecli" : "updatecli"
-    updatecliCommand += " ${finalConfig.action}"
-    // Do not add the flag "--config" if the provided value is "empty string"
-    updatecliCommand += finalConfig.config ? " --config ${finalConfig.config}" : ""
-    // Do not add the flag "--values" if the provided value is "empty string"
-    updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
-
-    // def call(Map params = [:]) {
-    // def finalConfig = params ?: [:] // Ensure finalConfig is always a valid map
+    // // **Factorized updatecli command builder - defined once, after installation**
     // def updatecliCommand = finalConfig.version ? "${customUpdatecliPath}/updatecli" : "updatecli"
     // updatecliCommand += " ${finalConfig.action}"
+    // // Do not add the flag "--config" if the provided value is "empty string"
     // updatecliCommand += finalConfig.config ? " --config ${finalConfig.config}" : ""
+    // // Do not add the flag "--values" if the provided value is "empty string"
     // updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
+
+    def call(Map params = [:]) {
+    def finalConfig = params ?: [:] // Ensure finalConfig is always a valid map
+    def updatecliCommand = finalConfig.version ? "${customUpdatecliPath}/updatecli" : "updatecli"
+    updatecliCommand += " ${finalConfig.action}"
+    updatecliCommand += finalConfig.config ? " --config ${finalConfig.config}" : ""
+    updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
 
     stage(updatecliRunStage) {
       if (runUpdatecli) {
