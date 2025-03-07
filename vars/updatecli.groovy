@@ -14,9 +14,10 @@ def call(userConfig = [:]) {
   ]
 
   // TODO: use isInfra() to set a default githubApp credentials id for infra & for ci
-  // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html  final Map finalConfig = defaultConfig << userConfig
+  // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html  final Map 
+  
+  finalConfig = defaultConfig << userConfig
   final String customUpdatecliPath = "/tmp/custom_updatecli" // Factorized custom path
-
 
   // // Build the updatecli command if no custom version is provided
   // def updatecliCommand = ""
