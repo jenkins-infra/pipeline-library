@@ -74,6 +74,13 @@ def call(Map params = [:]) {
 
               stage("Checkout (${stageIdentifier})") {
                 infra.checkoutSCM(repo)
+                // DEBUG
+                if (!isUnix()) {
+                    bat 'git config --show-origin --show-scope --list'
+                    pwsh 'git config --show-origin --show-scope --list'
+                    powershell 'git config --show-origin --show-scope --list'
+                }
+                // END DEBUG
                 incrementals = fileExists('.mvn/extensions.xml') &&
                     readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')
                 final String gitUnavailableMessage = '[buildPlugin] Git CLI may not be available'
