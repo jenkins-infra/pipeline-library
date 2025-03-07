@@ -49,7 +49,7 @@ def call(userConfig = [:]) {
     if (runUpdatecli && finalConfig.version) {
       stage("Download updatecli version ${finalConfig.version}") {
         sh 'echo $PATH'
-        withEnv(["UPDATECLI_VERSION=${finalConfig.version}", "PATH+CUSTOM=$customUpdatecliPath"]) { //Extend PATH dynamically
+        withEnv(["UPDATECLI_VERSION=${finalConfig.version}", "PATH+CUSTOM=$customUpdatecliPath", "CUSTOM_UPDATECLI_PATH=${customUpdatecliPath}"]) { //Extend PATH dynamically
           sh 'echo $PATH'
           sh '''
             versionTag="v${UPDATECLI_VERSION}"
@@ -61,9 +61,9 @@ def call(userConfig = [:]) {
             curl --silent --location --output ${tarFileName} ${downloadUrl} || { echo "Download failed"; exit 1; }
             echo "customUpdatecliPath is: ${PATH}"
             # Create destination directory for extraction.
-            mkdir -p ${customUpdatecliPath}
+            mkdir -p ${CUSTOM_UPDATECLI_PATH}
             # Extract the updatecli binary from the tar file.
-            tar --extract --gzip --file="${tarFileName}" --directory=${customUpdatecliPath} updatecli
+            tar --extract --gzip --file="${tarFileName}" --directory=${CUSTOM_UPDATECLI_PATH} updatecli
             # Remove the tar file leaving only the executable binary.
             rm -f ${tarFileName}
             # Debugging: Verify PATH and the resolved updatecli binary
