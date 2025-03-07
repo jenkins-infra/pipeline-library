@@ -96,7 +96,7 @@ def call(userConfig = [:]) {
           )
         ]) {
           // check the existing updatecli version.
-          sh '${updatecliCommand} version'
+          sh "${updatecliCommand} version"
           sh updatecliCommand
         }
       } // withCredentials
