@@ -84,6 +84,7 @@ def call(userConfig = [:]) {
     updatecliCommand += " ${finalConfig.action}"
     updatecliCommand += finalConfig.config ? " --config ${finalConfig.config}" : ""
     updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
+    }
 
     stage(updatecliRunStage) {
       if (runUpdatecli) {
