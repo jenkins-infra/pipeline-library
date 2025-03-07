@@ -47,7 +47,7 @@ def call(userConfig = [:]) {
     // If a custom version is provided, download and install that version of updatecli using tar files in a single sh step
     if (runUpdatecli && finalConfig.version) {
       stage("Download updatecli version ${finalConfig.version}") {
-        withEnv(["UPDATECLI_VERSION=${finalConfig.version}", "PATH+UPDATECLI=${customUpdatecliPath}"]) { //Extend PATH dynamically
+        withEnv(["UPDATECLI_VERSION=${finalConfig.version}", "PATH=$customUpdatecliPath:\$PATH"]) { //Extend PATH dynamically
           sh '''
             versionTag="v${UPDATECLI_VERSION}"
             cpu="$(uname -m)"
@@ -78,6 +78,12 @@ def call(userConfig = [:]) {
     // Do not add the flag "--values" if the provided value is "empty string"
     updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
 
+    // def call(Map params = [:]) {
+    // def finalConfig = params ?: [:] // Ensure finalConfig is always a valid map
+    // def updatecliCommand = finalConfig.version ? "${customUpdatecliPath}/updatecli" : "updatecli"
+    // updatecliCommand += " ${finalConfig.action}"
+    // updatecliCommand += finalConfig.config ? " --config ${finalConfig.config}" : ""
+    // updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
 
     stage(updatecliRunStage) {
       if (runUpdatecli) {
