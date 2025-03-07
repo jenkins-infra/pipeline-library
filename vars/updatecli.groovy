@@ -48,7 +48,7 @@ def call(userConfig = [:]) {
     // If a custom version is provided, download and install that version of updatecli using tar files in a single sh step
     if (runUpdatecli && finalConfig.version) {
       stage("Download updatecli version ${finalConfig.version}") {
-        withEnv(["UPDATECLI_VERSION=${finalConfig.version}", "PATH=$customUpdatecliPath:\$PATH"]) { //Extend PATH dynamically
+        withEnv(["UPDATECLI_VERSION=${finalConfig.version}", "PATH+CUSTOM=$customUpdatecliPath"]) { //Extend PATH dynamically
           sh '''
             versionTag="v${UPDATECLI_VERSION}"
             cpu="$(uname -m)"
