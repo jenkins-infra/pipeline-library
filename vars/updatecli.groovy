@@ -66,7 +66,7 @@ def call(userConfig = [:]) {
                                     # Debugging: Verify PATH and the resolved updatecli binary
                                     echo "Updated PATH: $PATH"
                                     echo "Resolved updatecli path: $(which updatecli)"
-                                    echo "$(ls -l /tmp/custom_updatecli/updatecli)
+                                    echo "$(ls -l /tmp/custom_updatecli/updatecli)"
                                 '''
                             }
                         }
