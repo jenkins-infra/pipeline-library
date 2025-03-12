@@ -16,7 +16,7 @@ def call(userConfig = [:]) {
     // TODO: use isInfra() to set a default githubApp credentials id for infra & for ci
     // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html  final Map
     finalConfig = defaultConfig << userConfig
-    final String customUpdatecliPath = "/tmp/custom_updatecli" // Factorized custom path
+    final String customUpdatecliPath = "${pwd tmp: true}/custom_updatecli"
 
     // Set cron trigger if requested
     if (finalConfig.cronTriggerExpression) {
@@ -37,15 +37,14 @@ def call(userConfig = [:]) {
         }
 
         stage(updatecliRunStage) {
-            withEnv(["PATH+CUSTOM=$customUpdatecliPath"]) { // Wrap entire execution inside PATH update
-                if (runUpdatecli) {
+            if (runUpdatecli) {
+                withEnv(["PATH+CUSTOM=$customUpdatecliPath"]) { // Wrap entire execution inside PATH update
                     // If a custom version is provided, download and install that version of updatecli
                     if (finalConfig.version) {
                         stage("Download updatecli version ${finalConfig.version}") {
                             sh 'echo $PATH'
                             withEnv(["UPDATECLI_VERSION=${finalConfig.version}", "CUSTOM_UPDATECLI_PATH=${customUpdatecliPath}"]) { // Only custom installation vars
                                 sh '''
-                                    versionTag="v${UPDATECLI_VERSION}"
                                     cpu="$(uname -m)"
                                     # Normalize CPU architecture for Updatecli release filenames
                                     if [ "$cpu" = "aarch64" ] || [ "$cpu" = "arm64" ]; then
@@ -53,27 +52,18 @@ def call(userConfig = [:]) {
                                     fi
                                     # Construct the tar file name based on the CPU architecture.
                                     tarFileName="updatecli_Linux_${cpu}.tar.gz"
-                                    downloadUrl="https://github.com/updatecli/updatecli/releases/download/${versionTag}/${tarFileName}"
-                                    echo "Downloading updatecli version ${UPDATECLI_VERSION} from ${downloadUrl}"
-                                    curl --silent --location --output ${tarFileName} ${downloadUrl} || { echo "Download failed"; exit 1; }
-                                    echo "customUpdatecliPath is: ${PATH}"
-                                    # Create destination directory for extraction.
-                                    mkdir -p ${CUSTOM_UPDATECLI_PATH}
-                                    # Extract the updatecli binary from the tar file.
-                                    tar --extract --gzip --file="${tarFileName}" --directory=${CUSTOM_UPDATECLI_PATH} updatecli
-                                    # Remove the tar file leaving only the executable binary.
-                                    rm -f ${tarFileName}
-                                    # Debugging: Verify PATH and the resolved updatecli binary
-                                    echo "Updated PATH: $PATH"
-                                    echo "Resolved updatecli path: $(which updatecli)"
-                                    echo "$(ls -l /tmp/custom_updatecli/updatecli)"
+                                    downloadUrl="https://github.com/updatecli/updatecli/releases/download/v${UPDATECLI_VERSION}/${tarFileName}"
+                                    curl --silent --show-error --location --output ${tarFileName} ${downloadUrl}
+                                    mkdir -p "${CUSTOM_UPDATECLI_PATH}"
+                                    tar --extract --gzip --file="${tarFileName}" --directory="${CUSTOM_UPDATECLI_PATH}" updatecli
+                                    rm -f "${tarFileName}"
                                 '''
                             }
                         }
                     }
 
                     // Build the updatecli command
-                    def updatecliCommand = ""
+                    String updatecliCommand = ""
                     updatecliCommand = "updatecli ${finalConfig.action}"
                     updatecliCommand += finalConfig.config ? " --config ${finalConfig.config}" : ""
                     updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
@@ -84,12 +74,14 @@ def call(userConfig = [:]) {
                             passwordVariable: 'UPDATECLI_GITHUB_TOKEN'
                         )
                     ]) {
-                        // check the existing updatecli version.
-                        sh 'updatecli version'
+                        sh '''
+                        which updatecli
+                        updatecli version
+                        '''
                         sh updatecliCommand
                     }
-                } // if (runUpdatecli)
-            } // withEnv (["PATH+CUSTOM=$customUpdatecliPath"])
+                } // withEnv (["PATH+CUSTOM=$customUpdatecliPath"])
+            } // if (runUpdatecli)
         } // stage(updatecliRunStage)
     } // node
 }
