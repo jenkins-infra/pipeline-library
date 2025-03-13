@@ -63,7 +63,7 @@ def call(userConfig = [:]) {
                     }
 
                     // Build the updatecli command
-                    String updatecliCommand = ""
+                    def updatecliCommand = ""
                     updatecliCommand = "updatecli ${finalConfig.action}"
                     updatecliCommand += finalConfig.config ? " --config ${finalConfig.config}" : ""
                     updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
