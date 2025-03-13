@@ -37,11 +37,11 @@ class UpdatecliStepTests extends BaseTest {
     // And the repository checkouted
     assertTrue(assertMethodCallContainsPattern('checkout', ''))
 
-    
-     // Ensure no download happens
+
+    // Ensure no download happens
     assertFalse(assertMethodCallContainsPattern('sh', 'curl --silent --show-error --location --output'))
     assertFalse(assertMethodCallContainsPattern('sh', 'tar --extract'))
-    
+
     // And only the diff command called with default values
     assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
     assertFalse(assertMethodCallContainsPattern('sh','updatecli apply'))
@@ -142,9 +142,9 @@ class UpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('usernamePassword', "credentialsId=${anotherCredentialsId}"))
   }
 
-    /**
-  * New Test Cases for Custom Version Functionality
-  */
+  /**
+   * New Test Cases for Custom Version Functionality
+   */
 
   // Test that when a custom version is specified, the pipeline includes the download steps.
   @Test
