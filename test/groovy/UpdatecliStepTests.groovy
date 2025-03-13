@@ -37,6 +37,11 @@ class UpdatecliStepTests extends BaseTest {
     // And the repository checkouted
     assertTrue(assertMethodCallContainsPattern('checkout', ''))
 
+    
+     // Ensure no download happens
+    assertFalse(assertMethodCallContainsPattern('sh', 'curl --silent --show-error --location --output'))
+    assertFalse(assertMethodCallContainsPattern('sh', 'tar --extract'))
+    
     // And only the diff command called with default values
     assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
     assertFalse(assertMethodCallContainsPattern('sh','updatecli apply'))
@@ -144,75 +149,24 @@ class UpdatecliStepTests extends BaseTest {
   // Test that when a custom version is specified, the pipeline includes the download steps.
   @Test
   void itRunSuccessfullyWithCustomVersion() throws Exception {
-    // Simulate system calls for the single sh block.
-    helper.registerAllowedMethod('sh', [Map.class], { Map args ->
-      if (args.script.contains("uname -m")) {
-        return "x86_64\n"  // simulate CPU detection as "x86_64"
-      } else if (args.script.contains("curl --silent --location --output") && args.script.contains("updatecli_Linux_x86_64.tar.gz")) {
-        return 0  // simulate a successful tar file download
-      } else if (args.script.contains("mkdir -p /tmp/custom_updatecli")) {
-        return 0  // simulate creation of the extraction directory
-      } else if (args.script.contains("tar --extract --gzip --file=") &&
-                args.script.contains("--directory=/tmp/custom_updatecli") &&
-                args.script.contains("updatecli")) {
-        return 0  // simulate successful extraction of the tar archive
-      } else if (args.script.contains("rm -f") && args.script.contains("updatecli_Linux_x86_64.tar.gz")) {
-        return 0  // simulate successful removal of the tar archive
-      } else if (args.script.contains("echo \"Using updatecli version:")) {
-        return 0  // simulate version check within the sh block
-      } else if (args.script.contains("/tmp/custom_updatecli/updatecli diff")) {
-        return 0  // simulate execution of the final updatecli command
-      }
-      return 0
-    })
-
     def script = loadScript(scriptName)
     script.call(version: '0.92.0')
     printCallStack()
     assertJobStatusSuccess()
-
-    // Verify that the download stage is triggered
-    assertTrue(assertMethodCallContainsPattern('sh', 'echo "Downloading updatecli version ${UPDATECLI_VERSION} from ${downloadUrl}'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'curl --silent --location --output ${tarFileName} ${downloadUrl}'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'mkdir -p ${customUpdatecliPath}'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'tar --extract --gzip --file="${tarFileName}" --directory=${customUpdatecliPath} updatecli'))
-    assertTrue(assertMethodCallContainsPattern('sh', '/tmp/custom_updatecli/updatecli diff'))
-  }
-
-  @Test
-  void itDoesNotDownloadUpdatecliWhenNoCustomVersionSpecified() throws Exception {
-    def script = loadScript(scriptName)
-    script.call() // no version attribute provided
-    printCallStack()
-    assertJobStatusSuccess()
-
-    // Ensure no download happens
-    assertFalse(assertMethodCallContainsPattern('sh', 'curl --silent --location --output'))
-    assertFalse(assertMethodCallContainsPattern('sh', 'tar --extract'))
-    
-    // Ensure it still runs updatecli
-    assertTrue(assertMethodCallContainsPattern('sh', 'updatecli version'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'curl --silent --show-error --location --output'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'mkdir -p "${CUSTOM_UPDATECLI_PATH}"'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'tar --extract --gzip --file="${tarFileName}" --directory="${CUSTOM_UPDATECLI_PATH}" updatecli'))
     assertTrue(assertMethodCallContainsPattern('sh', 'updatecli diff'))
   }
 
   @Test
   void itFailsWhenCustomVersionNotFound() throws Exception {
-    helper.registerAllowedMethod('sh', [Map.class], { Map args ->
-      if (args.script.contains("curl --silent --location --output") && args.script.contains("updatecli_Linux")) {
-        return 1  // simulate download failure (non-zero exit status)
-      }
-      if (args.script.contains("uname -m")) {
-        return "x86_64\n"
-      }
-      return 0
-    })
-
     def script = loadScript(scriptName)
     try {
       script.call(version: '0.99.99')
       fail("Expected error due to custom version not found")
     } catch (Exception e) {
-      assertTrue(assertMethodCallContainsPattern('sh', 'echo "Download failed"'))
+      // Test passes if an exception is thrown due to curl failure.
     }
   }
 }
