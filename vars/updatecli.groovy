@@ -43,19 +43,16 @@ def call(userConfig = [:]) {
           // If a custom version is provided, download and install that version of updatecli
           if (finalConfig.version) {
             stage("Download updatecli version ${finalConfig.version}") {
-              sh 'echo $PATH'
               withEnv(["UPDATECLI_VERSION=${finalConfig.version}", "CUSTOM_UPDATECLI_PATH=${customUpdatecliPath}"]) {
-                // Only custom installation vars
                 sh '''
                                     cpu="$(uname -m)"
                                     # Normalize CPU architecture for Updatecli release filenames
+                                    # Caused by https://github.com/updatecli/updatecli/blob/main/.goreleaser.yml#L4-L9
                                     if [ "$cpu" = "aarch64" ] || [ "$cpu" = "arm64" ]; then
                                         cpu="arm64"
                                     fi
-                                    # Construct the tar file name based on the CPU architecture.
                                     tarFileName="updatecli_Linux_${cpu}.tar.gz"
-                                    downloadUrl="https://github.com/updatecli/updatecli/releases/download/v${UPDATECLI_VERSION}/${tarFileName}"
-                                    curl --silent --show-error --location --output ${tarFileName} ${downloadUrl}
+                                    curl --silent --show-error --location --output ${tarFileName} "https://github.com/updatecli/updatecli/releases/download/v${UPDATECLI_VERSION}/${tarFileName}"
                                     mkdir -p "${CUSTOM_UPDATECLI_PATH}"
                                     tar --extract --gzip --file="${tarFileName}" --directory="${CUSTOM_UPDATECLI_PATH}" updatecli
                                     rm -f "${tarFileName}"
