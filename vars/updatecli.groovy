@@ -91,7 +91,9 @@ def call(userConfig = [:]) {
 
   // Execute updatecli in the correct context based on runInCurrentAgent option
   if (finalConfig.runInCurrentAgent) {
-    executeUpdatecli()
+    node {
+      executeUpdatecli()
+    }
   } else {
     node(finalConfig.updatecliAgentLabel) {
       executeUpdatecli()
