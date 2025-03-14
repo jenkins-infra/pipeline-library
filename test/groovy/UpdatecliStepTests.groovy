@@ -161,12 +161,22 @@ class UpdatecliStepTests extends BaseTest {
 
   @Test
   void itFailsWhenCustomVersionNotFound() throws Exception {
+    helper.registerAllowedMethod('sh', [Map.class], { Map args ->
+      if (args.script.contains("curl --silent --show-error --location --output") && args.script.contains("updatecli_Linux")) {
+        return 1  // simulate download failure (non-zero exit status)
+      }
+      if (args.script.contains("uname -m")) {
+        return "x86_64\n"
+      }
+      return 0
+    })
+
     def script = loadScript(scriptName)
     try {
       script.call(version: '0.99.99')
       fail("Expected error due to custom version not found")
     } catch (Exception e) {
-      // Test passes if an exception is thrown due to curl failure.
+      assertTrue(assertMethodCallContainsPattern('sh', 'curl --silent --show-error'))
     }
   }
 }
