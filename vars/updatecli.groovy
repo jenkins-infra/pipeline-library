@@ -82,15 +82,5 @@ def call(userConfig = [:]) {
         } // withEnv (["PATH+CUSTOM=$customUpdatecliPath"])
       } // if (runUpdatecli)
     } // stage(updatecliRunStage)
-  } // executeUpdatecli closure
-
-  // Execute updatecli in the correct context based on runInCurrentAgent option
-  if (finalConfig.runInCurrentAgent) {
-      executeUpdatecli()
-    }
-  } else {
-    node(finalConfig.updatecliAgentLabel) {
-      executeUpdatecli()
-    }
-  }
+  } // node
 }
