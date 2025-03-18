@@ -154,5 +154,4 @@ class UpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh', 'tar --extract --gzip --file="${tarFileName}" --directory="${CUSTOM_UPDATECLI_PATH}" updatecli'))
     assertTrue(assertMethodCallContainsPattern('sh', 'updatecli diff'))
   }
-
 }
