@@ -79,7 +79,6 @@ def call(userConfig = [:]) {
           ]) {
             // check the existing updatecli version.
             sh '''
-                    echo jay version
                     which updatecli
                     updatecli version
                     '''
