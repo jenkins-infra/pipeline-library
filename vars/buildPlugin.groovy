@@ -62,7 +62,8 @@ def call(Map params = [:]) {
               label = platform
           }
         }
-        if (retryCounts == 1 && platform != 'windows') { // no spot instances for windows for now TODO change when available
+        if (retryCounts == 1 && platform != 'windows') {
+          // no spot instances for windows for now TODO change when available
           // Use a spot instance for the first try
           label += ' && spot'
         }
