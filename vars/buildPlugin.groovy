@@ -38,30 +38,31 @@ def call(Map params = [:]) {
     boolean skipTests = params?.tests?.skip
     boolean addToolEnv = !useContainerAgent
 
+    if (useContainerAgent) {
+      if (platform == 'linux' || platform == 'windows') {
+        def agentContainerLabel = jdk == '8' ? 'maven' : 'maven-' + jdk
+        if (platform == 'windows') {
+          agentContainerLabel += '-windows'
+        }
+        label = agentContainerLabel
+      }
+    } else {
+      switch(platform) {
+        case 'windows':
+          label = 'docker-windows'
+          break
+        case 'linux':
+          label = 'vm && linux'
+          break
+        default:
+          echo "WARNING: Unknown Virtual Machine platform '${platform}'. Set useContainerAgent to 'true' unless you want to be in uncharted territory."
+          label = platform
+      }
+    }
+
     tasks[stageIdentifier] = {
       int retryCounts = 1
       retry(count: 2, conditions: [kubernetesAgent(handleNonKubernetes: true), nonresumable()]) {
-        if (useContainerAgent) {
-          if (platform == 'linux' || platform == 'windows') {
-            def agentContainerLabel = jdk == '8' ? 'maven' : 'maven-' + jdk
-            if (platform == 'windows') {
-              agentContainerLabel += '-windows'
-            }
-            label = agentContainerLabel
-          }
-        } else {
-          switch(platform) {
-            case 'windows':
-              label = 'docker-windows'
-              break
-            case 'linux':
-              label = 'vm && linux'
-              break
-            default:
-              echo "WARNING: Unknown Virtual Machine platform '${platform}'. Set useContainerAgent to 'true' unless you want to be in uncharted territory."
-              label = platform
-          }
-        }
         if (retryCounts == 2 && platform != 'windows') {
           // no spot instances for windows for now TODO change when available
           // Use a spot instance for the first try and nonspot for second
