@@ -63,7 +63,7 @@ def call(Map params = [:]) {
     tasks[stageIdentifier] = {
       int retryCounts = 1
       retry(count: 3, conditions: [kubernetesAgent(handleNonKubernetes: true), nonresumable()]) {
-        if (retryCounts == 3 && platform != 'windows') {
+        if (retryCounts >= 3 && platform != 'windows') {
           // no spot instances for windows for now TODO change when available
           // Use a spot instance for the 2 first try and nonspot for third and last
           label = 'ubuntu-22-amd64-maven17-nonspot'
