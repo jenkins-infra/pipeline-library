@@ -154,4 +154,27 @@ class UpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh', 'tar --extract --gzip --file="${tarFileName}" --directory="${CUSTOM_UPDATECLI_PATH}" updatecli'))
     assertTrue(assertMethodCallContainsPattern('sh', 'updatecli diff'))
   }
+
+  // Test that when a runInCurrentAgent: true is specified, the pipeline does not provision an agent node.
+  @Test
+  void itRunSuccessfullyInCurrentNode() throws Exception {
+    def script = loadScript(scriptName)
+
+    // when calling the "updatecli" function with default configuration and runInCurrentAgent enabled
+    script.call(runInCurrentAgent: true)
+    printCallStack()
+
+    // Then we expect a successful build
+    assertJobStatusSuccess()
+
+    // And the specific pod agent should NOT be used (i.e. no call containing the dedicated agent label)
+    assertFalse(assertMethodCallContainsPattern('node', 'jnlp-linux-arm64'))
+
+    // And the repository should be checked out
+    assertTrue(assertMethodCallContainsPattern('checkout', ''))
+
+    // And only the diff command is called with default values
+    assertTrue(assertMethodCallContainsPattern('sh', 'updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
+    assertFalse(assertMethodCallContainsPattern('sh', 'updatecli apply'))
+  }
 }

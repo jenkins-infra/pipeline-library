@@ -8,9 +8,10 @@ def call(userConfig = [:]) {
     config: './updatecli/updatecli.d',      // Config manifest (file or directory) for updatecli
     values: './updatecli/values.yaml',      // Values file used by updatecli
     updatecliAgentLabel: 'jnlp-linux-arm64', // Label to select the Jenkins node (agent)
-    cronTriggerExpression: '',               // Enables cron trigger if specified
+    cronTriggerExpression: '',              // Enables cron trigger if specified
     credentialsId: 'github-app-updatecli-on-jenkins-infra', // GitHub credentials
-    version: ''                               // Custom updatecli version (e.g. '0.92.0' or '0.86.0-rc.1')
+    version: '', // Custom updatecli version (e.g. '0.92.0' or '0.86.0-rc.1')
+    runInCurrentAgent: false,               // New option: if true, run updatecli in the current node
   ]
 
   // TODO: use isInfra() to set a default githubApp credentials id for infra & for ci
@@ -22,7 +23,8 @@ def call(userConfig = [:]) {
     properties([pipelineTriggers([cron(finalConfig.cronTriggerExpression)])])
   }
 
-  node(finalConfig.updatecliAgentLabel) {
+  // Define a closure that encapsulates all updatecli execution logic
+  def executeUpdatecli = {
     final String customUpdatecliPath = "${pwd tmp: true}/custom_updatecli"
     final String updatecliRunStage = "Run updatecli: ${finalConfig.action}"
     boolean runUpdatecli = true
@@ -74,13 +76,22 @@ def call(userConfig = [:]) {
             )
           ]) {
             sh '''
-                        which updatecli
-                        updatecli version
-                        '''
+                    which updatecli
+                    updatecli version
+                    '''
             sh updatecliCommand
           }
         } // withEnv (["PATH+CUSTOM=$customUpdatecliPath"])
       } // if (runUpdatecli)
     } // stage(updatecliRunStage)
-  } // node
+  } // executeUpdatecli closure
+
+  // Execute updatecli in the correct context based on runInCurrentAgent option
+  if (finalConfig.runInCurrentAgent) {
+    executeUpdatecli()
+  } else {
+    node(finalConfig.updatecliAgentLabel) {
+      executeUpdatecli()
+    }
+  }
 }
