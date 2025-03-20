@@ -10,7 +10,6 @@ def call(userConfig = [:]) {
     updatecliAgentLabel: 'jnlp-linux-arm64', // Label to select the Jenkins node (agent)
     cronTriggerExpression: '',              // Enables cron trigger if specified
     credentialsId: 'github-app-updatecli-on-jenkins-infra', // GitHub credentials
-    version: '',                            // Custom updatecli version (e.g. '0.92.0' or '0.86.0-rc.1')
     runInCurrentAgent: false                // New option: if true, run updatecli in the current node
   ]
 
@@ -45,9 +44,7 @@ def call(userConfig = [:]) {
           // If a custom version is provided, download and install that version of updatecli
           if (finalConfig.version) {
             stage("Download updatecli version ${finalConfig.version}") {
-              sh 'echo $PATH'
               withEnv(["UPDATECLI_VERSION=${finalConfig.version}", "CUSTOM_UPDATECLI_PATH=${customUpdatecliPath}"]) {
-                // Only custom installation vars
                 sh '''
                                     cpu="$(uname -m)"
                                     # Normalize CPU architecture for Updatecli release filenames
@@ -77,7 +74,6 @@ def call(userConfig = [:]) {
             passwordVariable: 'UPDATECLI_GITHUB_TOKEN'
             )
           ]) {
-            // check the existing updatecli version.
             sh '''
                     which updatecli
                     updatecli version
