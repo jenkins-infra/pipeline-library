@@ -10,6 +10,7 @@ def call(userConfig = [:]) {
     updatecliAgentLabel: 'jnlp-linux-arm64', // Label to select the Jenkins node (agent)
     cronTriggerExpression: '',              // Enables cron trigger if specified
     credentialsId: 'github-app-updatecli-on-jenkins-infra', // GitHub credentials
+    version: '' // Custom updatecli version (e.g. '0.92.0' or '0.86.0-rc.1')
     runInCurrentAgent: false                // New option: if true, run updatecli in the current node
   ]
 
