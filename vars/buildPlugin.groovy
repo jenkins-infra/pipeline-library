@@ -65,9 +65,9 @@ def call(Map params = [:]) {
       retry(count: 3, conditions: [kubernetesAgent(handleNonKubernetes: true), nonresumable()]) {
         if (retryCounter > 1) {
           // Use a spot instance for the 2 first try [try 0 and 1] and nonspot for third and last [2]
-          label += '&& nonspot'
+          label += ' && nonspot'
         } else {
-          label += '&& spot'
+          label += ' && spot'
         }
         retryCounter++
         node(label) {
