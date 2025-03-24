@@ -29,6 +29,7 @@ def call(Map params = [:]) {
   Map tasks = [failFast: failFast]
   getConfigurations(params).each { config ->
     String label = ''
+    String baselabel = ''
     String platform = config.platform
     String jdk = config.jdk
     String jenkinsVersion = config.jenkins
@@ -49,25 +50,27 @@ def call(Map params = [:]) {
     } else {
       switch(platform) {
         case 'windows':
-          label = 'docker-windows'
+          baselabel = 'docker-windows'
           break
         case 'linux':
-          label = 'vm && linux'
+          baselabel = 'vm && linux'
           break
         default:
           echo "WARNING: Unknown Virtual Machine platform '${platform}'. Set useContainerAgent to 'true' unless you want to be in uncharted territory."
-          label = platform
+          baselabel = platform
       }
     }
 
     tasks[stageIdentifier] = {
       int retryCounter = 0
       retry(count: 3, conditions: [kubernetesAgent(handleNonKubernetes: true), nonresumable()]) {
-        if (retryCounter > 1) {
-          // Use a spot instance for the 2 first tries and nonspot for the last
-          label += ' && nonspot'
-        } else {
-          label += ' && spot'
+        if (!useContainerAgent) {
+          if (retryCounter > 1) {
+            // Use a spot instance for the 2 first try [try 0 and 1] and nonspot for third and last [2]
+            label = baselabel + ' && nonspot'
+          } else {
+            label = baselabel + ' && spot'
+          }
         }
         retryCounter++
         node(label) {
