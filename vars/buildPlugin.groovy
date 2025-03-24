@@ -49,10 +49,10 @@ def call(Map params = [:]) {
     } else {
       switch(platform) {
         case 'windows':
-          label = 'docker-windows'
+          label = 'docker-windows && spot'
           break
         case 'linux':
-          label = 'vm && linux'
+          label = 'vm && linux && spot'
           break
         default:
           echo "WARNING: Unknown Virtual Machine platform '${platform}'. Set useContainerAgent to 'true' unless you want to be in uncharted territory."
@@ -64,11 +64,11 @@ def call(Map params = [:]) {
       int retryCounter = 0
       retry(count: 3, conditions: [kubernetesAgent(handleNonKubernetes: true), nonresumable()]) {
         if (retryCounter > 1) {
-          // Use a spot instance for the 2 first try and nonspot for third and last
+          // Use a spot instance for the 2 first try [try 0 and 1] and nonspot for third and last [2]
           if (platform == 'windows') {
-            label = 'win-2019-amd64-maven-17-nonspot'
+            label = 'docker-windows && nonspot'
           } else {
-            label = 'ubuntu-22-amd64-maven17-nonspot'
+            label = 'vm && linux && nonspot'
           }
         }
         retryCounter++
