@@ -59,12 +59,12 @@ Object withDockerCredentials(Map orgAndCredentialsId, Closure body) {
 }
 
 Object withDockerPushCredentials(Closure body) {
-  orgAndCredentialsId = new InfraConfig(env).getDockerPushOrgAndCredentialsId()
+  Map orgAndCredentialsId = new InfraConfig(env).getDockerPushOrgAndCredentialsId()
   return withDockerCredentials(orgAndCredentialsId, body)
 }
 
 Object withDockerPullCredentials(Closure body) {
-  orgAndCredentialsId = new InfraConfig(env).getDockerPullOrgAndCredentialsId()
+  Map orgAndCredentialsId = new InfraConfig(env).getDockerPullOrgAndCredentialsId()
   return withDockerCredentials(orgAndCredentialsId, body)
 }
 
