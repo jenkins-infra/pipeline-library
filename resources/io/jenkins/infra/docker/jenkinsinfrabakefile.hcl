@@ -4,7 +4,7 @@ variable "REGISTRY" {
   default = "docker.io"
 }
 
-variable "TAG_NAME" {
+variable "NEXT_VERSION" {
   default = ""
 }
 
@@ -44,7 +44,7 @@ target "default" {
   context = IMAGE_DIR
   tags = [
     full_image_name("latest"),
-    full_image_name(TAG_NAME)
+    full_image_name(NEXT_VERSION)
   ]
   platforms = [BAKE_TARGETPLATFORMS]
   args = {
