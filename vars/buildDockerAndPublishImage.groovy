@@ -115,8 +115,7 @@ def call(String imageShortName, Map userConfig=[:]) {
       "IMAGE_DIR=${finalConfig.imageDir}",
       "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
       "BUILD_TARGETPLATFORM=${finalConfig.targetplatforms.split(',')[0]}",
-      "BAKE_TARGETPLATFORMS=${finalConfig.targetplatforms}",
-      "NEXT_VERSION=${nextVersion}"  // NEW: Pass computed nextVersion as NEXT_VERSION
+      "BAKE_TARGETPLATFORMS=${finalConfig.targetplatforms}"
     ]) {
       infra.withDockerPullCredentials{
         String nextVersion = ''
@@ -236,6 +235,7 @@ def call(String imageShortName, Map userConfig=[:]) {
             withCredentials([
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
             ]) {
+              withEnv(["NEXT_VERSION=${nextVersion}"]) {
                 echo "Tagging and pushing the new version: ${nextVersion}"
                 if (isUnix()) {
                   sh '''
@@ -254,6 +254,7 @@ def call(String imageShortName, Map userConfig=[:]) {
                   git push origin --tags
                   '''
                 }
+              } // withEnv
             } // withCredentials
           } // stage
         } // if
