@@ -21,16 +21,6 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
       sh "make bake-$action"
     }
   } else {
-    if (action == 'deploy') {
-      if (env.TAG_NAME) {
-        // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
-        if (imageDeployName.contains(':')) {
-          imageDeployName += "-${env.TAG_NAME}"
-        } else {
-          imageDeployName += ":${env.TAG_NAME}"
-        }
-      }
-    }
     withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
       powershell "make $action"
     } // withEnv
@@ -126,6 +116,7 @@ def call(String imageShortName, Map userConfig=[:]) {
       "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
       "BUILD_TARGETPLATFORM=${finalConfig.targetplatforms.split(',')[0]}",
       "BAKE_TARGETPLATFORMS=${finalConfig.targetplatforms}",
+      "NEXT_VERSION=${nextVersion}"  // NEW: Pass computed nextVersion as NEXT_VERSION
     ]) {
       infra.withDockerPullCredentials{
         String nextVersion = ''
@@ -245,7 +236,6 @@ def call(String imageShortName, Map userConfig=[:]) {
             withCredentials([
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
             ]) {
-              withEnv(["NEXT_VERSION=${nextVersion}"]) {
                 echo "Tagging and pushing the new version: ${nextVersion}"
                 if (isUnix()) {
                   sh '''
@@ -264,68 +254,69 @@ def call(String imageShortName, Map userConfig=[:]) {
                   git push origin --tags
                   '''
                 }
-              } // withEnv
+            } // withCredentials
+          } // stage
+        } // if
+
+        // Only deploy on primary branch
+        if (env.BRANCH_IS_PRIMARY) {
+          stage("Deploy ${imageName}") {
+            if (!finalConfig.disablePublication) {
+              infra.withDockerPushCredentials{
+                makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
+              }
+            } else {
+              echo 'INFO: publication disabled.'
+            } // else
+          } // stage
+        }
+
+        // GitHub Release stage: Use NEXT_VERSION and only on primary branch
+        if (finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY) {
+          stage('GitHub Release') {
+            withCredentials([
+              usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
+            ]) {
+              String release = ''
+              if (isUnix()) {
+                final String releaseScript = '''
+                  originUrlWithGit="$(git remote get-url origin)"
+                  originUrl="${originUrlWithGit%.git}"
+                  org="$(echo "${originUrl}" | cut -d'/' -f4)"
+                  repository="$(echo "${originUrl}" | cut -d'/' -f5)"
+                  releasesUrl="/repos/${org}/${repository}/releases"
+                  releaseId="$(gh api "${releasesUrl}" | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')"
+                  if test "${releaseId}" -gt 0
+                  then
+                    gh api -X PATCH -F draft=false -F name="${NEXT_VERSION}" -F tag_name="${NEXT_VERSION}" "${releasesUrl}/${releaseId}" > /dev/null
+                  fi
+                  echo "${releaseId}"
+                '''
+                release = sh(script: releaseScript, returnStdout: true)
+              } else {
+                final String releaseScript = '''
+                  $originUrl = (git remote get-url origin) -replace '\\.git', ''
+                  $org = $originUrl.split('/')[3]
+                  $repository = $originUrl.split('/')[4]
+                  $releasesUrl = "/repos/$org/$repository/releases"
+                  $releaseId = (gh api $releasesUrl | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')
+                  $output = ''
+                  if ($releaseId -gt 0)
+                  {
+                    Invoke-Expression -Command "gh api -X PATCH -F draft=false -F name=$env:NEXT_VERSION -F tag_name=$env:NEXT_VERSION $releasesUrl/$releaseId" > $null
+                    $output = $releaseId
+                  }
+                  Write-Output $output
+                '''
+                release = powershell(script: releaseScript, returnStdout: true)
+              }
+              if (release == '') {
+                echo "No next release draft found."
+              } // if
             } // withCredentials
           } // stage
         } // if
       }// withDockerPullCredentials
-
-      if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
-        stage("Deploy ${imageName}") {
-          if (!finalConfig.disablePublication) {
-            infra.withDockerPushCredentials{
-              makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
-            }
-          } else {
-            echo 'INFO: publication disabled.'
-          } // else
-        } // stage
-      } // if
-
-      if (env.TAG_NAME && finalConfig.automaticSemanticVersioning) {
-        stage('GitHub Release') {
-          withCredentials([
-            usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
-          ]) {
-            String release = ''
-            if (isUnix()) {
-              final String releaseScript = '''
-                originUrlWithGit="$(git remote get-url origin)"
-                originUrl="${originUrlWithGit%.git}"
-                org="$(echo "${originUrl}" | cut -d'/' -f4)"
-                repository="$(echo "${originUrl}" | cut -d'/' -f5)"
-                releasesUrl="/repos/${org}/${repository}/releases"
-                releaseId="$(gh api "${releasesUrl}" | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')"
-                if test "${releaseId}" -gt 0
-                then
-                  gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${releasesUrl}/${releaseId}" > /dev/null
-                fi
-                echo "${releaseId}"
-              '''
-              release = sh(script: releaseScript, returnStdout: true)
-            } else {
-              final String releaseScript = '''
-                $originUrl = (git remote get-url origin) -replace '\\.git', ''
-                $org = $originUrl.split('/')[3]
-                $repository = $originUrl.split('/')[4]
-                $releasesUrl = "/repos/$org/$repository/releases"
-                $releaseId = (gh api $releasesUrl | jq -e -r '[ .[] | select(.draft == true and .name == \"next\").id] | max | select(. != null)')
-                $output = ''
-                if ($releaseId -gt 0)
-                {
-                  Invoke-Expression -Command "gh api -X PATCH -F draft=false -F name=$env:TAG_NAME -F tag_name=$env:TAG_NAME $releasesUrl/$releaseId" > $null
-                  $output = $releaseId
-                }
-                Write-Output $output
-              '''
-              release = powershell(script: releaseScript, returnStdout: true)
-            }
-            if (release == '') {
-              echo "No next release draft found."
-            } // if
-          } // withCredentials
-        } // stage
-      } // if
     } // withEnv
   } // node
 } // call
