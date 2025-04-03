@@ -111,7 +111,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   void mockTag(String gitTag = defaultGitTag) {
-    addEnvVar('NEXT_VERSION', gitTag)
+    addEnvVar('TAG_NAME', gitTag)
   }
 
   // Return if the usual static checks had been recorded with the usual pattern
