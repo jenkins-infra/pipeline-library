@@ -270,29 +270,29 @@ def call(String imageShortName, Map userConfig=[:]) {
         } // if
       }// withDockerPullCredentials
 
-        // Only deploy on primary branch
-        if (env.BRANCH_IS_PRIMARY) {
-          stage("Deploy ${imageName}") {
-            if (!finalConfig.disablePublication) {
-              infra.withDockerPushCredentials{
-                makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
-              }
-            } else {
-              echo 'INFO: publication disabled.'
-            } // else
-          } // stage
-        }
+      // Only deploy on primary branch
+      if (env.BRANCH_IS_PRIMARY) {
+        stage("Deploy ${imageName}") {
+          if (!finalConfig.disablePublication) {
+            infra.withDockerPushCredentials{
+              makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
+            }
+          } else {
+            echo 'INFO: publication disabled.'
+          } // else
+        } // stage
+      }
 
-        // GitHub Release stage: Use NEXT_VERSION and only on primary branch
-        // Create release only if SemVer is enabled, on primary branch, and publication is NOT disabled.
-        if (finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY && !finalConfig.disablePublication) {
-          stage('GitHub Release') {
-            withCredentials([
-              usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
-            ]) {
-              String release = ''
-              if (isUnix()) {
-                final String releaseScript = '''
+      // GitHub Release stage: Use NEXT_VERSION and only on primary branch
+      // Create release only if SemVer is enabled, on primary branch, and publication is NOT disabled.
+      if (finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY && !finalConfig.disablePublication) {
+        stage('GitHub Release') {
+          withCredentials([
+            usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
+          ]) {
+            String release = ''
+            if (isUnix()) {
+              final String releaseScript = '''
                   originUrlWithGit="$(git remote get-url origin)"
                   originUrl="${originUrlWithGit%.git}"
                   org="$(echo "${originUrl}" | cut -d'/' -f4)"
@@ -305,9 +305,9 @@ def call(String imageShortName, Map userConfig=[:]) {
                   fi
                   echo "${releaseId}"
                 '''
-                release = sh(script: releaseScript, returnStdout: true)
-              } else {
-                final String releaseScript = '''
+              release = sh(script: releaseScript, returnStdout: true)
+            } else {
+              final String releaseScript = '''
                   $originUrl = (git remote get-url origin) -replace '\\.git', ''
                   $org = $originUrl.split('/')[3]
                   $repository = $originUrl.split('/')[4]
@@ -321,14 +321,14 @@ def call(String imageShortName, Map userConfig=[:]) {
                   }
                   Write-Output $output
                 '''
-                release = powershell(script: releaseScript, returnStdout: true)
-              }
-              if (release == '') {
-                echo "No next release draft found."
-              } // if
-            } // withCredentials
-          } // stage
-        } // if
+              release = powershell(script: releaseScript, returnStdout: true)
+            }
+            if (release == '') {
+              echo "No next release draft found."
+            } // if
+          } // withCredentials
+        } // stage
+      } // if
     } // withEnv
   } // node
 } // call
