@@ -284,7 +284,8 @@ def call(String imageShortName, Map userConfig=[:]) {
         }
 
         // GitHub Release stage: Use NEXT_VERSION and only on primary branch
-        if (finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY) {
+        // Create release only if SemVer is enabled, on primary branch, and publication is NOT disabled.
+        if (finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY && !finalConfig.disablePublication) {
           stage('GitHub Release') {
             withCredentials([
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')

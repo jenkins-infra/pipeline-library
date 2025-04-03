@@ -245,8 +245,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // And the tag pushed
     assertTrue(assertTagPushed(defaultGitTag))
-    // But no release created (no tag triggering the build)
-    assertFalse(assertReleaseCreated())
+    // GitHub Release SHOULD happen on primary branch builds
+    assertTrue(assertReleaseCreated())
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
@@ -313,8 +313,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // And the tag pushed
     assertTrue(assertTagPushed(defaultGitTagIncludingImageName))
-    // But no release created (no tag triggering the build)
-    assertFalse(assertReleaseCreated())
+    //GitHub Release SHOULD happen on primary branch builds
+    assertTrue(assertReleaseCreated())
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
@@ -405,12 +405,12 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
 
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
-    // And the deploy step called for latest
-    assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
+    // Deployment should NOT happen on tag-triggered builds.
+    assertFalse(assertMethodCallContainsPattern('sh','make bake-deploy'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DEPLOY_NAME=' + fullTestImageName))
 
-    // And the release is created (tag triggering the build)
-    assertTrue(assertReleaseCreated())
+    // GitHub Release should NOT happen on tag-triggered builds
+    assertFalse(assertReleaseCreated())
     // But no tag pushed
     assertFalse(assertTagPushed(defaultGitTag))
     // And all mocked/stubbed methods have to be called
@@ -444,8 +444,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
 
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
-    // And the deploy step called for latest
-    assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
+    // Deployment should NOT happen on tag-triggered builds
+    assertFalse(assertMethodCallContainsPattern('sh','make bake-deploy'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DEPLOY_NAME=' + fullTestImageName))
 
     // And the release is not created as no next release draft exists
@@ -469,8 +469,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     printCallStack()
     // Then we expect a successful build with the code cloned
     assertJobStatusSuccess()
-    // With the deploy step called with the correct image name
-    assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
+    // Deployment should NOT happen on tag-triggered builds
+    assertFalse(assertMethodCallContainsPattern('sh','make bake-deploy'))
     assertTrue(assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=${fullCustomImageName}"))
 
     // And all mocked/stubbed methods have to be called
