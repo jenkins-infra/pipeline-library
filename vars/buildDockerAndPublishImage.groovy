@@ -21,6 +21,16 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
       sh "make bake-$action"
     }
   } else {
+    if (action == 'deploy') {
+      if (env.TAG_NAME) {
+        // User could specify a tag in the image name. In that case the git tag is appended. Otherwise the docker tag is set to the git tag.
+        if (imageDeployName.contains(':')) {
+          imageDeployName += "-${env.TAG_NAME}"
+        } else {
+          imageDeployName += ":${env.TAG_NAME}"
+        }
+      }
+    }
     withEnv(["IMAGE_DEPLOY_NAME=${imageDeployName}"]) {
       powershell "make $action"
     } // withEnv
@@ -115,7 +125,7 @@ def call(String imageShortName, Map userConfig=[:]) {
       "IMAGE_DIR=${finalConfig.imageDir}",
       "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
       "BUILD_TARGETPLATFORM=${finalConfig.targetplatforms.split(',')[0]}",
-      "BAKE_TARGETPLATFORMS=${finalConfig.targetplatforms}"
+      "BAKE_TARGETPLATFORMS=${finalConfig.targetplatforms}",
     ]) {
       infra.withDockerPullCredentials{
         String nextVersion = ''
@@ -258,6 +268,7 @@ def call(String imageShortName, Map userConfig=[:]) {
             } // withCredentials
           } // stage
         } // if
+      }// withDockerPullCredentials
 
         // Only deploy on primary branch
         if (env.BRANCH_IS_PRIMARY) {
@@ -317,7 +328,6 @@ def call(String imageShortName, Map userConfig=[:]) {
             } // withCredentials
           } // stage
         } // if
-      }// withDockerPullCredentials
     } // withEnv
   } // node
 } // call
