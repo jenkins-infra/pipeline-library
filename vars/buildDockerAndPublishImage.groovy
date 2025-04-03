@@ -126,7 +126,7 @@ def call(String imageShortName, Map userConfig=[:]) {
       "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
       "BUILD_TARGETPLATFORM=${finalConfig.targetplatforms.split(',')[0]}",
       "BAKE_TARGETPLATFORMS=${finalConfig.targetplatforms}",
-      "NEXT_VERSION=${nextVersion}",
+      "NEXT_VERSION=${nextVersion}"
     ]) {
       infra.withDockerPullCredentials{
         String nextVersion = ''
@@ -246,24 +246,26 @@ def call(String imageShortName, Map userConfig=[:]) {
             withCredentials([
               usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
             ]) {
-              echo "Tagging and pushing the new version: ${nextVersion}"
-              if (isUnix()) {
-                sh '''
-                git config user.name "${GIT_USERNAME}"
-                git config user.email "jenkins-infra@googlegroups.com"
+              withEnv(["NEXT_VERSION=${nextVersion}"]) {
+                echo "Tagging and pushing the new version: ${nextVersion}"
+                if (isUnix()) {
+                  sh '''
+                  git config user.name "${GIT_USERNAME}"
+                  git config user.email "jenkins-infra@googlegroups.com"
 
-                git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
-                git push origin --tags
-                '''
-              } else {
-                powershell '''
-                git config user.email "jenkins-infra@googlegroups.com"
-                git config user.password $env:GIT_PASSWORD
+                  git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
+                  git push origin --tags
+                  '''
+                } else {
+                  powershell '''
+                  git config user.email "jenkins-infra@googlegroups.com"
+                  git config user.password $env:GIT_PASSWORD
 
-                git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"
-                git push origin --tags
-                '''
-              }
+                  git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"
+                  git push origin --tags
+                  '''
+                }
+              } // withEnv
             } // withCredentials
           } // stage
         } // if
