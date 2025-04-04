@@ -270,7 +270,8 @@ def call(String imageShortName, Map userConfig=[:]) {
         } // if
       }// withDockerPullCredentials
 
-      if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
+      // Only deploy on primary branch
+      if (env.BRANCH_IS_PRIMARY) {
         stage("Deploy ${imageName}") {
           if (!finalConfig.disablePublication) {
             infra.withDockerPushCredentials{
@@ -280,9 +281,11 @@ def call(String imageShortName, Map userConfig=[:]) {
             echo 'INFO: publication disabled.'
           } // else
         } // stage
-      } // if
+      }
 
-      if (env.TAG_NAME && finalConfig.automaticSemanticVersioning) {
+      // GitHub Release stage: Use NEXT_VERSION and only on primary branch
+      // Create release only if SemVer is enabled, on primary branch, and publication is NOT disabled.
+      if (finalConfig.automaticSemanticVersioning && env.BRANCH_IS_PRIMARY && !finalConfig.disablePublication) {
         stage('GitHub Release') {
           withCredentials([
             usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
@@ -290,34 +293,34 @@ def call(String imageShortName, Map userConfig=[:]) {
             String release = ''
             if (isUnix()) {
               final String releaseScript = '''
-                originUrlWithGit="$(git remote get-url origin)"
-                originUrl="${originUrlWithGit%.git}"
-                org="$(echo "${originUrl}" | cut -d'/' -f4)"
-                repository="$(echo "${originUrl}" | cut -d'/' -f5)"
-                releasesUrl="/repos/${org}/${repository}/releases"
-                releaseId="$(gh api "${releasesUrl}" | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')"
-                if test "${releaseId}" -gt 0
-                then
-                  gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${releasesUrl}/${releaseId}" > /dev/null
-                fi
-                echo "${releaseId}"
-              '''
+                  originUrlWithGit="$(git remote get-url origin)"
+                  originUrl="${originUrlWithGit%.git}"
+                  org="$(echo "${originUrl}" | cut -d'/' -f4)"
+                  repository="$(echo "${originUrl}" | cut -d'/' -f5)"
+                  releasesUrl="/repos/${org}/${repository}/releases"
+                  releaseId="$(gh api "${releasesUrl}" | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')"
+                  if test "${releaseId}" -gt 0
+                  then
+                    gh api -X PATCH -F draft=false -F name="${NEXT_VERSION}" -F tag_name="${NEXT_VERSION}" "${releasesUrl}/${releaseId}" > /dev/null
+                  fi
+                  echo "${releaseId}"
+                '''
               release = sh(script: releaseScript, returnStdout: true)
             } else {
               final String releaseScript = '''
-                $originUrl = (git remote get-url origin) -replace '\\.git', ''
-                $org = $originUrl.split('/')[3]
-                $repository = $originUrl.split('/')[4]
-                $releasesUrl = "/repos/$org/$repository/releases"
-                $releaseId = (gh api $releasesUrl | jq -e -r '[ .[] | select(.draft == true and .name == \"next\").id] | max | select(. != null)')
-                $output = ''
-                if ($releaseId -gt 0)
-                {
-                  Invoke-Expression -Command "gh api -X PATCH -F draft=false -F name=$env:TAG_NAME -F tag_name=$env:TAG_NAME $releasesUrl/$releaseId" > $null
-                  $output = $releaseId
-                }
-                Write-Output $output
-              '''
+                  $originUrl = (git remote get-url origin) -replace '\\.git', ''
+                  $org = $originUrl.split('/')[3]
+                  $repository = $originUrl.split('/')[4]
+                  $releasesUrl = "/repos/$org/$repository/releases"
+                  $releaseId = (gh api $releasesUrl | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')
+                  $output = ''
+                  if ($releaseId -gt 0)
+                  {
+                    Invoke-Expression -Command "gh api -X PATCH -F draft=false -F name=$env:NEXT_VERSION -F tag_name=$env:NEXT_VERSION $releasesUrl/$releaseId" > $null
+                    $output = $releaseId
+                  }
+                  Write-Output $output
+                '''
               release = powershell(script: releaseScript, returnStdout: true)
             }
             if (release == '') {
