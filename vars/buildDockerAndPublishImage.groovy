@@ -188,48 +188,18 @@ def call(String imageShortName, Map userConfig=[:]) {
 
         if (env.BRANCH_IS_PRIMARY) {
           // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
-          // This stage is now inside the primary branch check
           if (finalConfig.automaticSemanticVersioning) {
             stage("Get Next Version of ${imageName}") {
-              String imageInTag = '-' + imageName.replace('-','').replace(':','').toLowerCase()
               if (isUnix()) {
                 sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
-                if (!finalConfig.includeImageNameInTag) {
-                  nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
-                } else {
-                  echo "Including the image name '${imageName}' in the next version"
-                  // Retrieving the semver part from the last tag including the image name
-                  String currentTagScript = 'git tag --list \"*' + imageInTag + '\" --sort=-v:refname | head -1'
-                  String currentSemVerVersion = sh(script: currentTagScript, returnStdout: true).trim()
-                  echo "Current semver version is '${currentSemVerVersion}'"
-                  // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
-                  currentSemVerVersion = currentSemVerVersion ?: '0.0.0-' + imageInTag
-                  String nextVersionScript = finalConfig.nextVersionCommand + ' -debug --previous-version=' + currentSemVerVersion
-                  String nextVersionSemVerPart = sh(script: nextVersionScript, returnStdout: true).trim()
-                  echo "Next semver version part is '${nextVersionSemVerPart}'"
-                  nextVersion =  nextVersionSemVerPart + imageInTag
-                }
+                nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
               } else {
                 powershell 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
-                if (!finalConfig.includeImageNameInTag) {
-                  nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
-                } else {
-                  echo "Including the image name '${imageName}' in the next version"
-                  // Retrieving the semver part from the last tag including the image name
-                  String currentTagScript = 'git tag --list \"*' + imageInTag + '\" --sort=-v:refname | head -1'
-                  String currentSemVerVersion = powershell(script: currentTagScript, returnStdout: true).trim()
-                  echo "Current semver version is '${currentSemVerVersion}'"
-                  // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
-                  currentSemVerVersion = currentSemVerVersion ?: '0.0.0-' + imageInTag
-                  String nextVersionScript = finalConfig.nextVersionCommand + ' -debug --previous-version=' + currentSemVerVersion
-                  String nextVersionSemVerPart = powershell(script: nextVersionScript, returnStdout: true).trim()
-                  echo "Next semver version part is '${nextVersionSemVerPart}'"
-                  nextVersion =  nextVersionSemVerPart + imageInTag
-                }
+                nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
               }
               echo "Next Release Version = ${nextVersion}"
             } // stage
-          } // if finalConfig.automaticSemanticVersioning
+          } // if
 
           withEnv(["NEXT_VERSION=${nextVersion}"]) {
             // Only deploy on primary branch
@@ -278,7 +248,7 @@ def call(String imageShortName, Map userConfig=[:]) {
                   }
                 } // withCredentials
               } // stage
-            } // if semVerEnabledOnPrimaryBranch
+            } // if
 
             // GitHub Release stage: Use NEXT_VERSION and only on primary branch
             // Create release only if SemVer is enabled, on primary branch, and publication is NOT disabled.
