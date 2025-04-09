@@ -41,7 +41,6 @@ def call(String imageShortName, Map userConfig=[:]) {
   def defaultConfig = [
     agentLabels: 'docker || linux-amd64-docker', // String expression for the labels the agent must match
     automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
-    includeImageNameInTag: false, // Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
     dockerfile: 'Dockerfile', // Obvious default
     targetplatforms: '', // // Define the (comma separated) list of Docker supported platforms to build the image for. Defaults to `linux/amd64` when unspecified. Incompatible with the legacy `platform` attribute.
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
@@ -143,41 +142,12 @@ def call(String imageShortName, Map userConfig=[:]) {
         // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
         if (finalConfig.automaticSemanticVersioning) {
           stage("Get Next Version of ${imageName}") {
-            String imageInTag = '-' + imageName.replace('-','').replace(':','').toLowerCase()
             if (isUnix()) {
               sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
-              if (!finalConfig.includeImageNameInTag) {
-                nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
-              } else {
-                echo "Including the image name '${imageName}' in the next version"
-                // Retrieving the semver part from the last tag including the image name
-                String currentTagScript = 'git tag --list \"*' + imageInTag + '\" --sort=-v:refname | head -1'
-                String currentSemVerVersion = sh(script: currentTagScript, returnStdout: true).trim()
-                echo "Current semver version is '${currentSemVerVersion}'"
-                // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
-                currentSemVerVersion = currentSemVerVersion ?: '0.0.0-' + imageInTag
-                String nextVersionScript = finalConfig.nextVersionCommand + ' -debug --previous-version=' + currentSemVerVersion
-                String nextVersionSemVerPart = sh(script: nextVersionScript, returnStdout: true).trim()
-                echo "Next semver version part is '${nextVersionSemVerPart}'"
-                nextVersion =  nextVersionSemVerPart + imageInTag
-              }
+              nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
             } else {
               powershell 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
-              if (!finalConfig.includeImageNameInTag) {
-                nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
-              } else {
-                echo "Including the image name '${imageName}' in the next version"
-                // Retrieving the semver part from the last tag including the image name
-                String currentTagScript = 'git tag --list \"*' + imageInTag + '\" --sort=-v:refname | head -1'
-                String currentSemVerVersion = powershell(script: currentTagScript, returnStdout: true).trim()
-                echo "Current semver version is '${currentSemVerVersion}'"
-                // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
-                currentSemVerVersion = currentSemVerVersion ?: '0.0.0-' + imageInTag
-                String nextVersionScript = finalConfig.nextVersionCommand + ' -debug --previous-version=' + currentSemVerVersion
-                String nextVersionSemVerPart = powershell(script: nextVersionScript, returnStdout: true).trim()
-                echo "Next semver version part is '${nextVersionSemVerPart}'"
-                nextVersion =  nextVersionSemVerPart + imageInTag
-              }
+              nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
             }
             echo "Next Release Version = ${nextVersion}"
           } // stage
