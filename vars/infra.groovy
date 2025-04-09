@@ -436,3 +436,27 @@ void publishDeprecationCheck(String deprecationSummary, String deprecationMessag
   echo "WARNING: ${deprecationMessage}"
   publishChecks name: 'pipeline-library', summary: deprecationSummary, conclusion: 'NEUTRAL', text: deprecationMessage
 }
+
+String getBuildAgentLabel(String platform, String jdk, Boolean useContainerAgent) {
+  if (useContainerAgent) {
+    if (platform == 'linux' || platform == 'windows') {
+      String agentContainerLabel = 'maven-' + jdk
+      if (platform == 'windows') {
+        agentContainerLabel += '-windows'
+      }
+      return agentContainerLabel
+    }
+  } else {
+    switch(platform) {
+      case 'windows':
+        return 'docker-windows'
+        break
+      case 'linux':
+        return 'vm && linux'
+        break
+      default:
+        echo "WARNING: Unknown Virtual Machine platform '${platform}'. Set useContainerAgent to 'true' unless you want to be in uncharted territory."
+        return platform
+    }
+  }
+}

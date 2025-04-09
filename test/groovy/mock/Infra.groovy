@@ -56,4 +56,8 @@ class Infra implements Serializable {
   public void maybePublishIncrementals() { }
 
   void publishDeprecationCheck(String deprecationSummary, String deprecationMessage) { }
+
+  String getBuildAgentLabel(String platform, String jdk, Boolean useContainerAgent) {
+    return "${platform}-${jdk}-${useContainerAgent.toString()}"
+  }
 }
