@@ -39,32 +39,14 @@ def call(Map params = [:]) {
     boolean skipTests = params?.tests?.skip
     boolean addToolEnv = !useContainerAgent
 
-    if (useContainerAgent) {
-      if (platform == 'linux' || platform == 'windows') {
-        def agentContainerLabel = jdk == '8' ? 'maven' : 'maven-' + jdk
-        if (platform == 'windows') {
-          agentContainerLabel += '-windows'
-        }
-        label = agentContainerLabel
-      }
-    } else {
-      switch(platform) {
-        case 'windows':
-          baselabel = 'docker-windows'
-          break
-        case 'linux':
-          baselabel = 'vm && linux'
-          break
-        default:
-          echo "WARNING: Unknown Virtual Machine platform '${platform}'. Set useContainerAgent to 'true' unless you want to be in uncharted territory."
-          baselabel = platform
-      }
-    }
+    baselabel = infra.getBuildAgentLabel(platform, jdk, useContainerAgent)
 
     tasks[stageIdentifier] = {
       int retryCounter = 0
       retry(count: 3, conditions: [kubernetesAgent(handleNonKubernetes: true), nonresumable()]) {
-        if (!useContainerAgent) {
+        if (useContainerAgent) {
+          label = baselabel
+        } else {
           if (retryCounter > 1) {
             // Use a spot instance for the 2 first try [try 0 and 1] and nonspot for third and last [2]
             label = baselabel + ' && nonspot'
