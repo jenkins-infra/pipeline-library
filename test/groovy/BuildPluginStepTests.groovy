@@ -125,9 +125,9 @@ class BuildPluginStepTests extends BaseTest {
     script.call([:])
     printCallStack()
     // then it runs a stage in a linux VM by default
-    assertTrue(assertMethodCallContainsPattern('node', 'vm && linux'))
+    assertTrue(assertMethodCallContainsPattern('node', 'linux-8-false'))
     // then it runs a stage in a Windows VM by default
-    assertTrue(assertMethodCallContainsPattern('node', 'docker-windows'))
+    assertTrue(assertMethodCallContainsPattern('node', 'windows-8-false'))
     // then it runs the junit step by default
     assertTrue(assertMethodCall('junit'))
     // then it runs the junit step with the maven test format
@@ -142,9 +142,9 @@ class BuildPluginStepTests extends BaseTest {
     script.call([useContainerAgent: true])
     printCallStack()
     // then it runs a stage in a linux container by default
-    assertTrue(assertMethodCallContainsPattern('node', 'maven'))
+    assertTrue(assertMethodCallContainsPattern('node', 'linux-8-true'))
     // then it runs a stage in a Windows container by default
-    assertTrue(assertMethodCallContainsPattern('node', 'maven-windows'))
+    assertTrue(assertMethodCallContainsPattern('node', 'windows-8-true'))
     assertJobStatusSuccess()
   }
 
@@ -176,12 +176,10 @@ class BuildPluginStepTests extends BaseTest {
     // when running with useContainerAgent set to true
     script.call(platforms: ['openbsd', 'maven-windows-experimental'])
     printCallStack()
-    // then it runs a stage in an openbsd node with a warning message
-    assertTrue(assertMethodCallContainsPattern('node', 'openbsd'))
-    assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: Unknown Virtual Machine platform \'openbsd\''))
+    // then it runs a stage in an openbsd node
+    assertTrue(assertMethodCallContainsPattern('node', 'openbsd-8-false'))
     // then it runs a stage in a maven-windows-experimental node with a warning message
-    assertTrue(assertMethodCallContainsPattern('node', 'maven-windows-experimental'))
-    assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: Unknown Virtual Machine platform \'maven-windows-experimental\''))
+    assertTrue(assertMethodCallContainsPattern('node', 'maven-windows-experimental-8-false'))
     assertJobStatusSuccess()
   }
 
