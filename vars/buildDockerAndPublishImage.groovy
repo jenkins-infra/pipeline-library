@@ -186,7 +186,7 @@ def call(String imageShortName, Map userConfig=[:]) {
           } // if else
         } // each
 
-        if (env.BRANCH_IS_PRIMARY) {
+        if (env.BRANCH_IS_PRIMARY || env.TAG_NAME) {
           // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
           if (finalConfig.automaticSemanticVersioning) {
             stage("Get Next Version of ${imageName}") {
@@ -199,6 +199,11 @@ def call(String imageShortName, Map userConfig=[:]) {
               }
               echo "Next Release Version = ${nextVersion}"
             } // stage
+          } else {
+            if (env.TAG_NAME) {
+              // if a tag is scanned, it need to be the nextVersion
+              nextVersion = env.TAG_NAME
+            }
           } // if
 
           withEnv(["NEXT_VERSION=${nextVersion}"]) {
