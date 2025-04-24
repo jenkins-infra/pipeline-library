@@ -40,7 +40,7 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
 def call(String imageShortName, Map userConfig=[:]) {
   def defaultConfig = [
     agentLabels: 'docker || linux-amd64-docker', // String expression for the labels the agent must match
-    automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
+    automaticSemanticVersioning: true, // automagically increase semantic version by default
     dockerfile: 'Dockerfile', // Obvious default
     targetplatforms: '', // // Define the (comma separated) list of Docker supported platforms to build the image for. Defaults to `linux/amd64` when unspecified. Incompatible with the legacy `platform` attribute.
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
