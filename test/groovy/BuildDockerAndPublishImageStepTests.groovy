@@ -180,8 +180,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And `unstash` isn't called
     assertFalse(assertMethodCall('unstash'))
 
-    // But no release created automatically
-    assertFalse(assertTagPushed(defaultGitTag))
+    // And release created automatically
+    assertTrue(assertTagPushed(defaultGitTag))
 
     // And all mocked/stubbed methods have to be called
     verifyMocks()
@@ -212,8 +212,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertMethodCallContainsPattern('sh','make bake-deploy')
     assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=${fullCustomImageName}")
 
-    // But no tag pushed
-    assertFalse(assertTagPushed(defaultGitTag))
+    // When Tag is manually pushed
+    assertTrue(assertTagPushed(defaultGitTag))
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
@@ -484,8 +484,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And `unstash` is called
     assertTrue(assertMethodCallContainsPattern('unstash', 'stashName'))
 
-    // But no release created automatically
-    assertFalse(assertTagPushed(defaultGitTag))
+    // And release created automatically
+    assertTrue(assertTagPushed(defaultGitTag))
 
     // And all mocked/stubbed methods have to be called
     verifyMocks()
