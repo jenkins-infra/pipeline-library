@@ -218,18 +218,6 @@ buildDockerAndPublishImage('inbound-agent-maven:jdk8-nanoserver', [
     ])
 ----
 
-is also called from `parallelDockerUpdatecli` with `config` within `buildDockerConfig` like this :
-[source, groovy]
-----
-parallelDockerUpdatecli([
-  imageName: 'wiki',
-  rebuildImageOnPeriodicJob: false,
-  updatecliConfig: [containerMemory: '1G'],
-  buildDockerConfig : [targetplatforms: 'linux/amd64,linux/arm64,linux/s390x']
-])
-----
-
-
 == Contribute
 
 === Requirements

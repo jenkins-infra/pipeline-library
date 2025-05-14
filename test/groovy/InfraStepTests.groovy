@@ -476,4 +476,54 @@ class InfraStepTests extends BaseTest {
     // then it doesn't succeeds
     assertJobStatusFailure()
   }
+
+  @Test
+  void testGetBuildAgentLabelWithLinuxJDK21Container() throws Exception {
+    def script = loadScript(scriptName)
+    String gotResult = script.getBuildAgentLabel('linux', '21', true)
+    printCallStack()
+    assertTrue(gotResult == 'maven-21')
+    assertFalse(assertMethodCallContainsPattern('echo', 'WARNING: Unknown Virtual Machine platform'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testGetBuildAgentLabelWithLinuxJDK8VM() throws Exception {
+    def script = loadScript(scriptName)
+    String gotResult = script.getBuildAgentLabel('linux', '8', false)
+    printCallStack()
+    assertTrue(gotResult == 'vm && linux')
+    assertFalse(assertMethodCallContainsPattern('echo', 'WARNING: Unknown Virtual Machine platform'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testGetBuildAgentLabelWithWindowsJDK17Container() throws Exception {
+    def script = loadScript(scriptName)
+    String gotResult = script.getBuildAgentLabel('windows', '17', true)
+    printCallStack()
+    assertTrue(gotResult == 'maven-17-windows')
+    assertFalse(assertMethodCallContainsPattern('echo', 'WARNING: Unknown Virtual Machine platform'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testGetBuildAgentLabelWithWindowsJDK8VM() throws Exception {
+    def script = loadScript(scriptName)
+    String gotResult = script.getBuildAgentLabel('windows', '8', false)
+    printCallStack()
+    assertTrue(gotResult == 'docker-windows')
+    assertFalse(assertMethodCallContainsPattern('echo', 'WARNING: Unknown Virtual Machine platform'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testGetBuildAgentLabelUnsupportedPlatform() throws Exception {
+    def script = loadScript(scriptName)
+    String gotResult = script.getBuildAgentLabel('openbsd', '11', false)
+    printCallStack()
+    assertTrue(gotResult == 'openbsd')
+    assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: Unknown Virtual Machine platform'))
+    assertJobStatusSuccess()
+  }
 }

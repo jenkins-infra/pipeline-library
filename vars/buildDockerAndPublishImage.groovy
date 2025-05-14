@@ -40,8 +40,7 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
 def call(String imageShortName, Map userConfig=[:]) {
   def defaultConfig = [
     agentLabels: 'docker || linux-amd64-docker', // String expression for the labels the agent must match
-    automaticSemanticVersioning: false, // Do not automagically increase semantic version by default
-    includeImageNameInTag: false, // Set to true for multiple semversioned images built in parallel, will include the image name in tag to avoid conflict
+    automaticSemanticVersioning: true, // automagically increase semantic version by default
     dockerfile: 'Dockerfile', // Obvious default
     targetplatforms: '', // // Define the (comma separated) list of Docker supported platforms to build the image for. Defaults to `linux/amd64` when unspecified. Incompatible with the legacy `platform` attribute.
     nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
@@ -140,49 +139,6 @@ def call(String imageShortName, Map userConfig=[:]) {
           writeFile file: 'Makefile', text: makefileContent
         } // stage
 
-        // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
-        if (finalConfig.automaticSemanticVersioning) {
-          stage("Get Next Version of ${imageName}") {
-            String imageInTag = '-' + imageName.replace('-','').replace(':','').toLowerCase()
-            if (isUnix()) {
-              sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
-              if (!finalConfig.includeImageNameInTag) {
-                nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
-              } else {
-                echo "Including the image name '${imageName}' in the next version"
-                // Retrieving the semver part from the last tag including the image name
-                String currentTagScript = 'git tag --list \"*' + imageInTag + '\" --sort=-v:refname | head -1'
-                String currentSemVerVersion = sh(script: currentTagScript, returnStdout: true).trim()
-                echo "Current semver version is '${currentSemVerVersion}'"
-                // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
-                currentSemVerVersion = currentSemVerVersion ?: '0.0.0-' + imageInTag
-                String nextVersionScript = finalConfig.nextVersionCommand + ' -debug --previous-version=' + currentSemVerVersion
-                String nextVersionSemVerPart = sh(script: nextVersionScript, returnStdout: true).trim()
-                echo "Next semver version part is '${nextVersionSemVerPart}'"
-                nextVersion =  nextVersionSemVerPart + imageInTag
-              }
-            } else {
-              powershell 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
-              if (!finalConfig.includeImageNameInTag) {
-                nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
-              } else {
-                echo "Including the image name '${imageName}' in the next version"
-                // Retrieving the semver part from the last tag including the image name
-                String currentTagScript = 'git tag --list \"*' + imageInTag + '\" --sort=-v:refname | head -1'
-                String currentSemVerVersion = powershell(script: currentTagScript, returnStdout: true).trim()
-                echo "Current semver version is '${currentSemVerVersion}'"
-                // Set a default value if there isn't any tag for the current image yet (https://groovy-lang.org/operators.html#_elvis_operator)
-                currentSemVerVersion = currentSemVerVersion ?: '0.0.0-' + imageInTag
-                String nextVersionScript = finalConfig.nextVersionCommand + ' -debug --previous-version=' + currentSemVerVersion
-                String nextVersionSemVerPart = powershell(script: nextVersionScript, returnStdout: true).trim()
-                echo "Next semver version part is '${nextVersionSemVerPart}'"
-                nextVersion =  nextVersionSemVerPart + imageInTag
-              }
-            }
-            echo "Next Release Version = ${nextVersion}"
-          } // stage
-        } // if
-
         stage("Lint ${imageName}") {
           // Define the image name as prefix to support multi images per pipeline
           String hadolintReportId = "${imageName.replaceAll(':','-').replaceAll('/','-')}-hadolint-${now.getTime()}"
@@ -230,102 +186,124 @@ def call(String imageShortName, Map userConfig=[:]) {
           } // if else
         } // each
 
-        // Automatic tagging on principal branch is not enabled by default, and disabled if disablePublication is set to true
-        if (semVerEnabledOnPrimaryBranch) {
-          stage("Semantic Release of ${imageName}") {
-            echo "Configuring credential.helper"
-            // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
-            if (isUnix()) {
-              sh 'git config --local credential.helper "!set -u; echo username=\\$GIT_USERNAME && echo password=\\$GIT_PASSWORD && echo"'
-            } else {
-              // Using 'bat' here instead of 'powershell' to avoid variable interpolation problem with $
-              bat 'git config --local credential.helper "!sh.exe -c \'set -u; echo username=$GIT_USERNAME && echo password=$GIT_PASSWORD && echo"\''
-            }
-
-            withCredentials([
-              usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
-            ]) {
-              withEnv(["NEXT_VERSION=${nextVersion}"]) {
-                echo "Tagging and pushing the new version: ${nextVersion}"
-                if (isUnix()) {
-                  sh '''
-                  git config user.name "${GIT_USERNAME}"
-                  git config user.email "jenkins-infra@googlegroups.com"
-
-                  git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
-                  git push origin --tags
-                  '''
-                } else {
-                  powershell '''
-                  git config user.email "jenkins-infra@googlegroups.com"
-                  git config user.password $env:GIT_PASSWORD
-
-                  git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"
-                  git push origin --tags
-                  '''
-                }
-              } // withEnv
-            } // withCredentials
-          } // stage
-        } // if
-      }// withDockerPullCredentials
-
-      if (env.TAG_NAME || env.BRANCH_IS_PRIMARY) {
-        stage("Deploy ${imageName}") {
-          if (!finalConfig.disablePublication) {
-            infra.withDockerPushCredentials{
-              makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
-            }
+        if (env.BRANCH_IS_PRIMARY || env.TAG_NAME) {
+          // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
+          if (finalConfig.automaticSemanticVersioning) {
+            stage("Get Next Version of ${imageName}") {
+              if (isUnix()) {
+                sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
+                nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+              } else {
+                powershell 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
+                nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+              }
+              echo "Next Release Version = ${nextVersion}"
+            } // stage
           } else {
-            echo 'INFO: publication disabled.'
-          } // else
-        } // stage
-      } // if
-
-      if (env.TAG_NAME && finalConfig.automaticSemanticVersioning) {
-        stage('GitHub Release') {
-          withCredentials([
-            usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
-          ]) {
-            String release = ''
-            if (isUnix()) {
-              final String releaseScript = '''
-                originUrlWithGit="$(git remote get-url origin)"
-                originUrl="${originUrlWithGit%.git}"
-                org="$(echo "${originUrl}" | cut -d'/' -f4)"
-                repository="$(echo "${originUrl}" | cut -d'/' -f5)"
-                releasesUrl="/repos/${org}/${repository}/releases"
-                releaseId="$(gh api "${releasesUrl}" | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')"
-                if test "${releaseId}" -gt 0
-                then
-                  gh api -X PATCH -F draft=false -F name="${TAG_NAME}" -F tag_name="${TAG_NAME}" "${releasesUrl}/${releaseId}" > /dev/null
-                fi
-                echo "${releaseId}"
-              '''
-              release = sh(script: releaseScript, returnStdout: true)
-            } else {
-              final String releaseScript = '''
-                $originUrl = (git remote get-url origin) -replace '\\.git', ''
-                $org = $originUrl.split('/')[3]
-                $repository = $originUrl.split('/')[4]
-                $releasesUrl = "/repos/$org/$repository/releases"
-                $releaseId = (gh api $releasesUrl | jq -e -r '[ .[] | select(.draft == true and .name == \"next\").id] | max | select(. != null)')
-                $output = ''
-                if ($releaseId -gt 0)
-                {
-                  Invoke-Expression -Command "gh api -X PATCH -F draft=false -F name=$env:TAG_NAME -F tag_name=$env:TAG_NAME $releasesUrl/$releaseId" > $null
-                  $output = $releaseId
-                }
-                Write-Output $output
-              '''
-              release = powershell(script: releaseScript, returnStdout: true)
+            if (env.TAG_NAME) {
+              // if a tag is scanned, it need to be the nextVersion
+              nextVersion = env.TAG_NAME
             }
-            if (release == '') {
-              echo "No next release draft found."
+          } // if
+
+          withEnv(["NEXT_VERSION=${nextVersion}"]) {
+            // Only deploy on primary branch
+            stage("Deploy ${imageName}") {
+              if (!finalConfig.disablePublication) {
+                infra.withDockerPushCredentials{
+                  makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
+                }
+              } else {
+                echo 'INFO: publication disabled.'
+              } // else
+            } // stage
+
+            // Automatic tagging on principal branch is not enabled by default, and disabled if disablePublication is set to true
+            if (semVerEnabledOnPrimaryBranch) {
+              stage("Semantic Release of ${imageName}") {
+                echo "Configuring credential.helper"
+                // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
+                if (isUnix()) {
+                  sh 'git config --local credential.helper "!set -u; echo username=\\$GIT_USERNAME && echo password=\\$GIT_PASSWORD && echo"'
+                } else {
+                  // Using 'bat' here instead of 'powershell' to avoid variable interpolation problem with $
+                  bat 'git config --local credential.helper "!sh.exe -c \'set -u; echo username=$GIT_USERNAME && echo password=$GIT_PASSWORD && echo"\''
+                }
+
+                withCredentials([
+                  usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
+                ]) {
+                  echo "Tagging and pushing the new version: ${nextVersion}"
+                  if (isUnix()) {
+                    sh '''
+                      git config user.name "${GIT_USERNAME}"
+                      git config user.email "jenkins-infra@googlegroups.com"
+
+                      git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
+                      git push origin --tags
+                      '''
+                  } else {
+                    powershell '''
+                      git config user.email "jenkins-infra@googlegroups.com"
+                      git config user.password $env:GIT_PASSWORD
+
+                      git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"
+                      git push origin --tags
+                      '''
+                  }
+                } // withCredentials
+              } // stage
             } // if
-          } // withCredentials
-        } // stage
-      } // if
-    } // withEnv
+
+            // GitHub Release stage: Use NEXT_VERSION and only on primary branch
+            // Create release only if SemVer is enabled, on primary branch, and publication is NOT disabled.
+            if (finalConfig.automaticSemanticVersioning && !finalConfig.disablePublication) {
+              stage('GitHub Release') {
+                withCredentials([
+                  usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
+                ]) {
+                  String release = ''
+                  if (isUnix()) {
+                    final String releaseScript = '''
+                        originUrlWithGit="$(git remote get-url origin)"
+                        originUrl="${originUrlWithGit%.git}"
+                        org="$(echo "${originUrl}" | cut -d'/' -f4)"
+                        repository="$(echo "${originUrl}" | cut -d'/' -f5)"
+                        releasesUrl="/repos/${org}/${repository}/releases"
+                        releaseId="$(gh api "${releasesUrl}" | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')"
+                        if test "${releaseId}" -gt 0
+                        then
+                          gh api -X PATCH -F draft=false -F name="${NEXT_VERSION}" -F tag_name="${NEXT_VERSION}" "${releasesUrl}/${releaseId}" > /dev/null
+                        fi
+                        echo "${releaseId}"
+                      '''
+                    release = sh(script: releaseScript, returnStdout: true)
+                  } else {
+                    final String releaseScript = '''
+                        $originUrl = (git remote get-url origin) -replace '\\.git', ''
+                        $org = $originUrl.split('/')[3]
+                        $repository = $originUrl.split('/')[4]
+                        $releasesUrl = "/repos/$org/$repository/releases"
+                        $releaseId = (gh api $releasesUrl | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')
+                        $output = ''
+                        if ($releaseId -gt 0)
+                        {
+                          Invoke-Expression -Command "gh api -X PATCH -F draft=false -F name=$env:NEXT_VERSION -F tag_name=$env:NEXT_VERSION $releasesUrl/$releaseId" > $null
+                          $output = $releaseId
+                        }
+                        Write-Output $output
+                      '''
+                    release = powershell(script: releaseScript, returnStdout: true)
+                  }
+                  if (release == '') {
+                    echo "No next release draft found."
+                  } // if
+                } // withCredentials
+              } // stage
+            } // if
+          } // withEnv NEXT_VERSION
+        } // if
+      } // infra.withDockerPullCredentials
+    } // withEnv (outer)
   } // node
 } // call
