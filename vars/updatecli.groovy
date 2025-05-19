@@ -15,9 +15,8 @@ def call(userConfig = [:]) {
     debug: false,                            // Enable debug output on updatecli
   ]
 
-  // TODO: use isInfra() to set a default githubApp credentials id for infra & for ci
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html  final Map
-  finalConfig = defaultConfig << userConfig
+  def finalConfig = defaultConfig << userConfig
 
   // Set cron trigger if requested
   if (finalConfig.cronTriggerExpression) {
@@ -68,7 +67,7 @@ def call(userConfig = [:]) {
           String updatecliCommand = ""
           updatecliCommand = "updatecli ${finalConfig.action}"
           if (finalConfig.debug) {
-            updatecliCommand += '--debug'
+            updatecliCommand += ' --debug'
           }
           updatecliCommand += finalConfig.config ? " --config ${finalConfig.config}" : ""
           updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
