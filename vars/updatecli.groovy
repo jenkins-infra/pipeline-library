@@ -4,14 +4,15 @@
 
 def call(userConfig = [:]) {
   def defaultConfig = [
-    action: 'diff',                         // Updatecli subcommand to execute
-    config: './updatecli/updatecli.d',      // Config manifest (file or directory) for updatecli
-    values: './updatecli/values.yaml',      // Values file used by updatecli
+    action: 'diff',                          // Updatecli subcommand to execute
+    config: './updatecli/updatecli.d',       // Config manifest (file or directory) for updatecli
+    values: './updatecli/values.yaml',       // Values file used by updatecli
     updatecliAgentLabel: 'jnlp-linux-arm64', // Label to select the Jenkins node (agent)
-    cronTriggerExpression: '',              // Enables cron trigger if specified
+    cronTriggerExpression: '',               // Enables cron trigger if specified
     credentialsId: 'github-app-updatecli-on-jenkins-infra', // GitHub credentials
-    version: '', // Custom updatecli version (e.g. '0.92.0' or '0.86.0-rc.1')
-    runInCurrentAgent: false,               // New option: if true, run updatecli in the current node
+    version: '',                             // Custom updatecli version (e.g. '0.92.0' or '0.86.0-rc.1')
+    runInCurrentAgent: false,                // Specify wether to allocate an agent to run updatecli (default) or reuse the current one
+    debug: false,                            // Enable debug output on updatecli
   ]
 
   // TODO: use isInfra() to set a default githubApp credentials id for infra & for ci
@@ -66,6 +67,9 @@ def call(userConfig = [:]) {
           // Build the updatecli command
           String updatecliCommand = ""
           updatecliCommand = "updatecli ${finalConfig.action}"
+          if (finalConfig.debug) {
+            updatecliCommand += '--debug'
+          }
           updatecliCommand += finalConfig.config ? " --config ${finalConfig.config}" : ""
           updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
           withCredentials([
