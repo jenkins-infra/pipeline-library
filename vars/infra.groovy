@@ -223,7 +223,7 @@ Object withArtifactCachingProxy(boolean useArtifactCachingProxy = true, Closure 
  * @param useArtifactCachingProxy (default: true) if possible, use an artifact caching proxy in front of repo.jenkins-ci.org to decrease JFrog Artifactory bandwidth usage and to increase reliability
  * @see withArtifactCachingProxy
  */
-Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true) {
+Object runMaven(List<String> options, String jdk = '21', List<String> extraEnv = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true) {
   List<String> mvnOptions = ['--batch-mode', '--show-version', '--errors', '--no-transfer-progress']
   withArtifactCachingProxy(useArtifactCachingProxy) {
     mvnOptions.addAll(options)
@@ -254,7 +254,7 @@ Object runMaven(List<String> options, Integer jdk, List<String> extraEnv = null,
  * @param jdk JDK version to be used
  * @param extraEnv Extra environment variables to be passed
  */
-Object runWithMaven(String command, String jdk = '8', List<String> extraEnv = null, Boolean addToolEnv = true) {
+Object runWithMaven(String command, String jdk = '21', List<String> extraEnv = null, Boolean addToolEnv = true) {
   List<String> javaEnv = []
   if (addToolEnv) {
     javaEnv += "PATH+MAVEN=${tool 'mvn'}/bin"
@@ -279,7 +279,7 @@ Object runWithMaven(String command, String jdk = '8', List<String> extraEnv = nu
  * @param jdk JDK version to be used
  * @param extraEnv Extra environment variables to be passed
  */
-Object runWithJava(String command, String jdk = '8', List<String> extraEnv = null, Boolean addToolEnv = true) {
+Object runWithJava(String command, String jdk = '21', List<String> extraEnv = null, Boolean addToolEnv = true) {
   List<String> javaEnv = []
   if (addToolEnv) {
     // Collection of well-known JDK locations on our agent templates (VMs and containers)

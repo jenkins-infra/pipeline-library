@@ -25,7 +25,7 @@ buildPlugin(
   useContainerAgent: true, // Set to `false` if you need to use Docker for containerized tests
   configurations: [
     [platform: 'linux', jdk: 21],
-    [platform: 'windows', jdk: 17],
+    [platform: 'windows', jdk: 21],
 ])
 ----
 
@@ -38,7 +38,7 @@ buildPlugin(
 * `failFast` (default: `true`) - instruct Maven tests to fail fast
 * `platforms` (default: `['linux', 'windows']`) - Labels matching platforms to
   execute the steps against in parallel
-* `jdkVersions` (default: `[8]`) - JDK version numbers, must match a version
+* `jdkVersions` (default: `[21]`) - JDK version numbers, must match a version
   number jdk tool installed
 * `jenkinsVersions`: (default: `[null]`) - a matrix of Jenkins baseline versions to build/test against in parallel (null means default,
   only available for Maven projects)
@@ -79,7 +79,7 @@ Usage:
 [source,groovy]
 ----
 buildPlugin(platforms: ['linux'],
-        jdkVersions: [11, 17],
+        jdkVersions: [17, 21],
         jacoco: [sourceCodeRetention: 'MODIFIED'],
         pit: [skip: false],
         checkstyle: [qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]],
@@ -99,7 +99,7 @@ and it may not work for other use-cases.
 * `failFast` (default: `true`) - instruct the build to fail fast when one of the configurations fail
 * `platforms` (default: `['linux', 'windows']`) - Labels matching platforms to
   execute the steps against in parallel
-* `jdkVersions` (default: `[8]`) - JDK version numbers, must match a version
+* `jdkVersions` (default: `[21]`) - JDK version numbers, must match a version
   number jdk tool installed
 * `configurations`: An alternative way to specify `platforms`, `jdkVersions` (that can not be combined
   with any of them)
@@ -109,8 +109,8 @@ and it may not work for other use-cases.
 [source,groovy]
 ----
 buildPluginWithGradle(/*...*/, configurations: [
-  [ platform: "linux", jdk: "8" ],
-  [ platform: "windows", jdk: "8"],
+  [ platform: "linux", jdk: "21" ],
+  [ platform: "windows", jdk: "21"],
 ])
 ----
 
@@ -222,7 +222,7 @@ buildDockerAndPublishImage('inbound-agent-maven:jdk8-nanoserver', [
 
 === Requirements
 
-* (Open)JDK v8
+* (Open)JDK v17
 * Maven 3.6.x
 
 === Testing a pull request

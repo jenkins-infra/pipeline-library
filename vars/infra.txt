@@ -51,7 +51,7 @@
     See the method Javadoc in the repository for more information.
 </p>
 
-<strong>infra.runMaven(List&lt;String&gt; options, String jdk = '8', List&lt;String&gt; extraEnv = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true)</strong>
+<strong>infra.runMaven(List&lt;String&gt; options, String jdk = '21', List&lt;String&gt; extraEnv = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true)</strong>
 
 <p>
     Run Maven with the specified options in the current workspace.
@@ -73,7 +73,7 @@
     See the method Javadoc in the repository for more information.
 </p>
 
-<strong>runWithMaven(String command, String jdk = '8', List&lt;String&gt; extraEnv = null, Boolean addToolEnv = true)</strong>
+<strong>runWithMaven(String command, String jdk = '21', List&lt;String&gt; extraEnv = null, Boolean addToolEnv = true)</strong>
 
 <p>
      Run the specified command with custom Java and Maven environments.
@@ -84,7 +84,7 @@
     See the method Javadoc in the repository for more information.
 </p>
 
-<strong>runWithJava(String command, String jdk = '8', List&lt;String&gt; extraEnv = null, Boolean addToolEnv = true)</strong>
+<strong>runWithJava(String command, String jdk = '21', List&lt;String&gt; extraEnv = null, Boolean addToolEnv = true)</strong>
 
 <p>
      Run the specified command with the Java tool.
