@@ -133,6 +133,10 @@ def call(Map config = [:]) {
   }
   echo "publishBuildStatusReport - Utility shell script execution completed."
 
+   // --- Step 5: Display generated status.json from workspace (FOR DEBUGGING/VERIFICATION) ---
+  echo "publishBuildStatusReport - Displaying content of generated report file: ${finalReportPathOnAgent}" {
+    sh "cat '${finalReportPathOnAgent}'"
+  }
   // --- Step 5: Publish the report (which was created by the shell script) ---
   // No Groovy-side validation of file content here, as per "no unnecessary validations".
   // We trust the shell script did its job if the 'sh' call above didn't fail (due to set -e in shell script).
