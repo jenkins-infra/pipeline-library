@@ -13,15 +13,16 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
       writeFile file: specificDockerBakeFile, text: bakefileContent
     }
     withEnv(
-        [ // Base list of environment variables
-            "DOCKER_BAKE_FILE=${specificDockerBakeFile}",
-            "DOCKER_BAKE_TARGET=${dockerBakeTarget}",
-            "IMAGE_DEPLOY_NAME=${imageDeployName}"
+        [
+          // Base list of environment variables
+          "DOCKER_BAKE_FILE=${specificDockerBakeFile}",
+          "DOCKER_BAKE_TARGET=${dockerBakeTarget}",
+          "IMAGE_DEPLOY_NAME=${imageDeployName}"
         ] + ((cacheToString && !cacheToString.isEmpty()) ? ["DOCKER_CACHE_TO_VALUE=${cacheToString}"] : []) // Conditionally add cacheTo
-    ) {
-      sh 'export BUILDX_BUILDER_NAME=buildx-builder; docker buildx use "${BUILDX_BUILDER_NAME}" 2>/dev/null || docker buildx create --use --name="${BUILDX_BUILDER_NAME}"'
-      sh "make bake-$action"
-    }
+        ) {
+          sh 'export BUILDX_BUILDER_NAME=buildx-builder; docker buildx use "${BUILDX_BUILDER_NAME}" 2>/dev/null || docker buildx create --use --name="${BUILDX_BUILDER_NAME}"'
+          sh "make bake-$action"
+        }
   } else {
     if (action == 'deploy') {
       if (env.TAG_NAME) {
