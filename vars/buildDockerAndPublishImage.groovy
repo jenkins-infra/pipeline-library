@@ -14,7 +14,6 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
     }
     withEnv(
         [
-          // Base list of environment variables
           "DOCKER_BAKE_FILE=${specificDockerBakeFile}",
           "DOCKER_BAKE_TARGET=${dockerBakeTarget}",
           "IMAGE_DEPLOY_NAME=${imageDeployName}"
