@@ -4,7 +4,7 @@ import java.util.Date
 import java.text.DateFormat
 
 // makecall is a function to concentrate all the call to 'make'
-def makecall(String action, String imageDeployName, String targetOperationSystem, String specificDockerBakeFile, String dockerBakeTarget, String cacheToString = '') {
+def makecall(String action, String imageDeployName, String targetOperationSystem, String specificDockerBakeFile, String dockerBakeTarget, String cacheTo) {
   final String bakefileContent = libraryResource 'io/jenkins/infra/docker/jenkinsinfrabakefile.hcl'
   // Please note that "make deploy" and the generated bake deploy file uses the environment variable "IMAGE_DEPLOY_NAME"
   if (isUnix()) {
