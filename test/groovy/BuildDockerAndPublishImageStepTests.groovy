@@ -782,4 +782,62 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
+  @Test
+  void itBuildsWithDefaultCacheToParameter() throws Exception {
+    def script = loadScript(scriptName)
+    helper.registerAllowedMethod('isUnix', [], { true }) // Ensure bake path is taken
+
+    withMocks {
+      script.call(testImageName, [:]) // No cacheTo parameter provided
+    }
+    printCallStack()
+
+    assertJobStatusSuccess()
+    assertTrue(assertMethodCallContainsPattern('sh', 'make bake-build'))
+
+    // Verify that the withEnv call for makecall does not contain DOCKER_CACHE_TO
+    boolean makecallWithEnvCorrect = false
+    for (def call : helper.getCallStack()) {
+      if (call.methodName == 'withEnv' && call.args[0] instanceof List && ((List)call.args[0]).any { it.toString().startsWith('DOCKER_BAKE_FILE=') }) {
+        // This is the withEnv block from makecall
+        List<String> envArgs = (List<String>) call.args[0]
+        assertFalse("DOCKER_CACHE_TO should not be set when no cacheTo parameter is provided", envArgs.any { it.toString().startsWith('DOCKER_CACHE_TO=') })
+        makecallWithEnvCorrect = true
+      }
+    }
+    assertTrue("The withEnv block for makecall was not found or verified.", makecallWithEnvCorrect)
+
+    verifyMocks()
+  }
+
+  @Test
+  void itBuildsWithCacheToParameterProvided() throws Exception {
+    def script = loadScript(scriptName)
+    helper.registerAllowedMethod('isUnix', [], { true }) // Ensure bake path is taken
+
+    final String cacheValue = "type=inline"
+
+    withMocks {
+      script.call(testImageName, [cacheTo: cacheValue])
+    }
+    printCallStack()
+
+    assertJobStatusSuccess()
+    assertTrue(assertMethodCallContainsPattern('sh', 'make bake-build'))
+
+    // Verify that the withEnv call for makecall contains the correct DOCKER_CACHE_TO value
+    boolean makecallWithEnvCorrect = false
+    for (def call : helper.getCallStack()) {
+      if (call.methodName == 'withEnv' && call.args[0] instanceof List && ((List)call.args[0]).any { it.toString().startsWith('DOCKER_BAKE_FILE=') }) {
+        // This is the withEnv block from makecall
+        List<String> envArgs = (List<String>) call.args[0]
+        assertTrue("DOCKER_CACHE_TO should be set when cacheTo parameter is provided", envArgs.contains("DOCKER_CACHE_TO=${cacheValue}"))
+        makecallWithEnvCorrect = true
+      }
+    }
+    assertTrue("The withEnv block for makecall was not found or verified correctly.", makecallWithEnvCorrect)
+
+    verifyMocks()
+  }
 }
