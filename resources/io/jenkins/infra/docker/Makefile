@@ -81,7 +81,7 @@ build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
 bake-build: ## Build the Docker Image(s) with dockerbake file
 	@echo "== Building ${DOCKER_BAKE_TARGET} target from DockerBake file $(DOCKER_BAKE_FILE)"
 	@make show
-	$(eval CACHE_TO_OPTION := $(if $(DOCKER_CACHE_TO_VALUE),--set "*.cache-to=$(DOCKER_CACHE_TO_VALUE)",))
+	$(eval CACHE_TO_OPTION := $(if $(DOCKER_CACHE_TO),--set "*.cache-to=$(DOCKER_CACHE_TO)",))
 	@docker buildx bake -f "$(DOCKER_BAKE_FILE)" "$(DOCKER_BAKE_TARGET)" $(CACHE_TO_OPTION)
 	@echo "== Build succeeded"
 
@@ -123,7 +123,7 @@ deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 
 bake-deploy: ## Tag and push the built image as specified by docker bake file
 	@echo "== Deploying $(DOCKER_BAKE_TARGET) target with docker bake file"
-	$(eval CACHE_TO_DEPLOY_OPTION := $(if $(DOCKER_CACHE_TO_VALUE),--set "*.cache-to=$(DOCKER_CACHE_TO_VALUE)",))
+	$(eval CACHE_TO_DEPLOY_OPTION := $(if $(DOCKER_CACHE_TO),--set "*.cache-to=$(DOCKER_CACHE_TO)",))
 	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" "$(DOCKER_BAKE_TARGET)" $(CACHE_TO_DEPLOY_OPTION) --push
 
 .PHONY: all clean lint build test deploy
