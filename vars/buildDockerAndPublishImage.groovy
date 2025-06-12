@@ -17,7 +17,7 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
           "DOCKER_BAKE_FILE=${specificDockerBakeFile}",
           "DOCKER_BAKE_TARGET=${dockerBakeTarget}",
           "IMAGE_DEPLOY_NAME=${imageDeployName}"
-        ] + ((cacheTo && !cacheTo.isEmpty()) ? ["DOCKER_CACHE_TO=${cacheTo}"] : []) // Conditionally add cacheTo
+        ] + ((cacheTo && !cacheTo.isEmpty() && env.BRANCH_IS_PRIMARY) ? ["DOCKER_CACHE_TO=${cacheTo}"] : []) // Conditionally add cacheTo
         ) {
           sh 'export BUILDX_BUILDER_NAME=buildx-builder; docker buildx use "${BUILDX_BUILDER_NAME}" 2>/dev/null || docker buildx create --use --name="${BUILDX_BUILDER_NAME}"'
           sh "make bake-$action"
