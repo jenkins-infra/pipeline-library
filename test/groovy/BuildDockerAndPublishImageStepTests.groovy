@@ -786,6 +786,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   @Test
   void itBuildsWithCacheToParameterProvided() throws Exception {
     def script = loadScript(scriptName)
+    mockPrincipalBranch()
     final String cacheValue = "type=inline"
     withMocks {
       script.call(testImageName, [cacheTo: cacheValue])
