@@ -169,7 +169,13 @@ def call(String imageShortName, Map userConfig=[:]) {
         } // stage
 
         stage("Build ${imageName}") {
-          makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, finalConfig.cacheTo)
+          if (env.BRANCH_IS_PRIMARY) {
+            infra.withDockerPushCredentials {
+              makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, finalConfig.cacheTo)
+            }
+          } else {
+            makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, finalConfig.cacheTo)
+          }
         } //stage
 
         // There can be 2 kind of tests: per image and per repository
