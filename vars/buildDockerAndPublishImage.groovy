@@ -4,7 +4,7 @@ import java.util.Date
 import java.text.DateFormat
 
 // makecall is a function to concentrate all the call to 'make'
-def makecall(String action, String imageDeployName, String targetOperationSystem, String specificDockerBakeFile, String dockerBakeTarget) {
+def makecall(String action, String imageDeployName, String targetOperationSystem, String specificDockerBakeFile, String dockerBakeTarget, String cacheTo) {
   final String bakefileContent = libraryResource 'io/jenkins/infra/docker/jenkinsinfrabakefile.hcl'
   // Please note that "make deploy" and the generated bake deploy file uses the environment variable "IMAGE_DEPLOY_NAME"
   if (isUnix()) {
@@ -12,14 +12,16 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
       specificDockerBakeFile = 'jenkinsinfrabakefile.hcl'
       writeFile file: specificDockerBakeFile, text: bakefileContent
     }
-    withEnv([
-      "DOCKER_BAKE_FILE=${specificDockerBakeFile}",
-      "DOCKER_BAKE_TARGET=${dockerBakeTarget}",
-      "IMAGE_DEPLOY_NAME=${imageDeployName}"
-    ]) {
-      sh 'export BUILDX_BUILDER_NAME=buildx-builder; docker buildx use "${BUILDX_BUILDER_NAME}" 2>/dev/null || docker buildx create --use --name="${BUILDX_BUILDER_NAME}"'
-      sh "make bake-$action"
-    }
+    withEnv(
+        [
+          "DOCKER_BAKE_FILE=${specificDockerBakeFile}",
+          "DOCKER_BAKE_TARGET=${dockerBakeTarget}",
+          "IMAGE_DEPLOY_NAME=${imageDeployName}"
+        ] + ((cacheTo && !cacheTo.isEmpty()) ? ["DOCKER_CACHE_TO=${cacheTo}"] : []) // Conditionally add cacheTo
+        ) {
+          sh 'export BUILDX_BUILDER_NAME=buildx-builder; docker buildx use "${BUILDX_BUILDER_NAME}" 2>/dev/null || docker buildx create --use --name="${BUILDX_BUILDER_NAME}"'
+          sh "make bake-$action"
+        }
   } else {
     if (action == 'deploy') {
       if (env.TAG_NAME) {
@@ -50,6 +52,7 @@ def call(String imageShortName, Map userConfig=[:]) {
     unstash: '', // Allow to unstash files if not empty
     dockerBakeFile: '', // Specify the path to a custom Docker Bake file to use instead of the default one
     dockerBakeTarget: 'default', // Specify the target of a custom Docker Bake file to work with
+    cacheTo: '', // New parameter for Docker build cache export using cache-to
     disablePublication: false, // Allow to disable tagging and publication of container image and GitHub release (true by default)
   ]
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -166,7 +169,7 @@ def call(String imageShortName, Map userConfig=[:]) {
         } // stage
 
         stage("Build ${imageName}") {
-          makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
+          makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, finalConfig.cacheTo)
         } //stage
 
         // There can be 2 kind of tests: per image and per repository
@@ -178,7 +181,7 @@ def call(String imageShortName, Map userConfig=[:]) {
           if (fileExists(testHarness)) {
             stage("Test ${testName} for ${imageName}") {
               withEnv(["TEST_HARNESS=${testHarness}"]) {
-                makecall('test', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
+                makecall('test', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, finalConfig.cacheTo)
               } // withEnv
             } //stage
           } else {
@@ -211,7 +214,7 @@ def call(String imageShortName, Map userConfig=[:]) {
             stage("Deploy ${imageName}") {
               if (!finalConfig.disablePublication) {
                 infra.withDockerPushCredentials{
-                  makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
+                  makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, finalConfig.cacheTo)
                 }
               } else {
                 echo 'INFO: publication disabled.'

@@ -782,4 +782,18 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
+
+  @Test
+  void itBuildsWithCacheToParameterProvided() throws Exception {
+    def script = loadScript(scriptName)
+    final String cacheValue = "type=inline"
+    withMocks {
+      script.call(testImageName, [cacheTo: cacheValue])
+    }
+    printCallStack()
+    assertJobStatusSuccess()
+    assertTrue(assertMethodCallContainsPattern('sh', 'make bake-build'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "DOCKER_CACHE_TO=${cacheValue}"))
+    verifyMocks()
+  }
 }
