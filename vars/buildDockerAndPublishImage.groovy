@@ -4,7 +4,7 @@ import java.util.Date
 import java.text.DateFormat
 
 // makecall is a function to concentrate all the call to 'make'
-def makecall(String action, String imageDeployName, String targetOperationSystem, String specificDockerBakeFile, String dockerBakeTarget, String cacheTo) {
+def makecall(String action, String imageDeployName, String targetOperationSystem, String specificDockerBakeFile, String dockerBakeTarget, String cacheTo= '') {
   final String bakefileContent = libraryResource 'io/jenkins/infra/docker/jenkinsinfrabakefile.hcl'
   // Please note that "make deploy" and the generated bake deploy file uses the environment variable "IMAGE_DEPLOY_NAME"
   if (isUnix()) {
@@ -16,8 +16,9 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
         [
           "DOCKER_BAKE_FILE=${specificDockerBakeFile}",
           "DOCKER_BAKE_TARGET=${dockerBakeTarget}",
-          "IMAGE_DEPLOY_NAME=${imageDeployName}"
-        ] + ((cacheTo && !cacheTo.isEmpty() && env.BRANCH_IS_PRIMARY) ? ["DOCKER_CACHE_TO=${cacheTo}"] : []) // Conditionally add cacheTo
+          "IMAGE_DEPLOY_NAME=${imageDeployName}",
+          "DOCKER_CACHE_TO=${cacheTo}",
+        ]
         ) {
           sh 'export BUILDX_BUILDER_NAME=buildx-builder; docker buildx use "${BUILDX_BUILDER_NAME}" 2>/dev/null || docker buildx create --use --name="${BUILDX_BUILDER_NAME}"'
           sh "make bake-$action"
@@ -169,7 +170,13 @@ def call(String imageShortName, Map userConfig=[:]) {
         } // stage
 
         stage("Build ${imageName}") {
-          makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, finalConfig.cacheTo)
+          if (env.BRANCH_IS_PRIMARY && finalConfig.cacheTo) {
+            infra.withDockerPushCredentials {
+              makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, finalConfig.cacheTo)
+            }
+          } else {
+            makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
+          }
         } //stage
 
         // There can be 2 kind of tests: per image and per repository
@@ -181,7 +188,7 @@ def call(String imageShortName, Map userConfig=[:]) {
           if (fileExists(testHarness)) {
             stage("Test ${testName} for ${imageName}") {
               withEnv(["TEST_HARNESS=${testHarness}"]) {
-                makecall('test', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, finalConfig.cacheTo)
+                makecall('test', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
               } // withEnv
             } //stage
           } else {
@@ -214,7 +221,7 @@ def call(String imageShortName, Map userConfig=[:]) {
             stage("Deploy ${imageName}") {
               if (!finalConfig.disablePublication) {
                 infra.withDockerPushCredentials{
-                  makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, finalConfig.cacheTo)
+                  makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
                 }
               } else {
                 echo 'INFO: publication disabled.'
