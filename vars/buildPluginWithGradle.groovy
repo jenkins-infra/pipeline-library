@@ -20,10 +20,10 @@ def call(Map params = [:]) {
   boolean archivedArtifacts = false
   Map tasks = [failFast: failFast]
   buildPlugin.getConfigurations(params).each { config ->
-    String label = infra.getBuildAgentLabel(config.platform, config.jdk, useContainerAgent)
     String jdk = config.jdk
+    String platform = config.platform
     String jenkinsVersion = config.jenkins
-
+    String label = infra.getBuildAgentLabel(platform, jdk, useContainerAgent)
     String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
     boolean first = tasks.size() == 1
     boolean skipTests = params?.tests?.skip
