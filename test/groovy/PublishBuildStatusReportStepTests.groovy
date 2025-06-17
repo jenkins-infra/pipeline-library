@@ -65,7 +65,6 @@ class PublishBuildStatusReportStepTests extends BaseTest {
   @Test
   void it_does_nothing_on_non_principal_branch() throws Exception {
     def script = loadScript(scriptName)
-    // No mockPrincipalBranch() call
 
     script.call()
     printCallStack()
