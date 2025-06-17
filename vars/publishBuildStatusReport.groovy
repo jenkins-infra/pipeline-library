@@ -133,7 +133,7 @@ def call(Map config = [:]) {
   }
   echo "publishBuildStatusReport - Utility shell script execution completed."
 
-   // --- Step 5: Display generated status.json from workspace (FOR DEBUGGING/VERIFICATION) ---
+  // --- Step 5: Display generated status.json from workspace (FOR DEBUGGING/VERIFICATION) ---
   echo "publishBuildStatusReport - Displaying content of generated report file: ${finalReportPathOnAgent}"
   sh "cat '${finalReportPathOnAgent}'"
 
