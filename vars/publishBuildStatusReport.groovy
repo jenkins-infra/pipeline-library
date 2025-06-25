@@ -88,64 +88,73 @@ def call(Map config = [:]) {
   echo "publishBuildStatusReport - Data for shell script: Controller='${controllerHostname}', Job='${jobName}', Build='${buildNumber}', Status='${buildStatus}'"
 
   // --- Step 2: Define the final path for the JSON report on the agent ---
-  // This path is constructed in Groovy as it uses Jenkins context (WORKSPACE, controllerHostname, jobName).
-  // The shell script will be responsible for creating this path and writing the file.
-  String finalReportDirOnAgent = "${env.WORKSPACE}/build_status_reports/${controllerHostname}/${jobName}"
+  String finalReportDirRelative = "build_status_reports/${controllerHostname}/${jobName}"
   String finalReportFileName = "status.json"
-  String finalReportPathOnAgent = "${finalReportDirOnAgent}/${finalReportFileName}"
-  echo "publishBuildStatusReport - Shell script will be instructed to write final report to: ${finalReportPathOnAgent}"
+  String finalReportPathRelative = "${finalReportDirRelative}/${finalReportFileName}"
+  String finalReportPathAbsolute = "${env.WORKSPACE}/${finalReportPathRelative}" // Absolute path for shell script
+  echo "publishBuildStatusReport - Shell script will be instructed to write final report to: ${finalReportPathAbsolute}"
 
   // --- Step 3: Prepare and deploy the utility shell script to the agent ---
-  final String shellScriptResourcePath = 'io/jenkins/infra/pipeline/generateAndWriteBuildStatusReport.sh' // Assuming this is the agreed name and path
+  final String shellScriptResourcePath = 'io/jenkins/infra/pipeline/generateAndWriteBuildStatusReport.sh'
   String shellScriptContent = libraryResource shellScriptResourcePath
 
-  String tempScriptDir = "${env.WORKSPACE}/.jenkins-scripts"
+  String tempScriptDir = ".jenkins-scripts"
   String tempScriptName = "exec_generate_report_${env.BUILD_ID ?: System.currentTimeMillis()}.sh"
   String tempScriptPathOnAgent = "${tempScriptDir}/${tempScriptName}"
 
-  // Ensure the temporary script directory exists
-  sh "mkdir -p '${tempScriptDir}'" // Single quotes for safety if tempScriptDir could have spaces (unlikely for .jenkins-scripts)
+  sh "mkdir -p '${tempScriptDir}'"
 
   writeFile file: tempScriptPathOnAgent, text: shellScriptContent
   sh "chmod +x '${tempScriptPathOnAgent}'"
   echo "publishBuildStatusReport - Utility shell script deployed to agent at: ${tempScriptPathOnAgent}"
 
   // --- Step 4: Execute the utility shell script ---
-  // Escape Groovy variables for safe inclusion as environment variable *values*.
   String escController = controllerHostname.replaceAll("'", "'\\\\''")
-  String escJobName = jobName.replaceAll("'", "'\\\\''") // jobName can have '/' - this escaping handles single quotes within.
+  String escJobName = jobName.replaceAll("'", "'\\\\''")
   String escBuildNumber = buildNumber.replaceAll("'", "'\\\\''")
   String escBuildStatus = buildStatus.replaceAll("'", "'\\\\''")
-  // finalReportPathOnAgent is constructed from WORKSPACE and sanitized names, less likely to need escaping for this purpose,
-  // but for consistency, we can escape it too.
-  String escFinalReportPathOnAgent = finalReportPathOnAgent.replaceAll("'", "'\\\\''")
+  String escFinalReportPathOnAgent = finalReportPathAbsolute.replaceAll("'", "'\\\\''")
 
   withEnv([
     "ENV_CONTROLLER_HOSTNAME=${escController}",
     "ENV_JOB_NAME=${escJobName}",
     "ENV_BUILD_NUMBER=${escBuildNumber}",
     "ENV_BUILD_STATUS=${escBuildStatus}",
-    "ENV_TARGET_JSON_FILE_PATH=${escFinalReportPathOnAgent}" // Pass the target path
+    "ENV_TARGET_JSON_FILE_PATH=${escFinalReportPathOnAgent}"
   ]) {
     echo "publishBuildStatusReport - Executing utility shell script: '${tempScriptPathOnAgent}'"
-    // Execute the script. It will handle its own file I/O. No stdout capture.
     sh "'${tempScriptPathOnAgent}'"
   }
   echo "publishBuildStatusReport - Utility shell script execution completed."
 
-  // --- Step 5: Display generated status.json from workspace (FOR DEBUGGING/VERIFICATION) ---
-  echo "publishBuildStatusReport - Displaying content of generated report file: ${finalReportPathOnAgent}"
-  sh "cat '${finalReportPathOnAgent}'"
+  // --- Step 5: Publish the generated report using azcopy ---
+  final String azureBaseUrl = "https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io"
+  final String remotePath = finalReportPathRelative
+  final String fullDestinationUrl = "${azureBaseUrl}/${remotePath}"
 
-  // --- Step 5: Publish the report (which was created by the shell script) ---
-  // No Groovy-side validation of file content here, as per "no unnecessary validations".
-  // We trust the shell script did its job if the 'sh' call above didn't fail (due to set -e in shell script).
-  // A fileExists check could be added here if deemed essential minimal validation.
-  echo "publishBuildStatusReport - Publishing report from: ${finalReportPathOnAgent}"
-  publishReports([finalReportPathOnAgent])
+  echo "publishBuildStatusReport - Publishing local file '${finalReportPathAbsolute}' to remote destination '${fullDestinationUrl}'"
 
-  // Cleanup of the temporary utility shell script is omitted as per last discussion.
-  // Jenkins workspace cleanup will eventually remove it.
+  // Escape variables for safe use inside the sh command string.
+  String escLocalPath = finalReportPathAbsolute.replaceAll("'", "'\\\\''")
+  String escDestinationUrl = fullDestinationUrl.replaceAll("'", "'\\\\''")
+
+  withEnv(["AZCOPY_LOCAL_PATH=${escLocalPath}", "AZCOPY_DESTINATION_URL=${escDestinationUrl}"]) {
+    sh'''
+        set -ex
+        echo "Attempting to publish report with azcopy..."
+        
+        # Ensure any previous azcopy login is cleared to avoid conflicts.
+        azcopy logout 2>/dev/null || true
+        
+        # Login using the agent's Managed Identity (credential-less).
+        azcopy login --identity
+        
+        # Copy the local file to the remote destination.
+        azcopy copy "\$AZCOPY_LOCAL_PATH" "\$AZCOPY_DESTINATION_URL" --recursive
+        
+        echo "azcopy copy command completed."
+    '''
+  }
 
   echo "publishBuildStatusReport - Process completed for ${jobName}#${buildNumber}."
 }
