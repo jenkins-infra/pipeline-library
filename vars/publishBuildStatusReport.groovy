@@ -59,10 +59,10 @@ def call(Map config = [:]) {
 
   // --- Step 0: Principal Branch Check ---
   // Only proceed if running on a principal branch.
-  if (env.BRANCH_IS_PRIMARY == null || !env.BRANCH_IS_PRIMARY.toBoolean()) {
-    echo "WARN: publishBuildStatusReport - Not on a principal branch (BRANCH_IS_PRIMARY: '${env.BRANCH_IS_PRIMARY}', BRANCH_NAME: '${env.BRANCH_NAME}'). Skipping report generation."
-    return
-  }
+  // if (env.BRANCH_IS_PRIMARY == null || !env.BRANCH_IS_PRIMARY.toBoolean()) {
+  //   echo "WARN: publishBuildStatusReport - Not on a principal branch (BRANCH_IS_PRIMARY: '${env.BRANCH_IS_PRIMARY}', BRANCH_NAME: '${env.BRANCH_NAME}'). Skipping report generation."
+  //   return
+  // }
 
   echo "publishBuildStatusReport - Principal branch execution. Proceeding..."
 
@@ -145,7 +145,11 @@ def call(Map config = [:]) {
         
         # Ensure any previous azcopy login is cleared to avoid conflicts.
         azcopy logout 2>/dev/null || true
-        
+
+        # Support for container agents using Workload Identity Federation.
+        # If the federated token file variable exists and is not empty, set the login type to WORKLOAD.
+        test -z "${AZURE_FEDERATED_TOKEN_FILE:-}" || export AZCOPY_AUTO_LOGIN_TYPE=WORKLOAD
+
         # Login using the agent's Managed Identity (credential-less).
         azcopy login --identity
         
