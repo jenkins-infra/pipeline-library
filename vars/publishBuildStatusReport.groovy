@@ -59,10 +59,10 @@ def call(Map config = [:]) {
 
   // --- Step 0: Principal Branch Check ---
   // Only proceed if running on a principal branch.
-  // if (env.BRANCH_IS_PRIMARY == null || !env.BRANCH_IS_PRIMARY.toBoolean()) {
-  //   echo "WARN: publishBuildStatusReport - Not on a principal branch (BRANCH_IS_PRIMARY: '${env.BRANCH_IS_PRIMARY}', BRANCH_NAME: '${env.BRANCH_NAME}'). Skipping report generation."
-  //   return
-  // }
+  if (env.BRANCH_IS_PRIMARY == null || !env.BRANCH_IS_PRIMARY.toBoolean()) {
+    echo "WARN: publishBuildStatusReport - Not on a principal branch (BRANCH_IS_PRIMARY: '${env.BRANCH_IS_PRIMARY}', BRANCH_NAME: '${env.BRANCH_NAME}'). Skipping report generation."
+    return
+  }
 
   echo "publishBuildStatusReport - Principal branch execution. Proceeding..."
 
@@ -128,36 +128,46 @@ def call(Map config = [:]) {
   echo "publishBuildStatusReport - Utility shell script execution completed."
 
   // --- Step 5: Publish the generated report using azcopy ---
+  // Get the parent directory of the file we want to upload.
+  String uploadDirectory = new File(finalReportPathAbsolute).parent
+  String uploadFileName = finalReportFileName // "status.json"
+
   final String azureBaseUrl = "https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io"
-  final String remotePath = finalReportPathRelative
+  // The remote path is the directory structure on the server.
+  final String remotePath = finalReportDirRelative
   final String fullDestinationUrl = "${azureBaseUrl}/${remotePath}"
 
-  echo "publishBuildStatusReport - Publishing local file '${finalReportPathAbsolute}' to remote destination '${fullDestinationUrl}'"
+  echo "publishBuildStatusReport - Publishing local file '${uploadFileName}' from directory '${uploadDirectory}' to remote destination '${fullDestinationUrl}'"
 
-  // Escape variables for safe use inside the sh command string.
-  String escLocalPath = finalReportPathAbsolute.replaceAll("'", "'\\\\''")
-  String escDestinationUrl = fullDestinationUrl.replaceAll("'", "'\\\\''")
+  // Use the dir step to change into the correct directory on the agent
+  dir(uploadDirectory) {
+    // Escape variables for safe use inside the sh command string.
+    String escFileName = uploadFileName.replaceAll("'", "'\\\\''")
+    String escDestinationUrl = fullDestinationUrl.replaceAll("'", "'\\\\''")
 
-  withEnv(["AZCOPY_LOCAL_PATH=${escLocalPath}", "AZCOPY_DESTINATION_URL=${escDestinationUrl}"]) {
-    sh'''
-        set -ex
-        echo "Attempting to publish report with azcopy..."
-        
-        # Ensure any previous azcopy login is cleared to avoid conflicts.
-        azcopy logout 2>/dev/null || true
+    withEnv(["AZCOPY_FILENAME=${escFileName}", "AZCOPY_DESTINATION_URL=${escDestinationUrl}"]) {
+      sh '''
+          set -ex
+          echo "Attempting to publish report with azcopy from current directory: $(pwd)"
+          
+          # Ensure any previous azcopy login is cleared to avoid conflicts.
+          azcopy logout 2>/dev/null || true
 
-        # Support for container agents using Workload Identity Federation.
-        # If the federated token file variable exists and is not empty, set the login type to WORKLOAD.
-        test -z "${AZURE_FEDERATED_TOKEN_FILE:-}" || export AZCOPY_AUTO_LOGIN_TYPE=WORKLOAD
+          # Support for container agents using Workload Identity Federation.
+          # If the federated token file variable exists and is not empty, set the login type to WORKLOAD.
+          test -z "${AZURE_FEDERATED_TOKEN_FILE:-}" || export AZCOPY_AUTO_LOGIN_TYPE=WORKLOAD
 
-        # Login using the agent's Managed Identity (credential-less).
-        azcopy login --identity
-        
-        # Copy the local file to the remote destination.
-        azcopy copy "\$AZCOPY_LOCAL_PATH" "\$AZCOPY_DESTINATION_URL" --recursive
-        
-        echo "azcopy copy command completed."
-    '''
+          # Login using the agent's Managed Identity (credential-less).
+          azcopy login --identity
+          
+          # Copy the local file from the current directory (.) to the remote destination.
+          # The remote URL points to the remote directory, and azcopy appends the filename.
+          # The --recursive flag is not needed for a single file copy.
+          azcopy copy "$AZCOPY_FILENAME" "$AZCOPY_DESTINATION_URL"
+          
+          echo "azcopy copy command completed."
+      '''
+    }
   }
 
   echo "publishBuildStatusReport - Process completed for ${jobName}#${buildNumber}."
