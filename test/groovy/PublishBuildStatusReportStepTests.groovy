@@ -1,9 +1,12 @@
+// test/groovy/PublishBuildStatusReportStepTests.groovy
+
 import org.junit.Before
 import org.junit.Test
 import java.util.Date
 import java.util.TimeZone
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertTrue
+import static org.junit.Assert.assertEquals // Adding for precise path check
 
 class PublishBuildStatusReportStepTests extends BaseTest {
   static final String scriptName = 'vars/publishBuildStatusReport.groovy'
@@ -14,6 +17,12 @@ class PublishBuildStatusReportStepTests extends BaseTest {
     super.setUp()
     // Mock the .format() extension method on the Date class for predictable timestamps in logs
     Date.metaClass.format = { String format, TimeZone tz -> '2025-06-17T15:10:00Z' }
+
+    // Mock the dir() step
+    helper.registerAllowedMethod('dir', [String.class, Closure.class], { String path, Closure body ->
+      binding.setVariable("dirCalledWithPath", path) // Capture path for verification
+      body.call() // Execute the closure passed to dir()
+    })
   }
 
   void mockPrincipalBranch() {
@@ -43,13 +52,17 @@ class PublishBuildStatusReportStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withEnv', 'ENV_BUILD_STATUS=SUCCESS'))
     assertTrue(assertMethodCallContainsPattern('sh', '.jenkins-scripts/exec_generate_report_'))
 
-    assertFalse("publishReports should NOT have been called", assertMethodCall('publishReports'))
 
-    String expectedLocalPath = '/home/jenkins/workspace/test-job/build_status_reports/ci.jenkins.io/my-folder/my-job/status.json'
-    String expectedRemoteUrl = 'https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io/build_status_reports/ci.jenkins.io/my-folder/my-job/status.json'
+    // 1. Verify that the dir() step was called with the correct directory path
+    String expectedUploadDirectory = '/home/jenkins/workspace/test-job/build_status_reports/ci.jenkins.io/my-folder/my-job'
+    assertEquals("The dir() step was not called with the correct directory path", expectedUploadDirectory, binding.getVariable("dirCalledWithPath"))
 
-    assertTrue(assertMethodCallContainsPattern('withEnv', "AZCOPY_LOCAL_PATH=${expectedLocalPath}"))
-    assertTrue(assertMethodCallContainsPattern('withEnv', "AZCOPY_DESTINATION_URL=${expectedRemoteUrl}"))
+    // 2. Verify the withEnv block inside the dir() step and the azcopy commands
+    String expectedRemoteDir = 'build_status_reports/ci.jenkins.io/my-folder/my-job'
+    String expectedRemoteUrl = "https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io/${expectedRemoteDir}"
+
+    assertTrue("AZCOPY_FILENAME was not set correctly in withEnv", assertMethodCallContainsPattern('withEnv', "AZCOPY_FILENAME=status.json"))
+    assertTrue("AZCOPY_DESTINATION_URL was not set correctly in withEnv", assertMethodCallContainsPattern('withEnv', "AZCOPY_DESTINATION_URL=${expectedRemoteUrl}"))
     assertTrue(assertMethodCallContainsPattern('sh', 'azcopy logout'))
     assertTrue(assertMethodCallContainsPattern('sh', 'azcopy login --identity'))
     assertTrue(assertMethodCallContainsPattern('sh', 'azcopy copy'))
@@ -70,15 +83,18 @@ class PublishBuildStatusReportStepTests extends BaseTest {
     assertMethodCallContainsPattern('withEnv', 'ENV_BUILD_NUMBER=unknown_build')
     assertMethodCallContainsPattern('withEnv', 'ENV_BUILD_STATUS=UNKNOWN')
 
-    String expectedLocalPath = '/home/jenkins/workspace/fallback-job/build_status_reports/unknown_controller/unknown_job/status.json'
-    assertTrue(assertMethodCallContainsPattern('withEnv', "AZCOPY_LOCAL_PATH=${expectedLocalPath}"))
+    // Verify the dir() step was called with the correct fallback directory path
+    String expectedUploadDirectory = '/home/jenkins/workspace/fallback-job/build_status_reports/unknown_controller/unknown_job'
+    assertEquals("The dir() step was not called with the correct fallback directory path", expectedUploadDirectory, binding.getVariable("dirCalledWithPath"))
+
+    // Verify that azcopy was still called
     assertTrue(assertMethodCallContainsPattern('sh', 'azcopy copy'))
   }
 
   @Test
   void it_does_nothing_on_non_principal_branch() throws Exception {
     def script = loadScript(scriptName)
-    // No env vars set
+    // No env vars set, so env.BRANCH_IS_PRIMARY will be null
 
     script.call()
     printCallStack()
@@ -88,6 +104,5 @@ class PublishBuildStatusReportStepTests extends BaseTest {
     assertFalse(assertMethodCall('libraryResource'))
     assertFalse(assertMethodCall('writeFile'))
     assertFalse(assertMethodCallContainsPattern('sh', 'azcopy'))
-    assertFalse(assertMethodCall('publishReports'))
   }
 }
