@@ -59,10 +59,10 @@ def call(Map config = [:]) {
 
   // --- Step 0: Principal Branch Check ---
   // Only proceed if running on a principal branch.
-  // if (env.BRANCH_IS_PRIMARY == null || !env.BRANCH_IS_PRIMARY.toBoolean()) {
-  //   echo "WARN: publishBuildStatusReport - Not on a principal branch (BRANCH_IS_PRIMARY: '${env.BRANCH_IS_PRIMARY}', BRANCH_NAME: '${env.BRANCH_NAME}'). Skipping report generation."
-  //   return
-  // }
+  if (env.BRANCH_IS_PRIMARY == null || !env.BRANCH_IS_PRIMARY.toBoolean()) {
+    echo "WARN: publishBuildStatusReport - Not on a principal branch (BRANCH_IS_PRIMARY: '${env.BRANCH_IS_PRIMARY}', BRANCH_NAME: '${env.BRANCH_NAME}'). Skipping report generation."
+    return
+  }
 
   echo "publishBuildStatusReport - Principal branch execution. Proceeding..."
 
