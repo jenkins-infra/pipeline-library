@@ -78,7 +78,7 @@ def call(Map config = [:]) {
     echo "WARN: publishBuildStatusReport - JENKINS_URL environment variable is not set or is empty. Using default hostname '${controllerHostname}'."
   }
 
-  String jobName = env.JOB_NAME ?: "unknown_job" // e.g., "MyFolder/MyJob"
+  String jobName = env.JOB_NAME ?: "unknown_job"
   String buildNumber = env.BUILD_NUMBER ?: "unknown_build"
   String buildStatus = currentBuild.currentResult ?: "UNKNOWN"
 
@@ -88,39 +88,28 @@ def call(Map config = [:]) {
   echo "publishBuildStatusReport - Data for shell script: Controller='${controllerHostname}', Job='${jobName}', Build='${buildNumber}', Status='${buildStatus}'"
 
   // --- Step 2: Define the final path for the JSON report on the agent ---
-  String finalReportDirRelative = "build_status_reports/${controllerHostname}/${jobName}"
-  String finalReportFileName = "status.json"
-  String finalReportPathRelative = "${finalReportDirRelative}/${finalReportFileName}"
-  String finalReportPathAbsolute = "${env.WORKSPACE}/${finalReportPathRelative}" // Absolute path for shell script
+  String finalReportPathAbsolute = "${env.WORKSPACE}/build_status_reports/${controllerHostname}/${jobName}/status.json"
   echo "publishBuildStatusReport - Shell script will be instructed to write final report to: ${finalReportPathAbsolute}"
 
   // --- Step 3: Prepare and deploy the utility shell script to the agent ---
   final String shellScriptResourcePath = 'io/jenkins/infra/pipeline/generateAndWriteBuildStatusReport.sh'
   String shellScriptContent = libraryResource shellScriptResourcePath
 
-  String tempScriptDir = ".jenkins-scripts"
-  String tempScriptName = "exec_generate_report_${env.BUILD_ID ?: System.currentTimeMillis()}.sh"
-  String tempScriptPathOnAgent = "${tempScriptDir}/${tempScriptName}"
+  String tempScriptPathOnAgent = ".jenkins-scripts/exec_generate_report_${env.BUILD_ID ?: System.currentTimeMillis()}.sh"
 
-  sh "mkdir -p '${tempScriptDir}'"
+  sh "mkdir -p '.jenkins-scripts'"
 
   writeFile file: tempScriptPathOnAgent, text: shellScriptContent
   sh "chmod +x '${tempScriptPathOnAgent}'"
   echo "publishBuildStatusReport - Utility shell script deployed to agent at: ${tempScriptPathOnAgent}"
 
   // --- Step 4: Execute the utility shell script ---
-  String escController = controllerHostname.replaceAll("'", "'\\\\''")
-  String escJobName = jobName.replaceAll("'", "'\\\\''")
-  String escBuildNumber = buildNumber.replaceAll("'", "'\\\\''")
-  String escBuildStatus = buildStatus.replaceAll("'", "'\\\\''")
-  String escFinalReportPathOnAgent = finalReportPathAbsolute.replaceAll("'", "'\\\\''")
-
   withEnv([
-    "ENV_CONTROLLER_HOSTNAME=${escController}",
-    "ENV_JOB_NAME=${escJobName}",
-    "ENV_BUILD_NUMBER=${escBuildNumber}",
-    "ENV_BUILD_STATUS=${escBuildStatus}",
-    "ENV_TARGET_JSON_FILE_PATH=${escFinalReportPathOnAgent}"
+    "ENV_CONTROLLER_HOSTNAME=${controllerHostname.replaceAll("'", "'\\\\''")}",
+    "ENV_JOB_NAME=${jobName.replaceAll("'", "'\\\\''")}",
+    "ENV_BUILD_NUMBER=${buildNumber.replaceAll("'", "'\\\\''")}",
+    "ENV_BUILD_STATUS=${buildStatus.replaceAll("'", "'\\\\''")}",
+    "ENV_TARGET_JSON_FILE_PATH=${finalReportPathAbsolute.replaceAll("'", "'\\\\''")}"
   ]) {
     echo "publishBuildStatusReport - Executing utility shell script: '${tempScriptPathOnAgent}'"
     sh "'${tempScriptPathOnAgent}'"
@@ -128,44 +117,29 @@ def call(Map config = [:]) {
   echo "publishBuildStatusReport - Utility shell script execution completed."
 
   // --- Step 5: Publish the generated report using azcopy ---
-  // Get the parent directory of the file we want to upload.
-  String uploadDirectory = new File(finalReportPathAbsolute).parent
-  String uploadFileName = finalReportFileName // "status.json"
+  final String fullDestinationUrl = "https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io/build_status_reports/${controllerHostname}/${jobName}"
 
-  final String azureBaseUrl = "https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io"
-  // The remote path is the directory structure on the server.
-  final String remotePath = finalReportDirRelative
-  final String fullDestinationUrl = "${azureBaseUrl}/${remotePath}"
-
-  echo "publishBuildStatusReport - Publishing local file '${uploadFileName}' from directory '${uploadDirectory}' to remote destination '${fullDestinationUrl}'"
+  echo "publishBuildStatusReport - Publishing local file 'status.json' from directory '${new File(finalReportPathAbsolute).parent}' to remote destination '${fullDestinationUrl}'"
 
   // Use the dir step to change into the correct directory on the agent
-  dir(uploadDirectory) {
+  dir(new File(finalReportPathAbsolute).parent) {
     // Escape variables for safe use inside the sh command string.
-    String escFileName = uploadFileName.replaceAll("'", "'\\\\''")
-    String escDestinationUrl = fullDestinationUrl.replaceAll("'", "'\\\\''")
-
-    withEnv(["AZCOPY_FILENAME=${escFileName}", "AZCOPY_DESTINATION_URL=${escDestinationUrl}"]) {
+    withEnv([
+      "AZCOPY_FILENAME=status.json",
+      "AZCOPY_DESTINATION_URL=${fullDestinationUrl.replaceAll("'", "'\\\\''")}"
+    ]) {
       sh '''
           set -ex
-          echo "Attempting to publish report with azcopy from current directory: $(pwd)"
-          
-          # Ensure any previous azcopy login is cleared to avoid conflicts.
+
           azcopy logout 2>/dev/null || true
 
-          # Support for container agents using Workload Identity Federation.
           # If the federated token file variable exists and is not empty, set the login type to WORKLOAD.
           test -z "${AZURE_FEDERATED_TOKEN_FILE:-}" || export AZCOPY_AUTO_LOGIN_TYPE=WORKLOAD
 
           # Login using the agent's Managed Identity (credential-less).
           azcopy login --identity
-          
-          # Copy the local file from the current directory (.) to the remote destination.
-          # The remote URL points to the remote directory, and azcopy appends the filename.
-          # The --recursive flag is not needed for a single file copy.
+
           azcopy copy "$AZCOPY_FILENAME" "$AZCOPY_DESTINATION_URL"
-          
-          echo "azcopy copy command completed."
       '''
     }
   }
