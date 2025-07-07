@@ -224,7 +224,7 @@ Object withArtifactCachingProxy(boolean useArtifactCachingProxy = true, Closure 
  * @see withArtifactCachingProxy
  */
 Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = null, Boolean addToolEnv = true, Boolean useArtifactCachingProxy = true) {
-  List<String> mvnOptions = ['--batch-mode', '--show-version', '--errors', '--no-transfer-progress']
+  List<String> mvnOptions = ['--batch-mode', '--show-version', '--errors', '--no-transfer-progress', '-Djava.io.tmpdir=' + env.WORKSPACE_TMP]
   withArtifactCachingProxy(useArtifactCachingProxy) {
     mvnOptions.addAll(options)
     mvnOptions.unique()
