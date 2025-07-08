@@ -336,6 +336,10 @@ Object runWithJava(String command, String jdk = '8', List<String> extraEnv = nul
     javaEnv.addAll(extraEnv)
   }
 
+  // Use workspace TMP instead of system temporary directory
+  javaEnv += "TMP=" + env.WORKSPACE_TMP
+  javaEnv += "TEMP=" + env.WORKSPACE_TMP
+
   withEnv(javaEnv) {
     if (isUnix()) {
       // TODO JENKINS-44231 candidate for simplification
