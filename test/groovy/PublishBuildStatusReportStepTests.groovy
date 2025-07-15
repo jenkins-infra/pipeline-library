@@ -1,5 +1,3 @@
-// test/groovy/PublishBuildStatusReportStepTests.groovy
-
 import org.junit.Before
 import org.junit.Test
 import static org.junit.Assert.assertFalse
@@ -32,8 +30,11 @@ class PublishBuildStatusReportStepTests extends BaseTest {
 
     assertJobStatusSuccess()
     assertTrue(assertMethodCallContainsPattern('pwd', 'tmp=true'))
+    assertTrue(assertMethodCallContainsPattern('libraryResource', 'io/jenkins/infra/pipeline/generateAndWriteBuildStatusReport.sh'))
+    assertTrue(assertMethodCallContainsPattern('writeFile', 'generateAndWriteBuildStatusReport.sh'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'BUILD_STATUS=SUCCESS'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'bash ${tempDir}/generateAndWriteBuildStatusReport.sh'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'chmod +x'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'bash'))
   }
 
   @Test
@@ -51,6 +52,7 @@ class PublishBuildStatusReportStepTests extends BaseTest {
 
     printCallStack()
     assertFalse(assertMethodCall('pwd'))
+    assertFalse(assertMethodCall('writeFile'))
     assertFalse(assertMethodCall('sh'))
   }
 
@@ -64,6 +66,7 @@ class PublishBuildStatusReportStepTests extends BaseTest {
 
     assertJobStatusSuccess()
     assertFalse(assertMethodCall('pwd'))
+    assertFalse(assertMethodCall('writeFile'))
     assertFalse(assertMethodCall('withEnv'))
     assertFalse(assertMethodCall('sh'))
   }
