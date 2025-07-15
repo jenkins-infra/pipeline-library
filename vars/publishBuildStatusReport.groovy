@@ -35,7 +35,9 @@ def call(Map config = [:]) {
 
   // Make script executable and run it
   withEnv(["BUILD_STATUS=${currentBuild.currentResult ?: 'UNKNOWN'}"]) {
-    sh "chmod +x ${scriptPath}"
-    sh "bash ${scriptPath}"
+    sh '''
+        chmod +x ${scriptPath}
+        bash ${scriptPath}
+    '''
   }
 }
