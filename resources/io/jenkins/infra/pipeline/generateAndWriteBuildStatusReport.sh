@@ -1,38 +1,35 @@
 #!/bin/bash
-#
-#
-# It expects the following environment variables to be set:
-#   ENV_CONTROLLER_HOSTNAME
-#   ENV_JOB_NAME
-#   ENV_BUILD_NUMBER
-#   ENV_BUILD_STATUS
-#   ENV_TARGET_JSON_FILE_PATH
+set -euo pipefail
 
-set -euo pipefail # Exit on error, treat unset variables as an error, and fail on pipe errors.
-                  # 'set -u' will cause an error if any ENV_ var below is not set.
+# Extract controller hostname from JENKINS_URL
+CONTROLLER_HOSTNAME=$(echo "$JENKINS_URL" | sed 's|https\?://||' | cut -d'/' -f1 | cut -d':' -f1 | sed 's/[^a-zA-Z0-9.-]/_/g')
 
-# Extract the directory part from the target file path.
-# Example: if ENV_TARGET_JSON_FILE_PATH is "foo/bar/status.json", TARGET_DIR will be "foo/bar"
-TARGET_DIR=$(dirname "$ENV_TARGET_JSON_FILE_PATH")
+# Build file path
+REPORT_DIR="$WORKSPACE/build_status_reports/$CONTROLLER_HOSTNAME/$JOB_NAME"
+REPORT_FILE="$REPORT_DIR/status.json"
 
-# Create the target directory and any parent directories if they don't exist.
-mkdir -p "$TARGET_DIR"
+# Create directory
+mkdir -p "$REPORT_DIR"
 
-# Generate timestamp.
+# Generate timestamp
 REPORT_TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 
-# Construct JSON using cat and heredoc, redirecting output directly to the target file.
-# The DELIMITER (EOF) is unquoted, so shell variables ($VAR) inside will be expanded.
-# This version assumes input ENV_... variables are "clean" for JSON string values.
-cat > "$ENV_TARGET_JSON_FILE_PATH" << EOF
+# Generate JSON report
+cat > "$REPORT_FILE" << EOF
 {
-  "controller_hostname": "$ENV_CONTROLLER_HOSTNAME",
-  "job_name": "$ENV_JOB_NAME",
-  "build_number": "$ENV_BUILD_NUMBER",
-  "build_status": "$ENV_BUILD_STATUS",
+  "controller_hostname": "$CONTROLLER_HOSTNAME",
+  "job_name": "$JOB_NAME",
+  "build_number": "$BUILD_NUMBER",
+  "build_status": "$BUILD_STATUS",
   "report_timestamp": "$REPORT_TIMESTAMP"
 }
 EOF
 
-# Optional: echo to stderr for debugging when running manually
-# echo "Debug: Report written to $ENV_TARGET_JSON_FILE_PATH" >&2
+# Upload with azcopy
+DESTINATION_URL="https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io/build_status_reports/$CONTROLLER_HOSTNAME/$JOB_NAME"
+
+cd "$REPORT_DIR"
+azcopy logout 2>/dev/null || true
+test -z "${AZURE_FEDERATED_TOKEN_FILE:-}" || export AZCOPY_AUTO_LOGIN_TYPE=WORKLOAD
+azcopy login --identity
+azcopy copy "status.json" "$DESTINATION_URL"
