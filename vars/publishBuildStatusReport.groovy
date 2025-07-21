@@ -34,7 +34,9 @@ def call(Map config = [:]) {
   writeFile file: scriptPath, text: libraryResource('io/jenkins/infra/pipeline/generateAndWriteBuildStatusReport.sh')
 
   // Make script executable and run it
-  withEnv(["BUILD_STATUS=${currentBuild.currentResult ?: 'UNKNOWN'}"]) {
-    sh "chmod +x ${scriptPath} && bash ${scriptPath}"
+  withEnv(["BUILD_STATUS=${currentBuild.currentResult ?: 'UNKNOWN'}", "SCRIPT_PATH=${scriptPath}"]) {
+    sh '''
+          bash ${SCRIPT_PATH}
+      '''
   }
 }
