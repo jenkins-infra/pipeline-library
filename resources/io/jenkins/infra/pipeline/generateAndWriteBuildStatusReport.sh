@@ -1,9 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-# Extract controller hostname from JENKINS_URL
-CONTROLLER_HOSTNAME=$(echo "$JENKINS_URL" | sed 's|https\?://||' | cut -d'/' -f1 | cut -d':' -f1 | sed 's/[^a-zA-Z0-9.-]/_/g')
-
 # Build file path
 REPORT_DIR="$WORKSPACE/build_status_reports/$CONTROLLER_HOSTNAME/$JOB_NAME"
 REPORT_FILE="$REPORT_DIR/status.json"
@@ -17,7 +14,7 @@ REPORT_TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 # Generate JSON report
 cat > "$REPORT_FILE" << EOF
 {
-  "controller_hostname": "$CONTROLLER_HOSTNAME",
+  "controller_url": "$JENKINS_URL",
   "job_name": "$JOB_NAME",
   "build_number": "$BUILD_NUMBER",
   "build_status": "$BUILD_STATUS",
