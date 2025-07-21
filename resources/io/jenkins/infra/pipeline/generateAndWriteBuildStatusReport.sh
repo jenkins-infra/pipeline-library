@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Build file path
-REPORT_DIR="$WORKSPACE/build_status_reports/$CONTROLLER_HOSTNAME/$JOB_NAME"
+REPORT_DIR="$WORKSPACE/build_status_reports/$JENKINS_URL/$JOB_NAME"
 REPORT_FILE="$REPORT_DIR/status.json"
 
 # Create directory
