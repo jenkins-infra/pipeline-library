@@ -19,9 +19,9 @@
  * }
  */
 def call(Map config = [:]) {
-  // if (!env.BRANCH_IS_PRIMARY) {
-  //   return
-  // }
+  if (!env.BRANCH_IS_PRIMARY) {
+    return
+  }
 
   if (!env.JENKINS_URL?.trim()) {
     error("JENKINS_URL is not set or empty")
