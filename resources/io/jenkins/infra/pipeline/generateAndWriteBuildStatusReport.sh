@@ -38,6 +38,6 @@ azcopy login --identity
 if ! azcopy copy "status.json" "$DESTINATION_URL"; then
     echo "azcopy failed, collecting logs for debugging"
     # Retrieve azcopy logs to archive them
-    cat /home/jenkins/.azcopy/*.log > "$WORKSPACE/azcopy.log" 2>/dev/null || echo "No azcopy logs found"
+    cat /home/jenkins/.azcopy/*.log > "$WORKSPACE/azcopy.log" 2>/dev/null
     exit 1
 fi

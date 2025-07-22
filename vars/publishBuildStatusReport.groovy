@@ -19,7 +19,7 @@
  * }
  */
 def call(Map config = [:]) {
-  // if (env.BRANCH_IS_PRIMARY == null || !env.BRANCH_IS_PRIMARY.toBoolean()) {
+  // if (!env.BRANCH_IS_PRIMARY) {
   //   return
   // }
 
