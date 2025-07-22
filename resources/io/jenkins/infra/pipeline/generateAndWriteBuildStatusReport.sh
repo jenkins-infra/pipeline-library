@@ -2,8 +2,11 @@
 set -euo pipefail
 set -x
 
+# Extract hostname from JENKINS_URL
+CONTROLLER_HOSTNAME=$(echo "$JENKINS_URL" | sed 's|https\?://||' | cut -d'/' -f1)
+
 # Build file path
-REPORT_DIR="$WORKSPACE/build_status_reports/$JENKINS_URL/$JOB_NAME"
+REPORT_DIR="$WORKSPACE/build_status_reports/$CONTROLLER_HOSTNAME/$JOB_NAME"
 REPORT_FILE="$REPORT_DIR/status.json"
 
 # Create directory
@@ -24,10 +27,17 @@ cat > "$REPORT_FILE" << EOF
 EOF
 
 # Upload with azcopy
-DESTINATION_URL="https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io/build_status_reports/$JENKINS_URL/$JOB_NAME"
+DESTINATION_URL="https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io/build_status_reports/$CONTROLLER_HOSTNAME/$JOB_NAME"
 
 cd "$REPORT_DIR"
-azcopy logout 2>/dev/null || true
+azcopy logout >/dev/null 2>&1 || true
 test -z "${AZURE_FEDERATED_TOKEN_FILE:-}" || export AZCOPY_AUTO_LOGIN_TYPE=WORKLOAD
 azcopy login --identity
-azcopy copy "status.json" "$DESTINATION_URL"
+
+# Try azcopy with error handling
+if ! azcopy copy "status.json" "$DESTINATION_URL"; then
+    echo "azcopy failed, collecting logs for debugging"
+    # Retrieve azcopy logs to archive them
+    cat /home/jenkins/.azcopy/*.log > "$WORKSPACE/azcopy.log" 2>/dev/null || echo "No azcopy logs found"
+    exit 1
+fi
