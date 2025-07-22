@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+set -x
 
 # Build file path
 REPORT_DIR="$WORKSPACE/build_status_reports/$JENKINS_URL/$JOB_NAME"
