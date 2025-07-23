@@ -43,7 +43,7 @@ def call(Map config = [:]) {
       currentBuild.result = 'FAILURE'
       sh '''
             # Retrieve azcopy logs to archive them
-            cat /home/jenkins/.azcopy/*.log > azcopy.log 2>/dev/null || echo "No azcopy logs found"
+            cat $HOME/.azcopy/*.log > azcopy.log 2>/dev/null || echo "No azcopy logs found"
         '''
       archiveArtifacts 'azcopy.log'
       throw err
