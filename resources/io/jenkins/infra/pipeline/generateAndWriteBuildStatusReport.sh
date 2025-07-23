@@ -32,11 +32,3 @@ cd "$REPORT_DIR"
 azcopy logout >/dev/null 2>&1 || true
 test -z "${AZURE_FEDERATED_TOKEN_FILE:-}" || export AZCOPY_AUTO_LOGIN_TYPE=WORKLOAD
 azcopy login --identity
-
-# Try azcopy with error handling
-if ! azcopy copy "status.json" "$DESTINATION_URL"; then
-    echo "azcopy failed, collecting logs for debugging"
-    # Retrieve azcopy logs to archive them
-    cat /home/jenkins/.azcopy/*.log > "$WORKSPACE/azcopy.log" 2>/dev/null
-    exit 1
-fi

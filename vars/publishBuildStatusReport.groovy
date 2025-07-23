@@ -35,8 +35,18 @@ def call(Map config = [:]) {
 
   // Make script executable and run it
   withEnv(["BUILD_STATUS=${currentBuild.currentResult ?: 'UNKNOWN'}", "SCRIPT_PATH=${scriptPath}"]) {
-    sh '''
-          bash ${SCRIPT_PATH}
-      '''
+    try {
+      sh '''
+            bash ${SCRIPT_PATH}
+        '''
+    } catch (err) {
+      currentBuild.result = 'FAILURE'
+      sh '''
+            # Retrieve azcopy logs to archive them
+            cat /home/jenkins/.azcopy/*.log > azcopy.log 2>/dev/null || echo "No azcopy logs found"
+        '''
+      archiveArtifacts 'azcopy.log'
+      throw err
+    }
   }
 }
