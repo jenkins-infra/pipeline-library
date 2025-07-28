@@ -27,7 +27,7 @@ cat > "$REPORT_FILE" << EOF
 EOF
 
 # Upload with azcopy
-DESTINATION_URL="https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io/build_status_reports/$CONTROLLER_HOSTNAME/$JOB_NAME/"
+DESTINATION_URL="https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io/build_status_reports/$CONTROLLER_HOSTNAME/$JOB_NAME/status.json"
 
 cd "$REPORT_DIR"
 azcopy logout >/dev/null 2>&1 || true
