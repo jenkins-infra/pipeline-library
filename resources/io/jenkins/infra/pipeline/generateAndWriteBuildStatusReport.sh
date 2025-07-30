@@ -27,10 +27,11 @@ cat > "$REPORT_FILE" << EOF
 EOF
 
 # Upload with azcopy
-DESTINATION_URL="https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io/build_status_reports/$CONTROLLER_HOSTNAME/$JOB_NAME"
+DESTINATION_URL="https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io/build_status_reports/$CONTROLLER_HOSTNAME/$JOB_NAME/"
 
 cd "$REPORT_DIR"
 azcopy logout >/dev/null 2>&1 || true
 test -z "${AZURE_FEDERATED_TOKEN_FILE:-}" || export AZCOPY_AUTO_LOGIN_TYPE=WORKLOAD
 azcopy login --identity
-azcopy copy "status.json" "$DESTINATION_URL" --recursive
+azcopy make "$DESTINATION_URL"
+azcopy copy "status.json" "$DESTINATION_URL"
