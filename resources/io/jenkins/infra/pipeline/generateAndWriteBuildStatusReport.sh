@@ -33,4 +33,4 @@ cd "$REPORT_DIR"
 azcopy logout >/dev/null 2>&1 || true
 test -z "${AZURE_FEDERATED_TOKEN_FILE:-}" || export AZCOPY_AUTO_LOGIN_TYPE=WORKLOAD
 azcopy login --identity
-azcopy sync "$REPORT_DIR/" "$DESTINATION_URL"
+azcopy copy "status.json" "$DESTINATION_URL" --recursive
