@@ -6,7 +6,6 @@ import java.text.DateFormat
 // makecall is a function to concentrate all the call to 'make'
 def makecall(String action, String imageDeployName, String targetOperationSystem, String specificDockerBakeFile, String dockerBakeTarget, String cacheTo= '') {
   final String bakefileContent = libraryResource 'io/jenkins/infra/docker/jenkinsinfrabakefile.hcl'
-  // Please note that "make deploy" and the generated bake deploy file uses the environment variable "IMAGE_DEPLOY_NAME"
   if (isUnix()) {
     if (! specificDockerBakeFile) {
       specificDockerBakeFile = 'jenkinsinfrabakefile.hcl'
@@ -54,7 +53,8 @@ def call(String imageShortName, Map userConfig=[:]) {
     dockerBakeFile: '', // Specify the path to a custom Docker Bake file to use instead of the default one
     dockerBakeTarget: 'default', // Specify the target of a custom Docker Bake file to work with
     cacheTo: '', // New parameter for Docker build cache export using cache-to
-    disablePublication: false, // Allow to disable tagging and publication of container image and GitHub release (true by default)
+    disablePublication: false, // Allow to disable tagging and publication of container image and GitHub release
+    publishToPrivateAzureRegistry: false, // Set to 'true' to publish the image into the private jenkins-infra private Azure Container Registry instead of DockerHub
   ]
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
   final Map finalConfig = defaultConfig << userConfig
@@ -117,7 +117,9 @@ def call(String imageShortName, Map userConfig=[:]) {
   final InfraConfig infraConfig = new InfraConfig(env)
   final String defaultRegistryNamespace = infraConfig.getDockerRegistryNamespace()
   final String registryNamespace = finalConfig.registryNamespace ?: defaultRegistryNamespace
+  final String acrName = 'dockerhubmirror'
   final String imageName = registryNamespace + '/' + imageShortName
+  final String registryHost = finalConfig.publishToPrivateAzureRegistry ? "${acrName}.azurecr.io" : 'docker.io'
 
   echo "INFO: Resolved Container Image Name: ${imageName}"
 
@@ -129,6 +131,7 @@ def call(String imageShortName, Map userConfig=[:]) {
       "IMAGE_DOCKERFILE=${finalConfig.dockerfile}",
       "BUILD_TARGETPLATFORM=${finalConfig.targetplatforms.split(',')[0]}",
       "BAKE_TARGETPLATFORMS=${finalConfig.targetplatforms}",
+      "REGISTRY=${registryHost}",
     ]) {
       infra.withDockerPullCredentials{
         String nextVersion = ''
@@ -220,8 +223,17 @@ def call(String imageShortName, Map userConfig=[:]) {
             // Only deploy on primary branch
             stage("Deploy ${imageName}") {
               if (!finalConfig.disablePublication) {
+                if (finalConfig.publishToPrivateAzureRegistry) {
+                  // Assume credential-less authentication (Azure Workload Identity)
+                  withEnv(["ACR_NAME=${acrName}"]) {
+                    sh '''
+                    az login --identity
+                    az acr login --name "${ACR_NAME}"
+                    '''
+                  }
+                }
                 infra.withDockerPushCredentials{
-                  makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
+                  makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, '')
                 }
               } else {
                 echo 'INFO: publication disabled.'
