@@ -170,6 +170,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=Dockerfile'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'BAKE_TARGETPLATFORMS=linux/amd64'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DEPLOY_NAME=' + fullTestImageName))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'REGISTRY=docker.io'))
 
     // And generated reports are recorded
     assertTrue(assertRecordIssues())
@@ -795,6 +796,43 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertJobStatusSuccess()
     assertTrue(assertMethodCallContainsPattern('sh', 'make bake-build'))
     assertTrue(assertMethodCallContainsPattern('withEnv', "DOCKER_CACHE_TO=${cacheValue}"))
+    verifyMocks()
+  }
+
+  @Test
+  void itBuildsAndDeploysOnPrivateAzureRegistry() throws Exception {
+    def script = loadScript(scriptName)
+
+    mockPrincipalBranch()
+
+    withMocks {
+      script.call(testImageName, [
+        publishToPrivateAzureRegistry: true,
+      ])
+    }
+    printCallStack()
+
+    // Then we expect a successful build with the code cloned
+    assertJobStatusSuccess()
+
+    // With the common workflow run as expected
+    assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
+    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
+
+    // And the Azure credential-less authentication is performed
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'ACR_NAME=dockerhubmirror'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'az login --identity'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'az acr login --name "${ACR_NAME}"'))
+
+    // And the expected image name (with registry prefix) is set
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DEPLOY_NAME=' + fullTestImageName))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'REGISTRY=dockerhubmirror.azurecr.io'))
+
+    // And the deploy step called
+    assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
+
+    // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
 }
