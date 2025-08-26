@@ -7,6 +7,7 @@ def call(Map params = [:]) {
   properties([buildDiscarder(logRotator(numToKeepStr: '5'))])
 
   def repo = params.containsKey('repo') ? params.repo : null
+  def useContainerAgent = params.containsKey('useContainerAgent') ? params.useContainerAgent : false
   def failFast = params.containsKey('failFast') ? params.failFast : true
   def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
   if (timeoutValue > 180) {
@@ -19,10 +20,10 @@ def call(Map params = [:]) {
   boolean archivedArtifacts = false
   Map tasks = [failFast: failFast]
   buildPlugin.getConfigurations(params).each { config ->
-    String label = config.platform
     String jdk = config.jdk
+    String platform = config.platform
     String jenkinsVersion = config.jenkins
-
+    String label = infra.getBuildAgentLabel(platform, jdk, useContainerAgent)
     String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
     boolean first = tasks.size() == 1
     boolean skipTests = params?.tests?.skip

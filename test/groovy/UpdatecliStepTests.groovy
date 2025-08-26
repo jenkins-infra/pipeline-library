@@ -37,6 +37,11 @@ class UpdatecliStepTests extends BaseTest {
     // And the repository checkouted
     assertTrue(assertMethodCallContainsPattern('checkout', ''))
 
+
+    // Ensure no download happens
+    assertFalse(assertMethodCallContainsPattern('sh', 'curl --silent --show-error --location --output'))
+    assertFalse(assertMethodCallContainsPattern('sh', 'tar --extract'))
+
     // And only the diff command called with default values
     assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
     assertFalse(assertMethodCallContainsPattern('sh','updatecli apply'))
@@ -135,5 +140,41 @@ class UpdatecliStepTests extends BaseTest {
 
     // And the custom credentialsId is taken in account
     assertTrue(assertMethodCallContainsPattern('usernamePassword', "credentialsId=${anotherCredentialsId}"))
+  }
+
+  // Test that when a custom version is specified, the pipeline includes the download steps.
+  @Test
+  void itRunSuccessfullyWithCustomVersion() throws Exception {
+    def script = loadScript(scriptName)
+    script.call(version: '0.92.0')
+    printCallStack()
+    assertJobStatusSuccess()
+    assertTrue(assertMethodCallContainsPattern('sh', 'curl --silent --show-error --location --output'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'mkdir -p "${CUSTOM_UPDATECLI_PATH}"'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'tar --extract --gzip --file="${tarFileName}" --directory="${CUSTOM_UPDATECLI_PATH}" updatecli'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'updatecli diff'))
+  }
+
+  // Test that when a runInCurrentAgent: true is specified, the pipeline does not provision an agent node.
+  @Test
+  void itRunSuccessfullyInCurrentNode() throws Exception {
+    def script = loadScript(scriptName)
+
+    // when calling the "updatecli" function with default configuration and runInCurrentAgent enabled
+    script.call(runInCurrentAgent: true)
+    printCallStack()
+
+    // Then we expect a successful build
+    assertJobStatusSuccess()
+
+    // And the specific pod agent should NOT be used (i.e. no call containing the dedicated agent label)
+    assertFalse(assertMethodCallContainsPattern('node', 'jnlp-linux-arm64'))
+
+    // And the repository should be checked out
+    assertTrue(assertMethodCallContainsPattern('checkout', ''))
+
+    // And only the diff command is called with default values
+    assertTrue(assertMethodCallContainsPattern('sh', 'updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
+    assertFalse(assertMethodCallContainsPattern('sh', 'updatecli apply'))
   }
 }
