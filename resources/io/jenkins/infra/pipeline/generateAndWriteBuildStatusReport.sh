@@ -13,7 +13,7 @@ REPORT_FILE="$REPORT_DIR/status.json"
 mkdir -p "$REPORT_DIR"
 
 # Generate timestamp
-REPORT_TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+REPORT_TIMESTAMP=$(date -u +%s)
 
 # Generate JSON report
 cat > "$REPORT_FILE" << EOF
