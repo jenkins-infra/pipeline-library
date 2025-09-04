@@ -187,7 +187,7 @@ def getInfraSharedTools(String sharedToolsSubDir) {
       [$class: 'CleanBeforeCheckout', deleteUntrackedNestedRepositories: true],
       [$class: 'RelativeTargetDirectory', relativeTargetDir: sharedToolsSubDir],
       [$class: 'GitSCMStatusChecksExtension', skip: true],
-    ], userRemoteConfigs: [[credentialsId: 'github-app-infra', url: 'https://github.com/jenkins-infra/shared-tools.git']]]
+    ], userRemoteConfigs: [[url: 'https://github.com/jenkins-infra/shared-tools.git']]]
 
   return outputs
 }
