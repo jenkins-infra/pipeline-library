@@ -128,7 +128,7 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
       writeFile file: scriptTmpPath, text: getSignedUrlScript
 
       // Call the script and retrieve the signed URL
-      signedUrl = sh(script: "bash ${scriptTmpPath}", returnStdout: true).trim()
+      final String signedUrl = sh(script: "bash ${scriptTmpPath}", returnStdout: true).trim()
 
       withEnv(["FILESHARE_SIGNED_URL=${signedUrl}"]) {
         echo "INFO: ${options.fileShare} file share signed URL expiring in ${options.durationInMinute} minute(s) available in \$FILESHARE_SIGNED_URL"

@@ -60,4 +60,8 @@ class Infra implements Serializable {
   String getBuildAgentLabel(String platform, String jdk, Boolean useContainerAgent) {
     return "${platform}-${jdk}-${useContainerAgent.toString()}"
   }
+
+  Object withFileShareServicePrincipal(Map options, Closure body) {
+    return body
+  }
 }
