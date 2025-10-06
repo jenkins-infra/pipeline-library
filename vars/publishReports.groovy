@@ -7,51 +7,57 @@
  */
 def call(List<String> files, Map params = [:]) {
   if (!infra.isTrusted() && !infra.isInfra()) {
-    error 'Can only call publishReports from within the trusted.ci environment'
+    error 'Can only call publishReports from within infra.ci or trusted.ci environment'
   }
 
-  withCredentials([string(credentialsId: 'azure-reports-access-key', variable: 'AZURE_STORAGE_KEY'),]) {
-    // Sanity Check to check that `az` is installed, in the PATH, and in a decent version
-    sh 'az version'
+  // Sanity check to check if the required tools are installed (or fail fast)
+  sh '''
+  az version
+  azcopy --version
+  '''
 
+  infra.withFileShareServicePrincipal([
+    servicePrincipalCredentialsId: 'reports-jenkins-io-azurefile-serviceprincipal',
+    fileShare: 'reports-jenkins-io',
+    fileShareStorageAccount: 'reportsjenkinsio'
+  ]) {
     for(int i = 0; i < files.size(); ++i) {
       String filename = files[i]
-      withEnv(['HOME=/tmp']) {
-        String uploadFlags = ''
-        switch (filename) {
-          case ~/(?i).*\.html/:
-            uploadFlags = '--content-type="text/html"'
-            break
-          case ~/(?i).*\.css/:
-            uploadFlags = '--content-type="text/css"'
-            break
-          case ~/(?i).*\.json/:
-            uploadFlags = '--content-type="application/json"'
-            break
-          case ~/(?i).*\.js/:
-            uploadFlags = '--content-type="application/javascript"'
-            break
-          case ~/(?i).*\.gif/:
-            uploadFlags = '--content-type="image/gif"'
-            break
-          case ~/(?i).*\.png/:
-            uploadFlags = '--content-type="image/png"'
-            break
-        }
-        def directory = filename.split("/")
-        def basename = directory[directory.size() - 1]
-        def dirname = Arrays.copyOfRange(directory, 0, directory.size()-1 ).join("/")
+      String contentType = ''
 
-        withEnv([
-          "FILENAME=${filename}",
-          "UPLOADFLAGS=${uploadFlags}",
-          "SOURCE_DIRNAME=${dirname ?: '.'}",
-          "DESTINATION_PATH=${dirname ?: '/'}",
-          "PATTERN=${ basename ?: '*' }",
-        ]) {
-          // `az storage file upload` doesn't support file uploaded in a remote directory that doesn't exist but upload-batch yes. Unfortunately the cli syntax is a bit different and requires filename and directory name to be set differently.
-          sh 'az storage file upload-batch --account-name prodjenkinsreports --destination reports --source ${SOURCE_DIRNAME} --destination-path ${DESTINATION_PATH} --pattern ${PATTERN} ${UPLOADFLAGS}'
-        }
+      switch (filename) {
+        case ~/(?i).*\.html/:
+          contentType = 'text/html'
+          break
+        case ~/(?i).*\.css/:
+          contentType = 'text/css'
+          break
+        case ~/(?i).*\.json/:
+          contentType = 'application/json'
+          break
+        case ~/(?i).*\.js/:
+          contentType = 'application/javascript'
+          break
+        case ~/(?i).*\.gif/:
+          contentType = 'image/gif'
+          break
+        case ~/(?i).*\.png/:
+          contentType = 'image/png'
+          break
+      }
+
+      withEnv(["FILENAME=${filename}", "CONTENT_TYPE=${contentType}",]) {
+        sh '''
+        # Don't output sensitive information
+        set +x
+
+        # Synchronize the File Share content
+        azcopy copy \
+          --skip-version-check \
+          --put-md5 `# File length us used by default which can lead to errors for tiny text files` \
+          --content-type="${CONTENT_TYPE}" \
+          "${FILENAME}" "${FILESHARE_SIGNED_URL}"
+        '''
       }
     }
   }
