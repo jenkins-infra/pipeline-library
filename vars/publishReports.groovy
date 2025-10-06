@@ -54,7 +54,7 @@ def call(List<String> files, Map params = [:]) {
         withEnv([
           "CONTENT_TYPE=${contentType}",
           "SOURCE_DIRNAME=${dirname ?: '.'}",
-          "DESTINATION_PATH=${dirname ?: '/'}",
+          "DESTINATION_PATH=${dirname ?: ''}",
           "PATTERN=${ basename ?: '*' }",
         ]) {
           sh '''
