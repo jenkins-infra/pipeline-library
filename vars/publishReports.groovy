@@ -46,18 +46,40 @@ def call(List<String> files, Map params = [:]) {
           break
       }
 
-      withEnv(["FILENAME=${filename}", "CONTENT_TYPE=${contentType}",]) {
-        sh '''
-        # Don't output sensitive information
-        set +x
+      String[] directory = filename.split("/")
+      String basename = directory[directory.size() - 1]
+      String dirname = Arrays.copyOfRange(directory, 0, directory.size()-1 ).join("/")
 
-        # Synchronize the File Share content
-        azcopy copy \
-          --skip-version-check \
-          --put-md5 `# File length us used by default which can lead to errors for tiny text files` \
-          --content-type="${CONTENT_TYPE}" \
-          "${FILENAME}" "${FILESHARE_SIGNED_URL}"
-        '''
+      try {
+        withEnv([
+          "CONTENT_TYPE=${contentType}",
+          "SOURCE_DIRNAME=${dirname ?: '.'}",
+          "DESTINATION_PATH=${dirname ?: '/'}",
+          "PATTERN=${ basename ?: '*' }",
+        ]) {
+          sh '''
+          # Don't output sensitive information
+          set +x
+
+          fileShareUrl="$(echo "${FILESHARE_SIGNED_URL}" | sed "s#/?#/${DESTINATION_PATH}?#")"
+
+          # Synchronize the File Share content
+          azcopy copy \
+            --skip-version-check \
+            --put-md5 `# File length us used by default which can lead to errors for tiny text files` \
+            --content-type="${CONTENT_TYPE}" \
+            --recursive \
+            "${SOURCE_DIRNAME}/${PATTERN}" "${fileShareUrl}"
+          '''
+        }
+      } catch (err) {
+        currentBuild.result = 'FAILURE'
+        sh '''
+              # Retrieve azcopy logs to archive them
+              cat $HOME/.azcopy/*.log > azcopy.log 2>/dev/null || echo "No azcopy logs found"
+          '''
+        archiveArtifacts 'azcopy.log'
+        throw err
       }
     }
   }
