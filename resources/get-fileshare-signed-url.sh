@@ -43,14 +43,14 @@ if  [[ -n "${AZURE_STORAGE_KEY:=""}" ]]; then
     shouldLogout="false"
 else
     # If a fileshare client secret is defined, use it to login
-    if [[ -n "${JENKINS_INFRA_FILESHARE_CLIENT_SECRET}" ]]; then
+    if [[ -n "${JENKINS_INFRA_FILESHARE_CLIENT_SECRET:-}" ]]; then
         # Env vars needed to use a service principal
         : "${JENKINS_INFRA_FILESHARE_CLIENT_ID?}" "${JENKINS_INFRA_FILESHARE_TENANT_ID?}"
 
         # Login without the JSON output from az
         az login --service-principal \
         --user "${JENKINS_INFRA_FILESHARE_CLIENT_ID}" \
-        --password="${JENKINS_INFRA_FILESHARE_CLIENT_SECRET}" \
+        --password="${JENKINS_INFRA_FILESHARE_CLIENT_SECRET:-}" \
         --tenant "${JENKINS_INFRA_FILESHARE_TENANT_ID}" > /dev/null
     else
         # Login credential-less with the user assigned identity of the VM agent
