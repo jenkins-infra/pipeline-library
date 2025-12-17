@@ -417,9 +417,10 @@ class InfraStepTests extends BaseTest {
     helper.registerAllowedMethod('isInfra', [], { true })
     def script = loadScript(scriptName)
     def isOK = false
+    // with missing fileShareStorageAccount option
     def options = [
-      fileShare: defaultFileShare,
-      fileShareStorageAccount: defaultFileShareStorageAccount
+      servicePrincipalCredentialsId: defaultServicePrincipalCredentialsId,
+      fileShare: defaultFileShare
     ]
     script.withFileShareServicePrincipal(options) {
       isOK = true
