@@ -73,7 +73,7 @@ Object withDockerPullCredentials(Closure body) {
  * signed with a SAS token with an expiry date of 10 minutes by default,
  * stored in FILESHARE_SIGNED_URL environment variable
  * @param options.servicePrincipalCredentialsId Azure Service Principal credentials id to use.
-                                                If empty ("credentials-less"), will login into Azure with the agent user managed identity
+                                                If empty ("credentials-less"), will login into Azure with the agent user assigned identity
                                                 Either must has Storage Account Contributor on the File Share Storage Account
  * @param options.fileShare Azure File Share name to use
  * @param options.fileShareStorageAccount Storage Account name of the Azure File Share to use (needed to generate the SAS token)
@@ -110,6 +110,7 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
   }
   // If a service principal credentials id is passed, generate a fileshare signed URL using this credentials
   if (options.servicePrincipalCredentialsId) {
+    echo "INFO: using service principal credentials passed in options"
     withCredentials([
       azureServicePrincipal(
       credentialsId: options.servicePrincipalCredentialsId,
@@ -121,7 +122,8 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
       generateFileShareSignedURL(options, body)
     }
   } else {
-    // If no service principal credentials id is passed, generate a fileshare signed URL credentials-less (using a user managed identity)
+    // If no service principal credentials id is passed, generate a fileshare signed URL credentials-less (using a user assigned identity)
+    echo "INFO: credentials-less (using user assigned identity service principal)"
     generateFileShareSignedURL(options, body)
   }
 }
@@ -131,7 +133,7 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
  * signed with a SAS token with an expiry date of 10 minutes by default,
  * stored in FILESHARE_SIGNED_URL environment variable.
  * The service principal used must has Storage Account Contributor on the File Share Storage Account.
- * This service principal can be either from an Azure credentials, or from an user managed identity.
+ * This service principal can be either from an Azure credentials, or from the agent's user assigned identity.
  * This function should not be called directly.
  * @param options.fileShare Azure File Share name to use
  * @param options.fileShareStorageAccount Storage Account name of the Azure File Share to use (needed to generate the SAS token)
