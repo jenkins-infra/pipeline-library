@@ -124,7 +124,7 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
 
       // Retrieve the script to generate a SAS token with the Service Principal for the File Share and return the file share signed URL
       final String scriptTmpPath = pwd(tmp: true) + '/get-fileshare-signed-url.sh'
-      final String getSignedUrlScript = libraryResource 'get-fileshare-signed-url.sh'
+      final String getSignedUrlScript = libraryResource 'io/jenkins/infra/pipeline/get-fileshare-signed-url.sh'
       writeFile file: scriptTmpPath, text: getSignedUrlScript
 
       // Call the script and retrieve the signed URL
