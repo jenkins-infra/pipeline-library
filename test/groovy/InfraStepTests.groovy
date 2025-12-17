@@ -397,6 +397,10 @@ class InfraStepTests extends BaseTest {
     printCallStack()
     // then the correct Azure Service Principal credentials is used
     assertTrue(assertMethodCallContainsPattern('azureServicePrincipal', "credentialsId=${defaultServicePrincipalCredentialsId}"))
+    // then the script is loaded
+    assertTrue(assertMethodCallContainsPattern('libraryResource', 'io/jenkins/infra/pipeline/get-fileshare-signed-url.sh'))
+    // then the script is written in a temporary folder in the workspace
+    assertTrue(assertMethodCallContainsPattern('writeFile', '/get-fileshare-signed-url.sh'))
     // then the correct options are passed as env vars
     assertTrue(assertMethodCallContainsPattern('withEnv', "STORAGE_NAME=${defaultFileShareStorageAccount}, STORAGE_FILESHARE=${defaultFileShare}, STORAGE_DURATION_IN_MINUTE=${defaultTokenDuration}, STORAGE_PERMISSIONS=${defaultTokenPermissions}"))
     // then a script to get a file share signed URL is called

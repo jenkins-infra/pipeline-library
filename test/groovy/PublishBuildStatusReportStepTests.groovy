@@ -30,8 +30,8 @@ class PublishBuildStatusReportStepTests extends BaseTest {
 
     assertJobStatusSuccess()
     assertTrue(assertMethodCallContainsPattern('pwd', 'tmp=true'))
-    assertTrue(assertMethodCallContainsPattern('libraryResource', 'io/jenkins/infra/pipeline/generateAndWriteBuildStatusReport.sh'))
-    assertTrue(assertMethodCallContainsPattern('writeFile', 'generateAndWriteBuildStatusReport.sh'))
+    assertTrue(assertMethodCallContainsPattern('libraryResource', 'io/jenkins/infra/pipeline/generate-and-write-build-status-report.sh'))
+    assertTrue(assertMethodCallContainsPattern('writeFile', 'generate-and-write-build-status-report.sh'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'BUILD_STATUS=SUCCESS'))
     assertTrue(assertMethodCallContainsPattern('sh', 'bash'))
   }

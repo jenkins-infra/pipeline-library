@@ -28,10 +28,10 @@ def call(Map config = [:]) {
   }
 
   def tempDir = pwd(tmp: true)
-  def scriptPath = "${tempDir}/generateAndWriteBuildStatusReport.sh"
+  def scriptPath = "${tempDir}/generate-and-write-build-status-report.sh"
 
   // Write the script to temp directory
-  writeFile file: scriptPath, text: libraryResource('io/jenkins/infra/pipeline/generateAndWriteBuildStatusReport.sh')
+  writeFile file: scriptPath, text: libraryResource('io/jenkins/infra/pipeline/generate-and-write-build-status-report.sh')
 
   // Make script executable and run it
   withEnv(["BUILD_STATUS=${currentBuild.currentResult ?: 'UNKNOWN'}", "SCRIPT_PATH=${scriptPath}"]) {
