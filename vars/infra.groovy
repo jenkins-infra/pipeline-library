@@ -72,9 +72,9 @@ Object withDockerPullCredentials(Closure body) {
  * Execute the body passed as closure with an Azure File Share URL
  * signed with a SAS token with an expiry date of 10 minutes by default,
  * stored in FILESHARE_SIGNED_URL environment variable
- * @param options.servicePrincipalCredentialsId Azure Service Principal credentials id to use.
-                                                If empty, will login into Azure with the agent's user assigned identity service principal ("credential-less")
-                                                In each case, the service principal must has Storage Account Contributor on the File Share Storage Account
+ * If no credentials id is passed as option, it will login into Azure with the agent's user assigned identity service principal ("credential-less")
+ * In each case, the service principal must has Storage Account Contributor on the File Share Storage Account
+ * @param options.servicePrincipalCredentialsId Azure Service Principal credentials id to use. Don't pass it for credential-less
  * @param options.fileShare Azure File Share name to use
  * @param options.fileShareStorageAccount Storage Account name of the Azure File Share to use (needed to generate the SAS token)
  * @param options.durationInMinute duration in minutes of the SAS token before expiration (default value: 10)
