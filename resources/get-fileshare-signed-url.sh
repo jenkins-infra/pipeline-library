@@ -4,7 +4,7 @@
 # Description: This script uses either a service principal or either a storage account access key to generate a SAS token
 # and returns the file share URL composed of the storage resource URI and the SAS token.
 # Ref: https://learn.microsoft.com/en-us/azure/storage/common/storage-sas-overview
-# This service principal can come from a credentials, or from a VM agent user assigned identity
+# This service principal can come from a credentials, or from a VM agent's user assigned identity
 # --
 # Usage:
 # - Return a file share signed URL: ./get-fileshare-signed-url.sh
