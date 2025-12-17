@@ -395,7 +395,7 @@ class InfraStepTests extends BaseTest {
       isOK = true
     }
     printCallStack()
-    // then the correct Azure Service Principal is used
+    // then the Azure Service Principal from the credentials passed in options is used
     assertTrue(assertMethodCallContainsPattern('azureServicePrincipal', "credentialsId=${defaultServicePrincipalCredentialsId}"))
     assertTrue(assertMethodCallContainsPattern('echo', 'INFO: using service principal credentials passed in options'))
     assertFalse(assertMethodCallContainsPattern('echo', 'INFO: credentials-less (using user assigned identity service principal)'))
