@@ -110,7 +110,7 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
   }
   // If a service principal credentials id is passed, generate a fileshare signed URL using this credentials
   if (options.servicePrincipalCredentialsId) {
-    echo "INFO: using service principal credentials passed in options"
+    echo 'INFO: using service principal credentials passed in options'
     withCredentials([
       azureServicePrincipal(
       credentialsId: options.servicePrincipalCredentialsId,
@@ -123,7 +123,7 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
     }
   } else {
     // If no service principal credentials id is passed, generate a fileshare signed URL credentials-less (using a user assigned identity)
-    echo "INFO: credentials-less (using user assigned identity service principal)"
+    echo 'INFO: credentials-less (using user assigned identity service principal)'
     generateFileShareSignedURL(options, body)
   }
 }
