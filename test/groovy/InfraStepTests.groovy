@@ -429,7 +429,7 @@ class InfraStepTests extends BaseTest {
     }
     printCallStack()
     // then an error message is displayed
-    assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: At least one of these required options is missing: servicePrincipalCredentialsId, fileShare, fileShareStorageAccount'))
+    assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: At least one of these required options is missing: fileShare, fileShareStorageAccount'))
     // then neither the Azure Service Principal credentials nor the user assigned identity service principal is used
     assertFalse(assertMethodCallContainsPattern('azureServicePrincipal', "credentialsId=${defaultServicePrincipalCredentialsId}"))
     assertFalse(assertMethodCallContainsPattern('echo', 'INFO: using service principal credentials passed in options'))
