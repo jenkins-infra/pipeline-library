@@ -452,6 +452,9 @@ class InfraStepTests extends BaseTest {
   void testWithFileShareServicePrincipalCredentialsLess() throws Exception {
     // When used on infra.ci.jenkins.io
     helper.registerAllowedMethod('isInfra', [], { true })
+    helper.registerAllowedMethod('sh', [Map.class], { m ->
+      return "https://${defaultFileShareStorageAccount}.credential-lesset/${defaultFileShare}?sas-token"
+    })
     def script = loadScript(scriptName)
     def isOK = false
     // without any servicePrincipalCredentialsId option
