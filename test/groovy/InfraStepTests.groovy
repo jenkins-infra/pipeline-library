@@ -452,7 +452,7 @@ class InfraStepTests extends BaseTest {
     def isOK = false
     // without any servicePrincipalCredentialsId option
     def options = [
-      fileShare: defaultFileShare
+      fileShare: defaultFileShare,
       fileShareStorageAccount: defaultFileShareStorageAccount
     ]
     script.withFileShareServicePrincipal(options) {
