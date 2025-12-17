@@ -398,7 +398,7 @@ class InfraStepTests extends BaseTest {
     // then the Azure Service Principal from the credentials passed in options is used
     assertTrue(assertMethodCallContainsPattern('azureServicePrincipal', "credentialsId=${defaultServicePrincipalCredentialsId}"))
     assertTrue(assertMethodCallContainsPattern('echo', 'INFO: using service principal credentials passed in options'))
-    assertFalse(assertMethodCallContainsPattern('echo', 'INFO: credentials-less (using user assigned identity service principal)'))
+    assertFalse(assertMethodCallContainsPattern('echo', 'INFO: credential-less (using user assigned identity service principal)'))
     // then the correct options are passed as env vars
     assertTrue(assertMethodCallContainsPattern('withEnv', "STORAGE_NAME=${defaultFileShareStorageAccount}, STORAGE_FILESHARE=${defaultFileShare}, STORAGE_DURATION_IN_MINUTE=${defaultTokenDuration}, STORAGE_PERMISSIONS=${defaultTokenPermissions}"))
     // then a script to get a file share signed URL is called
@@ -433,7 +433,7 @@ class InfraStepTests extends BaseTest {
     // then neither the Azure Service Principal credentials nor the user assigned identity service principal is used
     assertFalse(assertMethodCallContainsPattern('azureServicePrincipal', "credentialsId=${defaultServicePrincipalCredentialsId}"))
     assertFalse(assertMethodCallContainsPattern('echo', 'INFO: using service principal credentials passed in options'))
-    assertFalse(assertMethodCallContainsPattern('echo', 'INFO: credentials-less (using user assigned identity service principal)'))
+    assertFalse(assertMethodCallContainsPattern('echo', 'INFO: credential-less (using user assigned identity service principal)'))
     // then the correct options are not passed as env vars
     assertFalse(assertMethodCallContainsPattern('withEnv', "STORAGE_NAME=${defaultFileShareStorageAccount}, STORAGE_FILESHARE=${defaultFileShare}, STORAGE_DURATION_IN_MINUTE=${defaultTokenDuration}, STORAGE_PERMISSIONS=${defaultTokenPermissions}"))
     // then a script to get a file share signed URL is not called
@@ -466,7 +466,7 @@ class InfraStepTests extends BaseTest {
     // then the user assigned identity service principal is used insted of a credentials one
     assertFalse(assertMethodCallContainsPattern('azureServicePrincipal', 'credentialsId='))
     assertFalse(assertMethodCallContainsPattern('echo', 'INFO: using service principal credentials passed in options'))
-    assertTrue(assertMethodCallContainsPattern('echo', 'INFO: credentials-less (using user assigned identity service principal)'))
+    assertTrue(assertMethodCallContainsPattern('echo', 'INFO: credential-less (using user assigned identity service principal)'))
     // then the correct options are passed as env vars
     assertTrue(assertMethodCallContainsPattern('withEnv', "STORAGE_NAME=${defaultFileShareStorageAccount}, STORAGE_FILESHARE=${defaultFileShare}, STORAGE_DURATION_IN_MINUTE=${defaultTokenDuration}, STORAGE_PERMISSIONS=${defaultTokenPermissions}"))
     // then a script to get a file share signed URL is called

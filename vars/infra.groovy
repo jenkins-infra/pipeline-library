@@ -73,7 +73,7 @@ Object withDockerPullCredentials(Closure body) {
  * signed with a SAS token with an expiry date of 10 minutes by default,
  * stored in FILESHARE_SIGNED_URL environment variable
  * @param options.servicePrincipalCredentialsId Azure Service Principal credentials id to use.
-                                                If empty ("credentials-less"), will login into Azure with the agent user assigned identity
+                                                If empty ("credential-less"), will login into Azure with the agent user assigned identity
                                                 Either must has Storage Account Contributor on the File Share Storage Account
  * @param options.fileShare Azure File Share name to use
  * @param options.fileShareStorageAccount Storage Account name of the Azure File Share to use (needed to generate the SAS token)
@@ -122,8 +122,8 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
       generateFileShareSignedURL(options, body)
     }
   } else {
-    // If no service principal credentials id is passed, generate a fileshare signed URL credentials-less (using a user assigned identity)
-    echo 'INFO: credentials-less (using user assigned identity service principal)'
+    // If no service principal credentials id is passed, generate a fileshare signed URL credential-less (using a user assigned identity)
+    echo 'INFO: credential-less (using user assigned identity service principal)'
     generateFileShareSignedURL(options, body)
   }
 }
