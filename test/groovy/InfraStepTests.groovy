@@ -445,6 +445,37 @@ class InfraStepTests extends BaseTest {
   }
 
   @Test
+  void testWithFileShareServicePrincipalCredentialsLess() throws Exception {
+    // When used on infra.ci.jenkins.io
+    helper.registerAllowedMethod('isInfra', [], { true })
+    def script = loadScript(scriptName)
+    def isOK = false
+    // without any servicePrincipalCredentialsId option
+    def options = [
+      fileShare: defaultFileShare
+      fileShareStorageAccount: defaultFileShareStorageAccount
+    ]
+    script.withFileShareServicePrincipal(options) {
+      isOK = true
+    }
+    printCallStack()
+    // then no Azure Service Principal credentials is used
+    assertFalse(assertMethodCallContainsPattern('azureServicePrincipal', 'credentialsId='))
+    // then the correct options are passed as env vars
+    assertTrue(assertMethodCallContainsPattern('withEnv', "STORAGE_NAME=${defaultFileShareStorageAccount}, STORAGE_FILESHARE=${defaultFileShare}, STORAGE_DURATION_IN_MINUTE=${defaultTokenDuration}, STORAGE_PERMISSIONS=${defaultTokenPermissions}"))
+    // then a script to get a file share signed URL is called
+    assertTrue(assertMethodCallOccurrences('sh', 1))
+    // then it sets $FILESHARE_SIGNED_URL to the signed file share URL
+    assertTrue(assertMethodCallContainsPattern('withEnv', "FILESHARE_SIGNED_URL=https://${defaultFileShareStorageAccount}.file.core.windows.net/${defaultFileShare}?sas-token"))
+    // then it inform about the URL expiring in the default amount of minutes
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: ${defaultFileShare} file share signed URL expiring in ${defaultTokenDuration} minute(s) available in \$FILESHARE_SIGNED_URL"))
+    // then the body closure is executed
+    assertTrue(isOK)
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  @Test
   void testWithFileShareServicePrincipalShouldNotRunOutsideInfraOrTrusted() throws Exception {
     // When not used on infra.ci.jenkins.io or trusted.ci.jenkins.io
     helper.registerAllowedMethod('isInfra', [], { false })
