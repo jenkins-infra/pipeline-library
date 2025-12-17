@@ -4,6 +4,7 @@
 # Description: This script uses either a service principal or either a storage account access key to generate a SAS token
 # and returns the file share URL composed of the storage resource URI and the SAS token.
 # Ref: https://learn.microsoft.com/en-us/azure/storage/common/storage-sas-overview
+# This service principal can come from a credentials, or from a VM agent user assigned identity
 # --
 # Usage:
 # - Return a file share signed URL: ./get-fileshare-signed-url.sh
@@ -19,7 +20,7 @@
 # - AZURE_STORAGE_KEY: the storage account access key
 # or
 # - JENKINS_INFRA_FILESHARE_CLIENT_ID: the service principal app registration client id
-# - JENKINS_INFRA_FILESHARE_CLIENT_SECRET: the service principal client secret
+# - JENKINS_INFRA_FILESHARE_CLIENT_SECRET: the service principal client secret. If not set, login into Azure using user assigned identity
 # - JENKINS_INFRA_FILESHARE_TENANT_ID: the file share tenant id
 # --------------------------------------------------------------------------------
 set -Eeu -o pipefail
