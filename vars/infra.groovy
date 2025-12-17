@@ -129,9 +129,10 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
 /**
  * Execute the body passed as closure with an Azure File Share URL
  * signed with a SAS token with an expiry date of 10 minutes by default,
- * stored in FILESHARE_SIGNED_URL environment variable
- * The service principal used must has Storage Account Contributor on the File Share Storage Account
- * This service principal can be either from an Azure credentials, or from an user managed identity
+ * stored in FILESHARE_SIGNED_URL environment variable.
+ * The service principal used must has Storage Account Contributor on the File Share Storage Account.
+ * This service principal can be either from an Azure credentials, or from an user managed identity.
+ * This function should not be called directly.
  * @param options.fileShare Azure File Share name to use
  * @param options.fileShareStorageAccount Storage Account name of the Azure File Share to use (needed to generate the SAS token)
  * @param options.durationInMinute duration in minutes of the SAS token before expiration (default value: 10)
