@@ -92,8 +92,8 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
     issue += "ERROR: no Windows implementation yet, skipping.\n"
   }
   // Check required options
-  if (!options.servicePrincipalCredentialsId || !options.fileShare || !options.fileShareStorageAccount) {
-    issue += "ERROR: At least one of these required options is missing: servicePrincipalCredentialsId, fileShare, fileShareStorageAccount\n"
+  if (!options.fileShare || !options.fileShareStorageAccount) {
+    issue += "ERROR: At least one of these required options is missing: fileShare, fileShareStorageAccount\n"
   }
   // Return early if there is an issue
   if (issue) {
