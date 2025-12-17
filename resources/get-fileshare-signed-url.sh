@@ -52,7 +52,7 @@ else
         --password="${JENKINS_INFRA_FILESHARE_CLIENT_SECRET}" \
         --tenant "${JENKINS_INFRA_FILESHARE_TENANT_ID}" > /dev/null
     else
-        # Login with user assigned identity of the agent
+        # Login with user assigned identity of the VM agent
         az login --identity
     fi
 fi
