@@ -72,7 +72,9 @@ Object withDockerPullCredentials(Closure body) {
  * Execute the body passed as closure with an Azure File Share URL
  * signed with a SAS token with an expiry date of 10 minutes by default,
  * stored in FILESHARE_SIGNED_URL environment variable
- * @param options.servicePrincipalCredentialsId Azure Service Principal credentials id to use (must has Storage Account Contributor on the File Share Storage Account)
+ * @param options.servicePrincipalCredentialsId Azure Service Principal credentials id to use.
+                                                If empty ("credentials-less"), will login into Azure with the agent user managed identity
+                                                Either must has Storage Account Contributor on the File Share Storage Account
  * @param options.fileShare Azure File Share name to use
  * @param options.fileShareStorageAccount Storage Account name of the Azure File Share to use (needed to generate the SAS token)
  * @param options.durationInMinute duration in minutes of the SAS token before expiration (default value: 10)
@@ -106,34 +108,56 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
   if (!options.permissions) {
     options.permissions = 'dlrw'
   }
-  withCredentials([
-    azureServicePrincipal(
-    credentialsId: options.servicePrincipalCredentialsId,
-    clientIdVariable: 'JENKINS_INFRA_FILESHARE_CLIENT_ID',
-    clientSecretVariable: 'JENKINS_INFRA_FILESHARE_CLIENT_SECRET',
-    tenantIdVariable: 'JENKINS_INFRA_FILESHARE_TENANT_ID'
-    )
-  ]){
-    withEnv([
-      "STORAGE_NAME=${options.fileShareStorageAccount}",
-      "STORAGE_FILESHARE=${options.fileShare}",
-      "STORAGE_DURATION_IN_MINUTE=${options.durationInMinute}",
-      "STORAGE_PERMISSIONS=${options.permissions}",
-    ]) {
-      echo "INFO: generating a signed URL for the ${options.fileShare} file share..."
+  // If a service principal credentials id is passed, generate a fileshare signed URL using this credentials
+  if (options.servicePrincipalCredentialsId) {
+    withCredentials([
+      azureServicePrincipal(
+      credentialsId: options.servicePrincipalCredentialsId,
+      clientIdVariable: 'JENKINS_INFRA_FILESHARE_CLIENT_ID',
+      clientSecretVariable: 'JENKINS_INFRA_FILESHARE_CLIENT_SECRET',
+      tenantIdVariable: 'JENKINS_INFRA_FILESHARE_TENANT_ID'
+      )
+    ]){
+      generateFileShareSignedURL(options, body)
+    }
+  } else {
+    // If no service principal credentials id is passed, generate a fileshare signed URL credentials-less (using a user managed identity)
+    generateFileShareSignedURL(options, body)
+  }
+}
 
-      // Retrieve the script to generate a SAS token with the Service Principal for the File Share and return the file share signed URL
-      final String scriptTmpPath = pwd(tmp: true) + '/get-fileshare-signed-url.sh'
-      final String getSignedUrlScript = libraryResource 'get-fileshare-signed-url.sh'
-      writeFile file: scriptTmpPath, text: getSignedUrlScript
+/**
+ * Execute the body passed as closure with an Azure File Share URL
+ * signed with a SAS token with an expiry date of 10 minutes by default,
+ * stored in FILESHARE_SIGNED_URL environment variable
+ * The service principal used must has Storage Account Contributor on the File Share Storage Account
+ * This service principal can be either from an Azure credentials, or from an user managed identity
+ * @param options.fileShare Azure File Share name to use
+ * @param options.fileShareStorageAccount Storage Account name of the Azure File Share to use (needed to generate the SAS token)
+ * @param options.durationInMinute duration in minutes of the SAS token before expiration (default value: 10)
+ * @param options.permissions SAS token permissions (default value: "dlrw")
+ * @param body closure to execute
+ */
+Object generateFileShareSignedURL(Map options, Closure body) {
+  withEnv([
+    "STORAGE_NAME=${options.fileShareStorageAccount}",
+    "STORAGE_FILESHARE=${options.fileShare}",
+    "STORAGE_DURATION_IN_MINUTE=${options.durationInMinute}",
+    "STORAGE_PERMISSIONS=${options.permissions}",
+  ]) {
+    echo "INFO: generating a signed URL for the ${options.fileShare} file share..."
 
-      // Call the script and retrieve the signed URL
-      final String signedUrl = sh(script: "bash ${scriptTmpPath}", returnStdout: true).trim()
+    // Retrieve the script to generate a SAS token with the Service Principal for the File Share and return the file share signed URL
+    final String scriptTmpPath = pwd(tmp: true) + '/get-fileshare-signed-url.sh'
+    final String getSignedUrlScript = libraryResource 'get-fileshare-signed-url.sh'
+    writeFile file: scriptTmpPath, text: getSignedUrlScript
 
-      withEnv(["FILESHARE_SIGNED_URL=${signedUrl}"]) {
-        echo "INFO: ${options.fileShare} file share signed URL expiring in ${options.durationInMinute} minute(s) available in \$FILESHARE_SIGNED_URL"
-        body.call()
-      }
+    // Call the script and retrieve the signed URL
+    final String signedUrl = sh(script: "bash ${scriptTmpPath}", returnStdout: true).trim()
+
+    withEnv(["FILESHARE_SIGNED_URL=${signedUrl}"]) {
+      echo "INFO: ${options.fileShare} file share signed URL expiring in ${options.durationInMinute} minute(s) available in \$FILESHARE_SIGNED_URL"
+      body.call()
     }
   }
 }

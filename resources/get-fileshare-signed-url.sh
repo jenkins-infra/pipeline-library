@@ -41,14 +41,20 @@ if  [[ -n "${AZURE_STORAGE_KEY:=""}" ]]; then
     accountKeyArg=("--account-key" "${AZURE_STORAGE_KEY}")
     shouldLogout="false"
 else
-    # If there is no account key env var defined, require env vars needed to use a service principal
-    : "${JENKINS_INFRA_FILESHARE_CLIENT_ID?}" "${JENKINS_INFRA_FILESHARE_CLIENT_SECRET?}" "${JENKINS_INFRA_FILESHARE_TENANT_ID?}"
+    # If a fileshare client secret is defined, use it to login
+    if [[ -n "${JENKINS_INFRA_FILESHARE_CLIENT_SECRET}" ]]; then
+        # Env vars needed to use a service principal
+        : "${JENKINS_INFRA_FILESHARE_CLIENT_ID?}" "${JENKINS_INFRA_FILESHARE_TENANT_ID?}"
 
-    # Login without the JSON output from az
-    az login --service-principal \
-    --user "${JENKINS_INFRA_FILESHARE_CLIENT_ID}" \
-    --password="${JENKINS_INFRA_FILESHARE_CLIENT_SECRET}" \
-    --tenant "${JENKINS_INFRA_FILESHARE_TENANT_ID}" > /dev/null
+        # Login without the JSON output from az
+        az login --service-principal \
+        --user "${JENKINS_INFRA_FILESHARE_CLIENT_ID}" \
+        --password="${JENKINS_INFRA_FILESHARE_CLIENT_SECRET}" \
+        --tenant "${JENKINS_INFRA_FILESHARE_TENANT_ID}" > /dev/null
+    else
+        # Login with user managed identity
+        az login --identity
+    fi
 fi
 
 # date(1) isn't GNU compliant on MacOS, using gdate(1) in that case
