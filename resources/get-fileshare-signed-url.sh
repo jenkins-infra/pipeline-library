@@ -47,7 +47,7 @@ else
     # Login without the JSON output from az
     az login --service-principal \
     --user "${JENKINS_INFRA_FILESHARE_CLIENT_ID}" \
-    --password "${JENKINS_INFRA_FILESHARE_CLIENT_SECRET}" \
+    --password="${JENKINS_INFRA_FILESHARE_CLIENT_SECRET}" \
     --tenant "${JENKINS_INFRA_FILESHARE_TENANT_ID}" > /dev/null
 fi
 
