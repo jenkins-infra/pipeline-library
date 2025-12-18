@@ -148,15 +148,13 @@ Object generateFileShareSignedURL(Map options, Closure body) {
     "STORAGE_DURATION_IN_MINUTE=${options.durationInMinute}",
     "STORAGE_PERMISSIONS=${options.permissions}",
   ]) {
-    echo "INFO: generating a signed URL for the ${options.fileShare} file share..."
-
     // Retrieve the script to generate a SAS token with the Service Principal for the File Share and return the file share signed URL
     final String scriptTmpPath = pwd(tmp: true) + '/get-fileshare-signed-url.sh'
     final String getSignedUrlScript = libraryResource 'get-fileshare-signed-url.sh'
     writeFile file: scriptTmpPath, text: getSignedUrlScript
 
     // Call the script and retrieve the signed URL
-    final String signedUrl = sh(script: "bash ${scriptTmpPath}", returnStdout: true).trim()
+    final String signedUrl = sh(script: "set -x; bash ${scriptTmpPath}", returnStdout: true).trim()
 
     withEnv(["FILESHARE_SIGNED_URL=${signedUrl}"]) {
       body.call()
