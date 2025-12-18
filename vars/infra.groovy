@@ -160,7 +160,7 @@ Object generateFileShareSignedURL(Map options, Closure body) {
 
     withEnv(["FILESHARE_SIGNED_URL=${signedUrl}"]) {
       // If the returned File Share URL contains a query string with a token, log that this URL is signed for {duration} minutes
-      if signedUrl.contains('/?') {
+      if (signedUrl.contains('/?')) {
         echo "INFO: ${options.fileShare} file share signed URL expiring in ${options.durationInMinute} minute(s) available in \$FILESHARE_SIGNED_URL"
       } else {
         // Otherwise, we're in credential-less case, log that azcopy is logged in and can access File Share content from its (unsigned) URL
