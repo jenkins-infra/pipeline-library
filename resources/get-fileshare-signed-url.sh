@@ -13,18 +13,19 @@
 # Required parameters defined as environment variables:
 # - STORAGE_FILESHARE: the file share name
 # - STORAGE_NAME: the storage account name where the file share is located
-# - STORAGE_DURATION_IN_MINUTE: lifetime of the short-lived SAS token, in minute. Note: not taken in account in credential-less case
-# - STORAGE_PERMISSIONS: the permission(s) granted on the file share, any of "dlrw" (note: the order matters). Note: not taken in account in credential-less case
 #
 # To use this script the credential-less way:
 # - Ensure JENKINS_INFRA_FILESHARE_CLIENT_SECRET is unset or empty
 #
-# Otherwise and depending on wether you want to use a service principal or an access key to generate the SAS token, you'll also need either:
+# Otherwise and depending on wether you want to use a service principal or an access key to generate the SAS token, you'll also need:
 # - AZURE_STORAGE_KEY: the storage account access key
 # or
 # - JENKINS_INFRA_FILESHARE_CLIENT_ID: the service principal app registration client id
 # - JENKINS_INFRA_FILESHARE_CLIENT_SECRET: the service principal client secret
 # - JENKINS_INFRA_FILESHARE_TENANT_ID: the file share tenant id
+# And for both, you'll need those additional required parameters:
+# - STORAGE_DURATION_IN_MINUTE: lifetime of the short-lived SAS token, in minute. Note: not taken in account in credential-less case
+# - STORAGE_PERMISSIONS: the permission(s) granted on the file share, any of "dlrw" (note: the order matters). Note: not taken in account in credential-less case
 # --------------------------------------------------------------------------------
 set -Eeu -o pipefail
 
