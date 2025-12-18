@@ -59,9 +59,6 @@ if [[ -n "${secret}" ]]; then
     --tenant "${JENKINS_INFRA_FILESHARE_TENANT_ID}" > /dev/null
 
     generate_sas_token="true"
-else
-    # Login credential-less with the user assigned identity of the VM agent
-    az login --identity
 fi
 
 # If using an Azure storage key or an Azure credentials, we need to generate a Service SAS token to get a signed File Share URL
@@ -83,7 +80,7 @@ if [[ "${generate_sas_token}" == "true" ]]; then
     | sed 's|/|%2F|g')"
 else
     # If using user assigned identity, we just have to use it to login with azcopy
-    azcopy login --identity
+    azcopy login --identity > /dev/null
 fi
 
 [[ "${shouldLogout}" == "true" ]] && az logout
