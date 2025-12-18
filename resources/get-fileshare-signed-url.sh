@@ -62,14 +62,14 @@ if [[ -n "${secret}" ]]; then
 fi
 
 # If using an Azure storage key or an Azure credentials, we need to generate a Service SAS token to get a signed File Share URL
-token_as_query_string=""
+query_string=""
 if [[ "${generate_sas_token}" == "true" ]]; then
     # date(1) isn't GNU compliant on MacOS, using gdate(1) in that case
     [[ "$(uname  || true)" == "Darwin" ]] && dateCmd="gdate" || dateCmd="date"
     expiry="$("${dateCmd}" --utc --date "+ ${STORAGE_DURATION_IN_MINUTE} minutes" +"%Y-%m-%dT%H:%MZ")"
 
     # Generate a SAS token, remove double quotes around it and replace potential '/' by '%2F'
-    token_as_query_string="$(az storage share generate-sas "${accountKeyArg[@]}" \
+    query_string="/?$(az storage share generate-sas "${accountKeyArg[@]}" \
     --name "${STORAGE_FILESHARE}" \
     --account-name "${STORAGE_NAME}" \
     --https-only \
@@ -85,4 +85,4 @@ fi
 
 [[ "${shouldLogout}" == "true" ]] && az logout
 
-echo "https://${STORAGE_NAME}.file.core.windows.net/${STORAGE_FILESHARE}/?${token_as_query_string}"
+echo "https://${STORAGE_NAME}.file.core.windows.net/${STORAGE_FILESHARE}${query_string}"

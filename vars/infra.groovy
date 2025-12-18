@@ -77,8 +77,8 @@ Object withDockerPullCredentials(Closure body) {
  * @param options.servicePrincipalCredentialsId Azure Service Principal credentials id to use. Don't pass it for credential-less
  * @param options.fileShare Azure File Share name to use
  * @param options.fileShareStorageAccount Storage Account name of the Azure File Share to use (needed to generate the SAS token)
- * @param options.durationInMinute duration in minutes of the SAS token before expiration (default value: 10)
- * @param options.permissions SAS token permissions (default value: "dlrw")
+ * @param options.durationInMinute duration in minutes of the SAS token before expiration (default value: 10). Note: not taken in account in credential-less case
+ * @param options.permissions SAS token permissions (default value: "dlrw"). Note: not taken in account in credential-less case
  * @param body closure to execute
  */
 Object withFileShareServicePrincipal(Map options, Closure body) {
@@ -137,8 +137,8 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
  * This function should not be called directly.
  * @param options.fileShare Azure File Share name to use
  * @param options.fileShareStorageAccount Storage Account name of the Azure File Share to use (needed to generate the SAS token)
- * @param options.durationInMinute duration in minutes of the SAS token before expiration (default value: 10)
- * @param options.permissions SAS token permissions (default value: "dlrw")
+ * @param options.durationInMinute duration in minutes of the SAS token before expiration (default value: 10). Note: not taken in account in credential-less case
+ * @param options.permissions SAS token permissions (default value: "dlrw"). Note: not taken in account in credential-less case
  * @param body closure to execute
  */
 Object generateFileShareSignedURL(Map options, Closure body) {
@@ -159,7 +159,13 @@ Object generateFileShareSignedURL(Map options, Closure body) {
     final String signedUrl = sh(script: "bash ${scriptTmpPath}", returnStdout: true).trim()
 
     withEnv(["FILESHARE_SIGNED_URL=${signedUrl}"]) {
-      echo "INFO: ${options.fileShare} file share signed URL expiring in ${options.durationInMinute} minute(s) available in \$FILESHARE_SIGNED_URL"
+      // If the returned File Share URL contains a query string with a token, log that this URL is signed for {duration} minutes
+      if signedUrl.contains('/?') {
+        echo "INFO: ${options.fileShare} file share signed URL expiring in ${options.durationInMinute} minute(s) available in \$FILESHARE_SIGNED_URL"
+      } else {
+        // Otherwise, we're in credential-less case, log that azcopy is logged in and can access File Share content from its (unsigned) URL
+        echo "INFO: azcopy is logged in, ${options.fileShare} file share URL is available in \$FILESHARE_SIGNED_URL"
+      }
       body.call()
     }
   }
