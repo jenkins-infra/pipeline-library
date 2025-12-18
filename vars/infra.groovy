@@ -119,11 +119,11 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
       tenantIdVariable: 'JENKINS_INFRA_FILESHARE_TENANT_ID'
       )
     ]){
+      echo "INFO: ${options.fileShare} file share signed URL expiring in ${options.durationInMinute} minute(s) available in \$FILESHARE_SIGNED_URL"
       generateFileShareSignedURL(options, body)
     }
   } else {
-    // If no service principal credentials id is passed, generate a fileshare signed URL credential-less (using a user assigned identity)
-    echo 'INFO: credential-less (using user assigned identity service principal)'
+    echo "INFO: credential-less (using user assigned identity service principal), azcopy logged in and ${options.fileShare} file share URL available in \$FILESHARE_SIGNED_URL"
     generateFileShareSignedURL(options, body)
   }
 }
@@ -159,13 +159,6 @@ Object generateFileShareSignedURL(Map options, Closure body) {
     final String signedUrl = sh(script: "bash ${scriptTmpPath}", returnStdout: true).trim()
 
     withEnv(["FILESHARE_SIGNED_URL=${signedUrl}"]) {
-      // If the returned File Share URL contains a query string with a token, log that this URL is signed for {duration} minutes
-      if (signedUrl.contains('/?')) {
-        echo "INFO: ${options.fileShare} file share signed URL expiring in ${options.durationInMinute} minute(s) available in \$FILESHARE_SIGNED_URL"
-      } else {
-        // Otherwise, we're in credential-less case, log that azcopy is logged in and can access File Share content from its (unsigned) URL
-        echo "INFO: azcopy is logged in, ${options.fileShare} file share URL is available in \$FILESHARE_SIGNED_URL"
-      }
       body.call()
     }
   }
