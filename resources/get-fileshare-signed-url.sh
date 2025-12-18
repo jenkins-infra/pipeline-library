@@ -14,7 +14,7 @@
 # - STORAGE_FILESHARE: the file share name
 # - STORAGE_NAME: the storage account name where the file share is located
 #
-# To use this script the credential-less way:
+# To use this script the credential-less way returning the file share URL without SAS token:
 # - Ensure JENKINS_INFRA_FILESHARE_CLIENT_SECRET is unset or empty
 #
 # Otherwise and depending on wether you want to use a service principal or an access key to generate the SAS token, you'll also need:
