@@ -35,44 +35,57 @@ set +x
 AZURE_CONFIG_DIR="$(mktemp -d)"
 export AZURE_CONFIG_DIR
 
+secret="${JENKINS_INFRA_FILESHARE_CLIENT_SECRET:-}"
+
 accountKeyArg=()
 shouldLogout="true"
+generate_sas_token="false"
 # If a storage account key env var exists, use it instead of a service principal to generate a file share SAS token
-if  [[ -n "${AZURE_STORAGE_KEY:=""}" ]]; then
+if  [[ -n "${AZURE_STORAGE_KEY:-}" ]]; then
     accountKeyArg=("--account-key" "${AZURE_STORAGE_KEY}")
     shouldLogout="false"
-else
-    # If a fileshare client secret is defined, use it to login
-    if [[ -n "${JENKINS_INFRA_FILESHARE_CLIENT_SECRET:-}" ]]; then
-        # Env vars needed to use a service principal
-        : "${JENKINS_INFRA_FILESHARE_CLIENT_ID?}" "${JENKINS_INFRA_FILESHARE_TENANT_ID?}"
-
-        # Login without the JSON output from az
-        az login --service-principal \
-        --user "${JENKINS_INFRA_FILESHARE_CLIENT_ID}" \
-        --password="${JENKINS_INFRA_FILESHARE_CLIENT_SECRET:-}" \
-        --tenant "${JENKINS_INFRA_FILESHARE_TENANT_ID}" > /dev/null
-    else
-        # Login credential-less with the user assigned identity of the VM agent
-        az login --identity
-    fi
+    generate_sas_token="true"
 fi
 
-# date(1) isn't GNU compliant on MacOS, using gdate(1) in that case
-[[ "$(uname  || true)" == "Darwin" ]] && dateCmd="gdate" || dateCmd="date"
-expiry="$("${dateCmd}" --utc --date "+ ${STORAGE_DURATION_IN_MINUTE} minutes" +"%Y-%m-%dT%H:%MZ")"
+# If a fileshare client secret is defined, use it to login
+if [[ -n "${secret}" ]]; then
+    # Env vars needed to use a service principal
+    : "${JENKINS_INFRA_FILESHARE_CLIENT_ID?}" "${JENKINS_INFRA_FILESHARE_TENANT_ID?}"
 
-# Generate a SAS token, remove double quotes around it and replace potential '/' by '%2F'
-token="$(az storage share generate-sas "${accountKeyArg[@]}" \
---name "${STORAGE_FILESHARE}" \
---account-name "${STORAGE_NAME}" \
---https-only \
---permissions "${STORAGE_PERMISSIONS}" \
---expiry "${expiry}" \
---only-show-errors \
-| sed 's/\"//g' \
-| sed 's|/|%2F|g')"
+    # Login without the JSON output from az
+    az login --service-principal \
+    --user "${JENKINS_INFRA_FILESHARE_CLIENT_ID}" \
+    --password="${secret}" \
+    --tenant "${JENKINS_INFRA_FILESHARE_TENANT_ID}" > /dev/null
+
+    generate_sas_token="true"
+else
+    # Login credential-less with the user assigned identity of the VM agent
+    az login --identity
+fi
+
+# If using an Azure storage key or an Azure credentials, we need to generate a Service SAS token to get a signed File Share URL
+token_as_query_string=""
+if [[ "${generate_sas_token}" == "true" ]]; then
+    # date(1) isn't GNU compliant on MacOS, using gdate(1) in that case
+    [[ "$(uname  || true)" == "Darwin" ]] && dateCmd="gdate" || dateCmd="date"
+    expiry="$("${dateCmd}" --utc --date "+ ${STORAGE_DURATION_IN_MINUTE} minutes" +"%Y-%m-%dT%H:%MZ")"
+
+    # Generate a SAS token, remove double quotes around it and replace potential '/' by '%2F'
+    token_as_query_string="$(az storage share generate-sas "${accountKeyArg[@]}" \
+    --name "${STORAGE_FILESHARE}" \
+    --account-name "${STORAGE_NAME}" \
+    --https-only \
+    --permissions "${STORAGE_PERMISSIONS}" \
+    --expiry "${expiry}" \
+    --only-show-errors \
+    | sed 's/\"//g' \
+    | sed 's|/|%2F|g')"
+else
+    # If using user assigned identity, we just have to use it to login with azcopy
+    azcopy login --identity
+fi
 
 [[ "${shouldLogout}" == "true" ]] && az logout
 
-echo "https://${STORAGE_NAME}.file.core.windows.net/${STORAGE_FILESHARE}/?${token}"
+echo "https://${STORAGE_NAME}.file.core.windows.net/${STORAGE_FILESHARE}/?${token_as_query_string}"
