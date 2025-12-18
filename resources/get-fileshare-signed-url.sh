@@ -35,10 +35,9 @@ set +x
 AZURE_CONFIG_DIR="$(mktemp -d)"
 export AZURE_CONFIG_DIR
 
-secret="${JENKINS_INFRA_FILESHARE_CLIENT_SECRET:-}"
-
 fileshare_url="https://${STORAGE_NAME}.file.core.windows.net/${STORAGE_FILESHARE}"
 
+secret="${JENKINS_INFRA_FILESHARE_CLIENT_SECRET:-}"
 # Credential-less using user assigned identity, no need for any SAS token in the returned URL
 if [[ -z "${secret}" ]]; then
     # Login without the JSON output from azcopy
@@ -70,7 +69,7 @@ fi
 expiry="$("${dateCmd}" --utc --date "+ ${STORAGE_DURATION_IN_MINUTE} minutes" +"%Y-%m-%dT%H:%MZ")"
 
 # Generate a SAS token, remove double quotes around it and replace potential '/' by '%2F'
-token="/?$(az storage share generate-sas "${accountKeyArg[@]}" \
+token="$(az storage share generate-sas "${accountKeyArg[@]}" \
 --name "${STORAGE_FILESHARE}" \
 --account-name "${STORAGE_NAME}" \
 --https-only \
