@@ -439,7 +439,7 @@ class InfraStepTests extends BaseTest {
     // then it doesn't inform neither about the signed URL expiring in the default amount of minutes available in $FILESHARE_SIGNED_URL
     assertFalse(assertMethodCallContainsPattern('echo', "INFO: ${defaultFileShare} file share signed URL expiring in ${defaultTokenDuration} minute(s) available in \$FILESHARE_SIGNED_URL"))
     // nor about the credential-less, azcopy logged in, and the URL available in $FILESHARE_SIGNED_URL
-    assertTrue(assertMethodCallContainsPattern('echo', "INFO: credential-less (using user assigned identity service principal), azcopy logged in and ${defaultFileShare} file share URL available in \$FILESHARE_SIGNED_URL"))
+    assertFalse(assertMethodCallContainsPattern('echo', "INFO: credential-less (using user assigned identity service principal), azcopy logged in and ${defaultFileShare} file share URL available in \$FILESHARE_SIGNED_URL"))
     // then the body closure is not executed
     assertFalse(isOK)
     // then it doesn't succeeds
