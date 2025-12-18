@@ -397,15 +397,13 @@ class InfraStepTests extends BaseTest {
     printCallStack()
     // then the Azure Service Principal from the credentials passed in options is used
     assertTrue(assertMethodCallContainsPattern('azureServicePrincipal', "credentialsId=${defaultServicePrincipalCredentialsId}"))
-    assertTrue(assertMethodCallContainsPattern('echo', 'INFO: using service principal credentials passed in options'))
-    assertFalse(assertMethodCallContainsPattern('echo', 'INFO: credential-less (using user assigned identity service principal)'))
     // then the correct options are passed as env vars
     assertTrue(assertMethodCallContainsPattern('withEnv', "STORAGE_NAME=${defaultFileShareStorageAccount}, STORAGE_FILESHARE=${defaultFileShare}, STORAGE_DURATION_IN_MINUTE=${defaultTokenDuration}, STORAGE_PERMISSIONS=${defaultTokenPermissions}"))
     // then a script to get a file share signed URL is called
     assertTrue(assertMethodCallOccurrences('sh', 1))
     // then it sets $FILESHARE_SIGNED_URL to the signed file share URL
     assertTrue(assertMethodCallContainsPattern('withEnv', "FILESHARE_SIGNED_URL=https://${defaultFileShareStorageAccount}.file.core.windows.net/${defaultFileShare}?sas-token"))
-    // then it inform about the URL expiring in the default amount of minutes
+    // then it inform about the signed URL expiring in the default amount of minutes available in $FILESHARE_SIGNED_URL
     assertTrue(assertMethodCallContainsPattern('echo', "INFO: ${defaultFileShare} file share signed URL expiring in ${defaultTokenDuration} minute(s) available in \$FILESHARE_SIGNED_URL"))
     // then the body closure is executed
     assertTrue(isOK)
@@ -430,18 +428,18 @@ class InfraStepTests extends BaseTest {
     printCallStack()
     // then an error message is displayed
     assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: At least one of these required options is missing: fileShare, fileShareStorageAccount'))
-    // then neither the Azure Service Principal credentials nor the user assigned identity service principal is used
+    // then the Azure Service Principal from the credentials passed in options is not used
     assertFalse(assertMethodCallContainsPattern('azureServicePrincipal', "credentialsId=${defaultServicePrincipalCredentialsId}"))
-    assertFalse(assertMethodCallContainsPattern('echo', 'INFO: using service principal credentials passed in options'))
-    assertFalse(assertMethodCallContainsPattern('echo', 'INFO: credential-less (using user assigned identity service principal)'))
     // then the correct options are not passed as env vars
     assertFalse(assertMethodCallContainsPattern('withEnv', "STORAGE_NAME=${defaultFileShareStorageAccount}, STORAGE_FILESHARE=${defaultFileShare}, STORAGE_DURATION_IN_MINUTE=${defaultTokenDuration}, STORAGE_PERMISSIONS=${defaultTokenPermissions}"))
     // then a script to get a file share signed URL is not called
     assertFalse(assertMethodCallOccurrences('sh', 1))
     // then it doesn't set $FILESHARE_SIGNED_URL to the signed file share URL
     assertFalse(assertMethodCallContainsPattern('withEnv', "FILESHARE_SIGNED_URL="))
-    // then it doesn't inform about the URL expiring in the default amount of minutes
+    // then it doesn't inform neither about the signed URL expiring in the default amount of minutes available in $FILESHARE_SIGNED_URL
     assertFalse(assertMethodCallContainsPattern('echo', "INFO: ${defaultFileShare} file share signed URL expiring in ${defaultTokenDuration} minute(s) available in \$FILESHARE_SIGNED_URL"))
+    // nor about the credential-less, azcopy logged in, and the URL available in $FILESHARE_SIGNED_URL
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: credential-less (using user assigned identity service principal), azcopy logged in and ${defaultFileShare} file share URL available in \$FILESHARE_SIGNED_URL"))
     // then the body closure is not executed
     assertFalse(isOK)
     // then it doesn't succeeds
@@ -466,18 +464,16 @@ class InfraStepTests extends BaseTest {
       isOK = true
     }
     printCallStack()
-    // then the user assigned identity service principal is used insted of a credentials one
+    // then no Azure Service Principal from the credentials (not) passed in options is used
     assertFalse(assertMethodCallContainsPattern('azureServicePrincipal', 'credentialsId='))
-    assertFalse(assertMethodCallContainsPattern('echo', 'INFO: using service principal credentials passed in options'))
-    assertTrue(assertMethodCallContainsPattern('echo', 'INFO: credential-less (using user assigned identity service principal)'))
     // then the correct options are passed as env vars
     assertTrue(assertMethodCallContainsPattern('withEnv', "STORAGE_NAME=${defaultFileShareStorageAccount}, STORAGE_FILESHARE=${defaultFileShare}, STORAGE_DURATION_IN_MINUTE=${defaultTokenDuration}, STORAGE_PERMISSIONS=${defaultTokenPermissions}"))
     // then a script to get a file share signed URL is called
     assertTrue(assertMethodCallOccurrences('sh', 1))
     // then it sets $FILESHARE_SIGNED_URL to the signed file share URL
     assertTrue(assertMethodCallContainsPattern('withEnv', "FILESHARE_SIGNED_URL=https://${defaultFileShareStorageAccount}.file.core.windows.net/${defaultFileShare}?sas-token"))
-    // then it inform about the URL expiring in the default amount of minutes
-    assertTrue(assertMethodCallContainsPattern('echo', "INFO: ${defaultFileShare} file share signed URL expiring in ${defaultTokenDuration} minute(s) available in \$FILESHARE_SIGNED_URL"))
+    // then it inform about the credential-less, azcopy logged in, and the URL available in $FILESHARE_SIGNED_URL
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: credential-less (using user assigned identity service principal), azcopy logged in and ${defaultFileShare} file share URL available in \$FILESHARE_SIGNED_URL"))
     // then the body closure is executed
     assertTrue(isOK)
     // then it succeeds

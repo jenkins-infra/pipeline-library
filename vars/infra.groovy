@@ -110,7 +110,6 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
   }
   // If a service principal credentials id is passed, generate a fileshare signed URL using this credentials
   if (options.servicePrincipalCredentialsId) {
-    echo 'INFO: using service principal credentials passed in options'
     withCredentials([
       azureServicePrincipal(
       credentialsId: options.servicePrincipalCredentialsId,
