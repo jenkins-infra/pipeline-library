@@ -7,7 +7,7 @@
 # Ref: https://learn.microsoft.com/en-us/azure/storage/common/storage-sas-overview
 # --
 # Usage:
-# - Return a file share URL, signed if a service principal credential secret is passed: ./get-fileshare-signed-url.sh
+# - Return a file share URL, signed with SAS token if a service principal credential secret is passed: ./get-fileshare-signed-url.sh
 # - Interact with a file share and azcopy: azcopy list "$(./get-fileshare-signed-url.sh)"
 # --
 # Required parameters defined as environment variables:
@@ -16,11 +16,14 @@
 # - STORAGE_DURATION_IN_MINUTE: lifetime of the short-lived SAS token, in minute. Note: not taken in account in credential-less case
 # - STORAGE_PERMISSIONS: the permission(s) granted on the file share, any of "dlrw" (note: the order matters). Note: not taken in account in credential-less case
 #
-# When not in credential-less, depending on wether you want to use a service principal or an access key to generate the SAS token, you'll also need either:
+# To use this script the credential-less way:
+# - Ensure JENKINS_INFRA_FILESHARE_CLIENT_SECRET is unset or empty
+#
+# Otherwise and depending on wether you want to use a service principal or an access key to generate the SAS token, you'll also need either:
 # - AZURE_STORAGE_KEY: the storage account access key
 # or
 # - JENKINS_INFRA_FILESHARE_CLIENT_ID: the service principal app registration client id
-# - JENKINS_INFRA_FILESHARE_CLIENT_SECRET: the service principal client secret. If not set, login into Azure using user assigned identity
+# - JENKINS_INFRA_FILESHARE_CLIENT_SECRET: the service principal client secret
 # - JENKINS_INFRA_FILESHARE_TENANT_ID: the file share tenant id
 # --------------------------------------------------------------------------------
 set -Eeu -o pipefail
