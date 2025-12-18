@@ -154,7 +154,7 @@ Object generateFileShareSignedURL(Map options, Closure body) {
     writeFile file: scriptTmpPath, text: getSignedUrlScript
 
     // Call the script and retrieve the signed URL
-    final String signedUrl = sh(script: "set -x; bash ${scriptTmpPath}", returnStdout: true).trim()
+    final String signedUrl = sh(script: "set +x; bash ${scriptTmpPath}", returnStdout: true).trim()
 
     withEnv(["FILESHARE_SIGNED_URL=${signedUrl}"]) {
       body.call()
