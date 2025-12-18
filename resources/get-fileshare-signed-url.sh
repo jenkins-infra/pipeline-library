@@ -7,7 +7,7 @@
 # Ref: https://learn.microsoft.com/en-us/azure/storage/common/storage-sas-overview
 # --
 # Usage:
-# - Return a file share URL, signed with SAS token if a service principal credential secret is passed: ./get-fileshare-signed-url.sh
+# - Return a file share URL: ./get-fileshare-signed-url.sh
 # - Interact with a file share and azcopy: azcopy list "$(./get-fileshare-signed-url.sh)"
 # --
 # Required parameters defined as environment variables:
