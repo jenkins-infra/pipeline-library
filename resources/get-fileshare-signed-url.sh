@@ -38,7 +38,7 @@ export AZURE_CONFIG_DIR
 secret="${JENKINS_INFRA_FILESHARE_CLIENT_SECRET:-}"
 
 accountKeyArg=()
-shouldLogout="true"
+shouldLogout="false"
 generate_sas_token="false"
 # If a storage account key env var exists, use it instead of a service principal to generate a file share SAS token
 if  [[ -n "${AZURE_STORAGE_KEY:-}" ]]; then
@@ -58,6 +58,7 @@ if [[ -n "${secret}" ]]; then
     --password="${secret}" \
     --tenant "${JENKINS_INFRA_FILESHARE_TENANT_ID}" > /dev/null
 
+    shouldLogout="true"
     generate_sas_token="true"
 fi
 
