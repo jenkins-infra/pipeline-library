@@ -395,7 +395,7 @@ class InfraStepTests extends BaseTest {
       isOK = true
     }
     printCallStack()
-    // then the correct Azure Service Principal credentials is used
+    // then the Azure Service Principal from the credentials passed in options is used
     assertTrue(assertMethodCallContainsPattern('azureServicePrincipal', "credentialsId=${defaultServicePrincipalCredentialsId}"))
     // then the correct options are passed as env vars
     assertTrue(assertMethodCallContainsPattern('withEnv', "STORAGE_NAME=${defaultFileShareStorageAccount}, STORAGE_FILESHARE=${defaultFileShare}, STORAGE_DURATION_IN_MINUTE=${defaultTokenDuration}, STORAGE_PERMISSIONS=${defaultTokenPermissions}"))
@@ -403,7 +403,7 @@ class InfraStepTests extends BaseTest {
     assertTrue(assertMethodCallOccurrences('sh', 1))
     // then it sets $FILESHARE_SIGNED_URL to the signed file share URL
     assertTrue(assertMethodCallContainsPattern('withEnv', "FILESHARE_SIGNED_URL=https://${defaultFileShareStorageAccount}.file.core.windows.net/${defaultFileShare}?sas-token"))
-    // then it inform about the URL expiring in the default amount of minutes
+    // then it inform about the signed URL expiring in the default amount of minutes available in $FILESHARE_SIGNED_URL
     assertTrue(assertMethodCallContainsPattern('echo', "INFO: ${defaultFileShare} file share signed URL expiring in ${defaultTokenDuration} minute(s) available in \$FILESHARE_SIGNED_URL"))
     // then the body closure is executed
     assertTrue(isOK)
@@ -417,6 +417,45 @@ class InfraStepTests extends BaseTest {
     helper.registerAllowedMethod('isInfra', [], { true })
     def script = loadScript(scriptName)
     def isOK = false
+    // with missing fileShareStorageAccount option
+    def options = [
+      servicePrincipalCredentialsId: defaultServicePrincipalCredentialsId,
+      fileShare: defaultFileShare
+    ]
+    script.withFileShareServicePrincipal(options) {
+      isOK = true
+    }
+    printCallStack()
+    // then an error message is displayed
+    assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: At least one of these required options is missing: fileShare, fileShareStorageAccount'))
+    // then the Azure Service Principal from the credentials passed in options is not used
+    assertFalse(assertMethodCallContainsPattern('azureServicePrincipal', "credentialsId=${defaultServicePrincipalCredentialsId}"))
+    // then the correct options are not passed as env vars
+    assertFalse(assertMethodCallContainsPattern('withEnv', "STORAGE_NAME=${defaultFileShareStorageAccount}, STORAGE_FILESHARE=${defaultFileShare}, STORAGE_DURATION_IN_MINUTE=${defaultTokenDuration}, STORAGE_PERMISSIONS=${defaultTokenPermissions}"))
+    // then a script to get a file share signed URL is not called
+    assertFalse(assertMethodCallOccurrences('sh', 1))
+    // then it doesn't set $FILESHARE_SIGNED_URL to the signed file share URL
+    assertFalse(assertMethodCallContainsPattern('withEnv', "FILESHARE_SIGNED_URL="))
+    // then it doesn't inform neither about the signed URL expiring in the default amount of minutes available in $FILESHARE_SIGNED_URL
+    assertFalse(assertMethodCallContainsPattern('echo', "INFO: ${defaultFileShare} file share signed URL expiring in ${defaultTokenDuration} minute(s) available in \$FILESHARE_SIGNED_URL"))
+    // nor about the credential-less, azcopy logged in, and the URL available in $FILESHARE_SIGNED_URL
+    assertFalse(assertMethodCallContainsPattern('echo', "INFO: credential-less (using user assigned identity service principal), azcopy logged in and ${defaultFileShare} file share URL available in \$FILESHARE_SIGNED_URL"))
+    // then the body closure is not executed
+    assertFalse(isOK)
+    // then it doesn't succeeds
+    assertJobStatusFailure()
+  }
+
+  @Test
+  void testWithFileShareServicePrincipalCredentialsLess() throws Exception {
+    // When used on infra.ci.jenkins.io
+    helper.registerAllowedMethod('isInfra', [], { true })
+    helper.registerAllowedMethod('sh', [Map.class], { m ->
+      return "https://${defaultFileShareStorageAccount}.file.core.windows.net/${defaultFileShare}?sas-token"
+    })
+    def script = loadScript(scriptName)
+    def isOK = false
+    // without any servicePrincipalCredentialsId option
     def options = [
       fileShare: defaultFileShare,
       fileShareStorageAccount: defaultFileShareStorageAccount
@@ -425,22 +464,20 @@ class InfraStepTests extends BaseTest {
       isOK = true
     }
     printCallStack()
-    // then an error message is displayed
-    assertTrue(assertMethodCallContainsPattern('echo', 'ERROR: At least one of these required options is missing: servicePrincipalCredentialsId, fileShare, fileShareStorageAccount'))
-    // then the correct Azure Service Principal credentials is not used
-    assertFalse(assertMethodCallContainsPattern('azureServicePrincipal', "credentialsId=${defaultServicePrincipalCredentialsId}"))
-    // then the correct options are not passed as env vars
-    assertFalse(assertMethodCallContainsPattern('withEnv', "STORAGE_NAME=${defaultFileShareStorageAccount}, STORAGE_FILESHARE=${defaultFileShare}, STORAGE_DURATION_IN_MINUTE=${defaultTokenDuration}, STORAGE_PERMISSIONS=${defaultTokenPermissions}"))
-    // then a script to get a file share signed URL is not called
-    assertFalse(assertMethodCallOccurrences('sh', 1))
-    // then it doesn't set $FILESHARE_SIGNED_URL to the signed file share URL
-    assertFalse(assertMethodCallContainsPattern('withEnv', "FILESHARE_SIGNED_URL="))
-    // then it doesn't inform about the URL expiring in the default amount of minutes
-    assertFalse(assertMethodCallContainsPattern('echo', "INFO: ${defaultFileShare} file share signed URL expiring in ${defaultTokenDuration} minute(s) available in \$FILESHARE_SIGNED_URL"))
-    // then the body closure is not executed
-    assertFalse(isOK)
-    // then it doesn't succeeds
-    assertJobStatusFailure()
+    // then no Azure Service Principal from the credentials (not) passed in options is used
+    assertFalse(assertMethodCallContainsPattern('azureServicePrincipal', 'credentialsId='))
+    // then the correct options are passed as env vars
+    assertTrue(assertMethodCallContainsPattern('withEnv', "STORAGE_NAME=${defaultFileShareStorageAccount}, STORAGE_FILESHARE=${defaultFileShare}, STORAGE_DURATION_IN_MINUTE=${defaultTokenDuration}, STORAGE_PERMISSIONS=${defaultTokenPermissions}"))
+    // then a script to get a file share signed URL is called
+    assertTrue(assertMethodCallOccurrences('sh', 1))
+    // then it sets $FILESHARE_SIGNED_URL to the signed file share URL
+    assertTrue(assertMethodCallContainsPattern('withEnv', "FILESHARE_SIGNED_URL=https://${defaultFileShareStorageAccount}.file.core.windows.net/${defaultFileShare}?sas-token"))
+    // then it inform about the credential-less, azcopy logged in, and the URL available in $FILESHARE_SIGNED_URL
+    assertTrue(assertMethodCallContainsPattern('echo', "INFO: credential-less (using user assigned identity service principal), azcopy logged in and ${defaultFileShare} file share URL available in \$FILESHARE_SIGNED_URL"))
+    // then the body closure is executed
+    assertTrue(isOK)
+    // then it succeeds
+    assertJobStatusSuccess()
   }
 
   @Test
