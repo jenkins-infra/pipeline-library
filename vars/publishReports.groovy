@@ -16,11 +16,16 @@ def call(List<String> files, Map params = [:]) {
   azcopy --version
   '''
 
-  infra.withFileShareServicePrincipal([
-    servicePrincipalCredentialsId: 'reports-jenkins-io-azurefile-serviceprincipal',
+  Map infraFileShareOptions = [
     fileShare: 'reports-jenkins-io',
-    fileShareStorageAccount: 'reportsjenkinsio'
-  ]) {
+    fileShareStorageAccount: 'reportsjenkinsio',
+  ]
+  // Use an explicit Azure Credential unless caller sets Workload Identity
+  if (!params.useWorkloadIdentity) {
+    infraFileShareOptions['servicePrincipalCredentialsId'] = 'reports-jenkins-io-azurefile-serviceprincipal'
+  }
+
+  infra.withFileShareServicePrincipal(infraFileShareOptions) {
     for(int i = 0; i < files.size(); ++i) {
       String filename = files[i]
       String contentType = ''
