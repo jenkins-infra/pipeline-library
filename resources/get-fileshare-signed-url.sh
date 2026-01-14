@@ -39,6 +39,8 @@ set +x
 AZURE_CONFIG_DIR="$(mktemp -d)"
 export AZURE_CONFIG_DIR
 
+
+# Consumers expects a trailing slash, whether or not a token is appended
 fileshare_url="https://${STORAGE_NAME}.file.core.windows.net/${STORAGE_FILESHARE}/"
 
 secret="${JENKINS_INFRA_FILESHARE_CLIENT_SECRET:-}"
