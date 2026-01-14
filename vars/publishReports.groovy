@@ -64,14 +64,13 @@ def call(List<String> files, Map params = [:]) {
           "IS_CREDENTIAL_LESS=${params.useWorkloadIdentity.toString()}",
         ]) {
           sh '''
-          # Don't output sensitive information
-          set +x
-
           if [[ "${IS_CREDENTIAL_LESS}" == "true" ]]
           then
             # No query string (but a trailing slash in 'FILESHARE_SIGNED_URL')
             fileShareUrl="${FILESHARE_SIGNED_URL}${DESTINATION_PATH}"
           else
+            # Don't output sensitive information such as the SAS token in the querystring
+            set +x
             fileShareUrl="$(echo "${FILESHARE_SIGNED_URL}" | sed "s#/?#/${DESTINATION_PATH}?#")"
           fi
 
