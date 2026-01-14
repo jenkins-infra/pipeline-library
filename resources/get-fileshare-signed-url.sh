@@ -7,7 +7,9 @@
 # Ref: https://learn.microsoft.com/en-us/azure/storage/common/storage-sas-overview
 # --
 # Usage:
-# - Return a file share URL: ./get-fileshare-signed-url.sh
+# - Returns a file share URL which can be passed to 'azcopy' (URI always ends with a trailing slash, and a querystring may be present if a short-time lived token is needed): 
+#    - With a token (e.g. with Azure SP credential): https://<storage_name>.file.core.windows.net/<storage_fileshare>/?<token>
+#    - Without a token (e.g. with credential-less authentication such as workload identity): https://<storage_name>.file.core.windows.net/<storage_fileshare>/
 # - Interact with a file share and azcopy: azcopy list "$(./get-fileshare-signed-url.sh)"
 # --
 # Required parameters defined as environment variables:
@@ -39,7 +41,9 @@ set +x
 AZURE_CONFIG_DIR="$(mktemp -d)"
 export AZURE_CONFIG_DIR
 
-fileshare_url="https://${STORAGE_NAME}.file.core.windows.net/${STORAGE_FILESHARE}"
+
+# Consumers expects a trailing slash, whether or not a token is appended
+fileshare_url="https://${STORAGE_NAME}.file.core.windows.net/${STORAGE_FILESHARE}/"
 
 secret="${JENKINS_INFRA_FILESHARE_CLIENT_SECRET:-}"
 # Credential-less using user assigned identity, no need for any SAS token in the returned URL
@@ -86,4 +90,4 @@ token="$(az storage share generate-sas "${accountKeyArg[@]}" \
 [[ "${shouldLogout}" == "true" ]] && az logout
 
 # Return signed URL
-echo "${fileshare_url}/?${token}"
+echo "${fileshare_url}?${token}"
