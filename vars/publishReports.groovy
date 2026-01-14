@@ -61,12 +61,19 @@ def call(List<String> files, Map params = [:]) {
           "SOURCE_DIRNAME=${dirname ?: '.'}",
           "DESTINATION_PATH=${dirname ?: ''}",
           "PATTERN=${ basename ?: '*' }",
+          "IS_CREDENTIAL_LESS=${params.useWorkloadIdentity.toString()}",
         ]) {
           sh '''
           # Don't output sensitive information
           set +x
 
-          fileShareUrl="$(echo "${FILESHARE_SIGNED_URL}" | sed "s#/?#/${DESTINATION_PATH}?#")"
+          if [[ "${IS_CREDENTIAL_LESS}" == "true" ]]
+          then
+            # No trailing slash and no query string
+            fileShareUrl="${FILESHARE_SIGNED_URL}/${DESTINATION_PATH}"
+          else
+            fileShareUrl="$(echo "${FILESHARE_SIGNED_URL}" | sed "s#/?#/${DESTINATION_PATH}?#")"
+          fi
 
           # Synchronize the File Share content
           azcopy copy \
