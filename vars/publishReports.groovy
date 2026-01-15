@@ -66,8 +66,14 @@ def call(List<String> files, Map params = [:]) {
           sh '''
           if [[ "${IS_CREDENTIAL_LESS}" == "true" ]]
           then
-            # No query string (but a trailing slash in 'FILESHARE_SIGNED_URL')
-            fileShareUrl="${FILESHARE_SIGNED_URL%/}${DESTINATION_PATH%/}/"
+            # No query string (but a trailing slash in 'FILESHARE_SIGNED_URL') when using credential-less
+
+            fileShareUrl="${FILESHARE_SIGNED_URL}"
+            # Assemble URL if there is a relative path provided and avoid double trailing slashes
+            if [ -n "${DESTINATION_PATH}" ]
+            then
+              fileShareUrl="${FILESHARE_SIGNED_URL}${DESTINATION_PATH%/}/"
+            fi
           else
             # Don't output sensitive information such as the SAS token in the querystring
             set +x
