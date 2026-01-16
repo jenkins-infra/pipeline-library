@@ -77,7 +77,11 @@ def call(List<String> files, Map params = [:]) {
           else
             # Don't output sensitive information such as the SAS token in the querystring
             set +x
-            fileShareUrl="$(echo "${FILESHARE_SIGNED_URL}" | sed "s#/?#/${DESTINATION_PATH}?#")"
+            fileShareUrl="${FILESHARE_SIGNED_URL}"
+            if [ -n "${DESTINATION_PATH}" ]
+            then
+              fileShareUrl="$(echo "${FILESHARE_SIGNED_URL}" | sed "s#/?#/${DESTINATION_PATH%/}/?#")"
+            fi
           fi
 
           # Synchronize the File Share content
