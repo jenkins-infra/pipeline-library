@@ -529,13 +529,60 @@ class InfraStepTests extends BaseTest {
       // unknown platform
       [platform: 'openbsd', jdk: '11', container: false, expected: 'openbsd',          warning: 'vm'],
       [platform: 'openbsd', jdk: '11', container: true,  expected: 'openbsd',          warning: 'container'],
+      // docker controller and agents jobs
+      [
+        // linux image
+        platform: 'docker-highmem', jdk: '', container: false,
+        expected: 'docker-highmem && spot', warning: null
+      ],
+      [
+        // linux image built on trusted.ci.jenkins.io
+        platform: 'docker-highmem', jdk: '', container: false, trustedEnv: true,
+        expected: 'linux', warning: null
+      ],
+      [
+        // windows 2025 image
+        platform: 'windows-2025', jdk: '', container: false,
+        expected: 'windows-2025 && spot', warning: null
+      ],
+      [
+        // windows 2019 image built on trusted.ci.jenkins.io
+        platform: 'windows-2019', jdk: '', container: false, trustedEnv: true,
+        expected: 'windows-2019 && spot', warning: null
+      ],
+      [
+        // linux image first run
+        platform: 'docker-highmem', jdk: '', container: false, spotRetryCounter: 0,
+        expected: 'docker-highmem && spot', warning: null
+      ],
+      [
+        // linux image third run (second retry after the first run)
+        platform: 'docker-highmem', jdk: '', container: false, spotRetryCounter: 2,
+        expected: 'docker-highmem && nonspot', warning: null
+      ],
+      [
+        // windows 2022 image third run (second retry after the first run)
+        platform: 'windows-2022', jdk: '', container: false, spotRetryCounter: 2,
+        expected: 'windows-2022 && nonspot', warning: null
+      ],
+      [
+        // linux image built on trusted.ci.jenkins.io third run (second retry after the first run)
+        platform: 'docker-highmem', jdk: '', container: false, trustedEnv: true, spotRetryCounter: 2,
+        expected: 'linux', warning: null
+      ]
     ]
 
     cases.each { c ->
       // reset call stack between cases
       clearCallStack()
 
-      String result = script.getBuildAgentLabel(c.platform, c.jdk, c.container)
+      // default values
+      def spotRetryCounter = c.containsKey('spotRetryCounter') ? c.spotRetryCounter : null
+      // environment (trusted.ci.jenkins.io or not)
+      env.JENKINS_URL = c.containsKey('trusted') ? 'https://trusted.ci.jenkins.io:1443/' : 'https://ci.jenkins.io/'
+      binding.setVariable('env', env)
+
+      String result = script.getBuildAgentLabel(c.platform, c.jdk, c.container, spotRetryCounter)
 
       assertEquals("Unexpected result for case: ${c}", c.expected, result)
 

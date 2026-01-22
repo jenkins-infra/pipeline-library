@@ -460,7 +460,7 @@ void publishDeprecationCheck(String deprecationSummary, String deprecationMessag
   publishChecks name: 'pipeline-library', summary: deprecationSummary, conclusion: 'NEUTRAL', text: deprecationMessage
 }
 
-String getBuildAgentLabel(String platform, String jdk, Boolean useContainerAgent) {
+String getBuildAgentLabel(String platform, String jdk, Boolean useContainerAgent, Integer spotRetryCounter = 0) {
   return useContainerAgent ? containerAgentLabel(platform, jdk) : vmAgentLabel(platform)
 }
 
@@ -483,8 +483,18 @@ private String vmAgentLabel(String platform) {
       return 'vm && linux'
     case 'windows':
       return 'docker-windows'
+    // For docker controller and agents jobs
+    case 'docker-highmem':
+      // Fallback for trusted.ci.jenkins.io used for docker images publication
+      return (isTrusted() ? 'linux' : getSpotOrNonSpotAgentLabel('docker-highmem'))
+    case ~/windows-.*/:
+      return getSpotOrNonSpotAgentLabel(platform)
     default:
       echo "WARNING: Unknown Virtual Machine platform '${platform}'. Set useContainerAgent to 'true' unless you want to be in uncharted territory."
       return platform
   }
+}
+
+private String getSpotOrNonSpotAgentLabel(String agentLabel, Integer spotRetryCounter = 0) {
+  return (spotRetryCounter > 1) ? "${agentLabel} && nonspot" : "${agentLabel} && spot"
 }
