@@ -515,52 +515,38 @@ class InfraStepTests extends BaseTest {
   }
 
   @Test
-  void testGetBuildAgentLabelWithLinuxJDK21Container() throws Exception {
+  void testGetBuildAgentLabel() throws Exception {
     def script = loadScript(scriptName)
-    String gotResult = script.getBuildAgentLabel('linux', '21', true)
-    printCallStack()
-    assertTrue(gotResult == 'maven-21')
-    assertFalse(assertMethodCallContainsPattern('echo', 'WARNING: Unknown Virtual Machine platform'))
-    assertJobStatusSuccess()
-  }
+    final String
 
-  @Test
-  void testGetBuildAgentLabelWithLinuxJDK8VM() throws Exception {
-    def script = loadScript(scriptName)
-    String gotResult = script.getBuildAgentLabel('linux', '8', false)
-    printCallStack()
-    assertTrue(gotResult == 'vm && linux')
-    assertFalse(assertMethodCallContainsPattern('echo', 'WARNING: Unknown Virtual Machine platform'))
-    assertJobStatusSuccess()
-  }
+    def cases = [
+      // container agents
+      [platform: 'linux',   jdk: '21', container: true,  expected: 'maven-21',         warning: null],
+      [platform: 'windows', jdk: '17', container: true,  expected: 'maven-17-windows', warning: null],
+      // VM agents
+      [platform: 'linux',   jdk: '8',  container: false, expected: 'vm && linux',      warning: null],
+      [platform: 'windows', jdk: '8',  container: false, expected: 'docker-windows',   warning: null],
+      // unknown platform
+      [platform: 'openbsd', jdk: '11', container: false, expected: 'openbsd',          warning: 'vm'],
+    ]
 
-  @Test
-  void testGetBuildAgentLabelWithWindowsJDK17Container() throws Exception {
-    def script = loadScript(scriptName)
-    String gotResult = script.getBuildAgentLabel('windows', '17', true)
-    printCallStack()
-    assertTrue(gotResult == 'maven-17-windows')
-    assertFalse(assertMethodCallContainsPattern('echo', 'WARNING: Unknown Virtual Machine platform'))
-    assertJobStatusSuccess()
-  }
+    cases.each { c ->
+      // reset call stack between cases
+      clearCallStack()
 
-  @Test
-  void testGetBuildAgentLabelWithWindowsJDK8VM() throws Exception {
-    def script = loadScript(scriptName)
-    String gotResult = script.getBuildAgentLabel('windows', '8', false)
-    printCallStack()
-    assertTrue(gotResult == 'docker-windows')
-    assertFalse(assertMethodCallContainsPattern('echo', 'WARNING: Unknown Virtual Machine platform'))
-    assertJobStatusSuccess()
-  }
+      String result = script.getBuildAgentLabel(c.platform, c.jdk, c.container)
 
-  @Test
-  void testGetBuildAgentLabelUnsupportedPlatform() throws Exception {
-    def script = loadScript(scriptName)
-    String gotResult = script.getBuildAgentLabel('openbsd', '11', false)
-    printCallStack()
-    assertTrue(gotResult == 'openbsd')
-    assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: Unknown Virtual Machine platform'))
+      assertEquals("Unexpected result for case: ${c}", c.expected, result)
+
+      if (c.warning == null) {
+        assertFalse("Did not expect a warning for case: ${c}", assertMethodCallContainsPattern('echo', 'WARNING:'))
+      } else if (c.warning == 'vm') {
+        assertTrue("Expected VM warning for case: ${c}", assertMethodCallContainsPattern('echo', 'Unknown Virtual Machine platform'))
+      } else if (c.warning == 'container') {
+        assertTrue("Expected container warning for case: ${c}", assertMethodCallContainsPattern('echo', 'Unknown container platform'))
+      }
+    }
+
     assertJobStatusSuccess()
   }
 }
