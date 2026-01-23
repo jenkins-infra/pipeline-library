@@ -517,7 +517,6 @@ class InfraStepTests extends BaseTest {
   @Test
   void testGetBuildAgentLabel() throws Exception {
     def script = loadScript(scriptName)
-    final String
 
     def cases = [
       // container agents
@@ -529,22 +528,79 @@ class InfraStepTests extends BaseTest {
       // unknown platform
       [platform: 'openbsd', jdk: '11', container: false, expected: 'openbsd',          warning: 'vm'],
       [platform: 'openbsd', jdk: '11', container: true,  expected: 'openbsd',          warning: 'container'],
+      // docker controller and agents jobs
+      [
+        // linux image
+        platform: 'docker-highmem', jdk: '', container: false,
+        expected: 'docker-highmem && spot', warning: null
+      ],
+      [
+        // linux image built on trusted.ci.jenkins.io
+        platform: 'docker-highmem', jdk: '', container: false, trustedEnv: true,
+        expected: 'linux', warning: null
+      ],
+      [
+        // windows 2025 image
+        platform: 'windows-2025', jdk: '', container: false,
+        expected: 'windows-2025 && spot', warning: null
+      ],
+      [
+        // windows 2019 image built on trusted.ci.jenkins.io
+        platform: 'windows-2019', jdk: '', container: false, trustedEnv: true,
+        expected: 'windows-2019 && spot', warning: null
+      ],
+      [
+        // linux image first run
+        platform: 'docker-highmem', jdk: '', container: false, retry: 0,
+        expected: 'docker-highmem && spot', warning: null
+      ],
+      [
+        // linux image third run (second retry after the first run)
+        platform: 'docker-highmem', jdk: '', container: false, retry: 2,
+        expected: 'docker-highmem && nonspot', warning: null
+      ],
+      [
+        // windows 2022 image third run (second retry after the first run)
+        platform: 'windows-2022', jdk: '', container: false, retry: 2,
+        expected: 'windows-2022 && nonspot', warning: null
+      ],
+      [
+        // linux image built on trusted.ci.jenkins.io third run (second retry after the first run)
+        platform: 'docker-highmem', jdk: '', container: false, trustedEnv: true, retry: 2,
+        expected: 'linux', warning: null
+      ],
     ]
 
     cases.each { c ->
       // reset call stack between cases
       clearCallStack()
 
-      String result = script.getBuildAgentLabel(c.platform, c.jdk, c.container)
+      // default values
+      def spotRetryCounter = c.containsKey('retry') ? c.retry : null
+      // environment (trusted.ci.jenkins.io or not)
+      env.JENKINS_URL = (c.containsKey('trustedEnv') && c.trustedEnv) ? 'https://trusted.ci.jenkins.io:1443/' : 'https://ci.jenkins.io/'
+      binding.setVariable('env', env)
+
+      String result = script.getBuildAgentLabel(c.platform, c.jdk, c.container, spotRetryCounter)
+      printCallStack()
 
       assertEquals("Unexpected result for case: ${c}", c.expected, result)
 
       if (c.warning == null) {
         assertFalse("Did not expect a warning for case: ${c}", assertMethodCallContainsPattern('echo', 'WARNING:'))
-      } else if (c.warning == 'vm') {
+      }
+      if (c.warning == 'vm') {
         assertTrue("Expected VM warning for case: ${c}", assertMethodCallContainsPattern('echo', 'Unknown Virtual Machine platform'))
-      } else if (c.warning == 'container') {
+      }
+      if (c.warning == 'container') {
         assertTrue("Expected container warning for case: ${c}", assertMethodCallContainsPattern('echo', 'Unknown container platform'))
+      }
+
+      if (c.containsKey('trustedEnv') && c.trustedEnv) {
+        assertMethodCallContainsPattern('echo', 'running on trusted.ci.jenkins.io')
+      }
+      if (c.containsKey('retry') && c.retry > 1) {
+        assertMethodCallContainsPattern('echo', 'more than one retry, using "nonspot" agent')
       }
     }
 
