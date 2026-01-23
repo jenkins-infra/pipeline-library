@@ -600,7 +600,7 @@ class InfraStepTests extends BaseTest {
         assertMethodCallContainsPattern('echo', 'running on trusted.ci.jenkins.io')
       }
       if (c.containsKey('retry') && c.retry > 1) {
-        assertMethodCallContainsPattern('echo', 'second retry, using "nonspot" agent')
+        assertMethodCallContainsPattern('echo', 'more than one retry, using "nonspot" agent')
       }
     }
 

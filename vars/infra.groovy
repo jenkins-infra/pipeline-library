@@ -500,7 +500,7 @@ private String vmAgentLabel(String platform, Integer spotRetryCounter) {
 
 private String getSpotOrNonSpotAgentLabel(String agentLabel, Integer spotRetryCounter) {
   if (spotRetryCounter > 1) {
-    echo 'INFO: second retry, using "nonspot" agent'
+    echo 'INFO: more than one retry, using "nonspot" agent'
     return "${agentLabel} && nonspot"
   }
   return "${agentLabel} && spot"
