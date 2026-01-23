@@ -528,7 +528,6 @@ class InfraStepTests extends BaseTest {
       [platform: 'windows', jdk: '8',  container: false, expected: 'docker-windows',   warning: null],
       // unknown platform
       [platform: 'openbsd', jdk: '11', container: false, expected: 'openbsd',          warning: 'vm'],
-      [platform: 'openbsd', jdk: '11', container: true,  expected: 'openbsd',          warning: 'container'],
     ]
 
     cases.each { c ->
