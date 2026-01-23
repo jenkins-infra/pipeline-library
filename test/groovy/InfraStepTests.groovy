@@ -579,8 +579,12 @@ class InfraStepTests extends BaseTest {
       // default values
       def spotRetryCounter = c.containsKey('spotRetryCounter') ? c.spotRetryCounter : null
       // environment (trusted.ci.jenkins.io or not)
+      assertFalse(script.isTrusted())
       env.JENKINS_URL = c.containsKey('trusted') ? 'https://trusted.ci.jenkins.io:1443/' : 'https://ci.jenkins.io/'
       binding.setVariable('env', env)
+      if (c.containsKey('trusted')) {
+        assertTrue(script.isTrusted())
+      }
 
       String result = script.getBuildAgentLabel(c.platform, c.jdk, c.container, spotRetryCounter)
 
