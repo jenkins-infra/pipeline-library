@@ -461,7 +461,7 @@ void publishDeprecationCheck(String deprecationSummary, String deprecationMessag
 }
 
 String getBuildAgentLabel(String platform, String jdk, Boolean useContainerAgent, Integer spotRetryCounter = 0) {
-  return useContainerAgent ? containerAgentLabel(platform, jdk) : vmAgentLabel(platform)
+  return useContainerAgent ? containerAgentLabel(platform, jdk) : vmAgentLabel(platform, spotRetryCounter)
 }
 
 private String containerAgentLabel(String platform, String jdk) {
@@ -477,7 +477,7 @@ private String containerAgentLabel(String platform, String jdk) {
   }
 }
 
-private String vmAgentLabel(String platform) {
+private String vmAgentLabel(String platform, Integer spotRetryCounter) {
   switch(platform) {
     case 'linux':
       return 'vm && linux'
@@ -485,16 +485,23 @@ private String vmAgentLabel(String platform) {
       return 'docker-windows'
     // For docker controller and agents jobs
     case 'docker-highmem':
-      // Fallback for trusted.ci.jenkins.io used for docker images publication
-      return (isTrusted() ? 'linux' : getSpotOrNonSpotAgentLabel('docker-highmem'))
+      if (isTrusted()) {
+        echo 'INFO: running on trusted.ci.jenkins.io, fallback to "linux" agent'
+        return 'linux'
+      }
+      return getSpotOrNonSpotAgentLabel('docker-highmem', spotRetryCounter)
     case ~/windows-.*/:
-      return getSpotOrNonSpotAgentLabel(platform)
+      return getSpotOrNonSpotAgentLabel(platform, spotRetryCounter)
     default:
       echo "WARNING: Unknown Virtual Machine platform '${platform}'. Set useContainerAgent to 'true' unless you want to be in uncharted territory."
       return platform
   }
 }
 
-private String getSpotOrNonSpotAgentLabel(String agentLabel, Integer spotRetryCounter = 0) {
-  return (spotRetryCounter > 1) ? "${agentLabel} && nonspot" : "${agentLabel} && spot"
+private String getSpotOrNonSpotAgentLabel(String agentLabel, Integer spotRetryCounter) {
+  if (spotRetryCounter > 1) {
+    echo 'INFO: second retry, using "nonspot" agent'
+    return "${agentLabel} && nonspot"
+  }
+  return "${agentLabel} && spot"
 }
