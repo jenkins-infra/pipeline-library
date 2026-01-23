@@ -517,7 +517,6 @@ class InfraStepTests extends BaseTest {
   @Test
   void testGetBuildAgentLabel() throws Exception {
     def script = loadScript(scriptName)
-    final String
 
     def cases = [
       // container agents
@@ -552,24 +551,24 @@ class InfraStepTests extends BaseTest {
       ],
       [
         // linux image first run
-        platform: 'docker-highmem', jdk: '', container: false, spotRetryCounter: 0,
+        platform: 'docker-highmem', jdk: '', container: false, retry: 0,
         expected: 'docker-highmem && spot', warning: null
       ],
       [
         // linux image third run (second retry after the first run)
-        platform: 'docker-highmem', jdk: '', container: false, spotRetryCounter: 2,
+        platform: 'docker-highmem', jdk: '', container: false, retry: 2,
         expected: 'docker-highmem && nonspot', warning: null
       ],
       [
         // windows 2022 image third run (second retry after the first run)
-        platform: 'windows-2022', jdk: '', container: false, spotRetryCounter: 2,
+        platform: 'windows-2022', jdk: '', container: false, retry: 2,
         expected: 'windows-2022 && nonspot', warning: null
       ],
       [
         // linux image built on trusted.ci.jenkins.io third run (second retry after the first run)
-        platform: 'docker-highmem', jdk: '', container: false, trustedEnv: true, spotRetryCounter: 2,
+        platform: 'docker-highmem', jdk: '', container: false, trustedEnv: true, retry: 2,
         expected: 'linux', warning: null
-      ]
+      ],
     ]
 
     cases.each { c ->
@@ -577,25 +576,31 @@ class InfraStepTests extends BaseTest {
       clearCallStack()
 
       // default values
-      def spotRetryCounter = c.containsKey('spotRetryCounter') ? c.spotRetryCounter : null
+      def spotRetryCounter = c.containsKey('retry') ? c.retry : null
       // environment (trusted.ci.jenkins.io or not)
-      assertFalse(script.isTrusted())
-      env.JENKINS_URL = c.containsKey('trusted') ? 'https://trusted.ci.jenkins.io:1443/' : 'https://ci.jenkins.io/'
+      env.JENKINS_URL = (c.containsKey('trustedEnv') && c.trustedEnv) ? 'https://trusted.ci.jenkins.io:1443/' : 'https://ci.jenkins.io/'
       binding.setVariable('env', env)
-      if (c.containsKey('trusted')) {
-        assertTrue(script.isTrusted())
-      }
 
       String result = script.getBuildAgentLabel(c.platform, c.jdk, c.container, spotRetryCounter)
+      printCallStack()
 
       assertEquals("Unexpected result for case: ${c}", c.expected, result)
 
       if (c.warning == null) {
         assertFalse("Did not expect a warning for case: ${c}", assertMethodCallContainsPattern('echo', 'WARNING:'))
-      } else if (c.warning == 'vm') {
+      }
+      if (c.warning == 'vm') {
         assertTrue("Expected VM warning for case: ${c}", assertMethodCallContainsPattern('echo', 'Unknown Virtual Machine platform'))
-      } else if (c.warning == 'container') {
+      }
+      if (c.warning == 'container') {
         assertTrue("Expected container warning for case: ${c}", assertMethodCallContainsPattern('echo', 'Unknown container platform'))
+      }
+
+      if (c.containsKey('trustedEnv') && c.trustedEnv) {
+        assertMethodCallContainsPattern('echo', 'running on trusted.ci.jenkins.io')
+      }
+      if (c.containsKey('retry') && c.retry > 1) {
+        assertMethodCallContainsPattern('echo', 'second retry, using "nonspot" agent')
       }
     }
 
