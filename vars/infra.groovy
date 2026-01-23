@@ -461,25 +461,30 @@ void publishDeprecationCheck(String deprecationSummary, String deprecationMessag
 }
 
 String getBuildAgentLabel(String platform, String jdk, Boolean useContainerAgent) {
-  if (useContainerAgent) {
-    if (platform == 'linux' || platform == 'windows') {
-      String agentContainerLabel = 'maven-' + jdk
-      if (platform == 'windows') {
-        agentContainerLabel += '-windows'
-      }
-      return agentContainerLabel
-    }
-  } else {
-    switch(platform) {
-      case 'windows':
-        return 'docker-windows'
-        break
-      case 'linux':
-        return 'vm && linux'
-        break
-      default:
-        echo "WARNING: Unknown Virtual Machine platform '${platform}'. Set useContainerAgent to 'true' unless you want to be in uncharted territory."
-        return platform
-    }
+  return useContainerAgent ? containerAgentLabel(platform, jdk) : vmAgentLabel(platform)
+}
+
+private String containerAgentLabel(String platform, String jdk) {
+  String label = "maven-${jdk}"
+  switch(platform) {
+    case 'linux':
+      return label
+    case 'windows':
+      return "${label}-windows"
+    default:
+      echo "WARNING: Unknown container platform '${platform}'. Set useContainerAgent to 'false' unless you want to be in uncharted territory."
+      return platform
+  }
+}
+
+private String vmAgentLabel(String platform) {
+  switch(platform) {
+    case 'linux':
+      return 'vm && linux'
+    case 'windows':
+      return 'docker-windows'
+    default:
+      echo "WARNING: Unknown Virtual Machine platform '${platform}'. Set useContainerAgent to 'true' unless you want to be in uncharted territory."
+      return platform
   }
 }
