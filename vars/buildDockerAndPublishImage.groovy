@@ -246,10 +246,10 @@ def call(String imageShortName, Map userConfig=[:]) {
                 echo "Configuring credential.helper"
                 // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
                 if (isUnix()) {
-                  sh 'git config --local credential.helper "!set -u; echo username=\\$GIT_USERNAME && echo password=\\$GIT_PASSWORD && echo"'
+                  sh 'git config credential.helper "!set -u; echo username=\\$GIT_USERNAME && echo password=\\$GIT_PASSWORD && echo"'
                 } else {
                   // Using 'bat' here instead of 'powershell' to avoid variable interpolation problem with $
-                  bat 'git config --local credential.helper "!sh.exe -c \'set -u; echo username=$GIT_USERNAME && echo password=$GIT_PASSWORD && echo"\''
+                  bat 'git config credential.helper "!sh.exe -c \'set -u; echo username=$GIT_USERNAME && echo password=$GIT_PASSWORD && echo"\''
                 }
 
                 withCredentials([

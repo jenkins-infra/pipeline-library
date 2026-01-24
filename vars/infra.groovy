@@ -166,8 +166,8 @@ Object checkoutSCM(String repo = null) {
   // Fix https://github.com/jenkins-infra/helpdesk/issues/3865 with autocrlf
   if (!isUnix()) {
     bat '''
-        git config set --system core.autocrlf true
-        git config set --system core.longPaths true
+        git config set --global core.autocrlf true
+        git config set --global core.longPaths true
         '''
   }
 
