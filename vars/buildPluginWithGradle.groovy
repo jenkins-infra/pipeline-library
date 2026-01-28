@@ -23,7 +23,11 @@ def call(Map params = [:]) {
     String jdk = config.jdk
     String platform = config.platform
     String jenkinsVersion = config.jenkins
-    String label = infra.getBuildAgentLabel(platform, jdk, useContainerAgent)
+    String label = infra.getBuildAgentLabel([
+      useContainerAgent: useContainerAgent,
+      platform: platform,
+      jdk: jdk
+    ])
     String stageIdentifier = "${label}-${jdk}${jenkinsVersion ? '-' + jenkinsVersion : ''}"
     boolean first = tasks.size() == 1
     boolean skipTests = params?.tests?.skip

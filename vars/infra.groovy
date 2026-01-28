@@ -460,7 +460,11 @@ void publishDeprecationCheck(String deprecationSummary, String deprecationMessag
   publishChecks name: 'pipeline-library', summary: deprecationSummary, conclusion: 'NEUTRAL', text: deprecationMessage
 }
 
-String getBuildAgentLabel(String platform, String jdk, Boolean useContainerAgent, Integer spotRetryCounter = 0) {
+String getBuildAgentLabel(Map params = [:]) {
+  Boolean useContainerAgent = params.containsKey('useContainerAgent') ? params.useContainerAgent : null
+  String platform = params.containsKey('platform') ? params.platform : null
+  String jdk = params.containsKey('jdk') ? params.jdk : null
+  Integer spotRetryCounter = params.containsKey('spotRetryCounter') ? params.spotRetryCounter : 0
   return useContainerAgent ? containerAgentLabel(platform, jdk) : vmAgentLabel(platform, spotRetryCounter)
 }
 
