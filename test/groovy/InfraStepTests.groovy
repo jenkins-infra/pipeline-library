@@ -581,7 +581,12 @@ class InfraStepTests extends BaseTest {
       env.JENKINS_URL = (c.containsKey('trustedEnv') && c.trustedEnv) ? 'https://trusted.ci.jenkins.io:1443/' : 'https://ci.jenkins.io/'
       binding.setVariable('env', env)
 
-      String result = script.getBuildAgentLabel(c.platform, c.jdk, c.container, spotRetryCounter)
+      String result = script.getBuildAgentLabel([
+        useContainerAgent: c.container,
+        platform: c.platform,
+        jdk: c.jdk,
+        spotRetryCounter: spotRetryCounter
+      ])
       printCallStack()
 
       assertEquals("Unexpected result for case: ${c}", c.expected, result)

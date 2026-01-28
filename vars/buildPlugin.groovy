@@ -39,7 +39,11 @@ def call(Map params = [:]) {
     boolean skipTests = params?.tests?.skip
     boolean addToolEnv = !useContainerAgent
 
-    baselabel = infra.getBuildAgentLabel(platform, jdk, useContainerAgent)
+    baselabel = infra.getBuildAgentLabel([
+      useContainerAgent: useContainerAgent,
+      platform: platform,
+      jdk: jdk
+    ])
 
     tasks[stageIdentifier] = {
       int retryCounter = 0
