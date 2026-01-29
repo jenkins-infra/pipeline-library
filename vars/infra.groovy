@@ -503,6 +503,10 @@ private String vmAgentLabel(String platform, Integer spotRetryCounter) {
 }
 
 private String getSpotOrNonSpotAgentLabel(String agentLabel, Integer spotRetryCounter) {
+  if (isTrusted()) {
+    echo 'INFO: running on trusted.ci.jenkins.io, no "spot" or "nonspot" agents'
+    return agentLabel
+  }
   if (spotRetryCounter > 1) {
     echo 'INFO: more than one retry, using "nonspot" agent'
     return "${agentLabel} && nonspot"
