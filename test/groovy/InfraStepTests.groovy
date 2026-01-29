@@ -547,7 +547,7 @@ class InfraStepTests extends BaseTest {
       [
         // windows 2019 image built on trusted.ci.jenkins.io
         platform: 'windows-2019', jdk: '', container: false, trustedEnv: true,
-        expected: 'windows-2019 && spot', warning: null
+        expected: 'windows-2019', warning: null
       ],
       [
         // linux image first run
@@ -568,6 +568,11 @@ class InfraStepTests extends BaseTest {
         // linux image built on trusted.ci.jenkins.io third run (second retry after the first run)
         platform: 'docker-highmem', jdk: '', container: false, trustedEnv: true, retry: 2,
         expected: 'linux', warning: null
+      ],
+      [
+        // windows 2025 image built on trusted.ci.jenkins.io third run (second retry after the first run)
+        platform: 'windows-2025', jdk: '', container: false, trustedEnv: true, retry: 2,
+        expected: 'windows-2025', warning: null
       ],
     ]
 
