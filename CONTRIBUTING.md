@@ -101,7 +101,7 @@ Your commits need to be signed and verified by Github. You can achieve this by f
 
 In order to work with that repository you will need:
 
-- JDK 21.0.9+10: Check [Temurin releases](https://adoptium.net/temurin/releases/v21.0.9+10)
+- JDK 21.0.10+7: Check [Temurin releases](https://adoptium.net/temurin/releases/v21.0.10+7)
 - Maven version 3.9.12: Check https://maven.apache.org/download.cgi
 - Groovy: https://groovy-lang.org/install.html
 
