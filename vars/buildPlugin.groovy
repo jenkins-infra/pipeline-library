@@ -123,6 +123,9 @@ def call(Map params = [:]) {
                     mavenOptions += "help:evaluate -Dexpression=changelist -Doutput=$changelistF"
                   }
                 }
+                if (env.CHANGE_FORK == null) {
+                  mavenOptions += '-P-consume-incrementals'
+                }
                 if (jenkinsVersion) {
                   mavenOptions += "-Djenkins.version=${jenkinsVersion} -Daccess-modifier-checker.failOnError=false"
                 }
