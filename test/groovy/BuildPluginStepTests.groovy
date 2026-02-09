@@ -362,9 +362,10 @@ class BuildPluginStepTests extends BaseTest {
     def script = loadScript(scriptName)
     // when running with incrementals
     helper.registerAllowedMethod('fileExists', [String.class], { s ->
-      return s.equals('.mvn/extensions.xml') || s.equals('pom.xml')
+      return s.equals('.mvn/extensions.xml') || s.equals('.mvn/maven.config') || s.equals('pom.xml')
     })
     helper.addReadFileMock('.mvn/extensions.xml', 'git-changelist-maven-extension')
+    helper.addReadFileMock('.mvn/maven.config', '-Pmight-produce-incrementals')
     // and no jenkins version
     script.call(configurations: [['platform': 'linux', 'jdk': 8, 'jenkins': null]])
     printCallStack()
