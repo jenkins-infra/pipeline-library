@@ -72,7 +72,9 @@ def call(Map params = [:]) {
               stage("Checkout (${stageIdentifier})") {
                 infra.checkoutSCM(repo)
                 incrementals = fileExists('.mvn/extensions.xml') &&
-                    readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension')
+                    readFile('.mvn/extensions.xml').contains('git-changelist-maven-extension') &&
+                    fileExists('.mvn/maven.config') &&
+                    !readFile('.mvn/maven.config').contains('-Pmight-produce-incrementals-with-minimal-flattening')
                 final String gitUnavailableMessage = '[buildPlugin] Git CLI may not be available'
                 withEnv(["GITUNAVAILABLEMESSAGE=${gitUnavailableMessage}"]) {
                   if (incrementals) {
