@@ -126,7 +126,7 @@ def call(Map params = [:]) {
                     mavenOptions += "help:evaluate -Dexpression=changelist -Doutput=$changelistF"
                   }
                 }
-                if (fileExists 'consume-incrementals') {
+                if (fileExists('consume-incrementals')) {
                   consumingIncrementals = true
                 } else {
                   echo 'Forbidding use of Incremental dependencies. If you need to consume Incrementals, add a file named `consume-incrementals` to the repository root. (Contents arbitrary but conventionally a list of upstream PRs.) Then keep this PR in draft until the dependency has been switched to a release version and the marker file can be removed.'
