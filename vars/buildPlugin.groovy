@@ -316,7 +316,7 @@ def call(Map params = [:]) {
     infra.maybePublishIncrementals()
   }
   if (consumingIncrementals) {
-    unstable 'This build consumed Incremental dependencies. Remove the `consume-incrementals` file before reading for review.'
+    unstable "This build consumed Incremental dependencies. Remove the 'consume-incrementals' file before reading for review."
   }
 }
 
