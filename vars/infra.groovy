@@ -42,6 +42,7 @@ Object withDockerCredentials(Map orgAndCredentialsId, Closure body) {
         if (isUnix()) {
           sh '''
           echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin
+          set +x
           ip_all_json="$(curl -s https://ifconfig.me/all.json | jq || true)"
           echo "INFO: logged in Docker Hub as '${DOCKER_CONFIG_USR}'"
           if [[ -n "${ip_all_json}" ]]; then
