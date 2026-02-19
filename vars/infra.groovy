@@ -40,9 +40,21 @@ Object withDockerCredentials(Map orgAndCredentialsId, Closure body) {
       ]) {
         // Logging in on the Dockerhub helps to avoid request limit from DockerHub
         if (isUnix()) {
-          sh 'echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin'
+          sh '''
+          echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin
+          agent_ip="$(curl -s https://ifconfig.me || true)"
+          echo "INFO: logged in Docker Hub as ${DOCKER_CONFIG_USR} from ${agent_ip} IP address"
+          '''
         } else {
-          pwsh 'Write-Output ${env:DOCKER_CONFIG_PSW} | & ${Env:CONTAINER_BIN} login --username ${Env:DOCKER_CONFIG_USR} --password-stdin'
+          pwsh '''
+          Write-Output ${env:DOCKER_CONFIG_PSW} | & ${Env:CONTAINER_BIN} login --username ${Env:DOCKER_CONFIG_USR} --password-stdin
+          try {
+              $agentIp = (Invoke-RestMethod -Uri "https://ifconfig.me" -TimeoutSec 5)
+          } catch {
+              $agentIp = ""
+          }
+          Write-Host "INFO: logged in Docker Hub as $env:DOCKER_CONFIG_USR from $agentIp IP address"
+          '''
         }
 
         body.call()
