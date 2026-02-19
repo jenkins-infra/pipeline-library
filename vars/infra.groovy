@@ -33,16 +33,40 @@ Object withDockerCredentials(Map orgAndCredentialsId, Closure body) {
   if (orgAndCredentialsId.error) {
     echo orgAndCredentialsId.msg
   } else {
-    env.DOCKERHUB_ORGANISATION = orgAndCredentialsId.organisation
-    withEnv(["CONTAINER_BIN=${env.CONTAINER_BIN ?: 'docker'}"]){
+    withEnv([
+      "CONTAINER_BIN=${env.CONTAINER_BIN ?: 'docker'}",
+      "DOCKERHUB_ORGANISATION=${orgAndCredentialsId.organisation}",
+      "DOCKERHUB_CREDENTIALS_ID=${orgAndCredentialsId.credentialId}",
+    ]){
       withCredentials([
         usernamePassword(credentialsId: orgAndCredentialsId.credentialId, passwordVariable: 'DOCKER_CONFIG_PSW', usernameVariable: 'DOCKER_CONFIG_USR')
       ]) {
         // Logging in on the Dockerhub helps to avoid request limit from DockerHub
         if (isUnix()) {
-          sh 'echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin'
+          sh '''
+          echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin
+          set +x
+          ip_all_json="$(curl -s https://ifconfig.me/all.json | jq || true)"
+          echo "INFO: logged in Docker Hub as '${DOCKER_CONFIG_USR}' with '${DOCKERHUB_CREDENTIALS_ID}' credentials, namespace: ${DOCKERHUB_ORGANISATION}"
+          if [[ -n "${ip_all_json}" ]]; then
+            echo 'INFO: IP address details from ifconfig.me/all.json:'
+            echo "${ip_all_json}"
+          fi
+          '''
         } else {
-          pwsh 'Write-Output ${env:DOCKER_CONFIG_PSW} | & ${Env:CONTAINER_BIN} login --username ${Env:DOCKER_CONFIG_USR} --password-stdin'
+          pwsh '''
+          Write-Output ${env:DOCKER_CONFIG_PSW} | & ${Env:CONTAINER_BIN} login --username ${Env:DOCKER_CONFIG_USR} --password-stdin
+          try {
+              $ipAll = (Invoke-RestMethod -Uri "https://ifconfig.me/all.json" -TimeoutSec 5 | Out-String)
+          } catch {
+              $ipAll = ""
+          }
+          Write-Host "INFO: logged in Docker Hub as '$env:DOCKER_CONFIG_USR' with '$env:DOCKERHUB_CREDENTIALS_ID' credentials, namespace: $env:DOCKERHUB_ORGANISATION"
+          if ($ipAll) {
+            Write-Host 'INFO: IP address details from ifconfig.me/all.json:'
+            Write-Host $ipAll
+          }
+          '''
         }
 
         body.call()
