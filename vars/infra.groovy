@@ -33,8 +33,11 @@ Object withDockerCredentials(Map orgAndCredentialsId, Closure body) {
   if (orgAndCredentialsId.error) {
     echo orgAndCredentialsId.msg
   } else {
-    env.DOCKERHUB_ORGANISATION = orgAndCredentialsId.organisation
-    withEnv(["CONTAINER_BIN=${env.CONTAINER_BIN ?: 'docker'}"]){
+    withEnv([
+      "CONTAINER_BIN=${env.CONTAINER_BIN ?: 'docker'}",
+      "DOCKERHUB_ORGANISATION=${orgAndCredentialsId.organisation}",
+      "DOCKERHUB_CREDENTIALS_ID=${orgAndCredentialsId.credentialId}",
+    ]){
       withCredentials([
         usernamePassword(credentialsId: orgAndCredentialsId.credentialId, passwordVariable: 'DOCKER_CONFIG_PSW', usernameVariable: 'DOCKER_CONFIG_USR')
       ]) {
@@ -44,7 +47,7 @@ Object withDockerCredentials(Map orgAndCredentialsId, Closure body) {
           echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin
           set +x
           ip_all_json="$(curl -s https://ifconfig.me/all.json | jq || true)"
-          echo "INFO: logged in Docker Hub as '${DOCKER_CONFIG_USR}'"
+          echo "INFO: logged in Docker Hub as '${DOCKER_CONFIG_USR}' with '${DOCKERHUB_CREDENTIALS_ID}' credentials, namespace: ${DOCKERHUB_ORGANISATION}"
           if [[ -n "${ip_all_json}" ]]; then
             echo 'INFO: IP address details from ifconfig.me/all.json:'
             echo "${ip_all_json}"
@@ -58,7 +61,7 @@ Object withDockerCredentials(Map orgAndCredentialsId, Closure body) {
           } catch {
               $ipAll = ""
           }
-          Write-Host "INFO: logged in Docker Hub as '$env:DOCKER_CONFIG_USR'"
+          Write-Host "INFO: logged in Docker Hub as '$env:DOCKER_CONFIG_USR' with '$env:DOCKERHUB_CREDENTIALS_ID' credentials, namespace: $env:DOCKERHUB_ORGANISATION"
           if ($ipAll) {
             Write-Host 'INFO: IP address details from ifconfig.me/all.json:'
             Write-Host $ipAll
