@@ -72,7 +72,7 @@ class InfraStepTests extends BaseTest {
     assertTrue(isOK)
     assertJobStatusSuccess()
     assertTrue(assertMethodCallContainsPattern('sh', 'echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'echo "INFO: logged in Docker Hub as ${DOCKER_CONFIG_USR} from ${agent_ip} IP address"'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'echo "INFO: logged in Docker Hub as \'${DOCKER_CONFIG_USR}\'"'))
   }
 
   @Test
@@ -101,7 +101,7 @@ class InfraStepTests extends BaseTest {
     assertTrue(isOK)
     assertJobStatusSuccess()
     assertTrue(assertMethodCallContainsPattern('sh', 'echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'echo "INFO: logged in Docker Hub as ${DOCKER_CONFIG_USR} from ${agent_ip} IP address"'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'echo "INFO: logged in Docker Hub as \'${DOCKER_CONFIG_USR}\'"'))
   }
 
   @Test
@@ -117,7 +117,7 @@ class InfraStepTests extends BaseTest {
     assertTrue(isOK)
     assertJobStatusSuccess()
     assertTrue(assertMethodCallContainsPattern('pwsh', 'Write-Output ${env:DOCKER_CONFIG_PSW} | & ${Env:CONTAINER_BIN} login --username ${Env:DOCKER_CONFIG_USR} --password-stdin'))
-    assertTrue(assertMethodCallContainsPattern('pwsh', 'Write-Host "INFO: logged in Docker Hub as $env:DOCKER_CONFIG_USR from $agentIp IP address"'))
+    assertTrue(assertMethodCallContainsPattern('pwsh', 'Write-Host "INFO: logged in Docker Hub as \'$env:DOCKER_CONFIG_USR\'"'))
   }
 
   @Test
@@ -146,7 +146,7 @@ class InfraStepTests extends BaseTest {
     assertTrue(isOK)
     assertJobStatusSuccess()
     assertTrue(assertMethodCallContainsPattern('sh', 'echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'echo "INFO: logged in Docker Hub as ${DOCKER_CONFIG_USR} from ${agent_ip} IP address"'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'echo "INFO: logged in Docker Hub as \'${DOCKER_CONFIG_USR}\'"'))
   }
 
   @Test
@@ -162,7 +162,7 @@ class InfraStepTests extends BaseTest {
     assertTrue(isOK)
     assertJobStatusSuccess()
     assertTrue(assertMethodCallContainsPattern('pwsh', 'Write-Output ${env:DOCKER_CONFIG_PSW} | & ${Env:CONTAINER_BIN} login --username ${Env:DOCKER_CONFIG_USR} --password-stdin'))
-    assertTrue(assertMethodCallContainsPattern('pwsh', 'Write-Host "INFO: logged in Docker Hub as $env:DOCKER_CONFIG_USR from $agentIp IP address"'))
+    assertTrue(assertMethodCallContainsPattern('pwsh', 'Write-Host "INFO: logged in Docker Hub as \'$env:DOCKER_CONFIG_USR\'"'))
   }
 
   @Test
