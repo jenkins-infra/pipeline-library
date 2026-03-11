@@ -65,7 +65,7 @@ def call(userConfig = [:]) {
 
           // Build the updatecli command
           String updatecliCommand = ""
-          updatecliCommand = "updatecli ${finalConfig.action}"
+          updatecliCommand = "updatecli pipeline ${finalConfig.action}"
           if (finalConfig.debug) {
             updatecliCommand += ' --debug'
           }

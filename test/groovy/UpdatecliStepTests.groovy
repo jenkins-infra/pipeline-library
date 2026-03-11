@@ -43,8 +43,8 @@ class UpdatecliStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('sh', 'tar --extract'))
 
     // And only the diff command called with default values
-    assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
-    assertFalse(assertMethodCallContainsPattern('sh','updatecli apply'))
+    assertTrue(assertMethodCallContainsPattern('sh','updatecli pipeline diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
+    assertFalse(assertMethodCallContainsPattern('sh','updatecli pipeline apply'))
   }
 
   @Test
@@ -62,8 +62,8 @@ class UpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('checkout',''))
 
     // And only the custom command called with default values
-    assertFalse(assertMethodCallContainsPattern('sh','updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
-    assertTrue(assertMethodCallContainsPattern('sh','updatecli eat --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
+    assertFalse(assertMethodCallContainsPattern('sh','updatecli pipeline diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
+    assertTrue(assertMethodCallContainsPattern('sh','updatecli pipeline eat --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
   }
 
   @Test
@@ -81,7 +81,7 @@ class UpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('checkout',''))
 
     // And only the default command called with custom config and NO values
-    assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --config ./ops/config.yml'))
+    assertTrue(assertMethodCallContainsPattern('sh','updatecli pipeline diff --config ./ops/config.yml'))
     assertFalse(assertMethodCallContainsPattern('sh','--values'))
   }
 
@@ -101,7 +101,7 @@ class UpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('checkout',''))
 
     // And only the default command called with custom config and NO values
-    assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --values ./values.yaml'))
+    assertTrue(assertMethodCallContainsPattern('sh','updatecli pipeline diff --values ./values.yaml'))
     assertFalse(assertMethodCallContainsPattern('sh','--config'))
   }
 
@@ -123,8 +123,8 @@ class UpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('node', 'jnlp-linux-amd64'))
 
     // And only the diff command called with default values
-    assertTrue(assertMethodCallContainsPattern('sh','updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
-    assertFalse(assertMethodCallContainsPattern('sh','updatecli apply'))
+    assertTrue(assertMethodCallContainsPattern('sh','updatecli pipeline diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
+    assertFalse(assertMethodCallContainsPattern('sh','updatecli pipeline apply'))
   }
 
   @Test
@@ -152,7 +152,7 @@ class UpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh', 'curl --silent --show-error --location --output'))
     assertTrue(assertMethodCallContainsPattern('sh', 'mkdir -p "${CUSTOM_UPDATECLI_PATH}"'))
     assertTrue(assertMethodCallContainsPattern('sh', 'tar --extract --gzip --file="${tarFileName}" --directory="${CUSTOM_UPDATECLI_PATH}" updatecli'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'updatecli diff'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'updatecli pipeline diff'))
   }
 
   // Test that when a runInCurrentAgent: true is specified, the pipeline does not provision an agent node.
@@ -174,7 +174,7 @@ class UpdatecliStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('checkout', ''))
 
     // And only the diff command is called with default values
-    assertTrue(assertMethodCallContainsPattern('sh', 'updatecli diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
-    assertFalse(assertMethodCallContainsPattern('sh', 'updatecli apply'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'updatecli pipeline diff --config ./updatecli/updatecli.d --values ./updatecli/values.yaml'))
+    assertFalse(assertMethodCallContainsPattern('sh', 'updatecli pipeline apply'))
   }
 }
