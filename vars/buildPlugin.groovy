@@ -24,6 +24,7 @@ def call(Map params = [:]) {
     timeoutValue = 180
   }
 
+  boolean consumingIncrementals = false
   boolean publishingIncrementals = false
   boolean archivedArtifacts = false
   Map tasks = [failFast: failFast]
@@ -124,6 +125,12 @@ def call(Map params = [:]) {
                     changelistF = "${pwd tmp: true}/changelist"
                     mavenOptions += "help:evaluate -Dexpression=changelist -Doutput=$changelistF"
                   }
+                }
+                if (fileExists('consume-incrementals')) {
+                  consumingIncrementals = true
+                } else {
+                  echo 'Forbidding use of Incremental dependencies. If you need to consume Incrementals, add a file named `consume-incrementals` to the repository root. (Contents arbitrary but conventionally a list of upstream PRs.) Then keep this PR in draft until the dependency has been switched to a release version and the marker file can be removed.'
+                  mavenOptions += '-P-consume-incrementals'
                 }
                 if (jenkinsVersion) {
                   mavenOptions += "-Djenkins.version=${jenkinsVersion} -Daccess-modifier-checker.failOnError=false"
@@ -307,6 +314,9 @@ def call(Map params = [:]) {
   parallel(tasks)
   if (publishingIncrementals) {
     infra.maybePublishIncrementals()
+  }
+  if (consumingIncrementals) {
+    unstable "This build consumed Incremental dependencies. Remove the 'consume-incrementals' file before readying for review."
   }
 }
 
