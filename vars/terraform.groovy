@@ -71,7 +71,7 @@ def call(userConfig = [:]) {
     parallelStages['production'] = {
       stage('Production') {
         agentTemplate(finalConfig.agentLabel, {
-          withCredentials(defaultConfig.productionCredentials) {
+          withCredentials(finalConfig.productionCredentials) {
             final String planFileName = 'terraform-plan-for-humans.txt'
             def scmOutput
             stage('🦅 Generate Terraform Plan') {
