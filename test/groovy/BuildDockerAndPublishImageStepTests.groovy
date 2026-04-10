@@ -70,6 +70,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     helper.registerAllowedMethod('powershell', [Map.class], { m ->
       return shellMock(m.script)
     })
+    helper.registerAllowedMethod('publishBuildStatusReport', [], {})
 
     addEnvVar('WORKSPACE', '/tmp')
 
