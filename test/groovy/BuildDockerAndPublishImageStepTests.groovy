@@ -351,6 +351,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('sh','make bake-deploy'))
     // And no release (no tag)
     assertFalse(assertTagPushed(defaultGitTag))
+    // Does not publish build status report
+    assertFalse(assertMethodCall('publishBuildStatusReport'))
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
