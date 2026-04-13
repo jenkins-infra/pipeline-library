@@ -39,7 +39,6 @@ class PublishBuildStatusReportStepTests extends BaseTest {
   @Test
   void it_errors_on_missing_jenkins_url() throws Exception {
     def script = loadScript(scriptName)
-    mockPrincipalBranch()
     // No JENKINS_URL set
 
     try {
@@ -56,17 +55,21 @@ class PublishBuildStatusReportStepTests extends BaseTest {
   }
 
   @Test
-  void it_does_nothing_on_non_principal_branch() throws Exception {
+  void it_succeeds_on_non_principal_branch() throws Exception {
     def script = loadScript(scriptName)
-    // No BRANCH_IS_PRIMARY set, so it should return early
+    addEnvVar('JENKINS_URL', 'https://ci.jenkins.io/')
+    addEnvVar('JOB_NAME', 'my-folder/my-job')
+    addEnvVar('BUILD_NUMBER', '123')
+    binding.getVariable('currentBuild').currentResult = 'SUCCESS'
 
     script.call()
     printCallStack()
 
     assertJobStatusSuccess()
-    assertFalse(assertMethodCall('pwd'))
-    assertFalse(assertMethodCall('writeFile'))
-    assertFalse(assertMethodCall('withEnv'))
-    assertFalse(assertMethodCall('sh'))
+    assertTrue(assertMethodCallContainsPattern('pwd', 'tmp=true'))
+    assertTrue(assertMethodCallContainsPattern('libraryResource', 'io/jenkins/infra/pipeline/generateAndWriteBuildStatusReport.sh'))
+    assertTrue(assertMethodCallContainsPattern('writeFile', 'generateAndWriteBuildStatusReport.sh'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'BUILD_STATUS=SUCCESS'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'bash'))
   }
 }
