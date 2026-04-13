@@ -185,6 +185,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // And release created automatically
     assertTrue(assertTagPushed(defaultGitTag))
 
+    // Publish build status report on main branch
+    assertTrue(assertMethodCall('publishBuildStatusReport'))
+
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
