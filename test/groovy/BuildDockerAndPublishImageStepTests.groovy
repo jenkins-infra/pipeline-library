@@ -70,6 +70,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     helper.registerAllowedMethod('powershell', [Map.class], { m ->
       return shellMock(m.script)
     })
+    helper.registerAllowedMethod('publishBuildStatusReport', [], {})
 
     addEnvVar('WORKSPACE', '/tmp')
 
@@ -183,6 +184,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // And release created automatically
     assertTrue(assertTagPushed(defaultGitTag))
+
+    // Publish build status report on main branch
+    assertTrue(assertMethodCall('publishBuildStatusReport'))
 
     // And all mocked/stubbed methods have to be called
     verifyMocks()
@@ -347,6 +351,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('sh','make bake-deploy'))
     // And no release (no tag)
     assertFalse(assertTagPushed(defaultGitTag))
+    // Does not publish build status report
+    assertFalse(assertMethodCall('publishBuildStatusReport'))
     // And all mocked/stubbed methods have to be called
     verifyMocks()
   }
