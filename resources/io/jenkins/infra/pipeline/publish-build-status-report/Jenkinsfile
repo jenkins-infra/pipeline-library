@@ -8,14 +8,16 @@ pipeline {
     stages {
         stage('Check parameters') {
             steps {
-                if (!params.REPORT_JOB_NAME?.trim()) {
-                    error('REPORT_JOB_NAME is not set or empty')
-                }
-                if (!params.REPORT_BUILD_NUMBER?.trim()) {
-                    error('REPORT_BUILD_NUMBER is not set or empty')
-                }
-                if (!params.REPORT_BUILD_STATUS?.trim()) {
-                    error('REPORT_BUILD_STATUS is not set or empty')
+                script {
+                    if (!params.REPORT_JOB_NAME?.trim()) {
+                        error('REPORT_JOB_NAME is not set or empty')
+                    }
+                    if (!params.REPORT_BUILD_NUMBER?.trim()) {
+                        error('REPORT_BUILD_NUMBER is not set or empty')
+                    }
+                    if (!params.REPORT_BUILD_STATUS?.trim()) {
+                        error('REPORT_BUILD_STATUS is not set or empty')
+                    }
                 }
             }
         }
