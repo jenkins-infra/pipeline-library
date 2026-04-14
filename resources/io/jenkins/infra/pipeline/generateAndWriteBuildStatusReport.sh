@@ -1,18 +1,20 @@
 #!/bin/bash
 set -euxo pipefail
 
-# Required parameters
+# Required parameters set by Jenkins controller
 : "${JENKINS_URL:?JENKINS_URL is not set}"
 : "${WORKSPACE:?WORKSPACE is not set}"
-: "${JOB_NAME:?JOB_NAME is not set}"
-: "${BUILD_STATUS:?BUILD_STATUS is not set}"
-: "${BUILD_NUMBER:?BUILD_NUMBER is not set}"
+
+# Required parameters that must be set by the caller
+: "${REPORT_JOB_NAME:?REPORT_JOB_NAME is not set}"
+: "${REPORT_BUILD_NUMBER:?REPORT_BUILD_NUMBER is not set}"
+: "${REPORT_BUILD_STATUS:?REPORT_BUILD_STATUS is not set}"
 
 # Extract hostname from JENKINS_URL
 controller_hostname=$(echo "${JENKINS_URL}" | sed 's|https\?://||' | cut -d'/' -f1)
 
 # Build file path
-report_dir="${WORKSPACE}/build_status_reports/${controller_hostname}/${JOB_NAME}"
+report_dir="${WORKSPACE}/build_status_reports/${controller_hostname}/${REPORT_JOB_NAME}"
 report_file="${report_dir}/status.json"
 
 # Create directory
@@ -25,15 +27,15 @@ report_timestamp=$(date -u +%s)
 cat > "${report_file}" << EOF
 {
   "controller_url": "${JENKINS_URL}",
-  "job_name": "${JOB_NAME}",
-  "build_number": "${BUILD_NUMBER}",
-  "build_status": "${BUILD_STATUS}",
+  "job_name": "${REPORT_JOB_NAME}",
+  "build_number": "${REPORT_BUILD_NUMBER}",
+  "build_status": "${REPORT_BUILD_STATUS}",
   "report_timestamp": "${report_timestamp}"
 }
 EOF
 
 # Upload with azcopy
-destination_url="https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io/build_status_reports/${controller_hostname}/${JOB_NAME}/"
+destination_url="https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io/build_status_reports/${controller_hostname}/${REPORT_JOB_NAME}/"
 
 cd "${report_dir}"
 azcopy logout >/dev/null 2>&1 || true

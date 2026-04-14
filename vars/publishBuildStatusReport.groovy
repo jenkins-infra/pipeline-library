@@ -18,23 +18,40 @@
  *     }
  * }
  */
-def call(Map config = [:]) {
+def call(Map params = [:]) {
   if (!env.BRANCH_IS_PRIMARY) {
     return
   }
 
   if (!env.JENKINS_URL?.trim()) {
-    error("JENKINS_URL is not set or empty")
+    error('JENKINS_URL is not set or empty')
   }
 
+  // Write the script to temp directory
   def tempDir = pwd(tmp: true)
   def scriptPath = "${tempDir}/generateAndWriteBuildStatusReport.sh"
-
-  // Write the script to temp directory
   writeFile file: scriptPath, text: libraryResource('io/jenkins/infra/pipeline/generateAndWriteBuildStatusReport.sh')
 
-  // Make script executable and run it
-  withEnv(["BUILD_STATUS=${currentBuild.currentResult ?: 'UNKNOWN'}", "SCRIPT_PATH=${scriptPath}"]) {
+  def jobName = params.containsKey('jobName') ? params.jobName : (env.JOB_NAME ?: '')
+  def buildNumber = params.containsKey('buildNumber') ? params.buildNumber : (env.BUILD_NUMBER ?: '')
+  def buildStatus = params.containsKey('buildStatus') ? params.buildStatus : (currentBuild.currentResult ?: 'UNKNOWN')
+
+  if (!jobName?.trim()) {
+    error('REPORT_JOB_NAME is not set or empty')
+  }
+  if (!buildNumber?.trim()) {
+    error('REPORT_BUILD_NUMBER is not set or empty')
+  }
+  if (!buildStatus?.trim()) {
+    error('REPORT_BUILD_STATUS is not set or empty')
+  }
+
+  withEnv([
+    "REPORT_JOB_NAME=${jobName}",
+    "REPORT_BUILD_NUMBER=${buildNumber}",
+    "REPORT_BUILD_STATUS=${buildStatus}",
+    "SCRIPT_PATH=${scriptPath}"
+  ]) {
     try {
       sh '''
             bash ${SCRIPT_PATH}

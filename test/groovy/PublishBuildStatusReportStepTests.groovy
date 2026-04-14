@@ -32,7 +32,45 @@ class PublishBuildStatusReportStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('pwd', 'tmp=true'))
     assertTrue(assertMethodCallContainsPattern('libraryResource', 'io/jenkins/infra/pipeline/generateAndWriteBuildStatusReport.sh'))
     assertTrue(assertMethodCallContainsPattern('writeFile', 'generateAndWriteBuildStatusReport.sh'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'BUILD_STATUS=SUCCESS'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'REPORT_BUILD_STATUS=SUCCESS'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'bash'))
+  }
+
+  @Test
+  void it_fails_if_env_var_missing() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+    addEnvVar('JENKINS_URL', 'https://ci.jenkins.io/')
+    addEnvVar('BUILD_NUMBER', '123')
+    binding.getVariable('currentBuild').currentResult = 'SUCCESS'
+
+    try {
+      script.call()
+      assertFalse('Expected error() to be called', true)
+    } catch (Exception e) {
+      assertTrue('Expected error about REPORT_JOB_NAME', e.getMessage().contains('REPORT_JOB_NAME is not set or empty'))
+    }
+  }
+
+  @Test
+  void it_succeeds_with_custom_params() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+    addEnvVar('JENKINS_URL', 'https://ci.jenkins.io/')
+    addEnvVar('JOB_NAME', 'my-folder/my-job')
+    addEnvVar('BUILD_NUMBER', '123')
+    binding.getVariable('currentBuild').currentResult = 'SUCCESS'
+
+    script.call([jobName: 'my-custom-folder/my-custom-job', buildNumber: '987', buildStatus: 'CUSTOM'])
+    printCallStack()
+
+    assertJobStatusSuccess()
+    assertTrue(assertMethodCallContainsPattern('pwd', 'tmp=true'))
+    assertTrue(assertMethodCallContainsPattern('libraryResource', 'io/jenkins/infra/pipeline/generateAndWriteBuildStatusReport.sh'))
+    assertTrue(assertMethodCallContainsPattern('writeFile', 'generateAndWriteBuildStatusReport.sh'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'REPORT_JOB_NAME=my-custom-folder/my-custom-job'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'REPORT_BUILD_NUMBER=987'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'REPORT_BUILD_STATUS=CUSTOM'))
     assertTrue(assertMethodCallContainsPattern('sh', 'bash'))
   }
 
