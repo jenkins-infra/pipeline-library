@@ -1,6 +1,5 @@
 #!/bin/bash
-set -euo pipefail
-set -x
+set -euxo pipefail
 
 # Required parameters
 : "${JENKINS_URL:?JENKINS_URL is not set}"
