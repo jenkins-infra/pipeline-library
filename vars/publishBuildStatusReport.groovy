@@ -37,13 +37,13 @@ def call(Map params = [:]) {
   def buildStatus = params.containsKey('buildStatus') ? params.buildStatus : (currentBuild.currentResult ?: 'UNKNOWN')
 
   if (!jobName?.trim()) {
-    error('REPORT_JOB_NAME is not set or empty')
+    error('Neither JOB_NAME nor params.jobName is set or not empty')
   }
   if (!buildNumber?.trim()) {
-    error('REPORT_BUILD_NUMBER is not set or empty')
+    error('Neither BUILD_NUMBER nor params.buildNumber is set or not empty')
   }
   if (!buildStatus?.trim()) {
-    error('REPORT_BUILD_STATUS is not set or empty')
+    error('REPORT_BUILD_STATUS nor params.buildStatus is set or not empty')
   }
 
   withEnv([

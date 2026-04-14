@@ -48,7 +48,7 @@ class PublishBuildStatusReportStepTests extends BaseTest {
       script.call()
       assertFalse('Expected error() to be called', true)
     } catch (Exception e) {
-      assertTrue('Expected error about REPORT_JOB_NAME', e.getMessage().contains('REPORT_JOB_NAME is not set or empty'))
+      assertTrue('Expected error about JOB_NAME', e.getMessage().contains('Neither JOB_NAME nor params.jobName is set or not empty'))
     }
   }
 
