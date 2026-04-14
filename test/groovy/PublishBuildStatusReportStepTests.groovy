@@ -64,6 +64,7 @@ class PublishBuildStatusReportStepTests extends BaseTest {
 
     assertJobStatusSuccess()
     assertFalse(assertMethodCall('pwd'))
+    assertFalse(assertMethodCall('libraryResource'))
     assertFalse(assertMethodCall('writeFile'))
     assertFalse(assertMethodCall('withEnv'))
     assertFalse(assertMethodCall('sh'))
