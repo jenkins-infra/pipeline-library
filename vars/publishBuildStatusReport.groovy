@@ -38,6 +38,8 @@ def call(Map params = [:]) {
 
   if (!jobName?.trim()) {
     error('Neither JOB_NAME nor params.jobName is set or not empty')
+  } else {
+    echo "jobName: ${jobName}"
   }
   if (!buildNumber?.trim()) {
     error('Neither BUILD_NUMBER nor params.buildNumber is set or not empty')
