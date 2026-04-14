@@ -55,21 +55,17 @@ class PublishBuildStatusReportStepTests extends BaseTest {
   }
 
   @Test
-  void it_succeeds_on_non_principal_branch() throws Exception {
+  void it_does_nothing_on_pull_request_build() throws Exception {
     def script = loadScript(scriptName)
-    addEnvVar('JENKINS_URL', 'https://ci.jenkins.io/')
-    addEnvVar('JOB_NAME', 'my-folder/my-job')
-    addEnvVar('BUILD_NUMBER', '123')
-    binding.getVariable('currentBuild').currentResult = 'SUCCESS'
+    addEnvVar('CHANGE_ID', '42')
 
     script.call()
     printCallStack()
 
     assertJobStatusSuccess()
-    assertTrue(assertMethodCallContainsPattern('pwd', 'tmp=true'))
-    assertTrue(assertMethodCallContainsPattern('libraryResource', 'io/jenkins/infra/pipeline/generateAndWriteBuildStatusReport.sh'))
-    assertTrue(assertMethodCallContainsPattern('writeFile', 'generateAndWriteBuildStatusReport.sh'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'BUILD_STATUS=SUCCESS'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'bash'))
+    assertFalse(assertMethodCall('pwd'))
+    assertFalse(assertMethodCall('writeFile'))
+    assertFalse(assertMethodCall('withEnv'))
+    assertFalse(assertMethodCall('sh'))
   }
 }

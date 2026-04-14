@@ -19,6 +19,11 @@
  * }
  */
 def call(Map config = [:]) {
+  // Fast-fail on pull request builds to prevent external PRs from writing status
+  if (env.CHANGE_ID) {
+    return
+  }
+
   if (!env.JENKINS_URL?.trim()) {
     error("JENKINS_URL is not set or empty")
   }
