@@ -1,0 +1,32 @@
+pipeline {
+    agent any
+    parameters {
+        string(name: 'REPORT_JOB_NAME', defaultValue: '', description: 'Job name (ex: job-folder/job-name)')
+        string(name: 'REPORT_BUILD_NUMBER', defaultValue: '', description: 'Build number (ex: 123)')
+        string(name: 'REPORT_BUILD_STATUS', defaultValue: 'SUCCESS', description: 'Build status (ex: SUCCESS)')
+    }
+    stages {
+        stage('Check parameters') {
+            steps {
+                if (!params.REPORT_JOB_NAME?.trim()) {
+                    error('REPORT_JOB_NAME is not set or empty')
+                }
+                if (!params.REPORT_BUILD_NUMBER?.trim()) {
+                    error('REPORT_BUILD_NUMBER is not set or empty')
+                }
+                if (!params.REPORT_BUILD_STATUS?.trim()) {
+                    error('REPORT_BUILD_STATUS is not set or empty')
+                }
+            }
+        }
+        stage('Publish build status report') {
+            steps {
+                publishBuildStatusReport([
+                    jobName: params.REPORT_JOB_NAME,
+                    buildNumber: params.REPORT_BUILD_NUMBER,
+                    buildStatus: params.REPORT_BUILD_STATUS,
+                ])
+            }
+        }
+    }
+}
