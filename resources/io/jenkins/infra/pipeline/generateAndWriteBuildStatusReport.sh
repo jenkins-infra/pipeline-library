@@ -2,6 +2,13 @@
 set -euo pipefail
 set -x
 
+# Required parameters
+: "${JENKINS_URL:?JENKINS_URL is not set}"
+: "${WORKSPACE:?WORKSPACE is not set}"
+: "${JOB_NAME:?JOB_NAME is not set}"
+: "${BUILD_STATUS:?BUILD_STATUS is not set}"
+: "${BUILD_NUMBER:?BUILD_NUMBER is not set}"
+
 # Extract hostname from JENKINS_URL
 CONTROLLER_HOSTNAME=$(echo "$JENKINS_URL" | sed 's|https\?://||' | cut -d'/' -f1)
 
