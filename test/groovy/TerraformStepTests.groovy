@@ -86,7 +86,7 @@ class TerraformStepTests extends BaseTest {
 
     // And 2 nodes with default label are spawned
     assertTrue(assertMethodCallContainsPattern('node', 'jnlp-linux-arm64'))
-    assertTrue(assertMethodCallOccurrences('node', 2))
+    assertTrue(assertMethodCallOccurrences('node', 3))
 
     // xterm color enabled (easier to read Terraform plans)
     assertTrue(assertMethodCallContainsPattern('ansiColor', 'xterm'))
@@ -247,7 +247,7 @@ class TerraformStepTests extends BaseTest {
 
     // And 2 nodes with custom label are spawned
     assertTrue(assertMethodCallContainsPattern('node', customLabel))
-    assertTrue(assertMethodCallOccurrences('node', 2))
+    assertTrue(assertMethodCallOccurrences('node', 3))
     // Publish Build Report Status
     assertTrue(assertMethodCall('publishBuildStatusReport'))
   }
