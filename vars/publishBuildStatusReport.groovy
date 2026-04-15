@@ -54,6 +54,7 @@ def call(Map params = [:]) {
     "REPORT_BUILD_STATUS=${buildStatus}",
     "SCRIPT_PATH=${scriptPath}"
   ]) {
+    println "${env}"
     try {
       sh '''
             bash ${SCRIPT_PATH}
