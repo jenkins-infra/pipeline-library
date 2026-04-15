@@ -21,6 +21,7 @@
 def call(Map config = [:]) {
   // Fast-fail on pull request builds to prevent external PRs from writing status
   if (env.CHANGE_ID) {
+    echo 'Not publishing any build status report from a pull request, skipping
     return
   }
 
