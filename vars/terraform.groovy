@@ -160,7 +160,9 @@ def call(userConfig = [:]) {
     // Execute parallel stages from the map
     parallel parallelStages
     if (isBuildOnProductionBranch) {
-      publishBuildStatusReport()
+      node(finalConfig.agentLabel) {
+        publishBuildStatusReport()
+      }
     }
   }
 }
