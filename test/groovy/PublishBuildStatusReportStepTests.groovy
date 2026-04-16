@@ -63,6 +63,7 @@ class PublishBuildStatusReportStepTests extends BaseTest {
     printCallStack()
 
     assertJobStatusSuccess()
+    assertTrue(assertMethodCallContainsPattern('echo', 'Not publishing any build status report from a pull request'))
     assertFalse(assertMethodCall('pwd'))
     assertFalse(assertMethodCall('writeFile'))
     assertFalse(assertMethodCall('withEnv'))
