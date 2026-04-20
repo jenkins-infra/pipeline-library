@@ -8,7 +8,6 @@ set -euxo pipefail
 # Required parameters that must be set by the caller
 : "${JOB_NAME:?JOB_NAME is not set}"
 : "${BUILD_NUMBER:?BUILD_NUMBER is not set}"
-: "${BUILD_STATUS:?BUILD_STATUS is not set}"
 
 # Extract hostname from JENKINS_URL
 controller_hostname=$(echo "${JENKINS_URL}" | sed 's|https\?://||' | cut -d'/' -f1)
@@ -29,7 +28,6 @@ cat > "${report_file}" << EOF
   "controller_url": "${JENKINS_URL}",
   "job_name": "${JOB_NAME}",
   "build_number": "${BUILD_NUMBER}",
-  "build_status": "${BUILD_STATUS}",
   "report_timestamp": "${report_timestamp}"
 }
 EOF
