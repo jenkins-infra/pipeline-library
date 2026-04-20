@@ -43,4 +43,4 @@ if [[ -n "${AZCOPY_LOGIN_IDENTITY_RESOURCE_ID:-}" ]]; then
 else
   azcopy login --identity
 fi
-azcopy copy "status.json" "${destination_url}"
+azcopy copy "status.json" "${destination_url}" --recursive
