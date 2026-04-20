@@ -20,7 +20,7 @@ class PublishBuildStatusReportStepTests extends BaseTest {
   void it_succeeds_on_principal_branch() throws Exception {
     def script = loadScript(scriptName)
     mockPrincipalBranch()
-    addEnvVar('JENKINS_URL', 'https://ci.jenkins.io/')
+    addEnvVar('JENKINS_URL', 'https://infra.jenkins.io/')
     addEnvVar('JOB_NAME', 'my-folder/my-job')
     addEnvVar('BUILD_NUMBER', '123')
     binding.getVariable('currentBuild').currentResult = 'SUCCESS'
@@ -64,6 +64,22 @@ class PublishBuildStatusReportStepTests extends BaseTest {
 
     assertJobStatusSuccess()
     assertTrue(assertMethodCallContainsPattern('echo', 'Not publishing any build status report from a pull request'))
+    assertFalse(assertMethodCall('pwd'))
+    assertFalse(assertMethodCall('writeFile'))
+    assertFalse(assertMethodCall('withEnv'))
+    assertFalse(assertMethodCall('sh'))
+  }
+
+  @Test
+  void it_skips_on_ci_jenkins_io() throws Exception {
+    def script = loadScript(scriptName)
+    addEnvVar('JENKINS_URL', 'https://ci.jenkins.io/')
+
+    script.call()
+    printCallStack()
+
+    assertJobStatusSuccess()
+    assertTrue(assertMethodCallContainsPattern('echo', '[WARNING] Build status report not supported on ci.jenkins.io'))
     assertFalse(assertMethodCall('pwd'))
     assertFalse(assertMethodCall('writeFile'))
     assertFalse(assertMethodCall('withEnv'))
