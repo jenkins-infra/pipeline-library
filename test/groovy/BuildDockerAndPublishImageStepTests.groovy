@@ -78,7 +78,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     infraConfigMock = new StubFor(InfraConfig.class)
     infraConfigMock.demand.with {
       getDockerRegistryNamespace{ defaultDockerRegistryNamespace }
-      isCI(0..1){ false } // Range arg: expect 0 or 1 calls (see Demand.invokeMethod in groovy.mock.interceptor)
     }
 
     dateMock = new StubFor(Date.class)
@@ -838,40 +837,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
 
     // And the deploy step called
     assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
-
-    // And all mocked/stubbed methods have to be called
-    verifyMocks()
-  }
-
-  @Test
-  void itSkipsPublishBuildStatusReportOnCiJenkinsIo() throws Exception {
-    def script = loadScript(scriptName)
-
-    mockPrincipalBranch()
-
-    // Override infraConfigMock to simulate ci.jenkins.io
-    infraConfigMock = new StubFor(InfraConfig.class)
-    infraConfigMock.demand.with {
-      getDockerRegistryNamespace{ defaultDockerRegistryNamespace }
-      isCI(1..1){ true }
-    }
-
-    withMocks {
-      script.call(testImageName)
-    }
-    printCallStack()
-
-    // Build succeeds
-    assertJobStatusSuccess()
-
-    // Deploy still happens (it's primary branch)
-    assertTrue(assertMethodCallContainsPattern('sh','make bake-deploy'))
-
-    // But publishBuildStatusReport is NOT called on ci.jenkins.io
-    assertFalse(assertMethodCall('publishBuildStatusReport'))
-
-    // Tag still pushed
-    assertTrue(assertTagPushed(defaultGitTag))
 
     // And all mocked/stubbed methods have to be called
     verifyMocks()

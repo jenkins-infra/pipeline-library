@@ -324,9 +324,7 @@ def call(String imageShortName, Map userConfig=[:]) {
               } // stage
             } // if
           } // withEnv NEXT_VERSION
-          if (!infraConfig.isCI()) {
-            publishBuildStatusReport()
-          }
+          publishBuildStatusReport()
         } // if
       } // infra.withDockerPullCredentials
     } // withEnv (outer)
