@@ -20,10 +20,10 @@
  */
 def call(Map config = [:]) {
   // Fast-fail on pull request builds to prevent external PRs from writing status
-  // if (env.CHANGE_ID) {
-  //   echo 'Not publishing any build status report from a pull request, skipping'
-  //   return
-  // }
+  if (env.CHANGE_ID) {
+    echo 'Not publishing any build status report from a pull request, skipping'
+    return
+  }
 
   // ci.jenkins.io agents lack Azure Managed Identity required by azcopy
   def infraConfig = new io.jenkins.infra.InfraConfig(env)
