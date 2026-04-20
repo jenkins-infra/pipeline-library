@@ -38,5 +38,9 @@ destination_url="https://buildsreportsjenkinsio.file.core.windows.net/builds-rep
 cd "${report_dir}"
 azcopy logout >/dev/null 2>&1 || true
 test -z "${AZURE_FEDERATED_TOKEN_FILE:-}" || export AZCOPY_AUTO_LOGIN_TYPE=WORKLOAD
-azcopy login --identity
+if [[ -n "${AZCOPY_LOGIN_IDENTITY_RESOURCE_ID:-}" ]]; then
+  azcopy login --identity --identity-resource-id "${AZCOPY_LOGIN_IDENTITY_RESOURCE_ID}"
+else
+  azcopy login --identity
+fi
 azcopy copy "status.json" "${destination_url}"
