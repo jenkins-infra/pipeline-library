@@ -26,7 +26,7 @@ def call(Map config = [:]) {
   }
 
   if (env.JENKINS_URL?.trim() == 'https://ci.jenkins.io/') {
-    echo '[WARNING] Build status report not supported on ci.jenkins.io, skipping'
+    echo '[WARNING] Not publishing any build status report from ci.jenkins.io, skipping'
     return
   }
 

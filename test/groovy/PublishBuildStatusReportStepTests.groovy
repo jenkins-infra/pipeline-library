@@ -79,7 +79,7 @@ class PublishBuildStatusReportStepTests extends BaseTest {
     printCallStack()
 
     assertJobStatusSuccess()
-    assertTrue(assertMethodCallContainsPattern('echo', '[WARNING] Build status report not supported on ci.jenkins.io, skipping'))
+    assertTrue(assertMethodCallContainsPattern('echo', '[WARNING] Not publishing any build status report from ci.jenkins.io, skipping'))
     assertFalse(assertMethodCall('pwd'))
     assertFalse(assertMethodCall('writeFile'))
     assertFalse(assertMethodCall('withEnv'))
