@@ -44,7 +44,7 @@ def call(Map config = [:]) {
   withEnv(["BUILD_STATUS=${currentBuild.currentResult ?: 'UNKNOWN'}", "SCRIPT_PATH=${scriptPath}"]) {
     try {
       sh '''
-            bash ${SCRIPT_PATH}
+            bash "${SCRIPT_PATH}"
         '''
     } catch (err) {
       currentBuild.result = 'FAILURE'
