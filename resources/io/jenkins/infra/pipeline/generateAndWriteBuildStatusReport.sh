@@ -12,8 +12,11 @@ set -euxo pipefail
 # Extract hostname from JENKINS_URL
 controller_hostname=$(echo "${JENKINS_URL}" | sed 's|https\?://||' | cut -d'/' -f1)
 
+# Sanitize JOB_NAME for filesystem and URL safety
+sanitized_job_name=$(echo "${JOB_NAME}" | tr ' ' '-')
+
 # Build file path
-report_dir="${WORKSPACE}/build_status_reports/${controller_hostname}/${JOB_NAME}"
+report_dir="${WORKSPACE}/build_status_reports/${controller_hostname}/${sanitized_job_name}"
 report_file="${report_dir}/status.json"
 
 # Create directory
@@ -33,7 +36,7 @@ cat > "${report_file}" << EOF
 EOF
 
 # Upload with azcopy
-destination_url="https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io/build_status_reports/${controller_hostname}/${JOB_NAME}/"
+destination_url="https://buildsreportsjenkinsio.file.core.windows.net/builds-reports-jenkins-io/build_status_reports/${controller_hostname}/${sanitized_job_name}/"
 
 cd "${report_dir}"
 azcopy logout >/dev/null 2>&1 || true
