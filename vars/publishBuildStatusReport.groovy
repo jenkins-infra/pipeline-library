@@ -25,10 +25,8 @@ def call(Map config = [:]) {
   //   return
   // }
 
-  // ci.jenkins.io agents lack Azure Managed Identity required by azcopy
-  def infraConfig = new io.jenkins.infra.InfraConfig(env)
-  if (infraConfig.isCI()) {
-    echo '[WARNING] Build status report not supported on ci.jenkins.io (no Azure Managed Identity), skipping'
+  if (env.JENKINS_URL?.trim() == 'https://ci.jenkins.io/') {
+    echo '[WARNING] Build status report not supported on ci.jenkins.io, skipping'
     return
   }
 
