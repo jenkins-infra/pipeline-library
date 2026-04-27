@@ -31,6 +31,7 @@ class TerraformStepTests extends BaseTest {
     binding.setProperty('scm', ['GIT_URL': 'https://github.com/lesfurets/jenkins-unit-test.git'])
     helper.registerAllowedMethod('ansiColor', [String.class, Closure.class], { s, body ->body() })
     helper.registerAllowedMethod('checkout', [Map.class], { m -> m })
+    helper.registerAllowedMethod('publishBuildStatusReport', [], {})
 
     // Used by the publish checks
     addEnvVar('BUILD_URL', dummyBuildUrl)
@@ -85,7 +86,7 @@ class TerraformStepTests extends BaseTest {
 
     // And 2 nodes with default label are spawned
     assertTrue(assertMethodCallContainsPattern('node', 'jnlp-linux-arm64'))
-    assertTrue(assertMethodCallOccurrences('node', 2))
+    assertTrue(assertMethodCallOccurrences('node', 3))
 
     // xterm color enabled (easier to read Terraform plans)
     assertTrue(assertMethodCallContainsPattern('ansiColor', 'xterm'))
@@ -98,6 +99,9 @@ class TerraformStepTests extends BaseTest {
     // Default pipeline properties
     assertTrue(assertMethodCallContainsPattern('disableConcurrentBuilds', ''))
     assertTrue(assertMethodCallContainsPattern('logRotator', 'numToKeepStr=50'))
+
+    // Publish Build Report Status
+    assertTrue(assertMethodCall('publishBuildStatusReport'))
   }
 
   @Test
@@ -137,6 +141,9 @@ class TerraformStepTests extends BaseTest {
 
     // Only 5 builds per PR to keep
     assertTrue(assertMethodCallContainsPattern('logRotator', 'numToKeepStr=5'))
+
+    // Does not publish Build Report Status
+    assertFalse(assertMethodCall('publishBuildStatusReport'))
   }
 
   @Test
@@ -176,6 +183,9 @@ class TerraformStepTests extends BaseTest {
 
     // Ensure that drift-detection is disabled
     assertFalse(assertMethodCallContainsPattern('withEnv','TF_CLI_ARGS_plan=-detailed-exitcode'))
+
+    // Does not publish Build Report Status
+    assertFalse(assertMethodCall('publishBuildStatusReport'))
   }
 
   @Test
@@ -208,6 +218,9 @@ class TerraformStepTests extends BaseTest {
 
     // Terraform is set up through environment to NOT detect configuration drift
     assertFalse(assertMethodCallContainsPattern('withEnv','TF_CLI_ARGS_plan=-detailed-exitcode'))
+
+    // Publish Build Report Status
+    assertTrue(assertMethodCall('publishBuildStatusReport'))
   }
 
   @Test
@@ -234,6 +247,8 @@ class TerraformStepTests extends BaseTest {
 
     // And 2 nodes with custom label are spawned
     assertTrue(assertMethodCallContainsPattern('node', customLabel))
-    assertTrue(assertMethodCallOccurrences('node', 2))
+    assertTrue(assertMethodCallOccurrences('node', 3))
+    // Publish Build Report Status
+    assertTrue(assertMethodCall('publishBuildStatusReport'))
   }
 }

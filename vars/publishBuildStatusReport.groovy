@@ -19,7 +19,14 @@
  * }
  */
 def call(Map config = [:]) {
-  if (!env.BRANCH_IS_PRIMARY) {
+  // Fast-fail on pull request builds to prevent external PRs from writing status
+  if (env.CHANGE_ID) {
+    echo '[WARNING] Not publishing any build status report from a pull request, skipping'
+    return
+  }
+
+  if (env.JENKINS_URL?.trim() == 'https://ci.jenkins.io/') {
+    echo '[WARNING] Not publishing any build status report from ci.jenkins.io, skipping'
     return
   }
 
@@ -37,7 +44,7 @@ def call(Map config = [:]) {
   withEnv(["BUILD_STATUS=${currentBuild.currentResult ?: 'UNKNOWN'}", "SCRIPT_PATH=${scriptPath}"]) {
     try {
       sh '''
-            bash ${SCRIPT_PATH}
+            bash "${SCRIPT_PATH}"
         '''
     } catch (err) {
       currentBuild.result = 'FAILURE'
