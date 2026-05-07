@@ -275,7 +275,7 @@ Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = 
   withArtifactCachingProxy(useArtifactCachingProxy) {
     mvnOptions.addAll(options)
     mvnOptions.unique()
-    String command = "mvn ${mvnOptions.join(' ')}"
+    String command = "mvn -X ${mvnOptions.join(' ')}"
     runWithMaven(command, jdk, extraEnv, addToolEnv)
   }
 }
