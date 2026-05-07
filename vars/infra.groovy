@@ -303,10 +303,6 @@ Object runMaven(List<String> options, Integer jdk, List<String> extraEnv = null,
  */
 Object runWithMaven(String command, String jdk = '8', List<String> extraEnv = null, Boolean addToolEnv = true) {
   List<String> javaEnv = []
-  if (addToolEnv) {
-    javaEnv += "PATH+MAVEN=${tool 'mvn'}/bin"
-  }
-
   if (extraEnv) {
     javaEnv.addAll(extraEnv)
   }
