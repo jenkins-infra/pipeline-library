@@ -21,7 +21,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   static final String fullTestImageName = defaultDockerRegistryNamespace + '/' + testImageName
   static final String defaultGitTag = '1.0.0'
   static final String defaultGitTagIncludingImageName = '1.0.0-bitcoinminerimage'
-  static final String defaultNextVersionCommand = 'jx-release-version'
+  static final String defaultNextVersionCommand = 'git gc && jx-release-version'
   static final String defaultOrigin = 'https://github.com/org/repository.git'
   static final String defaultReleaseId = '12345'
   static final String defaultDockerBakeFile = 'jenkinsinfrabakefile.hcl'
