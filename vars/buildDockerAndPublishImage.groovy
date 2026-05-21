@@ -45,7 +45,8 @@ def call(String imageShortName, Map userConfig=[:]) {
     automaticSemanticVersioning: true, // automagically increase semantic version by default
     dockerfile: 'Dockerfile', // Obvious default
     targetplatforms: '', // // Define the (comma separated) list of Docker supported platforms to build the image for. Defaults to `linux/amd64` when unspecified. Incompatible with the legacy `platform` attribute.
-    nextVersionCommand: 'jx-release-version', // Commmand line used to retrieve the next version
+    // git gc ensures we don't run into https://github.com/jenkins-infra/docker-jenkins-lts/issues/1084
+    nextVersionCommand: 'git gc && jx-release-version', // Commmand line used to retrieve the next version
     gitCredentials: 'github-app-infra.ci.jenkins.io-docker-deploy', // Credential ID for tagging and creating release
     imageDir: '.', // Relative path to the context directory for the Docker build
     registryNamespace: '', // Empty by default (means "autodiscover based on the current controller")
