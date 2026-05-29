@@ -12,6 +12,7 @@ def call(userConfig = [:]) {
     runTests: false, // Executes the tests provided by the "calling" project, which should provide a tests/Makefile
     runCommonTests: true, // Executes the default test suite from the shared tools repository (terratest)
     publishReports: [],
+    cronTriggerExpression: '',  // Enables cron trigger if specified
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -28,12 +29,16 @@ def call(userConfig = [:]) {
   final String sharedToolsSubDir = '.shared-tools'
   final String makeCliCmd = "make --directory=${sharedToolsSubDir}/terraform/"
 
-  properties([
+  def projectProperties = [
     // Only run 1 build at a time, on a given branch, to ensure that infrastructure changes are sequentials (easier to audit)
     disableConcurrentBuilds(),
     // Only keep build history for long on the principal branch
     buildDiscarder(logRotator(numToKeepStr: isBuildOnProductionBranch ? '50' : '5')),
-  ])
+  ]
+  if (finalConfig.cronTriggerExpression) {
+    projectProperties.add(pipelineTriggers([cron(finalConfig.cronTriggerExpression)]))
+  }
+  properties(projectProperties)
 
   withEnv([
     // https://www.terraform.io/docs/cli/config/environment-variables.html#tf_in_automation
