@@ -18,6 +18,15 @@ def call(userConfig = [:]) {
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html  final Map
   def finalConfig = defaultConfig << userConfig
 
+  def projectProperties = [
+    disableConcurrentBuilds(abortPrevious: true),
+    buildDiscarder(logRotator(numToKeepStr: '50')),
+  ]
+  if (finalConfig.cronTriggerExpression) {
+    projectProperties.add(pipelineTriggers([cron(finalConfig.cronTriggerExpression)]))
+  }
+  properties(projectProperties)
+
   // Set cron trigger if requested
   if (finalConfig.cronTriggerExpression) {
     properties([pipelineTriggers([cron(finalConfig.cronTriggerExpression)])])
