@@ -76,6 +76,8 @@ class TerraformStepTests extends BaseTest {
 
     // With Terraform configured to run in automation trhough the environment
     assertTrue(assertMethodCallContainsPattern('withEnv','TF_IN_AUTOMATION=1'))
+    assertTrue(assertMethodCallContainsPattern('withEnv','TF_VAR_environment=production'))
+    assertTrue(assertMethodCallContainsPattern('withEnv','TF_VAR_environment=staging'))
     assertTrue(assertMethodCallContainsPattern('withEnv','TF_INPUT=0'))
     assertTrue(assertMethodCallContainsPattern('withEnv','TF_CLI_ARGS_plan=-detailed-exitcode'))
 
