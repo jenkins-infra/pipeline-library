@@ -51,7 +51,7 @@ def call(userConfig = [:]) {
       parallelStages['staging'] = {
         stage('Staging') {
           agentTemplate(finalConfig.agentLabel, {
-            withEnv(['TERRAFORM_ENVIRONMENT=staging']) {
+            withEnv(['TF_VAR_environment=staging']) {
               withCredentials(finalConfig.stagingCredentials) {
                 stage('🔎 Validate Terraform for Staging Environment') {
                   getInfraSharedTools(sharedToolsSubDir)
@@ -78,7 +78,7 @@ def call(userConfig = [:]) {
     parallelStages['production'] = {
       stage('Production') {
         agentTemplate(finalConfig.agentLabel, {
-          withEnv(['TERRAFORM_ENVIRONMENT=production']) {
+          withEnv(['TF_VAR_environment=production']) {
             withCredentials(finalConfig.productionCredentials) {
               final String planFileName = 'terraform-plan-for-humans.txt'
               def scmOutput
