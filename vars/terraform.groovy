@@ -51,20 +51,22 @@ def call(userConfig = [:]) {
       parallelStages['staging'] = {
         stage('Staging') {
           agentTemplate(finalConfig.agentLabel, {
-            withCredentials(finalConfig.stagingCredentials) {
-              stage('🔎 Validate Terraform for Staging Environment') {
-                getInfraSharedTools(sharedToolsSubDir)
+            withEnv(['TERRAFORM_ENVIRONMENT=staging']) {
+              withCredentials(finalConfig.stagingCredentials) {
+                stage('🔎 Validate Terraform for Staging Environment') {
+                  getInfraSharedTools(sharedToolsSubDir)
 
-                sh makeCliCmd + ' validate'
-              }
-              if (finalConfig.runCommonTests) {
-                stage('✅ Commons Test Terraform Project') {
-                  sh makeCliCmd + ' common-tests'
+                  sh makeCliCmd + ' validate'
                 }
-              }
-              if (finalConfig.runTests) {
-                stage('✅ Specific Tests Terraform Project') {
-                  sh 'make -C ./tests'
+                if (finalConfig.runCommonTests) {
+                  stage('✅ Commons Test Terraform Project') {
+                    sh makeCliCmd + ' common-tests'
+                  }
+                }
+                if (finalConfig.runTests) {
+                  stage('✅ Specific Tests Terraform Project') {
+                    sh 'make -C ./tests'
+                  }
                 }
               }
             }
@@ -76,84 +78,86 @@ def call(userConfig = [:]) {
     parallelStages['production'] = {
       stage('Production') {
         agentTemplate(finalConfig.agentLabel, {
-          withCredentials(finalConfig.productionCredentials) {
-            final String planFileName = 'terraform-plan-for-humans.txt'
-            def scmOutput
-            stage('🦅 Generate Terraform Plan') {
-              // When the job is triggered by the daily cron timer, then the plan succeed only if there is no changes found (e.g. no config drift)
-              // For all other triggers, the plan succeed either there are changes or not
-              String tfCliArgsPlan = ''
-              if (isBuildCauseTimer) {
-                tfCliArgsPlan = '-detailed-exitcode'
-              }
-              withEnv([
-                // https://www.terraform.io/docs/cli/config/environment-variables.html#tf_cli_args-and-tf_cli_args_name
-                "TF_CLI_ARGS_plan=${tfCliArgsPlan}",
-                "PLAN_FILE_NAME=${planFileName}",
-              ]) {
-                scmOutput = getInfraSharedTools(sharedToolsSubDir)
+          withEnv(['TERRAFORM_ENVIRONMENT=production']) {
+            withCredentials(finalConfig.productionCredentials) {
+              final String planFileName = 'terraform-plan-for-humans.txt'
+              def scmOutput
+              stage('🦅 Generate Terraform Plan') {
+                // When the job is triggered by the daily cron timer, then the plan succeed only if there is no changes found (e.g. no config drift)
+                // For all other triggers, the plan succeed either there are changes or not
+                String tfCliArgsPlan = ''
+                if (isBuildCauseTimer) {
+                  tfCliArgsPlan = '-detailed-exitcode'
+                }
+                withEnv([
+                  // https://www.terraform.io/docs/cli/config/environment-variables.html#tf_cli_args-and-tf_cli_args_name
+                  "TF_CLI_ARGS_plan=${tfCliArgsPlan}",
+                  "PLAN_FILE_NAME=${planFileName}",
+                ]) {
+                  scmOutput = getInfraSharedTools(sharedToolsSubDir)
 
-                // Retrieve published reports for idempotency (otherwise Terraform's "local_file" will be marked as always re-created as ignored from the SCM)
-                // Note: always run after call to getInfraSharedTools() (or it will be overridden)
-                if (finalConfig.publishReports && finalConfig.publishReports.size > 0) {
-                  for (int i = 0; i < finalConfig.publishReports.size; i++) {
-                    final String relativeFilePath = finalConfig.publishReports[i]
-                    String fileText = ""
-                    try {
-                      fileText = new URL ("https://reports.jenkins.io/${relativeFilePath}").getText()
+                  // Retrieve published reports for idempotency (otherwise Terraform's "local_file" will be marked as always re-created as ignored from the SCM)
+                  // Note: always run after call to getInfraSharedTools() (or it will be overridden)
+                  if (finalConfig.publishReports && finalConfig.publishReports.size > 0) {
+                    for (int i = 0; i < finalConfig.publishReports.size; i++) {
+                      final String relativeFilePath = finalConfig.publishReports[i]
+                      String fileText = ""
+                      try {
+                        fileText = new URL ("https://reports.jenkins.io/${relativeFilePath}").getText()
+                      }
+                      catch (Exception e) {
+                        echo "No file found at the provided URL: using an empty file instead."
+                      }
+                      writeFile(file: relativeFilePath, text: fileText)
                     }
-                    catch (Exception e) {
-                      echo "No file found at the provided URL: using an empty file instead."
-                    }
-                    writeFile(file: relativeFilePath, text: fileText)
                   }
-                }
-                try {
-                  sh makeCliCmd + ' plan'
-                }
-                finally {
-                  archiveArtifacts planFileName
-                }
-              }
-            }
-
-            if (isBuildOnChangeRequest) {
-              stage('🗣 Notify User on the PR') {
-                final String planFileUrl = "${env.BUILD_URL}artifact/${planFileName}"
-                publishChecks name: 'terraform-plan',
-                title: 'Terraform plan for this change request',
-                text: "The terraform plan for this change request can be found at <${planFileUrl}>.",
-                detailsURL: planFileUrl
-              }
-            }
-
-            // Only ask for manual approval when the build was manually launched by a human
-            // Note that we keep waiting with the current node agent as we want to keep the context
-            if (isBuildCauseUser) {
-              stage('⏳ Waiting for User Input (Manual Approval)') {
-                input message: 'Should we apply these changes to production?', ok: '🚢 Yes, ship it!'
-              }
-            }
-            if (!isBuildCauseTimer && isBuildOnProductionBranch) {
-              stage('🚢 Shipping Changes') {
-                try {
-                  sh makeCliCmd + ' deploy'
-                } catch(Exception e) {
-                  // If the deploy failed, keep the pod until a user catch the problem (cloud be an errored state, or many reason to keep the workspace)
-                  final String msg = 'An error happened while applying the terraform plan. Keeping the agent up and running. Delete the agent?'
                   try {
-                    publishChecks name: 'deploy-error',
-                    title: 'An error happened while applying the terraform plan',
-                    summary: msg,
-                    detailsURL: "${env.BUILD_URL}/console",
-                    conclusion: 'FAILURE'
-                  } finally {
-                    currentBuild.result = 'FAILURE'
-                    input message: msg
+                    sh makeCliCmd + ' plan'
+                  }
+                  finally {
+                    archiveArtifacts planFileName
                   }
                 }
-                if (finalConfig.publishReports && finalConfig.publishReports.size > 0) {
-                  publishReports(finalConfig.publishReports)
+              }
+
+              if (isBuildOnChangeRequest) {
+                stage('🗣 Notify User on the PR') {
+                  final String planFileUrl = "${env.BUILD_URL}artifact/${planFileName}"
+                  publishChecks name: 'terraform-plan',
+                  title: 'Terraform plan for this change request',
+                  text: "The terraform plan for this change request can be found at <${planFileUrl}>.",
+                  detailsURL: planFileUrl
+                }
+              }
+
+              // Only ask for manual approval when the build was manually launched by a human
+              // Note that we keep waiting with the current node agent as we want to keep the context
+              if (isBuildCauseUser) {
+                stage('⏳ Waiting for User Input (Manual Approval)') {
+                  input message: 'Should we apply these changes to production?', ok: '🚢 Yes, ship it!'
+                }
+              }
+              if (!isBuildCauseTimer && isBuildOnProductionBranch) {
+                stage('🚢 Shipping Changes') {
+                  try {
+                    sh makeCliCmd + ' deploy'
+                  } catch(Exception e) {
+                    // If the deploy failed, keep the pod until a user catch the problem (cloud be an errored state, or many reason to keep the workspace)
+                    final String msg = 'An error happened while applying the terraform plan. Keeping the agent up and running. Delete the agent?'
+                    try {
+                      publishChecks name: 'deploy-error',
+                      title: 'An error happened while applying the terraform plan',
+                      summary: msg,
+                      detailsURL: "${env.BUILD_URL}/console",
+                      conclusion: 'FAILURE'
+                    } finally {
+                      currentBuild.result = 'FAILURE'
+                      input message: msg
+                    }
+                  }
+                  if (finalConfig.publishReports && finalConfig.publishReports.size > 0) {
+                    publishReports(finalConfig.publishReports)
+                  }
                 }
               }
             }
