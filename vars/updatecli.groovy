@@ -27,11 +27,6 @@ def call(userConfig = [:]) {
   }
   properties(projectProperties)
 
-  // Set cron trigger if requested
-  if (finalConfig.cronTriggerExpression) {
-    properties([pipelineTriggers([cron(finalConfig.cronTriggerExpression)])])
-  }
-
   // Define a closure that encapsulates all updatecli execution logic
   def executeUpdatecli = {
     final String customUpdatecliPath = "${pwd tmp: true}/custom_updatecli"
