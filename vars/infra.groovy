@@ -275,8 +275,45 @@ Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = 
   withArtifactCachingProxy(useArtifactCachingProxy) {
     mvnOptions.addAll(options)
     mvnOptions.unique()
+
+    // Could run 'mvn -Dmaven.repo.local=/tmp help:evaluate -Dexpression=settings.localRepository -q -DforceStdout',
+    // in a shell step but mvnOptions is a mix of flags and goals so we have to parse options anyway
+    String foundLocalRepo = mvnOptions.find { opt -> opt ==~ /^\-Dmaven\.repo\.local=.*/ }
+    String m2repo = ''
+    if (foundLocalRepo) {
+      m2repo = foundLocalRepo.split('=')[1]
+    }
+    loadMavenLocalCacheIfAny(m2repo)
+
     String command = "mvn ${mvnOptions.join(' ')}"
     runWithMaven(command, jdk, extraEnv, addToolEnv)
+  }
+}
+
+/**
+ * Load Maven cache into local repository from the cachePath archive (tar.gz)
+ * @param mvnLocalRepo (required) path to the Maven local repository directory
+ * @param cachePath (optional) path to the tar.gz archive (usually on a shared remote volume) filled with the cache
+ */
+Object loadMavenLocalCacheIfAny(String mvnLocalRepo, String cachePath = '/cache/maven-bom-local-repo.tar.gz') {
+  if (isUnix()) {
+    withEnv(["MVN_LOCAL_REPO=${mvnLocalRepo}", "MVN_CACHE_PATH=${cachePath}",]) {
+      sh '''
+      test -n "${MVN_LOCAL_REPO}" || export MVN_LOCAL_REPO="$HOME/.m2/repository"
+      mkdir -p "${MVN_LOCAL_REPO}"
+      if test -f "${MVN_CACHE_PATH}";
+      then
+        pushd "${MVN_LOCAL_REPO}"
+        cache_archive_name=../"$(basename "${MVN_CACHE_PATH}")"
+        time cp "${MVN_CACHE_PATH}" "${cache_archive_name}"
+        time tar xzf "${cache_archive_name}" ./
+        rm -f "${cache_archive_name}"
+        popd
+      fi
+      '''
+    }
+  } else {
+    echo "WARNING: Maven cache loading not implemented on Windows yet."
   }
 }
 
