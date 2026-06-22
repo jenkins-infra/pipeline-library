@@ -40,7 +40,6 @@ grep 'Makefile' .gitignore || echo 'Makefile' | tee -a .gitignore
 ** Or `CONTAINER_BIN=docker make all` if you have Docker
 ** And/or `make -C <Path to the directory containing your Makefile> all`
 
-
 == Requirements
 
 * Command prompt with bash (or zsh/ksh)
@@ -99,7 +98,6 @@ You can customize the different steps through the following environment variable
 ** `BUILD_DATE` (Default to "now" when called): UTC timestamp formatted in `%Y-%m-%dT%H:%M:%S` when the command occurs.
 
 You can check the file `Makefile` if you want to get a better deep-dive understanding.
-
 
 == Contributing
 

@@ -166,7 +166,6 @@ Supported parameters:
 `artifacts`::
 (Optional) If `artifacts` is not null, invokes `archiveArtifacts` with the given string value.
 
-
 ==== Example
 
 [source, groovy]
@@ -207,6 +206,7 @@ Name of the docker image to build
 * disablePublication: (Optional, default to false) Allow to disable tagging and publication of container image and GitHub release
 
 ==== Example
+
 [source, groovy]
 ----
 buildDockerAndPublishImage('plugins-site-api')
