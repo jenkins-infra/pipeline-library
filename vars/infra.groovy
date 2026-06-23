@@ -306,7 +306,7 @@ Object loadMavenLocalCacheIfAny(String mvnLocalRepo, String cachePath = '/cache/
 
       if test -f "${MVN_CACHE_PATH}"
       then
-        # MVN_CACHE_PATH might served from a CSI S3 volume which does not support seeking.
+        # MVN_CACHE_PATH might be served from a CSI S3 volume which does not support seeking.
         # tar requires a seekable source, so we copy the archive locally first.
         # The copy lands in the parent of MVN_LOCAL_REPO which has sufficient disk space.
         cache_archive_name="$(dirname "${MVN_LOCAL_REPO}")/$(basename "${MVN_CACHE_PATH}")"
