@@ -313,7 +313,27 @@ Object loadMavenLocalCacheIfAny(String mvnLocalRepo, String cachePath = '/cache/
       '''
     }
   } else {
-    echo "WARNING: Maven cache loading not implemented on Windows yet."
+    pwsh '''
+    if (-not $env:MVN_LOCAL_REPO) {
+      $env:MVN_LOCAL_REPO = Join-Path $HOME ".m2/repository"
+    }
+    New-Item -ItemType Directory -Force -Path $env:MVN_LOCAL_REPO | Out-Null
+
+    if ($env:MVN_CACHE_PATH -and (Test-Path -PathType Leaf $env:MVN_CACHE_PATH)) {
+      # MVN_CACHE_PATH might be served from a CSI S3 volume which does not support seeking.
+      # tar requires a seekable source, so we copy the archive locally first.
+      # The copy lands in the parent of MVN_LOCAL_REPO which has sufficient disk space.
+      $cacheArchiveName = Join-Path (Split-Path -Parent $env:MVN_LOCAL_REPO) (Split-Path -Leaf $env:MVN_CACHE_PATH)
+
+      $elapsed = (Measure-Command { Copy-Item $env:MVN_CACHE_PATH $cacheArchiveName }).TotalSeconds
+      Write-Host "cp: ${elapsed}s"
+
+      $elapsed = (Measure-Command { tar xzf $cacheArchiveName -C $env:MVN_LOCAL_REPO }).TotalSeconds
+      Write-Host "tar: ${elapsed}s"
+
+      Remove-Item -Force $cacheArchiveName
+    }
+    '''
   }
 }
 
