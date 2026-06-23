@@ -299,16 +299,22 @@ Object loadMavenLocalCacheIfAny(String mvnLocalRepo, String cachePath = '/cache/
   if (isUnix()) {
     withEnv(["MVN_LOCAL_REPO=${mvnLocalRepo}", "MVN_CACHE_PATH=${cachePath}",]) {
       sh '''
-      test -n "${MVN_LOCAL_REPO}" || export MVN_LOCAL_REPO="$HOME/.m2/repository"
+      : "${MVN_CACHE_PATH:?MVN_CACHE_PATH must be set}"
+      export MVN_LOCAL_REPO="${MVN_LOCAL_REPO:-$HOME/.m2/repository}"
+
       mkdir -p "${MVN_LOCAL_REPO}"
-      if test -f "${MVN_CACHE_PATH}";
+
+      if test -f "${MVN_CACHE_PATH}"
       then
-        pushd "${MVN_LOCAL_REPO}"
-        cache_archive_name=../"$(basename "${MVN_CACHE_PATH}")"
+        # MVN_CACHE_PATH might served from a CSI S3 volume which does not support seeking.
+        # tar requires a seekable source, so we copy the archive locally first.
+        # The copy lands in the parent of MVN_LOCAL_REPO which has sufficient disk space.
+        cache_archive_name="$(dirname "${MVN_LOCAL_REPO}")/$(basename "${MVN_CACHE_PATH}")"
         time cp "${MVN_CACHE_PATH}" "${cache_archive_name}"
-        time tar xzf "${cache_archive_name}" ./
+        time tar xzf "${cache_archive_name}" -C "${MVN_LOCAL_REPO}"
         rm -f "${cache_archive_name}"
-        popd
+      else
+        echo "${MVN_CACHE_PATH} archive not found: skipping maven cache retrieval."
       fi
       '''
     }
@@ -332,6 +338,8 @@ Object loadMavenLocalCacheIfAny(String mvnLocalRepo, String cachePath = '/cache/
       Write-Host "tar: ${elapsed}s"
 
       Remove-Item -Force $cacheArchiveName
+    } else {
+      Write-Host "${env:MVN_CACHE_PATH} archive not found: skipping maven cache retrieval."
     }
     '''
   }
