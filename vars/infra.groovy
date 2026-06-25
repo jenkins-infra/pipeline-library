@@ -300,7 +300,8 @@ Object loadMavenLocalCacheIfAny(String mvnLocalRepo, String cachePath = '') {
     // Default dirname comes from the agents mountpoints of Linux container and Linux VM agents in jenkins-infra/jenkins-infra
     // It's a convention, we can do better (automatic update? shared metadata? other) but at least the reader is aware
     final String mvnCachePath = (cachePath ?: '/cache/maven-bom-local-repo.tar.gz')
-    withEnv(["MVN_LOCAL_REPO=${mvnLocalRepo}","MVN_CACHE_PATH=${mvnCachePath}"]) {
+    withEnv(["MVN_LOCAL_REPO=${mvnLocalRepo}", "MVN_CACHE_PATH=${mvnCachePath}"]) {
+      echo "Trying to load Maven cache from ${mvnCachePath} to ${mvnLocalRepo}..."
       sh '''
       : "${MVN_CACHE_PATH:?MVN_CACHE_PATH must be set}"
       export MVN_LOCAL_REPO="${MVN_LOCAL_REPO:-$HOME/.m2/repository}"
@@ -326,7 +327,8 @@ Object loadMavenLocalCacheIfAny(String mvnLocalRepo, String cachePath = '') {
     // Default dirname comes from the agents mountpoints of Windows VM agents in jenkins-infra/jenkins-infra
     // It's a convention, we can do better (automatic update? shared metadata? other) but at least the reader is aware
     final String mvnCachePath = (cachePath ?: 'C:/cache/maven-bom-local-repo.tar.gz')
-    withEnv(["MVN_LOCAL_REPO=${mvnLocalRepo}","MVN_CACHE_PATH=${mvnCachePath}"]) {
+    withEnv(["MVN_LOCAL_REPO=${mvnLocalRepo}", "MVN_CACHE_PATH=${mvnCachePath}"]) {
+      echo "Trying to load Maven cache from ${mvnCachePath} to ${mvnLocalRepo}..."
       pwsh '''
       if (-not $env:MVN_LOCAL_REPO) {
         $env:MVN_LOCAL_REPO = Join-Path $HOME ".m2/repository"
