@@ -293,11 +293,14 @@ Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = 
 /**
  * Load Maven cache into local repository from the cachePath archive (tar.gz)
  * @param mvnLocalRepo (required) path to the Maven local repository directory
- * @param cachePath (optional) path to the tar.gz archive (usually on a shared remote volume) filled with the cache
  */
-Object loadMavenLocalCacheIfAny(String mvnLocalRepo, String cachePath = '/cache/maven-bom-local-repo.tar.gz') {
+Object loadMavenLocalCacheIfAny(String mvnLocalRepo, String cachePath = '') {
   if (isUnix()) {
-    withEnv(["MVN_LOCAL_REPO=${mvnLocalRepo}", "MVN_CACHE_PATH=${cachePath}",]) {
+    // Default archive name comes from https://github.com/jenkins-infra/helm-charts/blob/2db07ddfe7df0847f975486226e342ba7bf434cd/charts/maven-cacher/maven-cacher.sh#L7
+    // Default dirname comes from the agents mountpoints of Linux container and Linux VM agents in jenkins-infra/jenkins-infra
+    // It's a convention, we can do better (automatic update? shared metadata? other) but at least the reader is aware
+    final String mvnCachePath = (cachePath ?: '/cache/maven-bom-local-repo.tar.gz')
+    withEnv(["MVN_LOCAL_REPO=${mvnLocalRepo}","MVN_CACHE_PATH=${mvnCachePath}"]) {
       sh '''
       : "${MVN_CACHE_PATH:?MVN_CACHE_PATH must be set}"
       export MVN_LOCAL_REPO="${MVN_LOCAL_REPO:-$HOME/.m2/repository}"
@@ -319,29 +322,35 @@ Object loadMavenLocalCacheIfAny(String mvnLocalRepo, String cachePath = '/cache/
       '''
     }
   } else {
-    pwsh '''
-    if (-not $env:MVN_LOCAL_REPO) {
-      $env:MVN_LOCAL_REPO = Join-Path $HOME ".m2/repository"
+    // Default archive name comes from https://github.com/jenkins-infra/helm-charts/blob/2db07ddfe7df0847f975486226e342ba7bf434cd/charts/maven-cacher/maven-cacher.sh#L7
+    // Default dirname comes from the agents mountpoints of Windows VM agents in jenkins-infra/jenkins-infra
+    // It's a convention, we can do better (automatic update? shared metadata? other) but at least the reader is aware
+    final String mvnCachePath = (cachePath ?: 'C:/cache/maven-bom-local-repo.tar.gz')
+    withEnv(["MVN_LOCAL_REPO=${mvnLocalRepo}","MVN_CACHE_PATH=${mvnCachePath}"]) {
+      pwsh '''
+      if (-not $env:MVN_LOCAL_REPO) {
+        $env:MVN_LOCAL_REPO = Join-Path $HOME ".m2/repository"
+      }
+      New-Item -ItemType Directory -Force -Path $env:MVN_LOCAL_REPO | Out-Null
+
+      if ($env:MVN_CACHE_PATH -and (Test-Path -PathType Leaf $env:MVN_CACHE_PATH)) {
+        # MVN_CACHE_PATH might be served from a CSI S3 volume which does not support seeking.
+        # tar requires a seekable source, so we copy the archive locally first.
+        # The copy lands in the parent of MVN_LOCAL_REPO which has sufficient disk space.
+        $cacheArchiveName = Join-Path (Split-Path -Parent $env:MVN_LOCAL_REPO) (Split-Path -Leaf $env:MVN_CACHE_PATH)
+
+        $elapsed = (Measure-Command { Copy-Item $env:MVN_CACHE_PATH $cacheArchiveName }).TotalSeconds
+        Write-Host "cp: ${elapsed}s"
+
+        $elapsed = (Measure-Command { tar xzf $cacheArchiveName -C $env:MVN_LOCAL_REPO }).TotalSeconds
+        Write-Host "tar: ${elapsed}s"
+
+        Remove-Item -Force $cacheArchiveName
+      } else {
+        Write-Host "${env:MVN_CACHE_PATH} archive not found: skipping maven cache retrieval."
+      }
+      '''
     }
-    New-Item -ItemType Directory -Force -Path $env:MVN_LOCAL_REPO | Out-Null
-
-    if ($env:MVN_CACHE_PATH -and (Test-Path -PathType Leaf $env:MVN_CACHE_PATH)) {
-      # MVN_CACHE_PATH might be served from a CSI S3 volume which does not support seeking.
-      # tar requires a seekable source, so we copy the archive locally first.
-      # The copy lands in the parent of MVN_LOCAL_REPO which has sufficient disk space.
-      $cacheArchiveName = Join-Path (Split-Path -Parent $env:MVN_LOCAL_REPO) (Split-Path -Leaf $env:MVN_CACHE_PATH)
-
-      $elapsed = (Measure-Command { Copy-Item $env:MVN_CACHE_PATH $cacheArchiveName }).TotalSeconds
-      Write-Host "cp: ${elapsed}s"
-
-      $elapsed = (Measure-Command { tar xzf $cacheArchiveName -C $env:MVN_LOCAL_REPO }).TotalSeconds
-      Write-Host "tar: ${elapsed}s"
-
-      Remove-Item -Force $cacheArchiveName
-    } else {
-      Write-Host "${env:MVN_CACHE_PATH} archive not found: skipping maven cache retrieval."
-    }
-    '''
   }
 }
 
