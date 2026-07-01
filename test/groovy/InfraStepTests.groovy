@@ -546,7 +546,7 @@ class InfraStepTests extends BaseTest {
       [platform: 'windows', jdk: '17', container: true,  expected: 'maven-17-windows', warning: null],
       // VM agents
       [platform: 'linux',   jdk: '8',  container: false, expected: 'vm && linux',      warning: null],
-      [platform: 'windows', jdk: '8',  container: false, expected: 'docker-windows',   warning: null],
+      [platform: 'windows', jdk: '8',  container: false, expected: 'windows-2025',     warning: null],
       // unknown platform
       [platform: 'openbsd', jdk: '11', container: false, expected: 'openbsd',          warning: 'vm'],
       [platform: 'openbsd', jdk: '11', container: true,  expected: 'openbsd',          warning: 'container'],
