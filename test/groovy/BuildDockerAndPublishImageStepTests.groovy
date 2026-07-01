@@ -421,7 +421,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     def script = loadScript(scriptName)
     withMocks {
       script.call(testImageName, [
-        agentLabels: 'docker-windows',
+        agentLabels: 'windows-2025',
       ])
     }
     printCallStack()
