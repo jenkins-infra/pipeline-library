@@ -582,7 +582,7 @@ private String vmAgentLabel(String platform, Integer spotRetryCounter) {
     case 'linux':
       return 'vm && linux'
     case 'windows':
-      return 'docker-windows'
+      return 'windows-2025'
     // For docker controller and agents jobs
     case 'docker-highmem':
       if (isTrusted()) {
