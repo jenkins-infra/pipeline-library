@@ -746,7 +746,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('powershell','make lint'))
     assertTrue(assertMethodCallContainsPattern('powershell','make build'))
 
-    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
+    assertTrue(assertMethodCallContainsPattern('node', 'windows-2025'))
     // And generated reports are recorded with named without ':' but '-' instead
     assertTrue(assertRecordIssues(fullCustomImageName.replaceAll(':','-')))
     // With the deploy step called with the correct image name
@@ -779,7 +779,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('powershell','make lint'))
     assertTrue(assertMethodCallContainsPattern('powershell','make build'))
 
-    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
+    assertTrue(assertMethodCallContainsPattern('node', 'windows-2025'))
     // And generated reports are recorded with named without ':' but '-' instead
     assertTrue(assertRecordIssues(fullCustomImageName.replaceAll(':','-')))
     // With the deploy step called with the correct image name
