@@ -611,3 +611,50 @@ private String getSpotOrNonSpotAgentLabel(String agentLabel, Integer spotRetryCo
   }
   return "${agentLabel} && spot"
 }
+
+// Search and copy an artifact from builds of a job
+// Returns the build number where it has been found, zero otherwise
+// If the primary branch is different than 'master', specify it with `primaryBranchName`
+int retrieveArtifactsFromPreviousBuilds(Map args) {
+  if (!args || !args.archiveName || !args.jobName) {
+    error('Missing args, must include archiveName and jobName')
+  }
+  String archiveName = args.archiveName
+  String jobName = args.jobName
+  String primaryBranchName = args.get('primaryBranchName', 'master')
+
+  int foundInBuildNumber = 0
+  boolean archiveExists = false
+  final int buildNumber = env.BUILD_NUMBER.toInteger()
+  if (buildNumber == 1) {
+    echo "[INFO] First build of ${jobName}, no ${archiveName} available yet"
+    return 0
+  }
+
+  // Loop over builds to retrieve the prep archive as previous build can have (only) other archive(s)
+  int checkBuildNumber = buildNumber - 1
+  // Don't loop until the first build of master '^^
+  final int limit = (jobName == primaryBranchName || jobName.endsWith("/${primaryBranchName}")) ? buildNumber - 50 : 0
+  while (!archiveExists && checkBuildNumber > limit) {
+    echo "[INFO] Trying to retrieve ${archiveName} from ${jobName}#${checkBuildNumber}..."
+    try {
+      copyArtifacts(projectName: jobName,
+      selector: specific("${checkBuildNumber}"),
+      filter: archiveName,
+      fingerprintArtifacts: true,
+      optional: false,
+      )
+      archiveExists = true
+    } catch(e) {}
+    if (!archiveExists) {
+      checkBuildNumber = checkBuildNumber - 1
+    }
+  }
+  if (!archiveExists) {
+    echo "[INFO] No ${archiveName} found in any build of ${jobName}"
+  } else {
+    foundInBuildNumber = checkBuildNumber
+    echo "[INFO] ${archiveName} found in ${jobName}#${checkBuildNumber}"
+  }
+  return foundInBuildNumber
+}
