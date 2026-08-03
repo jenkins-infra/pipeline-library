@@ -10,7 +10,7 @@ def call(Map params = [:]) {
   def useContainerAgent = params.containsKey('useContainerAgent') ? params.useContainerAgent : false
   def failFast = params.containsKey('failFast') ? params.failFast : true
   def timeoutValue = params.containsKey('timeout') ? params.timeout : 60
-  if (timeoutValue > 180) {
+  if (timeoutValue> 180) {
     echo "Timeout value requested was $timeoutValue, lowering to 180 to avoid Jenkins project's resource abusive consumption"
     timeoutValue = 180
   }
@@ -130,10 +130,10 @@ def call(Map params = [:]) {
 
               recordIssues(
                   enabledForFailure: true, tool: taskScanner(
-                  includePattern:'**/*.java',
-                  excludePattern:'**/build/**',
-                  highTags:'FIXME',
-                  normalTags:'TODO'),
+                      includePattern: '**/*.java',
+                      excludePattern: '**/build/**',
+                      highTags: 'FIXME',
+                      normalTags: 'TODO'),
                   sourceCodeEncoding: 'UTF-8',
                   skipBlames: true,
                   trendChartType: 'NONE'

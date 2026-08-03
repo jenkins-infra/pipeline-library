@@ -4,7 +4,7 @@ import java.util.Date
 import java.text.DateFormat
 
 // makecall is a function to concentrate all the call to 'make'
-def makecall(String action, String imageDeployName, String targetOperationSystem, String specificDockerBakeFile, String dockerBakeTarget, String cacheTo= '') {
+def makecall(String action, String imageDeployName, String targetOperationSystem, String specificDockerBakeFile, String dockerBakeTarget, String cacheTo = '') {
   final String bakefileContent = libraryResource 'io/jenkins/infra/docker/jenkinsinfrabakefile.hcl'
   if (isUnix()) {
     if (! specificDockerBakeFile) {
@@ -39,7 +39,7 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
   } // unix agent
 }
 
-def call(String imageShortName, Map userConfig=[:]) {
+def call(String imageShortName, Map userConfig =[:]) {
   def defaultConfig = [
     agentLabels: 'docker || linux-amd64-docker', // String expression for the labels the agent must match
     automaticSemanticVersioning: true, // automagically increase semantic version by default
@@ -94,7 +94,7 @@ def call(String imageShortName, Map userConfig=[:]) {
   // for now only one platform possible per windows build !
   String cstConfigSuffix = ''
   if (finalConfig.agentLabels.contains('windows') || finalConfig.targetplatforms.contains('windows')) {
-    if (finalConfig.targetplatforms.split(',').length > 1) {
+    if (finalConfig.targetplatforms.split(',').length> 1) {
       echo 'ERROR: with windows, only one platform can be specified within targetplatforms.'
       currentBuild.result = 'FAILURE'
       return

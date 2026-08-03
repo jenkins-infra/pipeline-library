@@ -136,11 +136,11 @@ Object withFileShareServicePrincipal(Map options, Closure body) {
   if (options.servicePrincipalCredentialsId) {
     withCredentials([
       azureServicePrincipal(
-      credentialsId: options.servicePrincipalCredentialsId,
-      clientIdVariable: 'JENKINS_INFRA_FILESHARE_CLIENT_ID',
-      clientSecretVariable: 'JENKINS_INFRA_FILESHARE_CLIENT_SECRET',
-      tenantIdVariable: 'JENKINS_INFRA_FILESHARE_TENANT_ID'
-      )
+          credentialsId: options.servicePrincipalCredentialsId,
+          clientIdVariable: 'JENKINS_INFRA_FILESHARE_CLIENT_ID',
+          clientSecretVariable: 'JENKINS_INFRA_FILESHARE_CLIENT_SECRET',
+          tenantIdVariable: 'JENKINS_INFRA_FILESHARE_TENANT_ID'
+          )
     ]){
       echo "INFO: ${options.fileShare} file share signed URL expiring in ${options.durationInMinute} minute(s) available in \$FILESHARE_SIGNED_URL"
       generateFileShareSignedURL(options, body)
@@ -278,7 +278,9 @@ Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = 
 
     // Could run 'mvn -Dmaven.repo.local=/tmp help:evaluate -Dexpression=settings.localRepository -q -DforceStdout',
     // in a shell step but mvnOptions is a mix of flags and goals so we have to parse options anyway
-    String foundLocalRepo = mvnOptions.find { opt -> opt ==~ /^\-Dmaven\.repo\.local=.*/ }
+    String foundLocalRepo = mvnOptions.find { opt ->
+      opt ==~ /^\-Dmaven\.repo\.local=.*/
+    }
     String m2repo = ''
     if (foundLocalRepo) {
       m2repo = foundLocalRepo.split('=')[1]
@@ -605,7 +607,7 @@ private String getSpotOrNonSpotAgentLabel(String agentLabel, Integer spotRetryCo
     echo 'INFO: running on trusted.ci.jenkins.io, no "spot" or "nonspot" agents'
     return agentLabel
   }
-  if (spotRetryCounter > 1) {
+  if (spotRetryCounter> 1) {
     echo 'INFO: more than one retry, using "nonspot" agent'
     return "${agentLabel} && nonspot"
   }

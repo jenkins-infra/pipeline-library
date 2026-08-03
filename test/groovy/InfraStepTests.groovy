@@ -26,7 +26,9 @@ class InfraStepTests extends BaseTest {
     super.setUp()
 
     // Mock Pipeline methods which are not already declared in the parent class
-    helper.registerAllowedMethod('azureServicePrincipal', [Map.class], { m -> m })
+    helper.registerAllowedMethod('azureServicePrincipal', [Map.class], { m ->
+      m
+    })
   }
 
   @Test
@@ -542,14 +544,14 @@ class InfraStepTests extends BaseTest {
 
     def cases = [
       // container agents
-      [platform: 'linux',   jdk: '21', container: true,  expected: 'maven-21',         warning: null],
-      [platform: 'windows', jdk: '17', container: true,  expected: 'maven-17-windows', warning: null],
+      [platform: 'linux', jdk: '21', container: true, expected: 'maven-21', warning: null],
+      [platform: 'windows', jdk: '17', container: true, expected: 'maven-17-windows', warning: null],
       // VM agents
-      [platform: 'linux',   jdk: '8',  container: false, expected: 'vm && linux',      warning: null],
-      [platform: 'windows', jdk: '8',  container: false, expected: 'windows-2025',     warning: null],
+      [platform: 'linux', jdk: '8', container: false, expected: 'vm && linux', warning: null],
+      [platform: 'windows', jdk: '8', container: false, expected: 'windows-2025', warning: null],
       // unknown platform
-      [platform: 'openbsd', jdk: '11', container: false, expected: 'openbsd',          warning: 'vm'],
-      [platform: 'openbsd', jdk: '11', container: true,  expected: 'openbsd',          warning: 'container'],
+      [platform: 'openbsd', jdk: '11', container: false, expected: 'openbsd', warning: 'vm'],
+      [platform: 'openbsd', jdk: '11', container: true, expected: 'openbsd', warning: 'container'],
       // docker controller and agents jobs
       [
         // linux image
@@ -631,7 +633,7 @@ class InfraStepTests extends BaseTest {
       if (c.containsKey('trustedEnv') && c.trustedEnv) {
         assertMethodCallContainsPattern('echo', 'running on trusted.ci.jenkins.io')
       }
-      if (c.containsKey('retry') && c.retry > 1) {
+      if (c.containsKey('retry') && c.retry> 1) {
         assertMethodCallContainsPattern('echo', 'more than one retry, using "nonspot" agent')
       }
     }

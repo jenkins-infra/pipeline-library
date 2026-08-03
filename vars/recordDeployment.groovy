@@ -1,4 +1,4 @@
-def call(owner, repo, ref, status, environmentURL, Map userConfig=[:]) {
+def call(owner, repo, ref, status, environmentURL, Map userConfig =[:]) {
   def defaultConfig = [
     environment: "preview",
     description: "Deploy to preview environment",

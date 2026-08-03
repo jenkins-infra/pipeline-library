@@ -26,7 +26,7 @@ def call(List<String> files, Map params = [:]) {
   }
 
   infra.withFileShareServicePrincipal(infraFileShareOptions) {
-    for(int i = 0; i < files.size(); ++i) {
+    for(int i = 0; i <files.size(); ++i) {
       String filename = files[i]
       String contentType = ''
 
@@ -53,7 +53,7 @@ def call(List<String> files, Map params = [:]) {
 
       String[] directory = filename.split("/")
       String basename = directory[directory.size() - 1]
-      String dirname = Arrays.copyOfRange(directory, 0, directory.size()-1 ).join("/")
+      String dirname = Arrays.copyOfRange(directory, 0, directory.size()-1).join("/")
 
       try {
         withEnv([

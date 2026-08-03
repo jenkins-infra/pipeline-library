@@ -19,7 +19,7 @@ def call(Map params = [:]) {
   if (forkCount) {
     echo "Running parallel tests with forkCount=${forkCount}"
   }
-  if (timeoutValue > 180) {
+  if (timeoutValue> 180) {
     echo "Timeout value requested was $timeoutValue, lowering to 180 to avoid Jenkins project's resource abusive consumption"
     timeoutValue = 180
   }
@@ -52,7 +52,7 @@ def call(Map params = [:]) {
         if (useContainerAgent) {
           label = baselabel
         } else {
-          if (retryCounter > 1) {
+          if (retryCounter> 1) {
             // Use a spot instance for the 2 first try [try 0 and 1] and nonspot for third and last [2]
             label = baselabel + ' && nonspot'
           } else {
@@ -251,10 +251,10 @@ def call(Map params = [:]) {
 
                   recordIssues(
                       enabledForFailure: true, tool: taskScanner(
-                      includePattern:'**/*.java',
-                      excludePattern:'**/target/**',
-                      highTags:'FIXME',
-                      normalTags:'TODO'),
+                          includePattern: '**/*.java',
+                          excludePattern: '**/target/**',
+                          highTags: 'FIXME',
+                          normalTags: 'TODO'),
                       sourceCodeEncoding: 'UTF-8',
                       skipBlames: true,
                       trendChartType: 'NONE'
@@ -322,7 +322,7 @@ def call(Map params = [:]) {
 
 private void discoverReferenceBuild() {
   folders = env.JOB_NAME.split('/')
-  if (folders.length > 1) {
+  if (folders.length> 1) {
     discoverGitReferenceBuild(scm: folders[1])
   }
 }

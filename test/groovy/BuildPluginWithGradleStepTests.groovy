@@ -145,7 +145,7 @@ class BuildPluginWithGradleStepTests extends BaseTest {
   void test_buildPluginWithGradle_with_warnings_ng_and_thresholds() throws Exception {
     def script = loadScript(scriptName)
     script.call(spotbugs: [
-      qualityGates      : [
+      qualityGates : [
         [threshold: 3, type: 'TOTAL', unstable: true],
         [threshold: 4, type: 'NEW', unstable: true],
       ],
@@ -163,7 +163,7 @@ class BuildPluginWithGradleStepTests extends BaseTest {
         [threshold: 3, type: 'TOTAL', unstable: true],
         [threshold: 4, type: 'NEW', unstable: true],
       ],
-      filters     : '[includeFile(\'MyFile.*.java\'), excludeCategory(\'WHITESPACE\')]'])
+      filters : '[includeFile(\'MyFile.*.java\'), excludeCategory(\'WHITESPACE\')]'])
     printCallStack()
 
     assertTrue(assertMethodCallContainsPattern('recordIssues', '{tool=checkstyle, sourceCodeEncoding=UTF-8, skipBlames=true, trendChartType=TOOLS_ONLY, qualityGates=[{threshold=3, type=TOTAL, unstable=true}, {threshold=4, type=NEW, unstable=true}], filters=[includeFile(\'MyFile.*.java\'), excludeCategory(\'WHITESPACE\')]}'))

@@ -29,7 +29,9 @@ class TerraformStepTests extends BaseTest {
     addEnvVar('BRANCH_NAME', 'main')
 
     binding.setProperty('scm', ['GIT_URL': 'https://github.com/lesfurets/jenkins-unit-test.git'])
-    helper.registerAllowedMethod('ansiColor', [String.class, Closure.class], { s, body ->body() })
+    helper.registerAllowedMethod('ansiColor', [String.class, Closure.class], { s, body ->
+      body()
+    })
     helper.registerAllowedMethod('checkout', [Map.class], { m -> m })
     helper.registerAllowedMethod('publishBuildStatusReport', [], {})
 

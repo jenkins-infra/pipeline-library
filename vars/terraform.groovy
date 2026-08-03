@@ -12,7 +12,7 @@ def call(userConfig = [:]) {
     runTests: false, // Executes the tests provided by the "calling" project, which should provide a tests/Makefile
     runCommonTests: true, // Executes the default test suite from the shared tools repository (terratest)
     publishReports: [],
-    cronTriggerExpression: '',  // Enables cron trigger if specified
+    cronTriggerExpression: '', // Enables cron trigger if specified
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
@@ -98,12 +98,12 @@ def call(userConfig = [:]) {
 
                   // Retrieve published reports for idempotency (otherwise Terraform's "local_file" will be marked as always re-created as ignored from the SCM)
                   // Note: always run after call to getInfraSharedTools() (or it will be overridden)
-                  if (finalConfig.publishReports && finalConfig.publishReports.size > 0) {
-                    for (int i = 0; i < finalConfig.publishReports.size; i++) {
+                  if (finalConfig.publishReports && finalConfig.publishReports.size> 0) {
+                    for (int i = 0; i <finalConfig.publishReports.size; i++) {
                       final String relativeFilePath = finalConfig.publishReports[i]
                       String fileText = ""
                       try {
-                        fileText = new URL ("https://reports.jenkins.io/${relativeFilePath}").getText()
+                        fileText = new URL("https://reports.jenkins.io/${relativeFilePath}").getText()
                       }
                       catch (Exception e) {
                         echo "No file found at the provided URL: using an empty file instead."
@@ -155,7 +155,7 @@ def call(userConfig = [:]) {
                       input message: msg
                     }
                   }
-                  if (finalConfig.publishReports && finalConfig.publishReports.size > 0) {
+                  if (finalConfig.publishReports && finalConfig.publishReports.size> 0) {
                     publishReports(finalConfig.publishReports)
                   }
                 }
@@ -177,7 +177,7 @@ def call(userConfig = [:]) {
 }
 
 def agentTemplate(agentLabel, body) {
-  node (agentLabel) {
+  node(agentLabel) {
     timeout(time: 1, unit: 'HOURS') {
       ansiColor('xterm') {
         body.call()

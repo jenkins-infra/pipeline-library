@@ -7,7 +7,7 @@ class InfraConfig implements Serializable {
 
   public InfraConfig(Object env) {
     this.jenkinsURL = env?.JENKINS_URL ?: ''
-    this.jenkinsHostname =  ''
+    this.jenkinsHostname = ''
     if (this.jenkinsURL != '') {
       this.jenkinsHostname = new URL(this.jenkinsURL).getHost()
     }

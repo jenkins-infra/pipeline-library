@@ -4,15 +4,15 @@
 
 def call(userConfig = [:]) {
   def defaultConfig = [
-    action: 'diff',                          // Updatecli subcommand to execute
-    config: './updatecli/updatecli.d',       // Config manifest (file or directory) for updatecli
-    values: './updatecli/values.yaml',       // Values file used by updatecli
+    action: 'diff', // Updatecli subcommand to execute
+    config: './updatecli/updatecli.d', // Config manifest (file or directory) for updatecli
+    values: './updatecli/values.yaml', // Values file used by updatecli
     updatecliAgentLabel: 'jnlp-linux-arm64', // Label to select the Jenkins node (agent)
-    cronTriggerExpression: '',               // Enables cron trigger if specified
+    cronTriggerExpression: '', // Enables cron trigger if specified
     credentialsId: 'github-app-updatecli-on-jenkins-infra', // GitHub credentials
-    version: '',                             // Custom updatecli version (e.g. '0.92.0' or '0.86.0-rc.1')
-    runInCurrentAgent: false,                // Specify wether to allocate an agent to run updatecli (default) or reuse the current one
-    debug: false,                            // Enable debug output on updatecli
+    version: '', // Custom updatecli version (e.g. '0.92.0' or '0.86.0-rc.1')
+    runInCurrentAgent: false, // Specify wether to allocate an agent to run updatecli (default) or reuse the current one
+    debug: false, // Enable debug output on updatecli
   ]
 
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html  final Map
@@ -77,10 +77,10 @@ def call(userConfig = [:]) {
           updatecliCommand += finalConfig.values ? " --values ${finalConfig.values}" : ""
           withCredentials([
             usernamePassword(
-            credentialsId: finalConfig.credentialsId,
-            usernameVariable: 'USERNAME_VALUE', // Setting this variable is mandatory, even if of not used when the credentials is a githubApp one
-            passwordVariable: 'UPDATECLI_GITHUB_TOKEN'
-            )
+                credentialsId: finalConfig.credentialsId,
+                usernameVariable: 'USERNAME_VALUE', // Setting this variable is mandatory, even if of not used when the credentials is a githubApp one
+                passwordVariable: 'UPDATECLI_GITHUB_TOKEN'
+                )
           ]) {
             sh '''
                     which updatecli

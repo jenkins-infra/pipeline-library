@@ -44,7 +44,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
       case {command.contains('gh api -X PATCH')}:
         return (noReleaseDraft ? '' : defaultReleaseId)
         break
-      case {command.contains(defaultNextVersionCommand + ' -debug --previous-version')}:
+      case {
+        command.contains(defaultNextVersionCommand + ' -debug --previous-version')
+      }:
         return defaultGitTagIncludingImageName
         break
       case defaultNextVersionCommand:
@@ -63,7 +65,11 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Mock Pipeline methods which are not already declared in the parent class
     helper.registerAllowedMethod('hadoLint', [Map.class], { m -> m })
     helper.registerAllowedMethod('fileExists', [String.class], { true })
-    binding.setVariable('infra', ['withDockerPullCredentials': {body -> body()}, 'withDockerPushCredentials': {body ->body()}])
+    binding.setVariable('infra', ['withDockerPullCredentials': {body ->
+        body()
+      }, 'withDockerPushCredentials': {body ->
+        body()
+      }])
     helper.registerAllowedMethod('sh', [Map.class], { m ->
       return shellMock(m.script)
     })
@@ -129,19 +135,11 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   Boolean assertTagPushed(String newVersion) {
-    return assertMethodCallContainsPattern('echo','Configuring credential.helper') \
-      && assertMethodCallContainsPattern('echo',"Tagging and pushing the new version: ${newVersion}") \
-      && (assertMethodCallContainsPattern('sh','git config user.name "${GIT_USERNAME}"') || assertMethodCallContainsPattern('powershell','git config user.name "$env:GIT_USERNAME"')) \
-      && (assertMethodCallContainsPattern('sh','git config user.email "jenkins-infra@googlegroups.com"') || assertMethodCallContainsPattern('powershell','git config user.email "jenkins-infra@googlegroups.com"')) \
-      && (assertMethodCallContainsPattern('sh','git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"') || assertMethodCallContainsPattern('powershell','git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"')) \
-      && (assertMethodCallContainsPattern('sh','git push origin --tags') || assertMethodCallContainsPattern('powershell','git push origin --tags'))
+    return assertMethodCallContainsPattern('echo','Configuring credential.helper') && assertMethodCallContainsPattern('echo',"Tagging and pushing the new version: ${newVersion}") && (assertMethodCallContainsPattern('sh','git config user.name "${GIT_USERNAME}"') || assertMethodCallContainsPattern('powershell','git config user.name "$env:GIT_USERNAME"')) && (assertMethodCallContainsPattern('sh','git config user.email "jenkins-infra@googlegroups.com"') || assertMethodCallContainsPattern('powershell','git config user.email "jenkins-infra@googlegroups.com"')) && (assertMethodCallContainsPattern('sh','git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"') || assertMethodCallContainsPattern('powershell','git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"')) && (assertMethodCallContainsPattern('sh','git push origin --tags') || assertMethodCallContainsPattern('powershell','git push origin --tags'))
   }
 
   Boolean assertReleaseCreated() {
-    return assertMethodCallContainsPattern('stage','GitHub Release') \
-      && assertMethodCallContainsPattern('withCredentials', 'GITHUB_TOKEN') \
-      && assertMethodCallContainsPattern('withCredentials', 'GITHUB_USERNAME') \
-      && !assertMethodCallContainsPattern('echo', 'No next release draft found.')
+    return assertMethodCallContainsPattern('stage','GitHub Release') && assertMethodCallContainsPattern('withCredentials', 'GITHUB_TOKEN') && assertMethodCallContainsPattern('withCredentials', 'GITHUB_USERNAME') && !assertMethodCallContainsPattern('echo', 'No next release draft found.')
   }
 
   @Test
@@ -361,7 +359,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   void itSkipTestStageIfNoSpecificCSTFile() throws Exception {
     def script = loadScript(scriptName)
     // when building a Docker Image with a default configuration and no cst.yml file found
-    helper.registerAllowedMethod('fileExists', [String.class], { s -> return !s.contains('/cst.yml') })
+    helper.registerAllowedMethod('fileExists', [String.class], { s ->
+      return !s.contains('/cst.yml')
+    })
     withMocks{
       script.call(testImageName)
     }
@@ -379,7 +379,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   void itSkipTestStageIfNoCommonCSTFile() throws Exception {
     def script = loadScript(scriptName)
     // when building a Docker Image with a default configuration and no cst.yml file found
-    helper.registerAllowedMethod('fileExists', [String.class], { s -> return !s.contains('/common-cst.yml') })
+    helper.registerAllowedMethod('fileExists', [String.class], { s ->
+      return !s.contains('/common-cst.yml')
+    })
     withMocks{
       script.call(testImageName)
     }

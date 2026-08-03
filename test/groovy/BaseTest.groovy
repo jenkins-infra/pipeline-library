@@ -23,10 +23,14 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('attachments', [])
     helper.registerAllowedMethod('checkout', [String.class], { 'OK' })
     helper.registerAllowedMethod('configFile', [Map.class], { 'OK' })
-    helper.registerAllowedMethod('configFileProvider', [List.class, Closure.class], { l, body -> body() })
+    helper.registerAllowedMethod('configFileProvider', [List.class, Closure.class], { l, body ->
+      body()
+    })
     helper.registerAllowedMethod('deleteDir', [], { true })
     helper.registerAllowedMethod('dir', [String.class], { s -> s })
-    helper.registerAllowedMethod('disableConcurrentBuilds', [Map.class], { 'OK' })
+    helper.registerAllowedMethod('disableConcurrentBuilds', [Map.class], {
+      'OK'
+    })
     helper.registerAllowedMethod('durabilityHint', [String.class], { s -> s })
     helper.registerAllowedMethod('echo', [String.class], { s -> s })
     helper.registerAllowedMethod('error', [String.class], { s ->
@@ -38,18 +42,30 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('hasDockerLabel', [], { true })
     helper.registerAllowedMethod('isUnix', [], { true })
     helper.registerAllowedMethod('junit', [Map.class])
-    helper.registerAllowedMethod('lock', [String.class, Closure.class], { s, body -> body() })
-    helper.registerAllowedMethod('node', [String.class, Closure.class], { s, body -> body() })
-    helper.registerAllowedMethod('retry', [Map.class, Closure.class], { m, body ->body() })
+    helper.registerAllowedMethod('lock', [String.class, Closure.class], { s, body ->
+      body()
+    })
+    helper.registerAllowedMethod('node', [String.class, Closure.class], { s, body ->
+      body()
+    })
+    helper.registerAllowedMethod('retry', [Map.class, Closure.class], { m, body ->
+      body()
+    })
     helper.registerAllowedMethod('agent', [], { 'agent' })
     helper.registerAllowedMethod('kubernetesAgent', [], { 'kubernetesAgent' })
-    helper.registerAllowedMethod('kubernetesAgent', [Map.class], { 'kubernetesAgent' })
+    helper.registerAllowedMethod('kubernetesAgent', [Map.class], {
+      'kubernetesAgent'
+    })
     helper.registerAllowedMethod('nonresumable', [], { 'nonresumable' })
 
-    helper.registerAllowedMethod('parallel', [Map.class, Closure.class], { l, body -> body() })
+    helper.registerAllowedMethod('parallel', [Map.class, Closure.class], { l, body ->
+      body()
+    })
     helper.registerAllowedMethod('pwd', [], { '/foo' })
     helper.registerAllowedMethod('pwd', [Map.class], { '/bar' })
-    helper.registerAllowedMethod('discoverGitReferenceBuild', [Map.class], { true })
+    helper.registerAllowedMethod('discoverGitReferenceBuild', [Map.class], {
+      true
+    })
     helper.registerAllowedMethod('recordIssues', [Map.class], { true })
     helper.registerAllowedMethod('esLint', [Map.class], { 'esLint' })
     helper.registerAllowedMethod('mavenConsole', [], { 'maven' })
@@ -71,17 +87,27 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('pwsh', [String.class], { s -> s })
     helper.registerAllowedMethod('stage', [String.class], { s -> s })
     helper.registerAllowedMethod('timeout', [String.class], { s -> s })
-    helper.registerAllowedMethod('timeout', [Integer.class, Closure.class], { list, body -> body() })
-    helper.registerAllowedMethod('withCredentials', [List.class, Closure.class], { list, body -> body() })
-    helper.registerAllowedMethod('withEnv', [List.class, Closure.class], { list, body -> body() })
+    helper.registerAllowedMethod('timeout', [Integer.class, Closure.class], { list, body ->
+      body()
+    })
+    helper.registerAllowedMethod('withCredentials', [List.class, Closure.class], { list, body ->
+      body()
+    })
+    helper.registerAllowedMethod('withEnv', [List.class, Closure.class], { list, body ->
+      body()
+    })
     helper.registerAllowedMethod('publishChecks', [Map.class], { m -> m })
     helper.registerAllowedMethod('input', [Map.class], { m -> m })
 
     // Kubernetes Agents in scripted syntax
-    helper.registerAllowedMethod('podTemplate', [Map.class, Closure.class], { m, body ->body() })
+    helper.registerAllowedMethod('podTemplate', [Map.class, Closure.class], { m, body ->
+      body()
+    })
     helper.registerAllowedMethod('containerTemplate', [Map.class], { m -> m })
     helper.registerAllowedMethod('podAnnotation', [Map.class], { m -> m })
-    helper.registerAllowedMethod('container', [String.class, Closure.class], { s, body ->body() })
+    helper.registerAllowedMethod('container', [String.class, Closure.class], { s, body ->
+      body()
+    })
     helper.registerAllowedMethod('merge', [], { })
     binding.setVariable('POD_LABEL', 'builder')
   }
