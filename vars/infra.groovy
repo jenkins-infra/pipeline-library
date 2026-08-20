@@ -540,7 +540,7 @@ void maybePublishIncrementals(int optionalAlternativeBuildId = 0) {
     }
     stage('Deploy') {
       def buildUrlToUse = env.BUILD_URL
-      if (optionalAlternativeBuildId > 0 && optionalAlternativeBuildId != env.BUILD_ID) {
+      if (optionalAlternativeBuildId> 0 && optionalAlternativeBuildId != env.BUILD_ID) {
         buildUrlToUse = "${env.JOB_URL}/${optionalAlternativeBuildId}/"
         echo "Using alternative build URL ${buildUrlToUse} instead of ${env.BUILD_URL}"
       }
