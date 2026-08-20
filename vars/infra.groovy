@@ -526,7 +526,7 @@ void prepareToPublishIncrementals() {
  * Call at the end of the build, outside any node, when #prepareToPublishIncrementals may have been called previously.
  * See INFRA-1571 and JEP-305.
  */
-void maybePublishIncrementals(int optionalAlternativeBuildId = 0) {
+void maybePublishIncrementals(int alternativeBuildId = 0) {
   if (new InfraConfig(env).isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
     if (env.CHANGE_ID == null) {
       def skip
@@ -540,8 +540,8 @@ void maybePublishIncrementals(int optionalAlternativeBuildId = 0) {
     }
     stage('Deploy') {
       def buildUrlToUse = env.BUILD_URL
-      if (optionalAlternativeBuildId> 0 && optionalAlternativeBuildId != env.BUILD_ID) {
-        buildUrlToUse = "${env.JOB_URL}/${optionalAlternativeBuildId}/"
+      if (alternativeBuildId> 0 && alternativeBuildId != env.BUILD_ID) {
+        buildUrlToUse = "${env.JOB_URL}/${alternativeBuildId}/"
         echo "Using alternative build URL ${buildUrlToUse} instead of ${env.BUILD_URL}"
       }
 
