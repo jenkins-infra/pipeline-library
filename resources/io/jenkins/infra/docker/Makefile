@@ -53,9 +53,10 @@ help: ## Show this Makefile's help
 
 all: clean lint build test ## Execute the complete process except the "deploy" step
 
+# DL3064 matches variable names instead of values (e.g. JENKINS_USERNAME) and DL3066 flags the usual `USER <name>`: both are false positives on our images
 lint: ## Lint the $(IMAGE_DOCKERFILE) content
 	@echo "== Linting $(call FixPath,$(IMAGE_DOCKERFILE)) with hadolint:"
-	hadolint --format=json "$(call FixPath,$(IMAGE_DOCKERFILE))" > "$(call FixPath,$(HADOLINT_REPORT))"
+	hadolint --ignore DL3064 --ignore DL3066 --format=json "$(call FixPath,$(IMAGE_DOCKERFILE))" > "$(call FixPath,$(HADOLINT_REPORT))"
 	@echo "== Lint succeeded"
 
 build: ## Build the Docker Image $(IMAGE_NAME) from $(IMAGE_DOCKERFILE)
