@@ -70,9 +70,12 @@ See https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentatio
 for a list of available configuration parameters.
 * `sonar`: (default: `null`) - a map of parameters to enable SonarCloud CI-based analysis (coverage-aware quality
   gates and pull-request decoration) via the https://github.com/SonarSource/sonar-maven-plugin[Sonar Maven Plugin].
-  Disabled by default; opt in by providing at least `projectKey`. Only runs on Linux, on the first
+  Disabled by default; opt in by providing at least an empty map (`sonar: [:]`). Only runs on Linux, on the first
   platform/jdkVersion/jenkinsVersion combination, since it depends on the JaCoCo coverage report produced there.
-** `projectKey` (required, no default) - the SonarCloud project key, conventionally `jenkinsci_<repo-name>`.
+** `projectKey` (default: `<organization>_<repo-name>`, e.g. `jenkinsci_jira-plugin`) - the SonarCloud project key.
+  Automatically derived from `JOB_NAME` for multibranch jobs; override it if your SonarCloud project key doesn't
+  follow this convention, or if `JOB_NAME` doesn't have the expected `<folder>/<repo>/<branch>` shape (in which
+  case it is required).
 ** `organization` (default: `'jenkinsci'`) - the SonarCloud organization.
 ** `credentialsId` (default: `'sonarcloud-token'`) - the ID of a Jenkins secret-text credential holding a
    SonarCloud https://docs.sonarsource.com/sonarqube-cloud/managing-your-account/managing-tokens/[project-scoped

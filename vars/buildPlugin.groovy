@@ -22,7 +22,13 @@ def call(Map params = [:]) {
 
   Map sonar = params.containsKey('sonar') ? params.sonar as Map : null
   if (sonar != null && !sonar.projectKey) {
-    error('[buildPlugin] "sonar.projectKey" is required when using the "sonar" parameter, e.g. sonar: [projectKey: "jenkinsci_my-plugin"]')
+    // Conventionally "<organization>_<repo-name>", e.g. "jenkinsci_jira-plugin".
+    String repoName = repoNameFromJobName()
+    if (repoName) {
+      sonar.projectKey = "${sonar.organization ?: 'jenkinsci'}_${repoName}"
+    } else {
+      error('[buildPlugin] "sonar.projectKey" could not be inferred from JOB_NAME (expected a multibranch job like "<folder>/<repo>/<branch>") and must be specified explicitly, e.g. sonar: [projectKey: "jenkinsci_my-plugin"]')
+    }
   }
   if (timeoutValue> 180) {
     echo "Timeout value requested was $timeoutValue, lowering to 180 to avoid Jenkins project's resource abusive consumption"
@@ -359,10 +365,16 @@ def call(Map params = [:]) {
 }
 
 private void discoverReferenceBuild() {
-  folders = env.JOB_NAME.split('/')
-  if (folders.length> 1) {
-    discoverGitReferenceBuild(scm: folders[1])
+  String repoName = repoNameFromJobName()
+  if (repoName) {
+    discoverGitReferenceBuild(scm: repoName)
   }
+}
+
+// JOB_NAME for a multibranch job follows "<folder>/<repo>/<branch>", e.g. "Plugins/jira-plugin/master".
+private String repoNameFromJobName() {
+  def folders = env.JOB_NAME?.split('/')
+  return (folders != null && folders.length> 1) ? folders[1] : null
 }
 
 boolean hasDockerLabel() {
