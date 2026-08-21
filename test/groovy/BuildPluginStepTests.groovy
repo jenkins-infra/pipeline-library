@@ -381,10 +381,38 @@ class BuildPluginStepTests extends BaseTest {
   }
 
   @Test
-  void test_buildPlugin_with_sonar_missing_projectKey_fails() throws Exception {
+  void test_buildPlugin_with_sonar_default_projectKey() throws Exception {
     def script = loadScript(scriptName)
+    Infra infraMock = new Infra()
+    binding.setProperty('infra', infraMock)
+    // env.JOB_NAME = 'build/plugin/test' is set in setUp(), so the repo name is 'plugin'
+    script.call(sonar: [:])
+    printCallStack()
+
+    List<String> sonarOptions = findSonarMavenOptions(infraMock)
+    assertNotNull(sonarOptions)
+    assertTrue(sonarOptions.contains('-Dsonar.projectKey=jenkinsci_plugin'))
+  }
+
+  @Test
+  void test_buildPlugin_with_sonar_default_projectKey_uses_custom_organization() throws Exception {
+    def script = loadScript(scriptName)
+    Infra infraMock = new Infra()
+    binding.setProperty('infra', infraMock)
+    script.call(sonar: [organization: 'my-org'])
+    printCallStack()
+
+    List<String> sonarOptions = findSonarMavenOptions(infraMock)
+    assertNotNull(sonarOptions)
+    assertTrue(sonarOptions.contains('-Dsonar.projectKey=my-org_plugin'))
+  }
+
+  @Test
+  void test_buildPlugin_with_sonar_missing_projectKey_and_unparseable_jobname_fails() throws Exception {
+    def script = loadScript(scriptName)
+    env.JOB_NAME = 'standalone-job'
     try {
-      script.call(sonar: [organization: 'jenkinsci'])
+      script.call(sonar: [:])
     } catch (ignored) {
       // intentionally left empty
     }
