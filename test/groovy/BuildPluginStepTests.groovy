@@ -449,7 +449,9 @@ class BuildPluginStepTests extends BaseTest {
     List<String> sonarOptions = findSonarMavenOptions(infraMock)
     assertNotNull(sonarOptions)
     assertTrue(sonarOptions.contains('-Dsonar.organization=my-org'))
-    assertFalse(sonarOptions.any { it.contains('sonar.organization=jenkinsci') })
+    assertFalse(sonarOptions.any {
+      it.contains('sonar.organization=jenkinsci')
+    })
     assertTrue(assertMethodCallContainsPattern('string', 'my-sonar-token'))
     assertFalse(assertMethodCallContainsPattern('string', 'sonarcloud-token'))
   }
