@@ -19,6 +19,11 @@ def call(Map params = [:]) {
   if (forkCount) {
     echo "Running parallel tests with forkCount=${forkCount}"
   }
+
+  Map sonar = params.containsKey('sonar') ? params.sonar as Map : null
+  if (sonar != null && !sonar.projectKey) {
+    error('[buildPlugin] "sonar.projectKey" is required when using the "sonar" parameter, e.g. sonar: [projectKey: "jenkinsci_my-plugin"]')
+  }
   if (timeoutValue> 180) {
     echo "Timeout value requested was $timeoutValue, lowering to 180 to avoid Jenkins project's resource abusive consumption"
     timeoutValue = 180
@@ -275,6 +280,39 @@ def call(Map params = [:]) {
                         sh 'launchable verify && launchable record commit'
                       } else {
                         bat 'launchable verify && launchable record commit'
+                      }
+                    }
+                  }
+
+                  /*
+                   * Optional SonarCloud CI-based analysis, opt-in via the `sonar` parameter.
+                   * Runs once per build (first platform/jdk/jenkinsVersion combination only) and only on
+                   * Linux agents, since JaCoCo coverage (consumed by the Sonar scanner) is Linux-only in
+                   * this library. Reuses the jacoco.xml already produced by the Build stage's
+                   * `-Penable-jacoco clean install` -- no need to re-run tests or `jacoco:report` here.
+                   * Runs as a separate Maven invocation, scoped to its own `withCredentials` block, to
+                   * keep the SONAR_TOKEN credential's exposure window as small as possible.
+                   */
+                  if (sonar && isUnix()) {
+                    echo "Running SonarCloud analysis on '${stageIdentifier}'"
+                    List<String> sonarOptions = [
+                      "-Dmaven.repo.local=$m2repo",
+                      "-Dsonar.organization=${sonar.organization ?: 'jenkinsci'}",
+                      "-Dsonar.projectKey=${sonar.projectKey}",
+                    ]
+                    if (env.CHANGE_ID) {
+                      sonarOptions += "-Dsonar.pullrequest.key=${env.CHANGE_ID}"
+                      sonarOptions += "-Dsonar.pullrequest.branch=${env.CHANGE_BRANCH}"
+                      sonarOptions += "-Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
+                    }
+                    if (sonar.qualityGateWait) {
+                      sonarOptions += '-Dsonar.qualitygate.wait=true'
+                    }
+                    sonarOptions += 'org.sonarsource.scanner.maven:sonar-maven-plugin:sonar'
+
+                    catchError(message: 'SonarCloud analysis failed', buildResult: currentBuild.currentResult, stageResult: 'UNSTABLE', catchInterruptions: false) {
+                      withCredentials([string(credentialsId: sonar.credentialsId ?: 'sonarcloud-token', variable: 'SONAR_TOKEN')]) {
+                        infra.runMaven(sonarOptions, jdk, null, addToolEnv, useArtifactCachingProxy)
                       }
                     }
                   }
