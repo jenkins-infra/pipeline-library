@@ -68,6 +68,26 @@ coverage results are recorded after the build with the corresponding Jenkins plu
 These values can replace or amend the default configuration for the `recordIssues` step of the https://github.com/jenkinsci/warnings-ng-plugin[Warnings NG Plugin].
 See https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration[Warnings NG Plugin documentation]
 for a list of available configuration parameters.
+* `sonar`: (default: `null`) - a map of parameters to enable SonarCloud CI-based analysis (coverage-aware quality
+  gates and pull-request decoration) via the https://github.com/SonarSource/sonar-maven-plugin[Sonar Maven Plugin].
+  Disabled by default; opt in by providing at least `projectKey`. Only runs on Linux, on the first
+  platform/jdkVersion/jenkinsVersion combination, since it depends on the JaCoCo coverage report produced there.
+** `projectKey` (required, no default) - the SonarCloud project key, conventionally `jenkinsci_<repo-name>`.
+** `organization` (default: `'jenkinsci'`) - the SonarCloud organization.
+** `credentialsId` (default: `'sonarcloud-token'`) - the ID of a Jenkins secret-text credential holding a
+   SonarCloud https://docs.sonarsource.com/sonarqube-cloud/managing-your-account/managing-tokens/[project-scoped
+   token]. This credential must be provisioned separately for your repository/folder; the pipeline library does
+   not create it for you.
+** `qualityGateWait` (default: `false`) - if `true`, adds `-Dsonar.qualitygate.wait=true` so the build waits for
+   and reports the SonarCloud quality gate result. A failed gate makes the build `UNSTABLE` (not `FAILURE`),
+   consistent with the other static-analysis quality gates above.
++
+When `env.CHANGE_ID` is set (i.e. this is a multibranch pull-request build), pull-request decoration parameters
+(`sonar.pullrequest.key`/`branch`/`base`) are added automatically so results appear on the GitHub PR.
++
+IMPORTANT: the target SonarCloud project must have *Automatic Analysis* disabled in its SonarCloud project
+settings (Administration -> Analysis Method) before CI-based analysis will work; otherwise SonarCloud will
+reject or ignore the CI-submitted analysis.
 * `timeout`: (default: `60`) - the number of minutes for build timeout, cannot be bigger than 180, i.e. 3 hours.
 
 NOTE: The `recordIssues` steps of the warnings plugin and the `recordCoverage` steps of the coverage plugin run on the first platform/jdkVersion,jenkinsVersion combination only.
@@ -83,7 +103,8 @@ buildPlugin(platforms: ['linux'],
         jacoco: [sourceCodeRetention: 'MODIFIED'],
         pit: [skip: false],
         checkstyle: [qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]],
-        pmd: [trendChartType: 'TOOLS_ONLY', qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]])
+        pmd: [trendChartType: 'TOOLS_ONLY', qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]],
+        sonar: [projectKey: 'jenkinsci_my-plugin'])
 ----
 
 === buildPluginWithGradle()

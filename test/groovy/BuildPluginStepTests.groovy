@@ -5,6 +5,7 @@ import org.junit.Test
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertNull
 import static org.junit.Assert.assertTrue
 
 class BuildPluginStepTests extends BaseTest {
@@ -357,6 +358,103 @@ class BuildPluginStepTests extends BaseTest {
     assertDefaultRecordCoverageWithJaCoCo()
 
     assertTrue(assertMethodCallContainsPattern('recordCoverage', '{tools=[{parser=PIT, pattern=**/pit-reports/mutations.xml}], id=pit, name=PIT, sourceCodeRetention=EVERY_BUILD, sourceDirectories=[{path=plugin/src/main/java}]}'))
+  }
+
+  private static List<String> findSonarMavenOptions(Infra infraMock) {
+    List<String> options = infraMock.runMavenCalls.find { call ->
+      call.any { it.toString().contains('sonar-maven-plugin') }
+    }
+    return options == null ? null : options.collect { it.toString() }
+  }
+
+  @Test
+  void test_buildPlugin_without_sonar() throws Exception {
+    def script = loadScript(scriptName)
+    Infra infraMock = new Infra()
+    binding.setProperty('infra', infraMock)
+    script.call()
+    printCallStack()
+
+    assertNull(findSonarMavenOptions(infraMock))
+    assertFalse(assertMethodCallContainsPattern('string', 'sonarcloud-token'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void test_buildPlugin_with_sonar_missing_projectKey_fails() throws Exception {
+    def script = loadScript(scriptName)
+    try {
+      script.call(sonar: [organization: 'jenkinsci'])
+    } catch (ignored) {
+      // intentionally left empty
+    }
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('error', 'sonar.projectKey'))
+    assertJobStatusFailure()
+  }
+
+  @Test
+  void test_buildPlugin_with_sonar_defaults() throws Exception {
+    def script = loadScript(scriptName)
+    Infra infraMock = new Infra()
+    binding.setProperty('infra', infraMock)
+    script.call(sonar: [projectKey: 'jenkinsci_my-plugin'])
+    printCallStack()
+
+    List<String> sonarOptions = findSonarMavenOptions(infraMock)
+    assertNotNull(sonarOptions)
+    assertTrue(sonarOptions.contains('-Dsonar.organization=jenkinsci'))
+    assertTrue(sonarOptions.contains('-Dsonar.projectKey=jenkinsci_my-plugin'))
+    assertFalse(sonarOptions.any { it.contains('sonar.qualitygate.wait') })
+    assertTrue(assertMethodCallContainsPattern('string', 'sonarcloud-token'))
+  }
+
+  @Test
+  void test_buildPlugin_with_sonar_custom_organization_and_credentialsId() throws Exception {
+    def script = loadScript(scriptName)
+    Infra infraMock = new Infra()
+    binding.setProperty('infra', infraMock)
+    script.call(sonar: [projectKey: 'x', organization: 'my-org', credentialsId: 'my-sonar-token'])
+    printCallStack()
+
+    List<String> sonarOptions = findSonarMavenOptions(infraMock)
+    assertNotNull(sonarOptions)
+    assertTrue(sonarOptions.contains('-Dsonar.organization=my-org'))
+    assertFalse(sonarOptions.any { it.contains('sonar.organization=jenkinsci') })
+    assertTrue(assertMethodCallContainsPattern('string', 'my-sonar-token'))
+    assertFalse(assertMethodCallContainsPattern('string', 'sonarcloud-token'))
+  }
+
+  @Test
+  void test_buildPlugin_with_sonar_qualityGateWait() throws Exception {
+    def script = loadScript(scriptName)
+    Infra infraMock = new Infra()
+    binding.setProperty('infra', infraMock)
+    script.call(sonar: [projectKey: 'x', qualityGateWait: true])
+    printCallStack()
+
+    List<String> sonarOptions = findSonarMavenOptions(infraMock)
+    assertNotNull(sonarOptions)
+    assertTrue(sonarOptions.contains('-Dsonar.qualitygate.wait=true'))
+  }
+
+  @Test
+  void test_buildPlugin_with_sonar_on_pr() throws Exception {
+    def script = loadScript(scriptName)
+    Infra infraMock = new Infra()
+    binding.setProperty('infra', infraMock)
+    env.CHANGE_ID = '1234'
+    env.CHANGE_BRANCH = 'feature/x'
+    env.CHANGE_TARGET = 'master'
+    script.call(sonar: [projectKey: 'x'])
+    printCallStack()
+
+    List<String> sonarOptions = findSonarMavenOptions(infraMock)
+    assertNotNull(sonarOptions)
+    assertTrue(sonarOptions.contains('-Dsonar.pullrequest.key=1234'))
+    assertTrue(sonarOptions.contains('-Dsonar.pullrequest.branch=feature/x'))
+    assertTrue(sonarOptions.contains('-Dsonar.pullrequest.base=master'))
   }
 
   @Test
