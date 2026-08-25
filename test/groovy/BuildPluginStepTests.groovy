@@ -439,11 +439,11 @@ class BuildPluginStepTests extends BaseTest {
   }
 
   @Test
-  void test_buildPlugin_with_sonar_custom_organization_and_credentialsId() throws Exception {
+  void test_buildPlugin_with_sonar_custom_organization() throws Exception {
     def script = loadScript(scriptName)
     Infra infraMock = new Infra()
     binding.setProperty('infra', infraMock)
-    script.call(sonar: [projectKey: 'x', organization: 'my-org', credentialsId: 'my-sonar-token'])
+    script.call(sonar: [projectKey: 'x', organization: 'my-org'])
     printCallStack()
 
     List<String> sonarOptions = findSonarMavenOptions(infraMock)
@@ -452,8 +452,7 @@ class BuildPluginStepTests extends BaseTest {
     assertFalse(sonarOptions.any {
       it.contains('sonar.organization=jenkinsci')
     })
-    assertTrue(assertMethodCallContainsPattern('string', 'my-sonar-token'))
-    assertFalse(assertMethodCallContainsPattern('string', 'sonarcloud-token'))
+    assertTrue(assertMethodCallContainsPattern('string', 'sonarcloud-token'))
   }
 
   @Test
