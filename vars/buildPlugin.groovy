@@ -317,7 +317,7 @@ def call(Map params = [:]) {
                     sonarOptions += 'org.sonarsource.scanner.maven:sonar-maven-plugin:sonar'
 
                     catchError(message: 'SonarCloud analysis failed', buildResult: currentBuild.currentResult, stageResult: 'UNSTABLE', catchInterruptions: false) {
-                      withCredentials([string(credentialsId: sonar.credentialsId ?: 'sonarcloud-token', variable: 'SONAR_TOKEN')]) {
+                      withCredentials([string(credentialsId: 'sonarcloud-token', variable: 'SONAR_TOKEN')]) {
                         infra.runMaven(sonarOptions, jdk, null, addToolEnv, useArtifactCachingProxy)
                       }
                     }

@@ -77,10 +77,6 @@ for a list of available configuration parameters.
   follow this convention, or if `JOB_NAME` doesn't have the expected `<folder>/<repo>/<branch>` shape (in which
   case it is required).
 ** `organization` (default: `'jenkinsci'`) - the SonarCloud organization.
-** `credentialsId` (default: `'sonarcloud-token'`) - the ID of a Jenkins secret-text credential holding a
-   SonarCloud https://docs.sonarsource.com/sonarqube-cloud/managing-your-account/managing-tokens/[project-scoped
-   token]. This credential must be provisioned separately for your repository/folder; the pipeline library does
-   not create it for you.
 ** `qualityGateWait` (default: `false`) - if `true`, adds `-Dsonar.qualitygate.wait=true` so the build waits for
    and reports the SonarCloud quality gate result. A failed gate makes the build `UNSTABLE` (not `FAILURE`),
    consistent with the other static-analysis quality gates above.
