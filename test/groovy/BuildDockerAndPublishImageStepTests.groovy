@@ -65,9 +65,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Mock Pipeline methods which are not already declared in the parent class
     helper.registerAllowedMethod('hadoLint', [Map.class], { m -> m })
     helper.registerAllowedMethod('fileExists', [String.class], { true })
-    binding.setVariable('infra', ['withDockerPullCredentials': {body ->
-        body()
-      }, 'withDockerPushCredentials': {body ->
+    binding.setVariable('infra', ['withDockerPushCredentials': {body ->
         body()
       }])
     helper.registerAllowedMethod('sh', [Map.class], { m ->

@@ -137,51 +137,6 @@ class InfraStepTests extends BaseTest {
   }
 
   @Test
-  void testWithDockerPullCredentials() throws Exception {
-    def script = loadScript(scriptName)
-    env.JENKINS_URL = 'https://ci.jenkins.io/'
-    def isOK = false
-    script.withDockerPullCredentials() {
-      isOK = true
-    }
-    printCallStack()
-    assertTrue(isOK)
-    assertJobStatusSuccess()
-    assertTrue(assertMethodCallContainsPattern('sh', 'echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'echo "INFO: logged in Docker Hub as \'${DOCKER_CONFIG_USR}\' with \'${DOCKERHUB_CREDENTIALS_ID}\' credentials, namespace: ${DOCKERHUB_ORGANISATION}"'))
-  }
-
-  @Test
-  void testWithDockerPullCredentialsWindows() throws Exception {
-    helper.registerAllowedMethod('isUnix', [], { false })
-    def script = loadScript(scriptName)
-    env.JENKINS_URL = 'https://ci.jenkins.io/'
-    def isOK = false
-    script.withDockerPullCredentials() {
-      isOK = true
-    }
-    printCallStack()
-    assertTrue(isOK)
-    assertJobStatusSuccess()
-    assertTrue(assertMethodCallContainsPattern('pwsh', 'Write-Output ${env:DOCKER_CONFIG_PSW} | & ${Env:CONTAINER_BIN} login --username ${Env:DOCKER_CONFIG_USR} --password-stdin'))
-    assertTrue(assertMethodCallContainsPattern('pwsh', 'Write-Host "INFO: logged in Docker Hub as \'$env:DOCKER_CONFIG_USR\' with \'$env:DOCKERHUB_CREDENTIALS_ID\' credentials, namespace: $env:DOCKERHUB_ORGANISATION"'))
-  }
-
-  @Test
-  void testWithDockerPullCredentialsOutsideInfra() throws Exception {
-    def script = loadScript(scriptName)
-    env.JENKINS_URL = 'https://foo/'
-    def isOK = false
-    script.withDockerPullCredentials() {
-      isOK = true
-    }
-    printCallStack()
-    assertFalse(isOK)
-    assertTrue(assertMethodCallContainsPattern('echo', 'Cannot use Docker credentials outside of jenkins infra environments'))
-    assertJobStatusSuccess()
-  }
-
-  @Test
   void testCheckoutWithEnvVariable() throws Exception {
     def script = loadScript(scriptName)
     env.BRANCH_NAME = 'BRANCH'

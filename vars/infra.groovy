@@ -87,11 +87,6 @@ Object withDockerPushCredentials(Closure body) {
   return withDockerCredentials(orgAndCredentialsId, body)
 }
 
-Object withDockerPullCredentials(Closure body) {
-  Map orgAndCredentialsId = new InfraConfig(env).getDockerPullOrgAndCredentialsId()
-  return withDockerCredentials(orgAndCredentialsId, body)
-}
-
 /**
  * Execute the body passed as closure with an Azure File Share URL
  * signed with a SAS token with an expiry date of 10 minutes by default,

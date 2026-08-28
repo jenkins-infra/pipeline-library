@@ -46,26 +46,6 @@ class InfraConfig implements Serializable {
     }
   }
 
-  // Returns the Docker Informations for pulling images
-  Map getDockerPullOrgAndCredentialsId() {
-    switch(jenkinsHostname){
-      case 'ci.jenkins.io':
-        return [error: false, organisation: 'cijenkinsio', credentialId: 'cijenkinsio-dockerhub-pull']
-        break
-      case 'trusted.ci.jenkins.io':
-        return [error: false, organisation: 'trustedcijenkinsio', credentialId: 'trustedcijenkinsio-dockerhub-pull']
-        break
-      case 'infra.ci.jenkins.io':
-        return [error: false, organisation: 'infracijenkinsio', credentialId: 'infracijenkinsio-dockerhub-pull']
-        break
-      case 'release.ci.jenkins.io':
-        return [error: false, organisation: 'releasecijenkinsio', credentialId: 'releasecijenkinsio-dockerhub-pull']
-        break
-      default:
-        return [error: true, msg: 'Cannot use Docker credentials outside of jenkins infra environments']
-    }
-  }
-
   // Returns the Docker Informations for pushing images
   Map getDockerPushOrgAndCredentialsId() {
     switch(jenkinsHostname){

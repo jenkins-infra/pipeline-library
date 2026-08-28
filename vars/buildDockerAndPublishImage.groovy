@@ -134,200 +134,198 @@ def call(String imageShortName, Map userConfig =[:]) {
       "BAKE_TARGETPLATFORMS=${finalConfig.targetplatforms}",
       "REGISTRY=${registryHost}",
     ]) {
-      infra.withDockerPullCredentials{
-        String nextVersion = ''
-        stage("Prepare ${imageName}") {
-          checkout scm
-          if (finalConfig.unstash != '') {
-            unstash finalConfig.unstash
-          }
+      String nextVersion = ''
+      stage("Prepare ${imageName}") {
+        checkout scm
+        if (finalConfig.unstash != '') {
+          unstash finalConfig.unstash
+        }
 
-          // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
-          // Even though we have mitigation through the multibranch job config allowing to build PRs only from the repository contributors
-          writeFile file: 'Makefile', text: makefileContent
-        } // stage
+        // The makefile to use must come from the pipeline to avoid a nasty user trying to exfiltrate data from the build
+        // Even though we have mitigation through the multibranch job config allowing to build PRs only from the repository contributors
+        writeFile file: 'Makefile', text: makefileContent
+      } // stage
 
-        stage("Lint ${imageName}") {
-          // Define the image name as prefix to support multi images per pipeline
-          String hadolintReportId = "${imageName.replaceAll(':','-').replaceAll('/','-')}-hadolint-${now.getTime()}"
-          String hadoLintReportFile = "${hadolintReportId}.json"
-          withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
-            try {
-              if (isUnix()) {
-                sh 'make lint'
-              } else {
-                powershell 'make lint'
-              }
-            } finally {
-              boolean skipChecks = false
-              if (env.BRANCH_IS_PRIMARY) {
-                skipChecks = true
-              }
-              recordIssues(
-                  skipPublishingChecks: skipChecks,
-                  enabledForFailure: true,
-                  aggregatingResults: false,
-                  tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
-                  )
+      stage("Lint ${imageName}") {
+        // Define the image name as prefix to support multi images per pipeline
+        String hadolintReportId = "${imageName.replaceAll(':','-').replaceAll('/','-')}-hadolint-${now.getTime()}"
+        String hadoLintReportFile = "${hadolintReportId}.json"
+        withEnv(["HADOLINT_REPORT=${env.WORKSPACE}/${hadoLintReportFile}"]) {
+          try {
+            if (isUnix()) {
+              sh 'make lint'
+            } else {
+              powershell 'make lint'
             }
-          }
-        } // stage
-
-        stage("Build ${imageName}") {
-          if (env.BRANCH_IS_PRIMARY && finalConfig.cacheTo) {
-            infra.withDockerPushCredentials {
-              makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, finalConfig.cacheTo)
+          } finally {
+            boolean skipChecks = false
+            if (env.BRANCH_IS_PRIMARY) {
+              skipChecks = true
             }
-          } else {
-            makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
+            recordIssues(
+                skipPublishingChecks: skipChecks,
+                enabledForFailure: true,
+                aggregatingResults: false,
+                tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
+                )
           }
-        } //stage
+        }
+      } // stage
 
-        // There can be 2 kind of tests: per image and per repository
-        // Assuming Windows versions of cst configuration files finishing by "-windows" (e.g. "common-cst-windows.yml")
-        [
-          'Image Test Harness': "${finalConfig.imageDir}/cst${cstConfigSuffix}.yml",
-          'Common Test Harness': "${env.WORKSPACE}/common-cst${cstConfigSuffix}.yml"
-        ].each { testName, testHarness ->
-          if (fileExists(testHarness)) {
-            stage("Test ${testName} for ${imageName}") {
-              withEnv(["TEST_HARNESS=${testHarness}"]) {
-                makecall('test', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
-              } // withEnv
-            } //stage
-          } else {
-            echo "Skipping test ${testName} for ${imageName} as ${testHarness} does not exist"
-          } // if else
-        } // each
+      stage("Build ${imageName}") {
+        if (env.BRANCH_IS_PRIMARY && finalConfig.cacheTo) {
+          infra.withDockerPushCredentials {
+            makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, finalConfig.cacheTo)
+          }
+        } else {
+          makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
+        }
+      } //stage
 
-        if (env.BRANCH_IS_PRIMARY || env.TAG_NAME) {
-          // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
-          if (finalConfig.automaticSemanticVersioning) {
-            stage("Get Next Version of ${imageName}") {
-              if (isUnix()) {
-                sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
-                nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
-              } else {
-                powershell 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
-                nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+      // There can be 2 kind of tests: per image and per repository
+      // Assuming Windows versions of cst configuration files finishing by "-windows" (e.g. "common-cst-windows.yml")
+      [
+        'Image Test Harness': "${finalConfig.imageDir}/cst${cstConfigSuffix}.yml",
+        'Common Test Harness': "${env.WORKSPACE}/common-cst${cstConfigSuffix}.yml"
+      ].each { testName, testHarness ->
+        if (fileExists(testHarness)) {
+          stage("Test ${testName} for ${imageName}") {
+            withEnv(["TEST_HARNESS=${testHarness}"]) {
+              makecall('test', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
+            } // withEnv
+          } //stage
+        } else {
+          echo "Skipping test ${testName} for ${imageName} as ${testHarness} does not exist"
+        } // if else
+      } // each
+
+      if (env.BRANCH_IS_PRIMARY || env.TAG_NAME) {
+        // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
+        if (finalConfig.automaticSemanticVersioning) {
+          stage("Get Next Version of ${imageName}") {
+            if (isUnix()) {
+              sh 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
+              nextVersion = sh(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+            } else {
+              powershell 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
+              nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
+            }
+            echo "Next Release Version = ${nextVersion}"
+          } // stage
+        } else {
+          if (env.TAG_NAME) {
+            // if a tag is scanned, it need to be the nextVersion
+            nextVersion = env.TAG_NAME
+          }
+        } // if
+
+        withEnv(["NEXT_VERSION=${nextVersion}"]) {
+          // Only deploy on primary branch
+          stage("Deploy ${imageName}") {
+            if (!finalConfig.disablePublication) {
+              if (finalConfig.publishToPrivateAzureRegistry) {
+                // Assume credential-less authentication (Azure Workload Identity)
+                withEnv(["ACR_NAME=${acrName}"]) {
+                  sh '''
+                  az login --identity
+                  az acr login --name "${ACR_NAME}"
+                  '''
+                }
               }
-              echo "Next Release Version = ${nextVersion}"
+              infra.withDockerPushCredentials{
+                makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, '')
+              }
+            } else {
+              echo 'INFO: publication disabled.'
+            } // else
+          } // stage
+
+          // Automatic tagging on principal branch is not enabled by default, and disabled if disablePublication is set to true
+          if (semVerEnabledOnPrimaryBranch) {
+            stage("Semantic Release of ${imageName}") {
+              echo "Configuring credential.helper"
+              // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
+              if (isUnix()) {
+                sh 'git config credential.helper "!set -u; echo username=\\$GIT_USERNAME && echo password=\\$GIT_PASSWORD && echo"'
+              } else {
+                // Using 'bat' here instead of 'powershell' to avoid variable interpolation problem with $
+                bat 'git config credential.helper "!sh.exe -c \'set -u; echo username=$GIT_USERNAME && echo password=$GIT_PASSWORD && echo"\''
+              }
+
+              withCredentials([
+                usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
+              ]) {
+                echo "Tagging and pushing the new version: ${nextVersion}"
+                if (isUnix()) {
+                  sh '''
+                    git config user.name "${GIT_USERNAME}"
+                    git config user.email "jenkins-infra@googlegroups.com"
+
+                    git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
+                    git push origin --tags
+                    '''
+                } else {
+                  powershell '''
+                    git config user.email "jenkins-infra@googlegroups.com"
+                    git config user.password $env:GIT_PASSWORD
+
+                    git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"
+                    git push origin --tags
+                    '''
+                }
+              } // withCredentials
             } // stage
-          } else {
-            if (env.TAG_NAME) {
-              // if a tag is scanned, it need to be the nextVersion
-              nextVersion = env.TAG_NAME
-            }
           } // if
 
-          withEnv(["NEXT_VERSION=${nextVersion}"]) {
-            // Only deploy on primary branch
-            stage("Deploy ${imageName}") {
-              if (!finalConfig.disablePublication) {
-                if (finalConfig.publishToPrivateAzureRegistry) {
-                  // Assume credential-less authentication (Azure Workload Identity)
-                  withEnv(["ACR_NAME=${acrName}"]) {
-                    sh '''
-                    az login --identity
-                    az acr login --name "${ACR_NAME}"
-                    '''
-                  }
-                }
-                infra.withDockerPushCredentials{
-                  makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, '')
-                }
-              } else {
-                echo 'INFO: publication disabled.'
-              } // else
-            } // stage
-
-            // Automatic tagging on principal branch is not enabled by default, and disabled if disablePublication is set to true
-            if (semVerEnabledOnPrimaryBranch) {
-              stage("Semantic Release of ${imageName}") {
-                echo "Configuring credential.helper"
-                // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
+          // GitHub Release stage: Use NEXT_VERSION and only on primary branch
+          // Create release only if SemVer is enabled, on primary branch, and publication is NOT disabled.
+          if (finalConfig.automaticSemanticVersioning && !finalConfig.disablePublication) {
+            stage('GitHub Release') {
+              withCredentials([
+                usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
+              ]) {
+                String release = ''
                 if (isUnix()) {
-                  sh 'git config credential.helper "!set -u; echo username=\\$GIT_USERNAME && echo password=\\$GIT_PASSWORD && echo"'
+                  final String releaseScript = '''
+                      originUrlWithGit="$(git remote get-url origin)"
+                      originUrl="${originUrlWithGit%.git}"
+                      org="$(echo "${originUrl}" | cut -d'/' -f4)"
+                      repository="$(echo "${originUrl}" | cut -d'/' -f5)"
+                      releasesUrl="/repos/${org}/${repository}/releases"
+                      releaseId="$(gh api "${releasesUrl}" | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')"
+                      if test "${releaseId}" -gt 0
+                      then
+                        gh api -X PATCH -F draft=false -F name="${NEXT_VERSION}" -F tag_name="${NEXT_VERSION}" "${releasesUrl}/${releaseId}" > /dev/null
+                      fi
+                      echo "${releaseId}"
+                    '''
+                  release = sh(script: releaseScript, returnStdout: true)
                 } else {
-                  // Using 'bat' here instead of 'powershell' to avoid variable interpolation problem with $
-                  bat 'git config credential.helper "!sh.exe -c \'set -u; echo username=$GIT_USERNAME && echo password=$GIT_PASSWORD && echo"\''
+                  final String releaseScript = '''
+                      $originUrl = (git remote get-url origin) -replace '\\.git', ''
+                      $org = $originUrl.split('/')[3]
+                      $repository = $originUrl.split('/')[4]
+                      $releasesUrl = "/repos/$org/$repository/releases"
+                      $releaseId = (gh api $releasesUrl | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')
+                      $output = ''
+                      if ($releaseId -gt 0)
+                      {
+                        Invoke-Expression -Command "gh api -X PATCH -F draft=false -F name=$env:NEXT_VERSION -F tag_name=$env:NEXT_VERSION $releasesUrl/$releaseId" > $null
+                        $output = $releaseId
+                      }
+                      Write-Output $output
+                    '''
+                  release = powershell(script: releaseScript, returnStdout: true)
                 }
-
-                withCredentials([
-                  usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
-                ]) {
-                  echo "Tagging and pushing the new version: ${nextVersion}"
-                  if (isUnix()) {
-                    sh '''
-                      git config user.name "${GIT_USERNAME}"
-                      git config user.email "jenkins-infra@googlegroups.com"
-
-                      git tag -a "${NEXT_VERSION}" -m "${IMAGE_NAME}"
-                      git push origin --tags
-                      '''
-                  } else {
-                    powershell '''
-                      git config user.email "jenkins-infra@googlegroups.com"
-                      git config user.password $env:GIT_PASSWORD
-
-                      git tag -a "$env:NEXT_VERSION" -m "$env:IMAGE_NAME"
-                      git push origin --tags
-                      '''
-                  }
-                } // withCredentials
-              } // stage
-            } // if
-
-            // GitHub Release stage: Use NEXT_VERSION and only on primary branch
-            // Create release only if SemVer is enabled, on primary branch, and publication is NOT disabled.
-            if (finalConfig.automaticSemanticVersioning && !finalConfig.disablePublication) {
-              stage('GitHub Release') {
-                withCredentials([
-                  usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
-                ]) {
-                  String release = ''
-                  if (isUnix()) {
-                    final String releaseScript = '''
-                        originUrlWithGit="$(git remote get-url origin)"
-                        originUrl="${originUrlWithGit%.git}"
-                        org="$(echo "${originUrl}" | cut -d'/' -f4)"
-                        repository="$(echo "${originUrl}" | cut -d'/' -f5)"
-                        releasesUrl="/repos/${org}/${repository}/releases"
-                        releaseId="$(gh api "${releasesUrl}" | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')"
-                        if test "${releaseId}" -gt 0
-                        then
-                          gh api -X PATCH -F draft=false -F name="${NEXT_VERSION}" -F tag_name="${NEXT_VERSION}" "${releasesUrl}/${releaseId}" > /dev/null
-                        fi
-                        echo "${releaseId}"
-                      '''
-                    release = sh(script: releaseScript, returnStdout: true)
-                  } else {
-                    final String releaseScript = '''
-                        $originUrl = (git remote get-url origin) -replace '\\.git', ''
-                        $org = $originUrl.split('/')[3]
-                        $repository = $originUrl.split('/')[4]
-                        $releasesUrl = "/repos/$org/$repository/releases"
-                        $releaseId = (gh api $releasesUrl | jq -e -r '[ .[] | select(.draft == true and .name == "next").id] | max | select(. != null)')
-                        $output = ''
-                        if ($releaseId -gt 0)
-                        {
-                          Invoke-Expression -Command "gh api -X PATCH -F draft=false -F name=$env:NEXT_VERSION -F tag_name=$env:NEXT_VERSION $releasesUrl/$releaseId" > $null
-                          $output = $releaseId
-                        }
-                        Write-Output $output
-                      '''
-                    release = powershell(script: releaseScript, returnStdout: true)
-                  }
-                  if (release == '') {
-                    echo "No next release draft found."
-                  } // if
-                } // withCredentials
-              } // stage
-            } // if
-          } // withEnv NEXT_VERSION
-          publishBuildStatusReport()
-        } // if
-      } // infra.withDockerPullCredentials
+                if (release == '') {
+                  echo "No next release draft found."
+                } // if
+              } // withCredentials
+            } // stage
+          } // if
+        } // withEnv NEXT_VERSION
+        publishBuildStatusReport()
+      } // if
     } // withEnv (outer)
   } // node
 } // call

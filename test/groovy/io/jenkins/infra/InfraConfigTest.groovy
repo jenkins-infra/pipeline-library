@@ -20,8 +20,6 @@ class InfraConfigTest {
     assertTrue(infraConfig.isCI())
     assertTrue(infraConfig.isRunningOnJenkinsInfra())
     assertEquals('jenkins4eval', infraConfig.getDockerRegistryNamespace())
-    assertEquals('cijenkinsio', infraConfig.getDockerPullOrgAndCredentialsId().organisation)
-    assertEquals('cijenkinsio-dockerhub-pull', infraConfig.getDockerPullOrgAndCredentialsId().credentialId)
     assertEquals('jenkins4eval', infraConfig.getDockerPushOrgAndCredentialsId().organisation)
     assertEquals('cijenkinsio-dockerhub-push', infraConfig.getDockerPushOrgAndCredentialsId().credentialId)
   }
@@ -36,8 +34,6 @@ class InfraConfigTest {
     assertFalse(infraConfig.isCI())
     assertTrue(infraConfig.isRunningOnJenkinsInfra())
     assertEquals('jenkinsciinfra', infraConfig.getDockerRegistryNamespace())
-    assertEquals('trustedcijenkinsio', infraConfig.getDockerPullOrgAndCredentialsId().organisation)
-    assertEquals('trustedcijenkinsio-dockerhub-pull', infraConfig.getDockerPullOrgAndCredentialsId().credentialId)
     assertEquals('jenkins', infraConfig.getDockerPushOrgAndCredentialsId().organisation)
     assertEquals('jenkinsciinfra-dockerhub-push', infraConfig.getDockerPushOrgAndCredentialsId().credentialId)
   }
@@ -52,8 +48,6 @@ class InfraConfigTest {
     assertFalse(infraConfig.isCI())
     assertTrue(infraConfig.isRunningOnJenkinsInfra())
     assertEquals('jenkins4eval', infraConfig.getDockerRegistryNamespace())
-    assertEquals('releasecijenkinsio', infraConfig.getDockerPullOrgAndCredentialsId().organisation)
-    assertEquals('releasecijenkinsio-dockerhub-pull', infraConfig.getDockerPullOrgAndCredentialsId().credentialId)
     assertTrue(infraConfig.getDockerPushOrgAndCredentialsId().error)
   }
 
@@ -67,8 +61,6 @@ class InfraConfigTest {
     assertFalse(infraConfig.isCI())
     assertTrue(infraConfig.isRunningOnJenkinsInfra())
     assertEquals('jenkinsciinfra', infraConfig.getDockerRegistryNamespace())
-    assertEquals('infracijenkinsio', infraConfig.getDockerPullOrgAndCredentialsId().organisation)
-    assertEquals('infracijenkinsio-dockerhub-pull', infraConfig.getDockerPullOrgAndCredentialsId().credentialId)
     assertEquals('jenkinsciinfra', infraConfig.getDockerPushOrgAndCredentialsId().organisation)
     assertEquals('jenkinsinfraadmin-dockerhub-push', infraConfig.getDockerPushOrgAndCredentialsId().credentialId)
   }
@@ -83,7 +75,6 @@ class InfraConfigTest {
     assertFalse(infraConfig.isCI())
     assertFalse(infraConfig.isRunningOnJenkinsInfra())
     assertEquals('jenkins4eval', infraConfig.getDockerRegistryNamespace())
-    assertTrue(infraConfig.getDockerPullOrgAndCredentialsId().error)
     assertTrue(infraConfig.getDockerPushOrgAndCredentialsId().error)
   }
 
@@ -97,7 +88,6 @@ class InfraConfigTest {
     assertFalse(infraConfig.isCI())
     assertFalse(infraConfig.isRunningOnJenkinsInfra())
     assertEquals('jenkins4eval', infraConfig.getDockerRegistryNamespace())
-    assertTrue(infraConfig.getDockerPullOrgAndCredentialsId().error)
     assertTrue(infraConfig.getDockerPushOrgAndCredentialsId().error)
   }
 
@@ -111,7 +101,6 @@ class InfraConfigTest {
     assertFalse(infraConfig.isCI())
     assertFalse(infraConfig.isRunningOnJenkinsInfra())
     assertEquals('jenkins4eval', infraConfig.getDockerRegistryNamespace())
-    assertTrue(infraConfig.getDockerPullOrgAndCredentialsId().error)
     assertTrue(infraConfig.getDockerPushOrgAndCredentialsId().error)
   }
 }
