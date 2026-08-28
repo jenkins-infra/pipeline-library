@@ -25,13 +25,23 @@ def call(Map config = [:]) {
     return
   }
 
-  if (env.JENKINS_URL?.trim() == 'https://ci.jenkins.io/') {
+  final String jenkinsURL = env.JENKINS_URL?.trim()
+
+  if (!jenkinsURL) {
+    error("JENKINS_URL is not set or empty")
+  }
+
+  if (jenkinsURL == 'https://ci.jenkins.io/') {
     echo '[WARNING] Not publishing any build status report from ci.jenkins.io, skipping'
     return
   }
 
-  if (!env.JENKINS_URL?.trim()) {
-    error("JENKINS_URL is not set or empty")
+  if (jenkinsURL == 'https://cert.ci.jenkins.io/') {
+    final String allowedJobName = 'acceptance-tests-check-agent-availability'
+    if (env.JOB_NAME != allowedJobName) {
+      echo "[WARNING] Not publishing any build status report from cert.ci.jenkins.io unless the job is '${allowedJobName}', skipping"
+      return
+    }
   }
 
   def tempDir = pwd(tmp: true)

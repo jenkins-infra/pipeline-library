@@ -28,6 +28,10 @@ Boolean isInfraCiController() {
   return isJenkinsIoURLSubdomaincontains('infra.ci')
 }
 
+Boolean isCertCiController() {
+  return isJenkinsIoURLSubdomaincontains('cert.ci')
+}
+
 // Deprecated, kept for backward compatibility
 Boolean isInfra() {
   echo 'DEPRECATION WARNING: the function "infra.isInfra()" is deprecated and should be replaced by "infra.isInfraCiController()".'
@@ -41,7 +45,7 @@ Boolean isTrusted() {
 }
 
 String getDockerRegistryNamespace() {
-  if (isTrustedCiController() || isInfraCiController() || isReleaseCiController()) {
+  if (isTrustedCiController() || isInfraCiController() || isReleaseCiController() || isCertCiController()) {
     return 'jenkinsciinfra'
   } else {
     return 'jenkins4eval'

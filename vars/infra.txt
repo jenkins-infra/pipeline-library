@@ -29,6 +29,12 @@
     Returns if the pipeline is running on the internal "release.ci.jenkins.io" Jenkins controller.
 </p>
 
+<strong>infra.isCertCiController()</strong>
+
+<p>
+    Returns if the pipeline is running on the internal "cert.ci.jenkins.io" Jenkins controller.
+</p>
+
 <strong>infra.withContainerRegistry(String containerRegistry = '', Closure body)</strong>
 
 <p>
