@@ -297,6 +297,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
         automaticSemanticVersioning: true,
         gitCredentials: 'git-creds',
         registryNamespace: 'jenkins',
+        runInCurrentAgent: true,
       ])
     }
     final String expectedImageName = 'jenkins/' + testImageName
@@ -309,7 +310,8 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh','make lint'))
     assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
 
-    assertTrue(assertMethodCallContainsPattern('node', 'docker'))
+    // Running in current agent is enabled: don't allocate one
+    assertFalse(assertMethodCallContainsPattern('node', 'docker'))
     // And the environement variables set with the custom configuration values
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DIR=docker/'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DOCKERFILE=build.Dockerfile'))

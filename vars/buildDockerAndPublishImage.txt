@@ -20,6 +20,7 @@ The following arguments are available for this function:
   * String **dockerBakeFile**: (Optionan, default to "") Specify the path to a custom Docker Bake file to use instead of the default one
   * String **dockerBakeTarget**: (Optional, default to "default") Specify the target of a custom Docker Bake file to work with
   * Boolean **disablePublication**: (Optional, default to false) Allow to disable tagging and publication of container image and GitHub release
+  * Boolean **runInCurrentAgent** (Optional, default to false) Specify wether to allocate an agent to run the Docker tasks or reuse the current one
 
 The lint phase generates a report when it fails, recorded by the hadolint tool in your Jenkins instance.
 

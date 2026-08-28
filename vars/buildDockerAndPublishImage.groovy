@@ -39,6 +39,17 @@ def makecall(String action, String imageDeployName, String targetOperationSystem
   } // unix agent
 }
 
+def withAgent(Boolean runInCurrentAgent, String agentLabels, Closure body) {
+  if (runInCurrentAgent) {
+    echo 'INFO: user specified "runInCurrentAgent" to true. Assuming the current agent has all requirements (Docker CE, etc.).'
+    body()
+  } else {
+    node(agentLabels) {
+      body()
+    }
+  }
+}
+
 def call(String imageShortName, Map userConfig =[:]) {
   def defaultConfig = [
     agentLabels: 'docker || linux-amd64-docker', // String expression for the labels the agent must match
@@ -56,6 +67,7 @@ def call(String imageShortName, Map userConfig =[:]) {
     cacheTo: '', // New parameter for Docker build cache export using cache-to
     disablePublication: false, // Allow to disable tagging and publication of container image and GitHub release
     publishToPrivateAzureRegistry: false, // Set to 'true' to publish the image into the private jenkins-infra private Azure Container Registry instead of DockerHub
+    runInCurrentAgent: false, // Specify wether to allocate an agent to run updatecli (default) or reuse the current one
   ]
   // Merging the 2 maps - https://blog.mrhaki.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
   final Map finalConfig = defaultConfig << userConfig
@@ -123,7 +135,7 @@ def call(String imageShortName, Map userConfig =[:]) {
 
   echo "INFO: Resolved Container Image Name: ${imageName}"
 
-  node(finalConfig.agentLabels) {
+  withAgent(finalConfig.runInCurrentAgent, finalConfig.agentLabels) {
     withEnv([
       "BUILD_DATE=${buildDate}",
       "IMAGE_NAME=${imageName}",
@@ -321,5 +333,5 @@ def call(String imageShortName, Map userConfig =[:]) {
         publishBuildStatusReport()
       } // if
     } // withEnv (outer)
-  } // node
+  } // withAgent
 } // call
