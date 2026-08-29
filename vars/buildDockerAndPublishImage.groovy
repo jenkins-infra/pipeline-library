@@ -118,9 +118,8 @@ def call(String imageShortName, Map userConfig =[:]) {
   final InfraConfig infraConfig = new InfraConfig(env)
   final String defaultRegistryNamespace = infraConfig.getDockerRegistryNamespace()
   final String registryNamespace = finalConfig.registryNamespace ?: defaultRegistryNamespace
-  final String acrName = 'dockerhubmirror'
   final String imageName = registryNamespace + '/' + imageShortName
-  final String registryHost = finalConfig.publishToPrivateAzureRegistry ? "${acrName}.azurecr.io" : 'docker.io'
+  final String registryHost = finalConfig.publishToPrivateAzureRegistry ? 'dockerhubmirror.azurecr.io' : 'docker.io'
 
   echo "INFO: Resolved Container Image Name: ${imageName}"
 
@@ -174,12 +173,16 @@ def call(String imageShortName, Map userConfig =[:]) {
 
       stage("Build ${imageName}") {
         if (env.BRANCH_IS_PRIMARY && finalConfig.cacheTo) {
-          infra.withDockerPushCredentials {
-            makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, finalConfig.cacheTo)
-          }
+          if (infraConfig.isCi()) {
+            echo '[WARNING]: ci.jenkins.io is not allowed to push container layers to any registry. Continuing without publishing cache.'
+          } else {
+            infra.withContainerRegistry(registryHost) {
+              makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, finalConfig.cacheTo)
+            }
+          } // if
         } else {
           makecall('build', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget)
-        }
+        } // if
       } //stage
 
       // There can be 2 kind of tests: per image and per repository
@@ -223,16 +226,7 @@ def call(String imageShortName, Map userConfig =[:]) {
           // Only deploy on primary branch
           stage("Deploy ${imageName}") {
             if (!finalConfig.disablePublication) {
-              if (finalConfig.publishToPrivateAzureRegistry) {
-                // Assume credential-less authentication (Azure Workload Identity)
-                withEnv(["ACR_NAME=${acrName}"]) {
-                  sh '''
-                  az login --identity
-                  az acr login --name "${ACR_NAME}"
-                  '''
-                }
-              }
-              infra.withDockerPushCredentials{
+              infra.withContainerRegistry(registryHost) {
                 makecall('deploy', imageName, operatingSystem, finalConfig.dockerBakeFile, finalConfig.dockerBakeTarget, '')
               }
             } else {

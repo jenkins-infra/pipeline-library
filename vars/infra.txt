@@ -23,11 +23,11 @@
     Return true if this Pipeline is executing on an infrastructure CI environment.
 </p>
 
-<strong>infra.withDockerCredentials(Closure body)</strong>
+<strong>infra.withContainerRegistry(String containerRegistry = '', Closure body)</strong>
 
 <p>
-    Run the specified Closure with Docker credentials.
-    Note that the credentials are available only on a trusted CI environment; execution will fail on other CI instances.
+    Run the specified Closure with Docker Engine logged-in to the specified container registry or DockerHub if unspecified.
+    Note that the credentials are only available in some Jenkins infra environments; execution will fail on other CI instances.
 </p>
 
 <strong>infra.checkoutSCM(String repo = null)</strong>

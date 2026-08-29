@@ -24,67 +24,83 @@ Boolean isInfra() {
   return new InfraConfig(env).isInfra()
 }
 
-//withDockerCredentials deprecated method present for backward compatibility
+/**
+ * Method kept for backward compatibility until all consumers are removed:
+ * - https://github.com/jenkinsci/docker/blob/c0cda9f24f6e05ffe34b713aa3d477c53c9db97e/Jenkinsfile#L106
+ * - https://github.com/jenkinsci/docker-agents/blob/a72bee7bd8967866790bcf65c8c82bc4cc78c55d/Jenkinsfile#L154
+ * - https://github.com/jenkinsci/docker-ssh-agent/blob/6e5cd9050638ae4f2e17a5d63084db4f13cd78d7/Jenkinsfile#L81
+ **/
 Object withDockerCredentials(Closure body) {
-  return withDockerPushCredentials(body)
+  // It's only an alias
+  return withContainerRegistry(body)
 }
 
-Object withDockerCredentials(Map orgAndCredentialsId, Closure body) {
-  if (orgAndCredentialsId.error) {
-    echo orgAndCredentialsId.msg
-  } else {
-    withEnv([
-      "CONTAINER_BIN=${env.CONTAINER_BIN ?: 'docker'}",
-      "DOCKERHUB_ORGANISATION=${orgAndCredentialsId.organisation}",
-      "DOCKERHUB_CREDENTIALS_ID=${orgAndCredentialsId.credentialId}",
-    ]){
+// withContainerRegistry is a step which ensures the agent's Docker Engine is logged-in to the specified container registry or DockerHub if unspecified.
+// It errors (pipeline failure) if the specified registry is unknown or forbidden (no credentials, blocker, etc.)
+Object withContainerRegistry(String containerRegistry = '', Closure body) {
+  // empty value means credential-less (aka. Azure workload identity)
+  final Map containerRegistriesCredentials = [
+    'infra.ci.jenkins.io': [
+      'index.docker.io': 'jenkinsciinfra-dockerhub-push',
+      'dockerhubmirror.azurecr.io': '',
+    ],
+    'trusted.ci.jenkins.io': [
+      'index.docker.io': 'jenkinsinfraadmin-dockerhub-push',
+    ],
+    'cert.ci.jenkins.io': [
+      'dockerhubmirror.azurecr.io': 'azure-container-registry-push',
+    ],
+  ]
+  final String jenkinsHostname = new InfraConfig(env).jenkinsHostname
+  final String containerRegistryURL = containerRegistry ?: 'index.docker.io'
+
+  // Check if the current context is allowed to log-in
+  if (!containerRegistriesCredentials.containsKey(jenkinsHostname)) {
+    error "Unknown Jenkins host (${jenkinsHostname}): cannot log-in to container registry."
+  }
+  if (!containerRegistriesCredentials[jenkinsHostname].containsKey(containerRegistryURL)) {
+    error "Unsupported container registry (${containerRegistryURL}) for this Jenkins host (${jenkinsHostname})cannot log-in to container registry."
+  }
+
+  final String credentialId = containerRegistriesCredentials[jenkinsHostname][containerRegistryURL]
+  if (credentialId) {
+    withEnv(["CONTAINER_REGISTRY=${containerRegistry}"]) {
       withCredentials([
-        usernamePassword(credentialsId: orgAndCredentialsId.credentialId, passwordVariable: 'DOCKER_CONFIG_PSW', usernameVariable: 'DOCKER_CONFIG_USR')
+        usernamePassword(credentialsId: credentialId, passwordVariable: 'DOCKER_CONFIG_PSW', usernameVariable: 'DOCKER_CONFIG_USR'),
       ]) {
-        // Logging in on the Dockerhub helps to avoid request limit from DockerHub
         if (isUnix()) {
           sh '''
-          echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin
-          set +x
-          ip_all_json="$(curl -s https://ifconfig.me/all.json | jq || true)"
-          echo "INFO: logged in Docker Hub as '${DOCKER_CONFIG_USR}' with '${DOCKERHUB_CREDENTIALS_ID}' credentials, namespace: ${DOCKERHUB_ORGANISATION}"
-          if [[ -n "${ip_all_json}" ]]; then
-            echo 'INFO: IP address details from ifconfig.me/all.json:'
-            echo "${ip_all_json}"
-          fi
+          echo "${DOCKER_CONFIG_PSW}" | docker login "${CONTAINER_REGISTRY}" --username "${DOCKER_CONFIG_USR}" --password-stdin
           '''
         } else {
           pwsh '''
-          Write-Output ${env:DOCKER_CONFIG_PSW} | & ${Env:CONTAINER_BIN} login --username ${Env:DOCKER_CONFIG_USR} --password-stdin
-          try {
-              $ipAll = (Invoke-RestMethod -Uri "https://ifconfig.me/all.json" -TimeoutSec 5 | Out-String)
-          } catch {
-              $ipAll = ""
-          }
-          Write-Host "INFO: logged in Docker Hub as '$env:DOCKER_CONFIG_USR' with '$env:DOCKERHUB_CREDENTIALS_ID' credentials, namespace: $env:DOCKERHUB_ORGANISATION"
-          if ($ipAll) {
-            Write-Host 'INFO: IP address details from ifconfig.me/all.json:'
-            Write-Host $ipAll
-          }
+          Write-Output ${env:DOCKER_CONFIG_PSW} | & docker login --username ${Env:DOCKER_CONFIG_USR} --password-stdin
           '''
-        }
-
-        body.call()
-        // Logging out to ensure credentials are cleaned up if the current agent is reused
-        if (isUnix()) {
-          sh '"${CONTAINER_BIN}" logout'
-        } else {
-          pwsh 'Invoke-Expression "${Env:CONTAINER_BIN} logout"'
-        }
-        return
+        } // if
       } // withCredentials
-    }// withEnv
-  }
-}
+    } // withEnv
+  } else {
+    // Assume credential-less authentication with Azure Workload Identity to an Azure Container Registry
+    sh 'az login --identity'
+    final String acrSuffix = '.azurecr.io'
+    final String acrName = containerRegistry.substring(0, containerRegistry.length() - acrSuffix.length())
+    withEnv(["ACR_NAME=${acrName}"]) {
+      sh 'az acr login --name "${ACR_NAME}"'
+    } // withEnv
+  } // if
 
-Object withDockerPushCredentials(Closure body) {
-  Map orgAndCredentialsId = new InfraConfig(env).getDockerPushOrgAndCredentialsId()
-  return withDockerCredentials(orgAndCredentialsId, body)
+  // Execute inner steps
+  body.call()
+
+  // Logging out to ensure credentials are cleaned up if the current agent is reused
+  withEnv(["CONTAINER_REGISTRY=${containerRegistry}"]) {
+    if (isUnix()) {
+      sh 'docker logout "${CONTAINER_REGISTRY}"'
+    } else {
+      pwsh 'docker logout "${env:CONTAINER_REGISTRY}"'
+    } // if
+  } // withEnv
+  return
 }
 
 /**

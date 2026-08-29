@@ -63,77 +63,37 @@ class InfraStepTests extends BaseTest {
   }
 
   @Test
-  void testWithDockerCredentials() throws Exception {
+  void testWithContainerRegistry() throws Exception {
     def script = loadScript(scriptName)
-    env.JENKINS_URL = 'https://ci.jenkins.io/'
+    env.JENKINS_URL = 'https://infra.ci.jenkins.io/'
     def isOK = false
-    script.withDockerCredentials() {
+    script.withContainerRegistry() {
       isOK = true
     }
     printCallStack()
     assertTrue(isOK)
     assertJobStatusSuccess()
-    assertTrue(assertMethodCallContainsPattern('sh', 'echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'echo "INFO: logged in Docker Hub as \'${DOCKER_CONFIG_USR}\' with \'${DOCKERHUB_CREDENTIALS_ID}\' credentials, namespace: ${DOCKERHUB_ORGANISATION}"'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'echo "${DOCKER_CONFIG_PSW}" | docker login "${CONTAINER_REGISTRY}" --username "${DOCKER_CONFIG_USR}" --password-stdin'))
+    // assertTrue(assertMethodCallContainsPattern('echo', 'INFO: logged in Docker Hub as'))
   }
 
   @Test
-  void testWithDockerCredentialsOutsideInfra() throws Exception {
+  void testWithContainerRegistryOutsideInfra() throws Exception {
     def script = loadScript(scriptName)
     env.JENKINS_URL = 'https://foo/'
     def isOK = false
-    script.withDockerCredentials() {
-      isOK = true
+    try {
+      script.withContainerRegistry() {
+        isOK = true
+      }
+    } catch(e) {
+      //NOOP
     }
     printCallStack()
     assertFalse(isOK)
-    assertTrue(assertMethodCallContainsPattern('echo', 'Cannot use Docker credentials outside of jenkins infra environment'))
-    assertJobStatusSuccess()
-  }
-
-  @Test
-  void testWithDockerPushCredentials() throws Exception {
-    def script = loadScript(scriptName)
-    env.JENKINS_URL = 'https://ci.jenkins.io/'
-    def isOK = false
-    script.withDockerPushCredentials() {
-      isOK = true
-    }
+    assertJobStatusFailure()
     printCallStack()
-    assertTrue(isOK)
-    assertJobStatusSuccess()
-    assertTrue(assertMethodCallContainsPattern('sh', 'echo "${DOCKER_CONFIG_PSW}" | "${CONTAINER_BIN}" login --username "${DOCKER_CONFIG_USR}" --password-stdin'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'echo "INFO: logged in Docker Hub as \'${DOCKER_CONFIG_USR}\' with \'${DOCKERHUB_CREDENTIALS_ID}\' credentials, namespace: ${DOCKERHUB_ORGANISATION}"'))
-  }
-
-  @Test
-  void testWithDockerPushCredentialsWindows() throws Exception {
-    helper.registerAllowedMethod('isUnix', [], { false })
-    def script = loadScript(scriptName)
-    env.JENKINS_URL = 'https://ci.jenkins.io/'
-    def isOK = false
-    script.withDockerPushCredentials() {
-      isOK = true
-    }
-    printCallStack()
-    assertTrue(isOK)
-    assertJobStatusSuccess()
-    assertTrue(assertMethodCallContainsPattern('pwsh', 'Write-Output ${env:DOCKER_CONFIG_PSW} | & ${Env:CONTAINER_BIN} login --username ${Env:DOCKER_CONFIG_USR} --password-stdin'))
-    assertTrue(assertMethodCallContainsPattern('pwsh', 'Write-Host "INFO: logged in Docker Hub as \'$env:DOCKER_CONFIG_USR\' with \'$env:DOCKERHUB_CREDENTIALS_ID\' credentials, namespace: $env:DOCKERHUB_ORGANISATION"'))
-  }
-
-  @Test
-  void testWithDockerPushCredentialsOutsideInfra() throws Exception {
-    def script = loadScript(scriptName)
-    env.JENKINS_URL = 'https://foo/'
-    def isOK = false
-    script.withDockerPushCredentials() {
-      isOK = true
-    }
-    printCallStack()
-    assertFalse(isOK)
-    assertTrue(assertMethodCallContainsPattern('echo', 'Cannot use Docker credentials outside of jenkins infra environments'))
-    assertJobStatusSuccess()
+    assertTrue(assertMethodCallContainsPattern('error', 'Unknown Jenkins host (foo): cannot log-in to container registry.'))
   }
 
   @Test

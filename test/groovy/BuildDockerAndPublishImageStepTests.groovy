@@ -65,7 +65,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Mock Pipeline methods which are not already declared in the parent class
     helper.registerAllowedMethod('hadoLint', [Map.class], { m -> m })
     helper.registerAllowedMethod('fileExists', [String.class], { true })
-    binding.setVariable('infra', ['withDockerPushCredentials': {body ->
+    binding.setVariable('infra', ['withContainerRegistry': {registry, body ->
         body()
       }])
     helper.registerAllowedMethod('sh', [Map.class], { m ->
@@ -795,6 +795,9 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     def script = loadScript(scriptName)
     mockPrincipalBranch()
     final String cacheValue = "type=inline"
+    infraConfigMock.demand.with {
+      isCi{ false }
+    }
     withMocks {
       script.call(testImageName, [cacheTo: cacheValue])
     }
@@ -825,11 +828,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('libraryResource','io/jenkins/infra/docker/Makefile'))
     assertTrue(assertMethodCallContainsPattern('sh','make bake-build'))
     assertTrue(assertMethodCallContainsPattern('node', 'docker'))
-
-    // And the Azure credential-less authentication is performed
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'ACR_NAME=dockerhubmirror'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'az login --identity'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'az acr login --name "${ACR_NAME}"'))
 
     // And the expected image name (with registry prefix) is set
     assertTrue(assertMethodCallContainsPattern('withEnv', 'IMAGE_DEPLOY_NAME=' + fullTestImageName))

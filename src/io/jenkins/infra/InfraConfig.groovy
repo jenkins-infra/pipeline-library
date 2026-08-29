@@ -45,21 +45,4 @@ class InfraConfig implements Serializable {
       return 'jenkins4eval'
     }
   }
-
-  // Returns the Docker Informations for pushing images
-  Map getDockerPushOrgAndCredentialsId() {
-    switch(jenkinsHostname){
-      case 'ci.jenkins.io':
-        return [error: false, organisation: 'jenkins4eval', credentialId: 'cijenkinsio-dockerhub-push']
-        break
-      case 'trusted.ci.jenkins.io':
-        return [error: false, organisation: 'jenkins', credentialId: 'jenkinsciinfra-dockerhub-push']
-        break
-      case 'infra.ci.jenkins.io':
-        return [error: false, organisation: 'jenkinsciinfra', credentialId: 'jenkinsinfraadmin-dockerhub-push']
-        break
-      default:
-        return [error: true, msg: 'Cannot use Docker credentials outside of jenkins infra environments']
-    }
-  }
 }
