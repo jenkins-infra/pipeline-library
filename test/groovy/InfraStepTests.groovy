@@ -74,7 +74,6 @@ class InfraStepTests extends BaseTest {
     assertTrue(isOK)
     assertJobStatusSuccess()
     assertTrue(assertMethodCallContainsPattern('sh', 'echo "${DOCKER_CONFIG_PSW}" | docker login "${CONTAINER_REGISTRY}" --username "${DOCKER_CONFIG_USR}" --password-stdin'))
-    // assertTrue(assertMethodCallContainsPattern('echo', 'INFO: logged in Docker Hub as'))
   }
 
   @Test

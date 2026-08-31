@@ -36,7 +36,7 @@ Object withDockerCredentials(Closure body) {
 }
 
 // withContainerRegistry is a step which ensures the agent's Docker Engine is logged-in to the specified container registry or DockerHub if unspecified.
-// It errors (pipeline failure) if the specified registry is unknown or forbidden (no credentials, blocker, etc.)
+// It fails if the specified registry is unknown or forbidden (no credentials, blocker, etc.)
 Object withContainerRegistry(String containerRegistry = '', Closure body) {
   // empty value means credential-less (aka. Azure workload identity)
   final Map containerRegistriesCredentials = [

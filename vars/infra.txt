@@ -27,7 +27,7 @@
 
 <p>
     Run the specified Closure with Docker Engine logged-in to the specified container registry or DockerHub if unspecified.
-    Note that the credentials are only available in some Jenkins infra environments; execution will fail on other CI instances.
+    Note that the credentials are only available in some Jenkins controllers; execution will fail on other CI instances.
 </p>
 
 <strong>infra.checkoutSCM(String repo = null)</strong>
