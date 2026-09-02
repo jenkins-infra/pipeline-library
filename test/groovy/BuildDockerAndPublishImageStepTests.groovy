@@ -2,7 +2,7 @@ import org.junit.Before
 import org.junit.Test
 import groovy.mock.interceptor.StubFor
 
-import io.jenkins.infra.*
+import mock.Infra
 import com.lesfurets.jenkins.unit.declarative.*
 
 import static org.junit.Assert.assertEquals
@@ -17,7 +17,7 @@ import java.text.SimpleDateFormat
 class BuildDockerAndPublishImageStepTests extends BaseTest {
   static final String scriptName = 'vars/buildDockerAndPublishImage.groovy'
   static final String testImageName = 'bitcoinMinerImage'
-  static final String defaultDockerRegistryNamespace = 'jenkinsciinfra'
+  static final String defaultDockerRegistryNamespace = 'mockedRegistryNamespace'
   static final String fullTestImageName = defaultDockerRegistryNamespace + '/' + testImageName
   static final String defaultGitTag = '1.0.0'
   static final String defaultGitTagIncludingImageName = '1.0.0-bitcoinminerimage'
@@ -26,7 +26,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   static final String defaultReleaseId = '12345'
   static final String defaultDockerBakeFile = 'jenkinsinfrabakefile.hcl'
 
-  def infraConfigMock
   def dateMock
   def simpleDateMock
 
@@ -65,9 +64,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     // Mock Pipeline methods which are not already declared in the parent class
     helper.registerAllowedMethod('hadoLint', [Map.class], { m -> m })
     helper.registerAllowedMethod('fileExists', [String.class], { true })
-    binding.setVariable('infra', ['withContainerRegistry': {registry, body ->
-        body()
-      }])
+    binding.setProperty('infra', new Infra(infraCi: true, dockerRegistryNamespace: defaultDockerRegistryNamespace))
     helper.registerAllowedMethod('sh', [Map.class], { m ->
       return shellMock(m.script)
     })
@@ -77,12 +74,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     helper.registerAllowedMethod('publishBuildStatusReport', [], {})
 
     addEnvVar('WORKSPACE', '/tmp')
-
-    // Define mocks/stubs for the data objects
-    infraConfigMock = new StubFor(InfraConfig.class)
-    infraConfigMock.demand.with {
-      getDockerRegistryNamespace{ defaultDockerRegistryNamespace }
-    }
 
     dateMock = new StubFor(Date.class)
     dateMock.demand.with {
@@ -96,17 +87,14 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   }
 
   void withMocks(Closure body) {
-    infraConfigMock.use {
-      dateMock.use {
-        simpleDateMock.use {
-          body()
-        }
+    dateMock.use {
+      simpleDateMock.use {
+        body()
       }
     }
   }
 
   void verifyMocks() {
-    infraConfigMock.expect.verify()
     dateMock.expect.verify()
     simpleDateMock.expect.verify()
   }
@@ -192,7 +180,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   void itBuildsAndDeploysWithDefaultConfigAndTagInImageNameOnPrincipalBranch() throws Exception {
     def script = loadScript(scriptName)
     def customImageNameWithTag = testImageName + ':3.141'
-    def fullCustomImageName = 'jenkinsciinfra/' + customImageNameWithTag
+    def fullCustomImageName = defaultDockerRegistryNamespace + '/' + customImageNameWithTag
     mockPrincipalBranch()
     withMocks{
       script.call(customImageNameWithTag)
@@ -730,7 +718,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     helper.registerAllowedMethod('isUnix', [], { false })
     def script = loadScript(scriptName)
     def customImageNameWithTag = testImageName + ':jdk8-nanoserver'
-    def fullCustomImageName = 'jenkinsciinfra/' + customImageNameWithTag
+    def fullCustomImageName = defaultDockerRegistryNamespace + '/' + customImageNameWithTag
     mockPrincipalBranch()
     mockTag()
     withMocks{
@@ -753,7 +741,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertRecordIssues(fullCustomImageName.replaceAll(':','-')))
     // With the deploy step called with the correct image name
     assertTrue(assertMethodCallContainsPattern('powershell','make deploy'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=jenkinsciinfra/bitcoinMinerImage:jdk8-nanoserver-1.0.0"))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=${defaultDockerRegistryNamespace}/bitcoinMinerImage:jdk8-nanoserver-1.0.0"))
 
     // And all mocked/stubbed methods have to be called
     verifyMocks()
@@ -763,7 +751,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
   void itBuildsAndDeploysWithDefaultConfigOnTagOnWindows() throws Exception {
     helper.registerAllowedMethod('isUnix', [], { false })
     def script = loadScript(scriptName)
-    def fullCustomImageName = 'jenkinsciinfra/' + testImageName
+    def fullCustomImageName = defaultDockerRegistryNamespace + '/' + testImageName
     mockPrincipalBranch()
     mockTag()
     withMocks{
@@ -786,7 +774,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     assertTrue(assertRecordIssues(fullCustomImageName.replaceAll(':','-')))
     // With the deploy step called with the correct image name
     assertTrue(assertMethodCallContainsPattern('powershell','make deploy'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=jenkinsciinfra/bitcoinMinerImage:1.0.0"))
+    assertTrue(assertMethodCallContainsPattern('withEnv', "IMAGE_DEPLOY_NAME=${defaultDockerRegistryNamespace}/bitcoinMinerImage:1.0.0"))
 
     // And all mocked/stubbed methods have to be called
     verifyMocks()
@@ -797,9 +785,6 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     def script = loadScript(scriptName)
     mockPrincipalBranch()
     final String cacheValue = "type=inline"
-    infraConfigMock.demand.with {
-      isCi{ false }
-    }
     withMocks {
       script.call(testImageName, [cacheTo: cacheValue])
     }

@@ -1,4 +1,3 @@
-import io.jenkins.infra.InfraConfig
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.text.DateFormat
@@ -127,8 +126,7 @@ def call(String imageShortName, Map userConfig =[:]) {
     return
   }
 
-  final InfraConfig infraConfig = new InfraConfig(env)
-  final String defaultRegistryNamespace = infraConfig.getDockerRegistryNamespace()
+  final String defaultRegistryNamespace = infra.getDockerRegistryNamespace()
   final String registryNamespace = finalConfig.registryNamespace ?: defaultRegistryNamespace
   final String imageName = registryNamespace + '/' + imageShortName
   final String registryHost = finalConfig.publishToPrivateAzureRegistry ? 'dockerhubmirror.azurecr.io' : 'docker.io'
@@ -185,7 +183,7 @@ def call(String imageShortName, Map userConfig =[:]) {
 
       stage("Build ${imageName}") {
         if (env.BRANCH_IS_PRIMARY && finalConfig.cacheTo) {
-          if (infraConfig.isCi()) {
+          if (infra.isCiController()) {
             echo '[WARNING]: ci.jenkins.io is not allowed to push container layers to any registry. Continuing without publishing cache.'
           } else {
             infra.withContainerRegistry(registryHost) {

@@ -5,10 +5,12 @@ package mock
  */
 class Infra implements Serializable {
 
-  private boolean trusted
-  private boolean release
-  private boolean infra
+  private boolean trustedCi
+  private boolean releaseCi
+  private boolean infraCi
+  private boolean ci
   private boolean buildError
+  private String dockerRegistryNamespace
 
   public void checkoutSCM(String repo = null) { }
 
@@ -41,16 +43,24 @@ class Infra implements Serializable {
     return "gradlew ${gradleOptions.join(' ')}"
   }
 
-  public boolean isTrusted() {
-    return trusted
+  public boolean isTrustedCiController() {
+    return trustedCi
   }
 
-  public boolean isRelease() {
-    return release
+  public boolean isReleaseCiController() {
+    return releaseCi
   }
 
-  public boolean isInfra() {
-    return infra
+  public boolean isInfraCiController() {
+    return infraCi
+  }
+
+  public boolean isCiController() {
+    return ci
+  }
+
+  public String getDockerRegistryNamespace() {
+    return dockerRegistryNamespace
   }
 
   public void maybePublishIncrementals() { }
@@ -62,6 +72,12 @@ class Infra implements Serializable {
   }
 
   Object withFileShareServicePrincipal(Map options, Closure body) {
-    return body
+    body()
+    return
+  }
+
+  Object withContainerRegistry(String containerRegistry = '', Closure body) {
+    body()
+    return
   }
 }

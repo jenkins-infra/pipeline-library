@@ -5,22 +5,28 @@
     It may be <code>ci.jenkins.io</code>, a trusted CI environment, or an infrastructure CI environment.
 </p>
 
-<strong>infra.isTrusted()</strong>
+<strong>infra.isCiController()</strong>
 
 <p>
-    Return true if this Pipeline is executing on a trusted CI environment.
+    Returns if the pipeline is running on the public "ci.jenkins.io" Jenkins controller.
 </p>
 
-<strong>infra.isRelease()</strong>
+<strong>infra.isTrustedCiController()</strong>
 
 <p>
-    Return true if this Pipeline is executing on the Jenkins release CI environment.
+    Returns if the pipeline is running on the internal "trusted.ci.jenkins.io" Jenkins controller.
 </p>
 
-<strong>infra.isInfra()</strong>
+<strong>infra.isReleaseCiController()</strong>
 
 <p>
-    Return true if this Pipeline is executing on an infrastructure CI environment.
+    Returns if the pipeline is running on the internal "release.ci.jenkins.io" Jenkins controller.
+</p>
+
+<strong>infra.isInfraCiController()</strong>
+
+<p>
+    Returns if the pipeline is running on the internal "release.ci.jenkins.io" Jenkins controller.
 </p>
 
 <strong>infra.withContainerRegistry(String containerRegistry = '', Closure body)</strong>

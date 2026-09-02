@@ -1,27 +1,39 @@
 #!/usr/bin/env groovy
 
-import io.jenkins.infra.InfraConfig
 import jenkins.scm.api.SCMSource
 import com.cloudbees.groovy.cps.NonCPS
 
-// Method kept for backward compatibility (as the method is available on the InfraConfig stateful object)
+Boolean isJenkinsIoURLSubdomaincontains(String search) {
+  final String jenkinsURL = env.JENKINS_URL
+  return jenkinsURL.startsWith('https://' + search + '.jenkins.io/') || jenkinsURL.startsWith('https://' + search + '.jenkins.io:')
+}
+
 Boolean isRunningOnJenkinsInfra() {
-  return new InfraConfig(env).isRunningOnJenkinsInfra()
+  return isCiController() || isTrustedCiController() || isReleaseCiController() || isInfraCiController()
 }
 
-// Method kept for backward compatibility (as the method is available on the InfraConfig stateful object)
-Boolean isTrusted() {
-  return new InfraConfig(env).isTrusted()
+Boolean isCiController() {
+  return isJenkinsIoURLSubdomaincontains('ci')
 }
 
-// Method kept for backward compatibility (as the method is available on the InfraConfig stateful object)
-Boolean isRelease() {
-  return new InfraConfig(env).isRelease()
+Boolean isTrustedCiController() {
+  return isJenkinsIoURLSubdomaincontains('trusted.ci')
 }
 
-// Method kept for backward compatibility (as the method is available on the InfraConfig stateful object)
-Boolean isInfra() {
-  return new InfraConfig(env).isInfra()
+Boolean isReleaseCiController() {
+  return isJenkinsIoURLSubdomaincontains('release.ci')
+}
+
+Boolean isInfraCiController() {
+  return isJenkinsIoURLSubdomaincontains('infra.ci')
+}
+
+String getDockerRegistryNamespace() {
+  if (isTrustedCiController() || isInfraCiController() || isReleaseCiController()) {
+    return 'jenkinsciinfra'
+  } else {
+    return 'jenkins4eval'
+  }
 }
 
 /**
@@ -51,7 +63,9 @@ Object withContainerRegistry(String containerRegistry = '', Closure body) {
       'dockerhubmirror.azurecr.io': 'azure-container-registry-push',
     ],
   ]
-  final String jenkinsHostname = new InfraConfig(env).jenkinsHostname
+  // Extract "hostname" without using the getHost() method (as it would need to be allowed in the pipeline groovy sandbox) by stripping slashes and URL scheme.
+  // Assuming there are no URI (otherwise hostname and URI would be concatened by the removal of slashes) but that would still work for the map where we search for keys.
+  final String jenkinsHostname = env.JENKINS_URL.replaceAll(/\//, '').replaceAll(/^https\:/, '')
   final String containerRegistryURL = containerRegistry ?: 'index.docker.io'
 
   // Check if the current context is allowed to log-in
@@ -119,7 +133,7 @@ Object withContainerRegistry(String containerRegistry = '', Closure body) {
 Object withFileShareServicePrincipal(Map options, Closure body) {
   String issue = ''
   // Only on infra.ci.jenkins.io or trusted.ci.jenkins.io
-  if (!isInfra() && !isTrusted()) {
+  if (!isInfraCiController() && !isTrustedCiController()) {
     issue += "ERROR: Cannot be used outside of infra.ci.jenkins.io or trusted.ci.jenkins.io\n"
   }
   // Only Unix for now
@@ -538,7 +552,7 @@ void prepareToPublishIncrementals() {
  * See INFRA-1571 and JEP-305.
  */
 void maybePublishIncrementals() {
-  if (new InfraConfig(env).isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
+  if (isRunningOnJenkinsInfra() && currentBuild.currentResult == 'SUCCESS') {
     if (env.CHANGE_ID == null) {
       def skip
       catchError(message: 'Could not check whether repo has enabled CD', buildResult: 'SUCCESS', stageResult: 'UNSTABLE', catchInterruptions: false) {
@@ -600,7 +614,7 @@ private String vmAgentLabel(String platform, Integer spotRetryCounter) {
       return 'windows-2025'
     // For docker controller and agents jobs
     case 'docker-highmem':
-      if (isTrusted()) {
+      if (isTrustedCiController()) {
         echo 'INFO: running on trusted.ci.jenkins.io, fallback to "linux" agent'
         return 'linux'
       }
@@ -614,7 +628,7 @@ private String vmAgentLabel(String platform, Integer spotRetryCounter) {
 }
 
 private String getSpotOrNonSpotAgentLabel(String agentLabel, Integer spotRetryCounter) {
-  if (isTrusted()) {
+  if (isTrustedCiController()) {
     echo 'INFO: running on trusted.ci.jenkins.io, no "spot" or "nonspot" agents'
     return agentLabel
   }

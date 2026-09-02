@@ -6,7 +6,7 @@
  * See https://issues.jenkins-ci.org/browse/INFRA-947 for more
  */
 def call(List<String> files, Map params = [:]) {
-  if (!infra.isTrusted() && !infra.isInfra()) {
+  if (!infra.isTrustedCiController() && !infra.isInfraCiController()) {
     error 'Can only call publishReports from within infra.ci or trusted.ci environment'
   }
 

@@ -11,7 +11,7 @@ class RunBenchmarksStepTests extends BaseTest {
   void setUp() throws Exception {
     super.setUp()
 
-    binding.setProperty('infra', new Infra(trusted: true))
+    binding.setProperty('infra', new Infra(trustedCi: true))
   }
 
   @Test

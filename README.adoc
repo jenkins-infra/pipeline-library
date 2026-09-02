@@ -132,16 +132,17 @@ Examples of not supported features:
 * Configuring `jenkinsVersion` for the build flow (as standalone arguments or as `configurations`)
 * Usage of link:https://azure.microsoft.com/en-us/services/container-instances/[Azure Container Instances] as agents (only Maven agents are configured)
 
-=== infra.isTrusted()
+=== infra.is(Trusted|Release|Infra|'')CiController()
 
-Determine whether the Pipeline is executing in an internal "trusted" Jenkins
-environment
+Returns if the pipeline is running on the internal "(trusted|release|infra|'').ci.jenkins.io" Jenkins controller.
 
 .Jenkinsfile
 [source,groovy]
 ----
-if (infra.isTrusted()) {
+if (infra.isTrustedCiController()) {
     /* perform some trusted action like a deployment */
+} else if (infra.isCiController()) {
+    /* only perform untrusted action like a lint / build / test  */
 }
 ----
 

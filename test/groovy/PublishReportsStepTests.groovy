@@ -13,13 +13,13 @@ class PublishReportsStepTests extends BaseTest {
   void setUp() throws Exception {
     super.setUp()
 
-    binding.setProperty('infra', new Infra(trusted: true))
+    binding.setProperty('infra', new Infra(trustedCi: true))
   }
 
   @Test
   void test_without_trusted_infra() throws Exception {
     def script = loadScript(scriptName)
-    binding.setProperty('infra', new Infra(trusted: false))
+    binding.setProperty('infra', new Infra(trustedCi: false))
     // when running with !infra.isTrusted()
     try {
       script.call(null)

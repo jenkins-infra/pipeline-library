@@ -43,7 +43,7 @@ class InfraStepTests extends BaseTest {
     def script = loadScript(scriptName)
     env.JENKINS_URL = 'https://trusted.ci.jenkins.io:1443/'
     binding.setVariable('env', env)
-    assertTrue(script.isTrusted())
+    assertTrue(script.isTrustedCiController())
   }
 
   @Test
@@ -51,7 +51,7 @@ class InfraStepTests extends BaseTest {
     def script = loadScript(scriptName)
     env.JENKINS_URL = 'https://release.ci.jenkins.io/'
     binding.setVariable('env', env)
-    assertTrue(script.isRelease())
+    assertTrue(script.isReleaseCiController())
   }
 
   @Test
@@ -59,7 +59,7 @@ class InfraStepTests extends BaseTest {
     def script = loadScript(scriptName)
     env.JENKINS_URL = 'https://infra.ci.jenkins.io/'
     binding.setVariable('env', env)
-    assertTrue(script.isInfra())
+    assertTrue(script.isInfraCiController())
   }
 
   @Test
@@ -318,7 +318,7 @@ class InfraStepTests extends BaseTest {
   @Test
   void testWithFileShareServicePrincipal() throws Exception {
     // When used on infra.ci.jenkins.io
-    helper.registerAllowedMethod('isInfra', [], { true })
+    helper.registerAllowedMethod('isInfraCiController', [], { true })
     helper.registerAllowedMethod('sh', [Map.class], { m ->
       return "https://${defaultFileShareStorageAccount}.file.core.windows.net/${defaultFileShare}?sas-token"
     })
@@ -352,7 +352,7 @@ class InfraStepTests extends BaseTest {
   @Test
   void testWithFileShareServicePrincipalWithMissingRequiredOption() throws Exception {
     // When used on infra.ci.jenkins.io
-    helper.registerAllowedMethod('isInfra', [], { true })
+    helper.registerAllowedMethod('isInfraCiController', [], { true })
     def script = loadScript(scriptName)
     def isOK = false
     // with missing fileShareStorageAccount option
@@ -387,7 +387,7 @@ class InfraStepTests extends BaseTest {
   @Test
   void testWithFileShareServicePrincipalCredentialsLess() throws Exception {
     // When used on infra.ci.jenkins.io
-    helper.registerAllowedMethod('isInfra', [], { true })
+    helper.registerAllowedMethod('isInfraCiController', [], { true })
     helper.registerAllowedMethod('sh', [Map.class], { m ->
       return "https://${defaultFileShareStorageAccount}.file.core.windows.net/${defaultFileShare}?sas-token"
     })
@@ -421,8 +421,8 @@ class InfraStepTests extends BaseTest {
   @Test
   void testWithFileShareServicePrincipalShouldNotRunOutsideInfraOrTrusted() throws Exception {
     // When not used on infra.ci.jenkins.io or trusted.ci.jenkins.io
-    helper.registerAllowedMethod('isInfra', [], { false })
-    helper.registerAllowedMethod('isTrusted', [], { false })
+    helper.registerAllowedMethod('isInfraCiController', [], { false })
+    helper.registerAllowedMethod('isTrustedCiController', [], { false })
     def script = loadScript(scriptName)
     def isOK = false
     def options = [
