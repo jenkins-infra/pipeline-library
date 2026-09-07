@@ -13,9 +13,11 @@ export ARCH ?= $(shell case $(current_arch) in (x86_64) echo "amd64" ;; (i386) e
 
 IMAGE_NAME ?= helloworld
 IMAGE_DEPLOY_NAME ?= "$(IMAGE_NAME)"
+# If there are no ':' character in IMAGE_DEPLOY_NAME (nominal case) then we assume both $NEXTVERSION and 'latest' tags should be built/deployed
+# We use tedious Makefile because the HCL 'strcontains()' function is unavailable in Docker Bake
 ifeq (,$(findstring :,$(IMAGE_DEPLOY_NAME)))
-	TAGS_LIST := $(NEXTVERSION),latest
-	export TAGS_LIST
+	CUSTOMTAGS := $(NEXTVERSION),latest
+	export CUSTOMTAGS
 endif
 BUILD_TARGETPLATFORM ?= linux/amd64
 # Paths
