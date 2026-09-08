@@ -19,6 +19,17 @@ def call(Map params = [:]) {
   if (forkCount) {
     echo "Running parallel tests with forkCount=${forkCount}"
   }
+
+  Map sonar = params.containsKey('sonar') ? params.sonar as Map : null
+  if (sonar != null && !sonar.projectKey) {
+    // Conventionally "<organization>_<repo-name>", e.g. "jenkinsci_jira-plugin".
+    String repoName = repoNameFromJobName()
+    if (repoName) {
+      sonar.projectKey = "${sonar.organization ?: 'jenkinsci'}_${repoName}"
+    } else {
+      error('[buildPlugin] "sonar.projectKey" could not be inferred from JOB_NAME (expected a multibranch job like "<folder>/<repo>/<branch>") and must be specified explicitly, e.g. sonar: [projectKey: "jenkinsci_my-plugin"]')
+    }
+  }
   if (timeoutValue> 180) {
     echo "Timeout value requested was $timeoutValue, lowering to 180 to avoid Jenkins project's resource abusive consumption"
     timeoutValue = 180
@@ -278,6 +289,39 @@ def call(Map params = [:]) {
                       }
                     }
                   }
+
+                  /*
+                   * Optional SonarCloud CI-based analysis, opt-in via the `sonar` parameter.
+                   * Runs once per build (first platform/jdk/jenkinsVersion combination only) and only on
+                   * Linux agents, since JaCoCo coverage (consumed by the Sonar scanner) is Linux-only in
+                   * this library. Reuses the jacoco.xml already produced by the Build stage's
+                   * `-Penable-jacoco clean install` -- no need to re-run tests or `jacoco:report` here.
+                   * Runs as a separate Maven invocation, scoped to its own `withCredentials` block, to
+                   * keep the SONAR_TOKEN credential's exposure window as small as possible.
+                   */
+                  if (sonar && isUnix()) {
+                    echo "Running SonarCloud analysis on '${stageIdentifier}'"
+                    List<String> sonarOptions = [
+                      "-Dmaven.repo.local=$m2repo",
+                      "-Dsonar.organization=${sonar.organization ?: 'jenkinsci'}",
+                      "-Dsonar.projectKey=${sonar.projectKey}",
+                    ]
+                    if (env.CHANGE_ID) {
+                      sonarOptions += "-Dsonar.pullrequest.key=${env.CHANGE_ID}"
+                      sonarOptions += "-Dsonar.pullrequest.branch=${env.CHANGE_BRANCH}"
+                      sonarOptions += "-Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
+                    }
+                    if (sonar.qualityGateWait) {
+                      sonarOptions += '-Dsonar.qualitygate.wait=true'
+                    }
+                    sonarOptions += 'org.sonarsource.scanner.maven:sonar-maven-plugin:sonar'
+
+                    catchError(message: 'SonarCloud analysis failed', buildResult: currentBuild.currentResult, stageResult: 'UNSTABLE', catchInterruptions: false) {
+                      withCredentials([string(credentialsId: 'sonarcloud-token', variable: 'SONAR_TOKEN')]) {
+                        infra.runMaven(sonarOptions, jdk, null, addToolEnv, useArtifactCachingProxy)
+                      }
+                    }
+                  }
                 } else {
                   echo "Skipping static analysis results for ${stageIdentifier}"
                 }
@@ -321,10 +365,16 @@ def call(Map params = [:]) {
 }
 
 private void discoverReferenceBuild() {
-  folders = env.JOB_NAME.split('/')
-  if (folders.length> 1) {
-    discoverGitReferenceBuild(scm: folders[1])
+  String repoName = repoNameFromJobName()
+  if (repoName) {
+    discoverGitReferenceBuild(scm: repoName)
   }
+}
+
+// JOB_NAME for a multibranch job follows "<folder>/<repo>/<branch>", e.g. "Plugins/jira-plugin/master".
+private String repoNameFromJobName() {
+  def folders = env.JOB_NAME?.split('/')
+  return (folders != null && folders.length> 1) ? folders[1] : null
 }
 
 boolean hasDockerLabel() {
