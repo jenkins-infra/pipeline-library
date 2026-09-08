@@ -128,7 +128,7 @@ deploy: ## Tag and push the built image as specified by $(IMAGE_DEPLOY).
 	docker image push "$(IMAGE_DEPLOY_NAME)"
 	@echo "== Deploy succeeded"
 
-bake-deploy: ## Tag and push the built image as specified by docker bake file
+bake-deploy: show ## Tag and push the built image as specified by docker bake file
 	@echo "== Deploying $(DOCKER_BAKE_TARGET) target with docker bake file"
 	$(eval CACHE_TO_DEPLOY_OPTION := $(if $(DOCKER_CACHE_TO),--set "*.cache-to=$(DOCKER_CACHE_TO)",))
 	@docker buildx bake -f "$(call FixPath,$(DOCKER_BAKE_FILE))" "$(DOCKER_BAKE_TARGET)" $(CACHE_TO_DEPLOY_OPTION) --push
