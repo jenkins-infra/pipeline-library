@@ -16,7 +16,7 @@ IMAGE_DEPLOY_NAME ?= "$(IMAGE_NAME)"
 # If there are no ':' character in IMAGE_DEPLOY_NAME (nominal case) then we assume both $NEXTVERSION and 'latest' tags should be built/deployed
 # We use tedious Makefile because the HCL 'strcontains()' function is unavailable in Docker Bake
 ifeq (,$(findstring :,$(IMAGE_DEPLOY_NAME)))
-	CUSTOMTAGS := $(NEXTVERSION),latest
+	CUSTOMTAGS := $(NEXT_VERSION),latest
 	export CUSTOMTAGS
 endif
 BUILD_TARGETPLATFORM ?= linux/amd64
