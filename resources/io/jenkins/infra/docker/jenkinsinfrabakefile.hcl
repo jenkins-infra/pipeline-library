@@ -4,7 +4,7 @@ variable "REGISTRY" {
   default = "docker.io"
 }
 
-variable "NEXT_VERSION" {
+variable "CUSTOMTAGS" {
   default = ""
 }
 
@@ -33,19 +33,15 @@ variable "SCM_URI" {
   default = ""
 }
 
-# return the full image name
-function "full_image_name" {
-  params = [tag]
-  result = notequal("", tag) ? "${REGISTRY}/${IMAGE_DEPLOY_NAME}:${tag}" : "${REGISTRY}/${IMAGE_DEPLOY_NAME}:latest"
+function "all_tags" {
+  params = [image_full_name, tags]
+  result = notequal("", tags) ? formatlist("${image_full_name}:%s", compact(split(",", tags))) : [image_full_name]
 }
 
 target "default" {
   dockerfile = IMAGE_DOCKERFILE
   context = IMAGE_DIR
-  tags = [
-    full_image_name("latest"),
-    full_image_name(NEXT_VERSION)
-  ]
+  tags = all_tags("${REGISTRY}/${IMAGE_DEPLOY_NAME}", CUSTOMTAGS)
   platforms = [BAKE_TARGETPLATFORMS]
   args = {
     GIT_COMMIT_REV="${GIT_COMMIT_REV}",
