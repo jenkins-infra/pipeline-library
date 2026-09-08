@@ -8,6 +8,7 @@ class Infra implements Serializable {
   private boolean trustedCi
   private boolean releaseCi
   private boolean infraCi
+  private boolean certCi
   private boolean ci
   private boolean buildError
   private String dockerRegistryNamespace
@@ -53,6 +54,10 @@ class Infra implements Serializable {
 
   public boolean isInfraCiController() {
     return infraCi
+  }
+
+  public boolean isCertCiController() {
+    return certCi
   }
 
   public boolean isCiController() {

@@ -143,7 +143,6 @@ def call(String imageShortName, Map userConfig =[:]) {
       "BAKE_TARGETPLATFORMS=${finalConfig.targetplatforms}",
       "REGISTRY=${registryHost}",
     ]) {
-      String nextVersion = ''
       stage("Prepare ${imageName}") {
         checkout scm
         if (finalConfig.unstash != '') {
@@ -167,16 +166,26 @@ def call(String imageShortName, Map userConfig =[:]) {
               powershell 'make lint'
             }
           } finally {
-            boolean skipChecks = false
-            if (env.BRANCH_IS_PRIMARY) {
-              skipChecks = true
+            // Only ci.jenkins.io and infra.ci.jenkins.io are expected to have the 'warnings' plugin
+            if (infra.isInfraCiController() || infra.isCiController()) {
+              boolean skipChecks = false
+              if (env.BRANCH_IS_PRIMARY) {
+                skipChecks = true
+              }
+              recordIssues(
+                  skipPublishingChecks: skipChecks,
+                  enabledForFailure: true,
+                  aggregatingResults: false,
+                  tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
+                  )
+            } else {
+              // Print the hadolint report file to stdout in case of error when no warnings plugin is available
+              if (isUnix()) {
+                sh 'cat "${HADOLINT_REPORT}"'
+              } else {
+                powershell 'type $env:HADOLINT_REPORT'
+              }
             }
-            recordIssues(
-                skipPublishingChecks: skipChecks,
-                enabledForFailure: true,
-                aggregatingResults: false,
-                tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
-                )
           }
         }
       } // stage
@@ -212,7 +221,9 @@ def call(String imageShortName, Map userConfig =[:]) {
         } // if else
       } // each
 
-      if (env.BRANCH_IS_PRIMARY || env.TAG_NAME) {
+      String nextVersion = ''
+
+      if (env.BRANCH_IS_PRIMARY || env.TAG_NAME || infra.isCertCiController()) {
         // Automatic tagging on principal branch is not enabled by default, show potential next version in PR anyway
         if (finalConfig.automaticSemanticVersioning) {
           stage("Get Next Version of ${imageName}") {
@@ -222,16 +233,18 @@ def call(String imageShortName, Map userConfig =[:]) {
             } else {
               powershell 'git fetch --all --tags' // Ensure that all the tags are retrieved (uncoupling from job configuration, wether tags are fetched or not)
               nextVersion = powershell(script: finalConfig.nextVersionCommand, returnStdout: true).trim()
-            }
-            echo "Next Release Version = ${nextVersion}"
+            } // if
+            echo "nextVersion: ${nextVersion}"
           } // stage
+        } else if (env.TAG_NAME) {
+          // if a tag is scanned, it need to be the nextVersion
+          nextVersion = env.TAG_NAME
+          echo "nextVersion: ${nextVersion}"
         } else {
-          if (env.TAG_NAME) {
-            // if a tag is scanned, it need to be the nextVersion
-            nextVersion = env.TAG_NAME
-          }
+          echo "INFO: no 'nextVersion' detected. Relying on the user-provided image name for Docker tag (${imageName})."
         } // if
 
+        // env var 'NEXT_VERSION' may be used by the docker bake file so we need it early
         withEnv(["NEXT_VERSION=${nextVersion}"]) {
           // Only deploy on primary branch
           stage("Deploy ${imageName}") {
@@ -245,7 +258,7 @@ def call(String imageShortName, Map userConfig =[:]) {
           } // stage
 
           // Automatic tagging on principal branch is not enabled by default, and disabled if disablePublication is set to true
-          if (semVerEnabledOnPrimaryBranch) {
+          if (semVerEnabledOnPrimaryBranch && nextVersion) {
             stage("Semantic Release of ${imageName}") {
               echo "Configuring credential.helper"
               // The credential.helper will execute everything after the '!', here echoing the username, the password and an empty line to be passed to git as credentials when git needs it.
@@ -283,7 +296,7 @@ def call(String imageShortName, Map userConfig =[:]) {
 
           // GitHub Release stage: Use NEXT_VERSION and only on primary branch
           // Create release only if SemVer is enabled, on primary branch, and publication is NOT disabled.
-          if (finalConfig.automaticSemanticVersioning && !finalConfig.disablePublication) {
+          if (finalConfig.automaticSemanticVersioning && !finalConfig.disablePublication && nextVersion) {
             stage('GitHub Release') {
               withCredentials([
                 usernamePassword(credentialsId: "${finalConfig.gitCredentials}", passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_USERNAME')
