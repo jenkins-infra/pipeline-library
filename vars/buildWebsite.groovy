@@ -8,7 +8,7 @@ def call(Map params = [:]) {
     publishDir: '',
     customEnvsPreview: '', // TODO or to remove if not really useful
     customEnvsProduction: '', // TODO or to remove if not really useful
-    postInstallCommand: '',
+    preBuildCommand: '',
   ]
   final Map config = defaultConfig << params
   if (!config.websiteName) {
@@ -51,10 +51,9 @@ def call(Map params = [:]) {
             echo "Currently running from an agent with label '${agentLabel}'"
             sh 'node --version'
             sh 'npm --version'
-          }
-
-          if (config.postInstallCommand) {
-            sh config.postInstallCommand
+            if (fileExists('.tool-versions')) {
+              sh 'cat .tool-versions'
+            }
           }
 
           if (config.typosCheck) {
@@ -79,13 +78,17 @@ def call(Map params = [:]) {
             sh 'npm run lint --if-present'
           }
 
-          stage('Test') {
-            sh 'npm test --if-present'
-            junit(testResults: 'test-results/**/*.xml', allowEmptyResults: true)
+          if (config.preBuildCommand) {
+            sh config.preBuildCommand
           }
 
           stage('Build') {
             sh 'npm run build'
+          }
+
+          stage('Test') {
+            sh 'npm test --if-present'
+            junit(testResults: 'test-results/**/*.xml', allowEmptyResults: true)
           }
 
           if (env.CHANGE_ID && infra.isInfraCiController()) {
