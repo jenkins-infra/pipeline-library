@@ -2,7 +2,7 @@
 
 def call(Map params = [:]) {
   final Map defaultConfig = [
-    websiteName: '', // must be the netlify name
+    websiteName: '', // must be the netlify name for websites, and also the repo name for NPM components
     timeout: 60,
     typosCheck: true,
     lint: true,
@@ -11,7 +11,7 @@ def call(Map params = [:]) {
     customEnvsProduction: '', // TODO or to remove if not really useful
     preBuildCommand: '',
     coveragePath: '',
-    releaseFromBranches: [],
+    releaseFromBranches: [], // only for NPM components
   ]
   final Map config = defaultConfig << params
   if (!config.websiteName) {
@@ -118,7 +118,7 @@ def call(Map params = [:]) {
             }
           }
 
-          // Private part
+          // Private section
           if (infra.isInfraCiController()) {
             if (env.CHANGE_ID) {
               stage('Deploy preview') {
@@ -132,12 +132,9 @@ def call(Map params = [:]) {
               }
             }
 
-            // jenkins-io-components only
             if (releaseFromBranches.contains(env.BRANCH_NAME)) {
               stage('Release') {
-                infra.withNpmCredentials(website) {
-                  sh 'npx semantic-release --repositoryUrl https://x-access-token:$GITHUB_TOKEN@github.com/jenkins-infra/jenkins-io-components.git'
-                }
+                infra.publishNpmRelease(website)
               }
             }
           }
