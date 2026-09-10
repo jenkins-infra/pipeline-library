@@ -2,7 +2,6 @@
 
 def call(Map params = [:]) {
   final Map defaultConfig = [
-    websiteName: '', // must be the netlify name for websites, and also the repo name for NPM components
     timeout: 60,
     typosCheck: true,
     lint: true,
@@ -122,19 +121,19 @@ def call(Map params = [:]) {
           if (infra.isInfraCiController()) {
             if (env.CHANGE_ID) {
               stage('Deploy preview') {
-                infra.deployWebsitePreview(websiteName: website, publicFolder: config.publicFolder)
+                infra.deployWebsitePreview(name: website, publicFolder: config.publicFolder)
               }
             }
 
             if (env.BRANCH_IS_PRIMARY) {
               stage('Publish') {
-                infra.publishWebsite(websiteName: website, publicFolder: config.publicFolder)
+                infra.publishWebsite(name: website, publicFolder: config.publicFolder)
               }
             }
 
             if (releaseToNpmFromBranches.contains(env.BRANCH_NAME)) {
               stage('Release') {
-                infra.publishNpmRelease(website)
+                infra.releaseToNpm(website)
               }
             }
           }

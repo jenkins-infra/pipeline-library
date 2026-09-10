@@ -671,57 +671,90 @@ String getBuildWebsiteAgentLabel(Integer spotRetryCounter) {
   return getSpotOrNonSpotAgentLabel(agentLabel, spotRetryCounter)
 }
 
-void deployWebsitePreview(Map params = [websiteName: '', publicFolder: '']) {
-  withCredentials([string(credentialsId: 'netlify-auth-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
-    try {
-      withEnv([
-        "WEBSITE_NAME=${params.websiteName}",
-        "PUBLIC_FOLDER=${params.publicFolder}",
-      ]) {
-        sh 'netlify-deploy --draft=true --siteName "${WEBSITE_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_FOLDER}"'
-      }
-      recordDeployment('jenkins-infra', website, pullRequest.head, 'success', "https://deploy-preview-${CHANGE_ID}--${website}.netlify.app")
-    } catch (e) {
-      echo 'Netlify preview deploy failed, continuing'
-      recordDeployment('jenkins-infra', website, pullRequest.head, 'failure', "https://deploy-preview-${CHANGE_ID}--${website}.netlify.app")
-    }
+// From current repo
+private Map getWebsiteConfig() {
+  if (!env.GIT_URL) {
+    error 'GIT_URL is not available'
   }
-}
-
-void publishWebsite(Map params = [websiteName: '', publicFolder: '']) {
-  websiteName = params.websiteName
-  final Map availableWebsiteConfig = [
+  final String repositoryName = env.GIT_URL.tokenize('/').last().replaceFirst(/\.git$/, '')
+  final Map availableConfig = [
     'contributor-spotlight': [
       fileShare: 'contributor-jenkins-io',
       fileShareStorageAccount: 'contributorjenkinsio',
+      netlifyName: 'contributor-spotlight',
       servicePrincipalCredentialsId: 'contributor-jenkins-io-fileshare-service-principal-writer',
     ],
     'docs-jenkins-io-pr': [
       fileShare: 'docs-jenkins-io',
       fileShareStorageAccount: 'docsjenkinsio',
+      netlifyName: 'docs-jenkins-io-pr',
       servicePrincipalCredentialsId: 'infraci-docs-jenkins-io-fileshare-service-principal-writer',
     ],
-    'jenkins-io-components': [
-      fileShare: 'stats-jenkins-io',
-      fileShareStorageAccount: 'statsjenkinsio',
-      servicePrincipalCredentialsId: 'infraci-stats-jenkins-io-fileshare-service-principal-writer',
+    'gatsby-plugin-jenkins-layout': [
+      githubAppCredentials: 'jenkins-io-components-ghapp',
+      npmToken: 'jenkinsci-npm-token',
     ],
-    'stats-jenkins-io': [
+    // TODO: deploy prod to a FS instead of netlify?
+    'jenkins-io-components': [
+      githubAppCredentials: 'jenkins-io-components-ghapp',
+      netlifyName: 'jenkins-io-components',
+      npmToken: 'jenkinsci-npm-token',
+    ],
+    'stats.jenkins.io': [
       fileShare: 'stats-jenkins-io',
       fileShareStorageAccount: 'statsjenkinsio',
+      // netlifyName: TODO, see helpdesk#???
       servicePrincipalCredentialsId: 'infraci-stats-jenkins-io-fileshare-service-principal-writer',
     ],
   ]
-  if (!availableWebsiteConfig.contains(websiteName)) {
-    error "There is no file share configuration available for '${websiteName}'"
+  if (!availableConfig.contains(repositoryName)) {
+    echo "WARNING: no configuration found for website '${repositoryName}'"
+  }
+  return availableConfig[repositoryName] + [repositoryName: repositoryName]
+}
+
+void deployWebsitePreview(String publicFolder = '') {
+  final Map config = getWebsiteConfig()
+  if (!publicFolder) {
+    echo 'A public folder is required to deploy a website preview'
+    return
+  }
+  if (!config.netlifyName) {
+    echo 'A netlify site name is required to deploy a website preview'
+    return
+  }
+  withCredentials([string(credentialsId: 'netlify-auth-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
+    try {
+      withEnv([
+        "NETLIFY_NAME=${config.netlifyName}", // Should not contains '.'
+        "PUBLIC_FOLDER=${publicFolder}",
+      ]) {
+        sh 'netlify-deploy --draft=true --siteName "${NETLIFY_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_FOLDER}"'
+      }
+      recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'success', "https://deploy-preview-${CHANGE_ID}--${config.netlifyName}.netlify.app")
+    } catch (e) {
+      echo 'Netlify preview deploy failed, continuing'
+      recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'failure', "https://deploy-preview-${CHANGE_ID}--${config.netlifyName}.netlify.app")
+    }
+  }
+}
+
+void publishWebsite(String publicFolder = '') {
+  final Map config = getWebsiteConfig()
+  if (!publicFolder) {
+    echo 'A public folder is required to publish a website'
+    return
+  }
+  if (!config.fileShare) {
+    echo 'A file share is required to publish a website'
   }
   infra.withFileShareServicePrincipal([
-    fileShare: availableWebsiteConfig.websiteName.fileShare,
-    fileShareStorageAccount: availableWebsiteConfig.websiteName.fileShareStorageAccount,
-    servicePrincipalCredentialsId: availableWebsiteConfig.websiteName.servicePrincipalCredentialsId,
+    fileShare: config.fileShare,
+    fileShareStorageAccount: config.fileShareStorageAccount,
+    servicePrincipalCredentialsId: config.servicePrincipalCredentialsId,
   ]) {
     try {
-      withEnv(["PUBLIC_FOLDER=${params.publicFolder}"]) {
+      withEnv(["PUBLIC_FOLDER=${publicFolder}"]) {
         sh '''
         # Synchronize the File Share content
         set +x
@@ -742,24 +775,24 @@ void publishWebsite(Map params = [websiteName: '', publicFolder: '']) {
   }
 }
 
-Object publishNpmRelease(String websiteName = '') {
-  allowedForRelease = ['jenkins-io-components', 'gatsby-plugin-jenkins-layout']
-  if (!allowedForRelease.contains(websiteName)) {
-    error 'Releasing not allowed'
+Object releaseToNpm() {
+  final Map config = getWebsiteConfig()
+  if (!config.npmToken && !config.githubAppId) {
+    error 'A token and a GitHub App credentials are required to release to NPM'
   }
   withCredentials([
     string(
-      credentialsId: 'jenkinsci-npm-token',
+      credentialsId: config.npmToken,
       variable: 'NPM_TOKEN'
     ),
     usernamePassword(
-      credentialsId: 'jenkins-io-components-ghapp',
+      credentialsId: config.githubAppCredentials,
       usernameVariable: 'GITHUB_APP',
       passwordVariable: 'GITHUB_TOKEN'
     ),
   ]) {
-    withEnv(["WEBSITE_NAME=${websiteName}"]) {
-      sh 'npx semantic-release --repositoryUrl https://x-access-token:$GITHUB_TOKEN@github.com/jenkins-infra/${WEBSITE_NAME}.git'
+    withEnv(["REPO_NAME=${config.repositoryName}"]) {
+      sh 'npx semantic-release --repositoryUrl https://x-access-token:$GITHUB_TOKEN@github.com/jenkins-infra/${REPO_NAME}.git'
     }
   }
 }
