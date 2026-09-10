@@ -671,7 +671,7 @@ String getBuildWebsiteAgentLabel(Integer spotRetryCounter) {
   return getSpotOrNonSpotAgentLabel(agentLabel, spotRetryCounter)
 }
 
-void deployWebsitePreview(Map params = [websiteName: '', publicDir: '']) {
+void deployWebsitePreview(Map params = [websiteName: '', publishDir: '']) {
   withCredentials([string(credentialsId: 'netlify-auth-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
     try {
       withEnv([
@@ -688,7 +688,7 @@ void deployWebsitePreview(Map params = [websiteName: '', publicDir: '']) {
   }
 }
 
-void publishWebsite(Map params = [websiteName: '', publicDir: '']) {
+void publishWebsite(Map params = [websiteName: '', publishDir: '']) {
   websiteName = params.websiteName
   final Map availableWebsiteConfig = [
     'contributor-spotlight': [
