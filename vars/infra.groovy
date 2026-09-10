@@ -644,13 +644,60 @@ private String vmAgentLabel(String platform, Integer spotRetryCounter) {
 }
 
 private String getSpotOrNonSpotAgentLabel(String agentLabel, Integer spotRetryCounter) {
+  def spot = true
+  if (isInfraCiController()) {
+    echo 'INFO: running on infra.ci.jenkins.io, no "spot" or "nonspot" agents'
+    return agentLabel
+  }
   if (isTrustedCiController()) {
     echo 'INFO: running on trusted.ci.jenkins.io, no "spot" or "nonspot" agents'
     return agentLabel
   }
   if (spotRetryCounter> 1) {
     echo 'INFO: more than one retry, using "nonspot" agent'
+    spot = false
     return "${agentLabel} && nonspot"
   }
-  return "${agentLabel} && spot"
+  if (agentLabel.contains('maven-')) {
+    return "${agentLabel}${spot ? '' : '-nonspot'}"
+  }
+  return "${agentLabel} && ${spot ? 'spot' : 'nonspot'}"
+}
+
+String getBuildWebsiteAgentLabel(Integer spotRetryCounter) {
+  // ci.jenkins.io has the default spot amd64 used by Java builds
+  // while infra.ci.jenkins.io defaults to arm64 VM agents (due to Gastby memory requirements)
+  String agentLabel = isCiController() ? 'maven-25' : 'linux-arm64-docker'
+  return getSpotOrNonSpotAgentLabel(agentLabel, spotRetryCounter)
+}
+
+Object withWebsiteFileShare(String websiteName = '', Closure body) {
+  final Map availableWebsiteConfig = [
+    'contributor-spotlight': [
+      fileShare: 'contributor-jenkins-io',
+      fileShareStorageAccount: 'contributorjenkinsio',
+      servicePrincipalCredentialsId: 'contributor-jenkins-io-fileshare-service-principal-writer',
+    ],
+    'docs-jenkins-io-pr': [
+      fileShare: 'docs-jenkins-io',
+      fileShareStorageAccount: 'docsjenkinsio',
+      servicePrincipalCredentialsId: 'infraci-docs-jenkins-io-fileshare-service-principal-writer',
+    ],
+    'stats-jenkins-io': [
+      fileShare: 'stats-jenkins-io',
+      fileShareStorageAccount: 'statsjenkinsio',
+      servicePrincipalCredentialsId: 'infraci-stats-jenkins-io-fileshare-service-principal-writer',
+    ],
+  ]
+  if (!availableWebsiteConfig.contains(websiteName)) {
+    error "There is no file share configuration available for '${websiteName}'"
+  }
+  infra.withFileShareServicePrincipal([
+    fileShare: availableWebsiteConfig.websiteName.fileShare,
+    fileShareStorageAccount: availableWebsiteConfig.websiteName.fileShareStorageAccount,
+    servicePrincipalCredentialsId: availableWebsiteConfig.websiteName.servicePrincipalCredentialsId,
+  ]) {
+    body.call()
+  }
+  return
 }
