@@ -671,14 +671,14 @@ String getBuildWebsiteAgentLabel(Integer spotRetryCounter) {
   return getSpotOrNonSpotAgentLabel(agentLabel, spotRetryCounter)
 }
 
-void deployWebsitePreview(Map params = [websiteName: '', publishDir: '']) {
+void deployWebsitePreview(Map params = [websiteName: '', publicFolder: '']) {
   withCredentials([string(credentialsId: 'netlify-auth-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
     try {
       withEnv([
         "WEBSITE_NAME=${params.websiteName}",
-        "PUBLIC_DIR=${params.publishDir}",
+        "PUBLIC_FOLDER=${params.publicFolder}",
       ]) {
-        sh 'netlify-deploy --draft=true --siteName "${WEBSITE_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_DIR}"'
+        sh 'netlify-deploy --draft=true --siteName "${WEBSITE_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_FOLDER}"'
       }
       recordDeployment('jenkins-infra', website, pullRequest.head, 'success', "https://deploy-preview-${CHANGE_ID}--${website}.netlify.app")
     } catch (e) {
@@ -688,7 +688,7 @@ void deployWebsitePreview(Map params = [websiteName: '', publishDir: '']) {
   }
 }
 
-void publishWebsite(Map params = [websiteName: '', publishDir: '']) {
+void publishWebsite(Map params = [websiteName: '', publicFolder: '']) {
   websiteName = params.websiteName
   final Map availableWebsiteConfig = [
     'contributor-spotlight': [
@@ -721,7 +721,7 @@ void publishWebsite(Map params = [websiteName: '', publishDir: '']) {
     servicePrincipalCredentialsId: availableWebsiteConfig.websiteName.servicePrincipalCredentialsId,
   ]) {
     try {
-      withEnv(["PUBLIC_DIR=${params.publishDir}"]) {
+      withEnv(["PUBLIC_FOLDER=${params.publicFolder}"]) {
         sh '''
         # Synchronize the File Share content
         set +x
@@ -729,7 +729,7 @@ void publishWebsite(Map params = [websiteName: '', publishDir: '']) {
           --skip-version-check \
           --recursive=true \
           --delete-destination=true \
-          "${PUBLIC_DIR}" "${FILESHARE_SIGNED_URL}"
+          "${PUBLIC_FOLDER}" "${FILESHARE_SIGNED_URL}"
         '''
       }
     } catch (e) {
