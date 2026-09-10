@@ -8,6 +8,7 @@ def call(Map params = [:]) {
     publishDir: '',
     customEnvsPreview: '', // TODO or to remove if not really useful
     customEnvsProduction: '', // TODO or to remove if not really useful
+    postInstallCommand: '',
   ]
   final Map config = defaultConfig << params
   if (!config.websiteName) {
@@ -46,6 +47,16 @@ def call(Map params = [:]) {
             infra.checkoutSCM()
           }
 
+          stage('Sanity checks') {
+            echo "Currently running from an agent with label '${agentLabel}'"
+            sh 'node --version'
+            sh 'npm --version'
+          }
+
+          if (config.postInstallCommand) {
+            sh config.postInstallCommand
+          }
+
           if (config.typosCheck) {
             stage('Typos check') {
               // TODO: review; on infra.ci:
@@ -56,16 +67,11 @@ def call(Map params = [:]) {
             }
           }
 
-          stage('Sanity checks') {
-            echo "Currently running from an agent with label '${agentLabel}'"
-            sh 'node --version'
-            sh 'npm --version'
-          }
-
           stage('Install') {
             // if (fileExists('.tool-versions')) {
             //   sh 'asdf install'
             // }
+            // TODO: add --skip-scripts
             sh 'npm ci'
           }
 
@@ -100,15 +106,21 @@ def call(Map params = [:]) {
             if (infra.isInfraCiController()) {
               stage('Deploy') {
                 infra.withWebsiteFileShare(config.websiteName) {
-                  sh '''
-                  # Synchronize the File Share content
-                  set +x
-                  azcopy sync \
-                    --skip-version-check \
-                    --recursive=true \
-                    --delete-destination=true \
-                    "${PUBLIC_DIR}" "${FILESHARE_SIGNED_URL}"
-                  '''
+                  try {
+                    sh '''
+                    # Synchronize the File Share content
+                    set +x
+                    azcopy sync \
+                      --skip-version-check \
+                      --recursive=true \
+                      --delete-destination=true \
+                      "${PUBLIC_DIR}" "${FILESHARE_SIGNED_URL}"
+                    '''
+                  } catch (e) {
+                    // Only collect azcopy logs when the deployment fails (heavy)
+                    sh 'cat /home/jenkins/.azcopy/*.log > azcopy.log'
+                    archiveArtifacts 'azcopy.log'
+                  }
                 }
               }
             }
