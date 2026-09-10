@@ -122,13 +122,13 @@ def call(Map params = [:]) {
           if (infra.isInfraCiController()) {
             if (env.CHANGE_ID) {
               stage('Deploy preview') {
-                infra.deployWebsitePreview(websiteName: website, publishDir: publishDir)
+                infra.deployWebsitePreview([websiteName: website, publishDir: publishDir])
               }
             }
 
             if (env.BRANCH_IS_PRIMARY) {
               stage('Publish') {
-                infra.publishWebsite(websiteName: website, publishDir: publishDir)
+                infra.publishWebsite([websiteName: website, publishDir: publishDir])
               }
             }
 
