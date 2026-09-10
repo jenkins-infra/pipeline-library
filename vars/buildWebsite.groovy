@@ -11,6 +11,7 @@ def call(Map params = [:]) {
     customEnvsProduction: '', // TODO or to remove if not really useful
     preBuildCommand: '',
     coveragePath: '',
+    releaseFromBranches: [],
   ]
   final Map config = defaultConfig << params
   if (!config.websiteName) {
@@ -19,6 +20,7 @@ def call(Map params = [:]) {
   if (!config.publishDir) {
     error "buildWebsite requires a 'publishDir' parameter (e.g. publishDir: './public')"
   }
+  final String website = config.websiteName
 
   // Do not trigger daily if not on the primary branch (e.g. not on PR, not on other branches, not on tags)
   final String cronPattern = env.BRANCH_IS_PRIMARY ? '@daily' : ''
@@ -39,8 +41,6 @@ def call(Map params = [:]) {
     node(agentLabel) {
       timeout(config.timeout) {
         withEnv([
-          "WEBSITE_NAME=${config.websiteName}",
-          "PUBLIC_DIR=${config.publishDir}",
           "NODE_ENV=${nodeEnvironment}",
           "DISABLE_SEARCH_ENGINE=${disableSearchEngine}",
           'TZ=UTC',
@@ -114,43 +114,31 @@ def call(Map params = [:]) {
             }
           }
 
-          if (env.CHANGE_ID && infra.isInfraCiController()) {
-            stage('Deploy preview') {
-              withCredentials([string(credentialsId: 'netlify-auth-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
-                try {
-                  sh 'netlify-deploy --draft=true --siteName "${WEBSITE_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_DIR}"'
-                  recordDeployment('jenkins-infra', config.websiteName, pullRequest.head, 'success', "https://deploy-preview-${CHANGE_ID}--${config.websiteName}.netlify.app")
-                } catch (e) {
-                  echo 'Netlify preview deploy failed, continuing'
-                  recordDeployment('jenkins-infra', config.websiteName, pullRequest.head, 'failure', "https://deploy-preview-${CHANGE_ID}--${config.websiteName}.netlify.app")
+          // Private part
+          if (infra.isInfraCiController()) {
+            if (env.CHANGE_ID) {
+              stage('Deploy preview') {
+                infra.deployWebsitePreview(websiteName: website, publicDir: publicDir)
+              }
+            }
+
+            if (env.BRANCH_IS_PRIMARY) {
+              stage('Publish') {
+                infra.publishWebsite(websiteName: website, publicDir: publicDir)
+              }
+            }
+
+            // jenkins-io-components only
+            if (releaseFromBranches.contains(env.BRANCH_NAME)) {
+              stage('Release') {
+                infra.withNpmCredentials(website) {
+                  sh 'npx semantic-release --repositoryUrl https://x-access-token:$GITHUB_TOKEN@github.com/jenkins-infra/jenkins-io-components.git'
                 }
               }
             }
           }
 
           if (env.BRANCH_IS_PRIMARY) {
-            if (infra.isInfraCiController()) {
-              stage('Deploy') {
-                infra.withWebsiteFileShare(config.websiteName) {
-                  try {
-                    sh '''
-                    # Synchronize the File Share content
-                    set +x
-                    azcopy sync \
-                      --skip-version-check \
-                      --recursive=true \
-                      --delete-destination=true \
-                      "${PUBLIC_DIR}" "${FILESHARE_SIGNED_URL}"
-                    '''
-                  } catch (e) {
-                    // Only collect azcopy logs when the deployment fails (heavy)
-                    sh 'cat /home/jenkins/.azcopy/*.log > azcopy.log'
-                    archiveArtifacts 'azcopy.log'
-                  }
-                }
-              }
-            }
-
             stage('Publish build report') {
               publishBuildStatusReport()
             }

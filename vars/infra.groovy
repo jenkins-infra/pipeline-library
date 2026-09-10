@@ -671,7 +671,25 @@ String getBuildWebsiteAgentLabel(Integer spotRetryCounter) {
   return getSpotOrNonSpotAgentLabel(agentLabel, spotRetryCounter)
 }
 
-Object withWebsiteFileShare(String websiteName = '', Closure body) {
+void deployWebsitePreview(Map params = [websiteName: '', publicDir: '']) {
+  withCredentials([string(credentialsId: 'netlify-auth-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
+    try {
+      withEnv([
+        "WEBSITE_NAME=${params.websiteName}",
+        "PUBLIC_DIR=${params.publishDir}",
+      ]) {
+        sh 'netlify-deploy --draft=true --siteName "${WEBSITE_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_DIR}"'
+      }
+      recordDeployment('jenkins-infra', website, pullRequest.head, 'success', "https://deploy-preview-${CHANGE_ID}--${website}.netlify.app")
+    } catch (e) {
+      echo 'Netlify preview deploy failed, continuing'
+      recordDeployment('jenkins-infra', website, pullRequest.head, 'failure', "https://deploy-preview-${CHANGE_ID}--${website}.netlify.app")
+    }
+  }
+}
+
+void publishWebsite(Map params = [websiteName: '', publicDir: '']) {
+  websiteName = params.websiteName
   final Map availableWebsiteConfig = [
     'contributor-spotlight': [
       fileShare: 'contributor-jenkins-io',
@@ -682,6 +700,11 @@ Object withWebsiteFileShare(String websiteName = '', Closure body) {
       fileShare: 'docs-jenkins-io',
       fileShareStorageAccount: 'docsjenkinsio',
       servicePrincipalCredentialsId: 'infraci-docs-jenkins-io-fileshare-service-principal-writer',
+    ],
+    'jenkins-io-components': [
+      fileShare: 'stats-jenkins-io',
+      fileShareStorageAccount: 'statsjenkinsio',
+      servicePrincipalCredentialsId: 'infraci-stats-jenkins-io-fileshare-service-principal-writer',
     ],
     'stats-jenkins-io': [
       fileShare: 'stats-jenkins-io',
@@ -697,7 +720,44 @@ Object withWebsiteFileShare(String websiteName = '', Closure body) {
     fileShareStorageAccount: availableWebsiteConfig.websiteName.fileShareStorageAccount,
     servicePrincipalCredentialsId: availableWebsiteConfig.websiteName.servicePrincipalCredentialsId,
   ]) {
+    try {
+      withEnv(["PUBLIC_DIR=${params.publishDir}"]) {
+        sh '''
+        # Synchronize the File Share content
+        set +x
+        azcopy sync \
+          --skip-version-check \
+          --recursive=true \
+          --delete-destination=true \
+          "${PUBLIC_DIR}" "${FILESHARE_SIGNED_URL}"
+        '''
+      }
+    } catch (e) {
+      // Only collect azcopy logs when the deployment fails (heavy)
+      sh 'cat /home/jenkins/.azcopy/*.log > azcopy.log'
+      archiveArtifacts 'azcopy.log'
+
+      // TODO: throw error
+    }
+  }
+}
+
+Object withNpmCredentials(String websiteName = '', Closure body) {
+  // jenkins-io-components only for now
+  if (website != 'jenkins-io-components') {
+    error 'Releasing only jenkins-io-components'
+  }
+  withCredentials([
+    string(
+      credentialsId: 'jenkinsci-npm-token',
+      variable: 'NPM_TOKEN'
+    ),
+    usernamePassword(
+      credentialsId: 'jenkins-io-components-ghapp',
+      usernameVariable: 'GITHUB_APP',
+      passwordVariable: 'GITHUB_TOKEN'
+    ),
+  ]) {
     body.call()
   }
-  return
 }
