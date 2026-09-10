@@ -53,6 +53,7 @@ def call(Map params = [:]) {
             sh 'node --version'
             sh 'npm --version'
             if (fileExists('.tool-versions')) {
+              echo 'For the record; should be the same as above, update it otherwise'
               sh 'cat .tool-versions'
             }
           }
