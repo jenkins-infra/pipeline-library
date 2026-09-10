@@ -56,8 +56,8 @@ def call(Map params = [:]) {
             ['.tool-versions', '.nvmrc'].each {
               if (fileExists(it)) {
                 echo 'For the record; should be the same as above, update it otherwise'
-                withEnv(["FILE=${it}"]) {
-                  sh 'cat ${FILE}'
+                withEnv(["FILE_TO_CAT=${it}"]) {
+                  sh 'cat "${FILE_TO_CAT}"'
                 }
               }
             }
@@ -122,13 +122,13 @@ def call(Map params = [:]) {
           if (infra.isInfraCiController()) {
             if (env.CHANGE_ID) {
               stage('Deploy preview') {
-                infra.deployWebsitePreview(websiteName: website, publicDir: publicDir)
+                infra.deployWebsitePreview(websiteName: website, publishDir: publishDir)
               }
             }
 
             if (env.BRANCH_IS_PRIMARY) {
               stage('Publish') {
-                infra.publishWebsite(websiteName: website, publicDir: publicDir)
+                infra.publishWebsite(websiteName: website, publishDir: publishDir)
               }
             }
 
