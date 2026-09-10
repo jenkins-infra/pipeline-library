@@ -723,6 +723,10 @@ void deployWebsitePreview(String publicFolder = '') {
     echo 'A netlify site name is required to deploy a website preview'
     return
   }
+  if (publicFolder.startWith('.')) {
+    echo 'The public folder can\'t start with a dot'
+    return
+  }
   withCredentials([string(credentialsId: 'netlify-auth-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
     try {
       withEnv([
@@ -747,6 +751,10 @@ void publishWebsite(String publicFolder = '') {
   }
   if (!config.fileShare) {
     echo 'A file share is required to publish a website'
+  }
+  if (publicFolder.startWith('.')) {
+    echo 'The public folder can\'t start with a dot'
+    return
   }
   infra.withFileShareServicePrincipal([
     fileShare: config.fileShare,
