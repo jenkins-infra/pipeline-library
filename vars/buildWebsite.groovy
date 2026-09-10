@@ -13,11 +13,8 @@ def call(Map params = [:]) {
     releaseToNpmFromBranches: [], // only for NPM components
   ]
   final Map config = defaultConfig << params
-  if (!config.websiteName) {
-    error "buildWebsite requires a 'websiteName' parameter (e.g. websiteName: 'contributor-spotlight')"
-  }
   if (!config.publicFolder) {
-    echo 'WARNING: buildWebsite requires a "publicFolder" parameter (e.g. publicFolder: \'./public\') for preview and publication'
+    echo 'WARNING: buildWebsite requires a "publicFolder" parameter (e.g. publicFolder: \'public\') for preview and publication'
   }
   final String website = config.websiteName
 
