@@ -10,6 +10,7 @@ def call(Map params = [:]) {
     customEnvsPreview: '', // TODO or to remove if not really useful
     customEnvsProduction: '', // TODO or to remove if not really useful
     preBuildCommand: '',
+    coveragePath: '',
   ]
   final Map config = defaultConfig << params
   if (!config.websiteName) {
@@ -72,13 +73,21 @@ def call(Map params = [:]) {
             // if (fileExists('.tool-versions')) {
             //   sh 'asdf install'
             // }
-            // TODO: add --skip-scripts
+            // TODO: readTrusted(package.json)? Even if incomplete
+            // --ignore-scripts is passed by default since summer 2026
             sh 'npm ci'
           }
 
           if (config.lint) {
             stage('Lint') {
-              sh 'npm run lint --if-present'
+              try {
+                sh 'npm run lint --if-present'
+              } catch (e) {
+                recordIssues(stopBuild: true, tools: [
+                  esLint(pattern: 'eslint-results.json'),
+                  styleLint(pattern: 'stylelint-results.json')
+                ])
+              }
             }
           }
 
@@ -93,6 +102,16 @@ def call(Map params = [:]) {
           stage('Test') {
             sh 'npm test --if-present'
             junit(testResults: 'test-results/**/*.xml', allowEmptyResults: true)
+            // for jenkins-io-components:
+            junit(testResults: 'junit.xml', allowEmptyResults: true)
+          }
+
+          // cobertura seems broken on infra, and we don't need to publish it from there
+          if (config.coveragePath && !infra.isInfraCiController()) {
+            stage('Coverage') {
+              sh 'npm run coverage --if-present'
+              recordCoverage name: 'coverage', sourceCodeRetention: 'NEVER', tools: [[parser: 'COBERTURA', pattern: config.coveragePath]]
+            }
           }
 
           if (env.CHANGE_ID && infra.isInfraCiController()) {
