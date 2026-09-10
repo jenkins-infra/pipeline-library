@@ -5,6 +5,7 @@ def call(Map params = [:]) {
     websiteName: '', // must be the netlify name
     timeout: 60,
     typosCheck: true,
+    lint: true,
     publishDir: '',
     customEnvsPreview: '', // TODO or to remove if not really useful
     customEnvsProduction: '', // TODO or to remove if not really useful
@@ -74,8 +75,10 @@ def call(Map params = [:]) {
             sh 'npm ci'
           }
 
-          stage('Lint') {
-            sh 'npm run lint --if-present'
+          if (config.lint) {
+            stage('Lint') {
+              sh 'npm run lint --if-present'
+            }
           }
 
           if (config.preBuildCommand) {
