@@ -6,7 +6,7 @@ def call(Map params = [:]) {
     timeout: 60,
     typosCheck: true,
     lint: true,
-    publishDir: '',
+    publicFolder: '',
     customEnvsPreview: '', // TODO or to remove if not really useful
     customEnvsProduction: '', // TODO or to remove if not really useful
     preBuildCommand: '',
@@ -17,8 +17,8 @@ def call(Map params = [:]) {
   if (!config.websiteName) {
     error "buildWebsite requires a 'websiteName' parameter (e.g. websiteName: 'contributor-spotlight')"
   }
-  if (!config.publishDir) {
-    error "buildWebsite requires a 'publishDir' parameter (e.g. publishDir: './public')"
+  if (!config.publicFolder) {
+    echo 'WARNING: buildWebsite requires a "publicFolder" parameter (e.g. publicFolder: \'./public\') for preview and publication'
   }
   final String website = config.websiteName
 
@@ -122,13 +122,13 @@ def call(Map params = [:]) {
           if (infra.isInfraCiController()) {
             if (env.CHANGE_ID) {
               stage('Deploy preview') {
-                infra.deployWebsitePreview([websiteName: website, publishDir: publishDir])
+                infra.deployWebsitePreview(websiteName: website, publicFolder: config.publicFolder)
               }
             }
 
             if (env.BRANCH_IS_PRIMARY) {
               stage('Publish') {
-                infra.publishWebsite([websiteName: website, publishDir: publishDir])
+                infra.publishWebsite(websiteName: website, publicFolder: config.publicFolder)
               }
             }
 
