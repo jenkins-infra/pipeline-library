@@ -11,7 +11,7 @@ def call(Map params = [:]) {
     customEnvsProduction: '', // TODO or to remove if not really useful
     preBuildCommand: '',
     coveragePath: '',
-    releaseFromBranches: [], // only for NPM components
+    releaseToNpmFromBranches: [], // only for NPM components
   ]
   final Map config = defaultConfig << params
   if (!config.websiteName) {
@@ -132,7 +132,7 @@ def call(Map params = [:]) {
               }
             }
 
-            if (releaseFromBranches.contains(env.BRANCH_NAME)) {
+            if (releaseToNpmFromBranches.contains(env.BRANCH_NAME)) {
               stage('Release') {
                 infra.publishNpmRelease(website)
               }
