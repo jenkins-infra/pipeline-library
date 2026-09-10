@@ -53,9 +53,13 @@ def call(Map params = [:]) {
             echo "Currently running from an agent with label '${agentLabel}'"
             sh 'node --version'
             sh 'npm --version'
-            if (fileExists('.tool-versions')) {
-              echo 'For the record; should be the same as above, update it otherwise'
-              sh 'cat .tool-versions'
+            ['.tool-versions', '.nvmrc'].each {
+              if (fileExists(it)) {
+                echo 'For the record; should be the same as above, update it otherwise'
+                withEnv(["FILE=${it}"]) {
+                  sh 'cat ${FILE}'
+                }
+              }
             }
           }
 
