@@ -742,10 +742,10 @@ void publishWebsite(Map params = [websiteName: '', publicDir: '']) {
   }
 }
 
-Object withNpmCredentials(String websiteName = '', Closure body) {
-  // jenkins-io-components only for now
-  if (website != 'jenkins-io-components') {
-    error 'Releasing only jenkins-io-components'
+Object publishNpmRelease(String websiteName = '') {
+  allowedForRelease = ['jenkins-io-components', 'gatsby-plugin-jenkins-layout']
+  if (!allowedForRelease.contains(websiteName)) {
+    error 'Releasing not allowed'
   }
   withCredentials([
     string(
@@ -758,6 +758,8 @@ Object withNpmCredentials(String websiteName = '', Closure body) {
       passwordVariable: 'GITHUB_TOKEN'
     ),
   ]) {
-    body.call()
+    withEnv(["WEBSITE_NAME=${websiteName}"]) {
+      sh 'npx semantic-release --repositoryUrl https://x-access-token:$GITHUB_TOKEN@github.com/jenkins-infra/${WEBSITE_NAME}.git'
+    }
   }
 }
