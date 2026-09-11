@@ -759,8 +759,6 @@ String[] getWebsiteEnvVars(Map customEnvs = [:]) {
 void deployWebsite(String publicFolder = '') {
   final Map config = getWebsiteConfig()
 
-  echo "DEBUG: publicFolder in deployWebsite = '${publicFolder}'"
-
   // Skip checks
   def skipReasons = []
   if (isCiController()) {
@@ -780,7 +778,7 @@ void deployWebsite(String publicFolder = '') {
   }
 
   // Ensure there is something to deploy
-  withEnv(["PUBLIC_FOLDER=${config.publicFolder}"]) {
+  withEnv(["PUBLIC_FOLDER=${publicFolder}"]) {
     sh '''
       if [[ ! -d "${PUBLIC_FOLDER}" ]] || [[ -z "$(find "${PUBLIC_FOLDER}" -mindepth 1 -print -quit)" ]]; then
         echo "Something went wrong, the public folder '"${PUBLIC_FOLDER}"' is empty or missing"
