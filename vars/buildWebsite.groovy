@@ -8,6 +8,7 @@ def call(Map params = [:]) {
     publicFolder: '',
     customEnvsPreview: '', // TODO or to remove if not really useful
     customEnvsProduction: '', // TODO or to remove if not really useful
+    customCronTrigger: '',
     preBuildCommand: '',
     coveragePath: '',
     releaseToNpmFromBranches: [], // only for NPM components
@@ -18,7 +19,7 @@ def call(Map params = [:]) {
   }
 
   // Do not trigger daily if not on the primary branch (e.g. not on PR, not on other branches, not on tags)
-  final String cronPattern = env.BRANCH_IS_PRIMARY ? '@daily' : ''
+  final String cronPattern = env.BRANCH_IS_PRIMARY ? (config.customCronTrigger ?: '@daily') : ''
 
   final String nodeEnvironment = env.CHANGE_ID ? 'development' : 'production'
   final String disableSearchEngine = env.CHANGE_ID ? 'true' : 'false'
