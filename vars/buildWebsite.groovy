@@ -79,7 +79,8 @@ def call(Map params = [:]) {
               } catch (e) {
                 recordIssues(stopBuild: true, tools: [
                   esLint(pattern: 'eslint-results.json'),
-                  styleLint(pattern: 'stylelint-results.json')
+                  checkStyle(pattern: 'eslint.xml'),
+                  styleLint(pattern: 'stylelint-results.json'),
                 ])
               }
             }
