@@ -671,12 +671,17 @@ String getBuildWebsiteAgentLabel(Integer spotRetryCounter) {
   return getSpotOrNonSpotAgentLabel(agentLabel, spotRetryCounter)
 }
 
+private String getRepositoryName() {
+  final String repositoryUrl = scm.getUserRemoteConfigs()[0].getUrl()
+  return repositoryUrl.tokenize('/').last().replaceFirst(/\.git$/, '')
+}
+
 // From current repo
 private Map getWebsiteConfig() {
   if (!env.GIT_URL) {
     error 'GIT_URL is not available, required to determine the current repository'
   }
-  final String repositoryName = env.GIT_URL.tokenize('/').last().replaceFirst(/\.git$/, '')
+  final String repositoryName = getRepositoryName()
   final Map availableConfig = [
     'contributor-spotlight': [
       fileShare: 'contributor-jenkins-io',
