@@ -2,7 +2,7 @@
 
 def call(Map params = [:]) {
   final Map defaultConfig = [
-    customCronTrigger: '',
+    cronPattern: '@daily',
     timeout: 60,
     typosCheck: true,
     lint: true,
@@ -16,7 +16,7 @@ def call(Map params = [:]) {
   final Map config = defaultConfig << params
 
   // Do not trigger daily if not on the primary branch (e.g. not on PR, not on other branches, not on tags)
-  final String cronPattern = env.BRANCH_IS_PRIMARY ? (config.customCronTrigger ?: '@daily') : ''
+  final String cronPattern = env.BRANCH_IS_PRIMARY ? config.cronPattern : ''
   properties([
     disableConcurrentBuilds(abortPrevious: true),
     buildDiscarder(logRotator(numToKeepStr: '5')),
