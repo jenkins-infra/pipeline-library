@@ -110,7 +110,10 @@ def call(Map params = [:]) {
             }
           }
 
-          stage('Deploy') {
+          String deployStage = 'Deploy'
+          if (env.CHANGE_ID) { deployStage += ' preview' }
+          if (env.BRANCH_IS_PRIMARY) { deployStage += ' production' }
+          stage(deployStage) {
             // Skip on ci.jenkins.io
             infra.deployWebsite(config.publicFolder)
           }
