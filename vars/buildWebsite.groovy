@@ -118,19 +118,19 @@ def call(Map params = [:]) {
           if (infra.isInfraCiController()) {
             if (env.CHANGE_ID) {
               stage('Deploy preview') {
-                infra.deployWebsitePreview(name: website, publicFolder: config.publicFolder)
+                infra.deployWebsitePreview(config.publicFolder)
               }
             }
 
             if (env.BRANCH_IS_PRIMARY) {
               stage('Publish') {
-                infra.publishWebsite(name: website, publicFolder: config.publicFolder)
+                infra.publishWebsite(config.publicFolder)
               }
             }
 
             if (releaseToNpmFromBranches.contains(env.BRANCH_NAME)) {
               stage('Release') {
-                infra.releaseToNpm(website)
+                infra.releaseToNpm()
               }
             }
           }
