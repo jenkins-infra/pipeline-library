@@ -92,16 +92,6 @@ def call(Map params = [:]) {
 
           stage('Build') {
             sh 'npm run build'
-            if (config.publicFolder) {
-              withEnv(["PUBLIC_FOLDER=${config.publicFolder}"]) {
-                sh '''
-                  if [[ ! -d "${PUBLIC_FOLDER}" ]] || [[ -z "$(find "${PUBLIC_FOLDER}" -mindepth 1 -print -quit)" ]]; then
-                    echo "Something went wrong, the public folder '"${PUBLIC_FOLDER}"' is empty or missing"
-                    exit 1
-                  fi
-                '''
-              }
-            }
           }
 
           stage('Test') {
@@ -119,24 +109,15 @@ def call(Map params = [:]) {
             }
           }
 
-          // Private section
-          if (!infra.isCifraCiController()) {
-            if (env.CHANGE_ID) {
-              stage('Deploy preview') {
-                infra.deployWebsitePreview(config.publicFolder)
-              }
-            }
+          stage('Deploy') {
+            // Skip on ci.jenkins.io
+            infra.deploy(config.publicFolder)
+          }
 
-            if (env.BRANCH_IS_PRIMARY) {
-              stage('Publish') {
-                infra.publishWebsite(config.publicFolder)
-              }
-            }
-
-            if (releaseToNpmFromBranches.contains(env.BRANCH_NAME)) {
-              stage('Release') {
-                infra.releaseToNpm()
-              }
+          if (releaseToNpmFromBranches.contains(env.BRANCH_NAME)) {
+            stage('Release') {
+              // Skip on ci.jenkins.io
+              infra.releaseToNpm()
             }
           }
 

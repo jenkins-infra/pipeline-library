@@ -717,6 +717,11 @@ private Map getWebsiteConfig() {
       // netlifyName: TODO, see helpdesk#???
       servicePrincipalCredentialsId: 'infraci-stats-jenkins-io-fileshare-service-principal-writer',
     ],
+    'stories': [
+      netlifyName: 'jenkins-is-the-way',
+      // TODO: deploy to a file share?
+      deployProductionToNetlify: true,
+    ],
   ]
   if (!availableConfig.contains(repositoryName)) {
     echo "WARNING: no configuration found for website '${repositoryName}'"
@@ -747,27 +752,72 @@ String[] getWebsiteEnvVars(Map customEnvs = [:]) {
   return envs
 }
 
-void deployWebsitePreview(String publicFolder = '') {
+void deployWebsite(String publicFolder = '') {
   final Map config = getWebsiteConfig()
-  if (!publicFolder) {
-    echo 'A public folder is required to deploy a website preview'
-    return
+
+  // Skip checks
+  String skipReasons = []
+  if (infra.isCifraCiController()) {
+    skipReasons += 'No deployment from ci.jenkins.io, only from a private controller'
   }
-  if (!config.netlifyName) {
-    echo 'A netlify site name is required to deploy a website preview'
-    return
+  if (!publicFolder) {
+    skipReasons += 'A public folder is required to deploy a website'
   }
   if (publicFolder.startWith('.')) {
-    echo 'The public folder can\'t start with a dot'
+    skipReasons +=  'The public folder can\'t start with a dot'
+  }
+  if (skipReasons) {
+    catchError(buildResult: 'SUCCESS', stageResult: 'NOT_BUILT') {
+      error('Skipping: ' + skipReasons.join(' / '))
+    }
     return
+  }
+
+  // Ensure there is something to deploy
+  withEnv(["PUBLIC_FOLDER=${config.publicFolder}"]) {
+    sh '''
+      if [[ ! -d "${PUBLIC_FOLDER}" ]] || [[ -z "$(find "${PUBLIC_FOLDER}" -mindepth 1 -print -quit)" ]]; then
+        echo "Something went wrong, the public folder '"${PUBLIC_FOLDER}"' is empty or missing"
+        exit 1
+      fi
+    '''
+  }
+
+  // On pull requests
+  if (env.CHANGE_ID) {
+    deployToNetlify([publicFolder: publicFolder, draft: true])
+  }
+
+  // In production
+  if (env.BRANCH_IS_PRIMARY) {
+    if (config.deployProductionToNetlify) {
+      deployToNetlify([publicFolder: publicFolder, draft: false])
+    } else {
+      deployToAzureFileShare(publicFolder)
+    }
+  }
+}
+
+private void deployToNetlify(Map params = [:]) {
+  final Map config = getWebsiteConfig()
+  // Deployment in draft by default
+  final Boolean draft = config.containsKey('draft') ? config.draft : true
+
+  // Checks
+  if (!params.publicFolder) {
+    error 'A public folder is required'
+  }
+  if (!config.netlifyName) {
+    error 'A netlify site name is required'
   }
   withCredentials([string(credentialsId: 'netlify-auth-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
     try {
       withEnv([
-        "NETLIFY_NAME=${config.netlifyName}", // Should not contains '.'
+        "NETLIFY_NAME=${config.netlifyName}",
         "PUBLIC_FOLDER=${publicFolder}",
+        "DRAFT=${draft}",
       ]) {
-        sh 'netlify-deploy --draft=true --siteName "${NETLIFY_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_FOLDER}"'
+        sh 'netlify-deploy --draft="${DRAFT}" --siteName "${NETLIFY_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_FOLDER}"'
       }
       recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'success', "https://deploy-preview-${CHANGE_ID}--${config.netlifyName}.netlify.app")
     } catch (e) {
@@ -780,18 +830,11 @@ void deployWebsitePreview(String publicFolder = '') {
   }
 }
 
-void publishWebsite(String publicFolder = '') {
+private void deployToAzureFileShare(String publicFolder = '') {
   final Map config = getWebsiteConfig()
-  if (!publicFolder) {
-    echo 'A public folder is required to publish a website'
-    return
-  }
+  // Check
   if (!config.fileShare) {
-    echo 'A file share is required to publish a website'
-  }
-  if (publicFolder.startWith('.')) {
-    echo 'The public folder can\'t start with a dot'
-    return
+    error 'A file share name is required to deploy to Azure File Share'
   }
   infra.withFileShareServicePrincipal([
     fileShare: config.fileShare,
@@ -815,15 +858,28 @@ void publishWebsite(String publicFolder = '') {
       sh 'cat /home/jenkins/.azcopy/*.log > azcopy.log'
       archiveArtifacts 'azcopy.log'
 
-      // TODO: throw error
+      error('Failure during the synchronization to Azure File Share')
     }
   }
 }
 
 Object releaseToNpm() {
   final Map config = getWebsiteConfig()
-  if (!config.npmToken && !config.githubAppId) {
-    error 'A token and a GitHub App credentials are required to release to NPM'
+
+  // Skip check
+  if (infra.isCifraCiController()) {
+    catchError(buildResult: 'SUCCESS', stageResult: 'NOT_BUILT') {
+      error 'Skipping, no release to NPM from ci.jenkins.io'
+    }
+    return
+  }
+
+  // Checks
+  if (!config.npmToken) {
+    error 'A NPM token is required for release'
+  }
+  if (!config.githubAppId) {
+    error 'A GitHub App credentials is required for release'
   }
   withCredentials([
     string(
