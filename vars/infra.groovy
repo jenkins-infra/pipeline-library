@@ -829,7 +829,7 @@ private void deployToNetlify(Map params = [:]) {
       recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'success', "https://deploy-preview-${CHANGE_ID}--${config.netlifyName}.netlify.app")
     } catch (e) {
       recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'failure', "https://deploy-preview-${CHANGE_ID}--${config.netlifyName}.netlify.app")
-      catchError(buildResult: 'SUCCESS', stageResult: 'NOT_BUILT') {
+      catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         error('Netlify preview deploy failed, continuing')
       }
       return
