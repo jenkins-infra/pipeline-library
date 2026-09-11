@@ -741,6 +741,7 @@ String[] getWebsiteEnvVars(Map customEnvs = [:]) {
     envs += ['NODE_ENV=development']
     envs += customEnvs.developement
   } else {
+    // TODO: prevent overrides from custom envs?
     envs += ['NODE_ENV=production']
     envs += customEnvs.production
     // On other controllers than ci.jenkins.io, if on primary branch add algolia credentials if any
@@ -771,7 +772,10 @@ void deployWebsite(String publicFolder = '') {
   }
   if (skipReasons) {
     catchError(buildResult: 'SUCCESS', stageResult: 'NOT_BUILT') {
-      error('Skipping: ' + skipReasons.join(' / '))
+      final String skipMessage = 'Skipping: ' + skipReasons.join(' / ')
+      echo skipReasons
+      echo skipMessage
+      error(skipMessage)
     }
     return
   }
