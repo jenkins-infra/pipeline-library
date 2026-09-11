@@ -644,13 +644,200 @@ private String vmAgentLabel(String platform, Integer spotRetryCounter) {
 }
 
 private String getSpotOrNonSpotAgentLabel(String agentLabel, Integer spotRetryCounter) {
+  def spot = true
+  if (isInfraCiController()) {
+    echo 'INFO: running on infra.ci.jenkins.io, no "spot" or "nonspot" agents'
+    return agentLabel
+  }
   if (isTrustedCiController()) {
     echo 'INFO: running on trusted.ci.jenkins.io, no "spot" or "nonspot" agents'
     return agentLabel
   }
   if (spotRetryCounter> 1) {
     echo 'INFO: more than one retry, using "nonspot" agent'
+    spot = false
     return "${agentLabel} && nonspot"
   }
-  return "${agentLabel} && spot"
+  if (agentLabel.contains('maven-')) {
+    return "${agentLabel}${spot ? '' : '-nonspot'}"
+  }
+  return "${agentLabel} && ${spot ? 'spot' : 'nonspot'}"
+}
+
+String getBuildWebsiteAgentLabel(Integer spotRetryCounter) {
+  // ci.jenkins.io has the default spot amd64 used by Java builds
+  // while infra.ci.jenkins.io defaults to arm64 VM agents (due to Gastby memory requirements)
+  String agentLabel = isCiController() ? 'maven-25' : 'linux-arm64-docker'
+  return getSpotOrNonSpotAgentLabel(agentLabel, spotRetryCounter)
+}
+
+// From current repo
+private Map getWebsiteConfig() {
+  if (!env.GIT_URL) {
+    error 'GIT_URL is not available'
+  }
+  final String repositoryName = env.GIT_URL.tokenize('/').last().replaceFirst(/\.git$/, '')
+  final Map availableConfig = [
+    'contributor-spotlight': [
+      fileShare: 'contributor-jenkins-io',
+      fileShareStorageAccount: 'contributorjenkinsio',
+      netlifyName: 'contributor-spotlight',
+      servicePrincipalCredentialsId: 'contributor-jenkins-io-fileshare-service-principal-writer',
+    ],
+    'docs-jenkins-io-pr': [
+      fileShare: 'docs-jenkins-io',
+      fileShareStorageAccount: 'docsjenkinsio',
+      netlifyName: 'docs-jenkins-io-pr',
+      servicePrincipalCredentialsId: 'infraci-docs-jenkins-io-fileshare-service-principal-writer',
+    ],
+    'gatsby-plugin-jenkins-layout': [
+      githubAppCredentials: 'jenkins-io-components-ghapp',
+      npmToken: 'jenkinsci-npm-token',
+    ],
+    // TODO: deploy prod to a FS instead of netlify?
+    'jenkins-io-components': [
+      githubAppCredentials: 'jenkins-io-components-ghapp',
+      netlifyName: 'jenkins-io-components',
+      npmToken: 'jenkinsci-npm-token',
+    ],
+    'plugin-site': [
+      fileShare: 'plugins-jenkins-io',
+      fileShareStorageAccount: 'pluginsjenkinsio',
+      netlifyName: 'jenkins-plugin-site-pr',
+      servicePrincipalCredentialsId: 'infraci-pluginsjenkinsio-fileshare-service-principal-writer',
+      algoliaCredentialsAndVars: [
+        'algolia-plugins-app-id': 'GATSBY_ALGOLIA_APP_ID',
+        'algolia-plugins-search-key': 'GATSBY_ALGOLIA_SEARCH_KEY',
+        'algolia-plugins-write-key': 'GATSBY_ALGOLIA_WRITE_KEY',
+      ]
+    ],
+    'stats.jenkins.io': [
+      fileShare: 'stats-jenkins-io',
+      fileShareStorageAccount: 'statsjenkinsio',
+      // netlifyName: TODO, see helpdesk#???
+      servicePrincipalCredentialsId: 'infraci-stats-jenkins-io-fileshare-service-principal-writer',
+    ],
+  ]
+  if (!availableConfig.contains(repositoryName)) {
+    echo "WARNING: no configuration found for website '${repositoryName}'"
+  }
+  return availableConfig[repositoryName] + [repositoryName: repositoryName]
+}
+
+String[] getWebsiteEnvVars(Map customEnvs = [:]) {
+  final Map config = getWebsiteConfig()
+  // Default env vars
+  String[] envs = ['TZ=UTC']
+  if (env.CHANGE_ID) {
+    // Pull requests
+    envs += ['NODE_ENV=development']
+    envs += customEnvs.developement
+  } else {
+    envs += ['NODE_ENV=production']
+    envs += customEnvs.production
+    // On other controllers than ci.jenkins.io, if on primary branch add algolia credentials if any
+    if (!isCiController && env.BRANCH_IS_PRIMARY && config.algoliaCredentialsAndVars) {
+      echo 'Adding Algolia credentials'
+      envs += config.algoliaCredentialsAndVars.each { credentialId, envVarName ->
+        "${envVarName}=${credentials(credentialsId)}"
+      }
+    }
+  }
+  echo "Environment variables for '${config.repositoryName}': ${envs}"
+  return envs
+}
+
+void deployWebsitePreview(String publicFolder = '') {
+  final Map config = getWebsiteConfig()
+  if (!publicFolder) {
+    echo 'A public folder is required to deploy a website preview'
+    return
+  }
+  if (!config.netlifyName) {
+    echo 'A netlify site name is required to deploy a website preview'
+    return
+  }
+  if (publicFolder.startWith('.')) {
+    echo 'The public folder can\'t start with a dot'
+    return
+  }
+  withCredentials([string(credentialsId: 'netlify-auth-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
+    try {
+      withEnv([
+        "NETLIFY_NAME=${config.netlifyName}", // Should not contains '.'
+        "PUBLIC_FOLDER=${publicFolder}",
+      ]) {
+        sh 'netlify-deploy --draft=true --siteName "${NETLIFY_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_FOLDER}"'
+      }
+      recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'success', "https://deploy-preview-${CHANGE_ID}--${config.netlifyName}.netlify.app")
+    } catch (e) {
+      recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'failure', "https://deploy-preview-${CHANGE_ID}--${config.netlifyName}.netlify.app")
+      catchError(buildResult: 'SUCCESS', stageResult: 'NOT_BUILT') {
+        error('Netlify preview deploy failed, continuing')
+      }
+      return
+    }
+  }
+}
+
+void publishWebsite(String publicFolder = '') {
+  final Map config = getWebsiteConfig()
+  if (!publicFolder) {
+    echo 'A public folder is required to publish a website'
+    return
+  }
+  if (!config.fileShare) {
+    echo 'A file share is required to publish a website'
+  }
+  if (publicFolder.startWith('.')) {
+    echo 'The public folder can\'t start with a dot'
+    return
+  }
+  infra.withFileShareServicePrincipal([
+    fileShare: config.fileShare,
+    fileShareStorageAccount: config.fileShareStorageAccount,
+    servicePrincipalCredentialsId: config.servicePrincipalCredentialsId,
+  ]) {
+    try {
+      withEnv(["PUBLIC_FOLDER=${publicFolder}"]) {
+        sh '''
+        # Synchronize the File Share content
+        set +x
+        azcopy sync \
+          --skip-version-check \
+          --recursive=true \
+          --delete-destination=true \
+          "${PUBLIC_FOLDER}" "${FILESHARE_SIGNED_URL}"
+        '''
+      }
+    } catch (e) {
+      // Only collect azcopy logs when the deployment fails (heavy)
+      sh 'cat /home/jenkins/.azcopy/*.log > azcopy.log'
+      archiveArtifacts 'azcopy.log'
+
+      // TODO: throw error
+    }
+  }
+}
+
+Object releaseToNpm() {
+  final Map config = getWebsiteConfig()
+  if (!config.npmToken && !config.githubAppId) {
+    error 'A token and a GitHub App credentials are required to release to NPM'
+  }
+  withCredentials([
+    string(
+      credentialsId: config.npmToken,
+      variable: 'NPM_TOKEN'
+    ),
+    usernamePassword(
+      credentialsId: config.githubAppCredentials,
+      usernameVariable: 'GITHUB_APP',
+      passwordVariable: 'GITHUB_TOKEN'
+    ),
+  ]) {
+    withEnv(["REPO_NAME=${config.repositoryName}"]) {
+      sh 'npx semantic-release --repositoryUrl https://x-access-token:$GITHUB_TOKEN@github.com/jenkins-infra/${REPO_NAME}.git'
+    }
+  }
 }
