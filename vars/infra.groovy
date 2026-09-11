@@ -674,7 +674,7 @@ String getBuildWebsiteAgentLabel(Integer spotRetryCounter) {
 // From current repo
 private Map getWebsiteConfig() {
   if (!env.GIT_URL) {
-    error 'GIT_URL is not available'
+    error 'GIT_URL is not available, required to determine the current repository'
   }
   final String repositoryName = env.GIT_URL.tokenize('/').last().replaceFirst(/\.git$/, '')
   final Map availableConfig = [
@@ -723,7 +723,7 @@ private Map getWebsiteConfig() {
       deployProductionToNetlify: true,
     ],
   ]
-  if (!availableConfig.contains(repositoryName)) {
+  if (!availableConfig.containsKey(repositoryName)) {
     echo "WARNING: no configuration found for website '${repositoryName}'"
   }
   return availableConfig[repositoryName] + [repositoryName: repositoryName]
@@ -743,7 +743,7 @@ String[] getWebsiteEnvVars(Map customEnvs = [:]) {
     // On other controllers than ci.jenkins.io, if on primary branch add algolia credentials if any
     if (!isCiController && env.BRANCH_IS_PRIMARY && config.algoliaCredentialsAndVars) {
       echo 'Adding Algolia credentials'
-      envs += config.algoliaCredentialsAndVars.each { credentialId, envVarName ->
+      envs += config.algoliaCredentialsAndVars.each { credentialIds, envVarName ->
         "${envVarName}=${credentials(credentialsId)}"
       }
     }
@@ -757,13 +757,13 @@ void deployWebsite(String publicFolder = '') {
 
   // Skip checks
   String skipReasons = []
-  if (infra.isCifraCiController()) {
+  if (isCifraCiController()) {
     skipReasons += 'No deployment from ci.jenkins.io, only from a private controller'
   }
   if (!publicFolder) {
     skipReasons += 'A public folder is required to deploy a website'
   }
-  if (publicFolder.startWith('.')) {
+  if (publicFolder.startsWith('.')) {
     skipReasons +=  'The public folder can\'t start with a dot'
   }
   if (skipReasons) {
@@ -814,7 +814,7 @@ private void deployToNetlify(Map params = [:]) {
     try {
       withEnv([
         "NETLIFY_NAME=${config.netlifyName}",
-        "PUBLIC_FOLDER=${publicFolder}",
+        "PUBLIC_FOLDER=${config.publicFolder}",
         "DRAFT=${draft}",
       ]) {
         sh 'netlify-deploy --draft="${DRAFT}" --siteName "${NETLIFY_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_FOLDER}"'
@@ -867,7 +867,7 @@ void releaseToNpm() {
   final Map config = getWebsiteConfig()
 
   // Skip check
-  if (infra.isCifraCiController()) {
+  if (isCifraCiController()) {
     catchError(buildResult: 'SUCCESS', stageResult: 'NOT_BUILT') {
       error 'Skipping, no release to NPM from ci.jenkins.io'
     }

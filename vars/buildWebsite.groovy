@@ -114,7 +114,7 @@ def call(Map params = [:]) {
             infra.deploy(config.publicFolder)
           }
 
-          if (releaseToNpmFromBranches.contains(env.BRANCH_NAME)) {
+          if (config.releaseToNpmFromBranches.contains(env.BRANCH_NAME)) {
             stage('Release') {
               // Skip on ci.jenkins.io
               infra.releaseToNpm()
