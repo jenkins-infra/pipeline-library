@@ -111,7 +111,7 @@ def call(Map params = [:]) {
 
           stage('Deploy') {
             // Skip on ci.jenkins.io
-            infra.deploy(config.publicFolder)
+            infra.deployWebsite(config.publicFolder)
           }
 
           if (config.releaseToNpmFromBranches.contains(env.BRANCH_NAME)) {

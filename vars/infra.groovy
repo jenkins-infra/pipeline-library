@@ -760,7 +760,7 @@ void deployWebsite(String publicFolder = '') {
 
   // Skip checks
   String skipReasons = []
-  if (isCifraCiController()) {
+  if (isCiController()) {
     skipReasons += 'No deployment from ci.jenkins.io, only from a private controller'
   }
   if (!publicFolder) {
@@ -870,7 +870,7 @@ void releaseToNpm() {
   final Map config = getWebsiteConfig()
 
   // Skip check
-  if (isCifraCiController()) {
+  if (isCiController()) {
     catchError(buildResult: 'SUCCESS', stageResult: 'NOT_BUILT') {
       error 'Skipping, no release to NPM from ci.jenkins.io'
     }
