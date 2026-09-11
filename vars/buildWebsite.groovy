@@ -97,6 +97,16 @@ def call(Map params = [:]) {
 
           stage('Build') {
             sh 'npm run build'
+            if (config.publicFolder) {
+              withEnv(["PUBLIC_FOLDER=${config.publicFolder}"]) {
+                sh '''
+                  if [[ ! -d "${PUBLIC_FOLDER}" ]] || [[ -z "$(find "${PUBLIC_FOLDER}" -mindepth 1 -print -quit)" ]]; then
+                    echo "Something went wrong, the public folder '"${PUBLIC_FOLDER}"' is empty or missing"
+                    exit 1
+                  fi
+                '''
+              }
+            }
           }
 
           stage('Test') {
