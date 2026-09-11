@@ -743,6 +743,7 @@ String[] getWebsiteEnvVars(Map customEnvs = [:]) {
       }
     }
   }
+  echo "Environment variables for '${config.repositoryName}': ${envs}"
   return envs
 }
 
