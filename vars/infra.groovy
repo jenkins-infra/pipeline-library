@@ -696,22 +696,23 @@ private Map getWebsiteConfig() {
       githubAppCredentials: 'jenkins-io-components-ghapp',
       npmToken: 'jenkinsci-npm-token',
     ],
-    // TODO: deploy prod to a FS instead of netlify?
     'jenkins-io-components': [
+      // TODO: deploy to a file share instead?
+      deployProductionToNetlify: true,
       githubAppCredentials: 'jenkins-io-components-ghapp',
       netlifyName: 'jenkins-io-components',
       npmToken: 'jenkinsci-npm-token',
     ],
     'plugin-site': [
-      fileShare: 'plugins-jenkins-io',
-      fileShareStorageAccount: 'pluginsjenkinsio',
-      netlifyName: 'jenkins-plugin-site-pr',
-      servicePrincipalCredentialsId: 'infraci-pluginsjenkinsio-fileshare-service-principal-writer',
       algoliaCredentialsAndVars: [
         'algolia-plugins-app-id': 'GATSBY_ALGOLIA_APP_ID',
         'algolia-plugins-search-key': 'GATSBY_ALGOLIA_SEARCH_KEY',
         'algolia-plugins-write-key': 'GATSBY_ALGOLIA_WRITE_KEY',
-      ]
+      ],
+      fileShare: 'plugins-jenkins-io',
+      fileShareStorageAccount: 'pluginsjenkinsio',
+      netlifyName: 'jenkins-plugin-site-pr',
+      servicePrincipalCredentialsId: 'infraci-pluginsjenkinsio-fileshare-service-principal-writer',
     ],
     'stats.jenkins.io': [
       fileShare: 'stats-jenkins-io',
@@ -720,9 +721,9 @@ private Map getWebsiteConfig() {
       servicePrincipalCredentialsId: 'infraci-stats-jenkins-io-fileshare-service-principal-writer',
     ],
     'stories': [
-      netlifyName: 'jenkins-is-the-way',
-      // TODO: deploy to a file share?
+      // TODO: deploy to a file share instead?
       deployProductionToNetlify: true,
+      netlifyName: 'jenkins-is-the-way',
     ],
   ]
   if (!availableConfig.containsKey(repositoryName)) {
