@@ -119,7 +119,7 @@ def call(Map params = [:]) {
           }
 
           // Private section
-          if (infra.isInfraCiController()) {
+          if (!infra.isCifraCiController()) {
             if (env.CHANGE_ID) {
               stage('Deploy preview') {
                 infra.deployWebsitePreview(config.publicFolder)
