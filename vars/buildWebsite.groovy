@@ -111,6 +111,7 @@ def call(Map params = [:]) {
 
           stage('Deploy') {
             // Skip on ci.jenkins.io
+            echo "DEBUG: publicFolder in buildWebsite = '${publicFolder}'"
             infra.deployWebsite(config.publicFolder)
           }
 

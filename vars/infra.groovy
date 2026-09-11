@@ -686,7 +686,7 @@ private Map getWebsiteConfig() {
       netlifyName: 'contributor-spotlight',
       servicePrincipalCredentialsId: 'contributor-jenkins-io-fileshare-service-principal-writer',
     ],
-    'docs-jenkins-io-pr': [
+    'docs.jenkins.io': [
       fileShare: 'docs-jenkins-io',
       fileShareStorageAccount: 'docsjenkinsio',
       netlifyName: 'docs-jenkins-io-pr',
@@ -729,7 +729,7 @@ private Map getWebsiteConfig() {
   if (!availableConfig.containsKey(repositoryName)) {
     echo "WARNING: no configuration found for website '${repositoryName}'"
   }
-  return availableConfig[repositoryName] + [repositoryName: repositoryName]
+  return (availableConfig[repositoryName] ?: [:]) + [repositoryName: repositoryName]
 }
 
 String[] getWebsiteEnvVars(Map customEnvs = [:]) {
@@ -747,7 +747,7 @@ String[] getWebsiteEnvVars(Map customEnvs = [:]) {
     // On other controllers than ci.jenkins.io, if on primary branch add algolia credentials if any
     if (!isCiController && env.BRANCH_IS_PRIMARY && config.algoliaCredentialsAndVars) {
       echo 'Adding Algolia credentials'
-      envs += config.algoliaCredentialsAndVars.each { credentialIds, envVarName ->
+      envs += config.algoliaCredentialsAndVars.collect { credentialsId, envVarName ->
         "${envVarName}=${credentials(credentialsId)}"
       }
     }
@@ -758,6 +758,8 @@ String[] getWebsiteEnvVars(Map customEnvs = [:]) {
 
 void deployWebsite(String publicFolder = '') {
   final Map config = getWebsiteConfig()
+
+  echo "DEBUG: publicFolder in deployWebsite = '${publicFolder}'"
 
   // Skip checks
   def skipReasons = []
@@ -818,7 +820,7 @@ private void deployToNetlify(Map params = [:]) {
     try {
       withEnv([
         "NETLIFY_NAME=${config.netlifyName}",
-        "PUBLIC_FOLDER=${config.publicFolder}",
+        "PUBLIC_FOLDER=${params.publicFolder}",
         "DRAFT=${draft}",
       ]) {
         sh 'netlify-deploy --draft="${DRAFT}" --siteName "${NETLIFY_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_FOLDER}"'
