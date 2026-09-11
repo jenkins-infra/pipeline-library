@@ -37,6 +37,7 @@ def call(Map params = [:]) {
         withEnv(infra.getWebsiteEnvVars([developement: config.customEnvsDevelopement, production: config.customEnvsProduction])) {
           stage('Checkout') {
             infra.checkoutSCM()
+            echo "DEBUG: publicFolder in buildWebsite = '${config.publicFolder}'"
           }
 
           stage('Sanity checks') {
@@ -111,7 +112,7 @@ def call(Map params = [:]) {
 
           stage('Deploy') {
             // Skip on ci.jenkins.io
-            echo "DEBUG: publicFolder in buildWebsite = '${publicFolder}'"
+            echo "DEBUG: publicFolder in buildWebsite = '${config.publicFolder}'"
             infra.deployWebsite(config.publicFolder)
           }
 
