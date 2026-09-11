@@ -700,6 +700,17 @@ private Map getWebsiteConfig() {
       netlifyName: 'jenkins-io-components',
       npmToken: 'jenkinsci-npm-token',
     ],
+    'plugin-site': [
+      fileShare: 'plugins-jenkins-io',
+      fileShareStorageAccount: 'pluginsjenkinsio',
+      netlifyName: 'jenkins-plugin-site-pr',
+      servicePrincipalCredentialsId: 'infraci-pluginsjenkinsio-fileshare-service-principal-writer',
+      algoliaCredentialsAndVars: [
+        'algolia-plugins-app-id': 'GATSBY_ALGOLIA_APP_ID',
+        'algolia-plugins-search-key': 'GATSBY_ALGOLIA_SEARCH_KEY',
+        'algolia-plugins-write-key': 'GATSBY_ALGOLIA_WRITE_KEY',
+      ]
+    ],
     'stats.jenkins.io': [
       fileShare: 'stats-jenkins-io',
       fileShareStorageAccount: 'statsjenkinsio',
@@ -711,6 +722,28 @@ private Map getWebsiteConfig() {
     echo "WARNING: no configuration found for website '${repositoryName}'"
   }
   return availableConfig[repositoryName] + [repositoryName: repositoryName]
+}
+
+String[] getWebsiteEnvVars(Map customEnvs = [:]) {
+  final Map config = getWebsiteConfig()
+  // Default env vars
+  String[] envs = ['TZ=UTC']
+  if (env.CHANGE_ID) {
+    // Pull requests
+    envs += ['NODE_ENV=development']
+    envs += customEnvs.developement
+  } else {
+    envs += ['NODE_ENV=production']
+    envs += customEnvs.production
+    // On other controllers than ci.jenkins.io, if on primary branch add algolia credentials if any
+    if (!isCiController && env.BRANCH_IS_PRIMARY && config.algoliaCredentialsAndVars) {
+      echo 'Adding Algolia credentials'
+      envs += config.algoliaCredentialsAndVars.each { credentialId, envVarName ->
+        "${envVarName}=${credentials(credentialsId)}"
+      }
+    }
+  }
+  return envs
 }
 
 void deployWebsitePreview(String publicFolder = '') {

@@ -2,33 +2,30 @@
 
 def call(Map params = [:]) {
   final Map defaultConfig = [
+    customCronTrigger: '',
     timeout: 60,
     typosCheck: true,
     lint: true,
     publicFolder: '',
-    customEnvsPreview: '', // TODO or to remove if not really useful
-    customEnvsProduction: '', // TODO or to remove if not really useful
-    customCronTrigger: '',
+    customEnvsDevelopement: [],
+    customEnvsProduction: [],
     preBuildCommand: '',
     coveragePath: '',
     releaseToNpmFromBranches: [], // only for NPM components
   ]
   final Map config = defaultConfig << params
-  if (!config.publicFolder) {
-    echo 'WARNING: buildWebsite requires a "publicFolder" parameter (e.g. publicFolder: \'public\') for preview and publication'
-  }
 
   // Do not trigger daily if not on the primary branch (e.g. not on PR, not on other branches, not on tags)
   final String cronPattern = env.BRANCH_IS_PRIMARY ? (config.customCronTrigger ?: '@daily') : ''
-
-  final String nodeEnvironment = env.CHANGE_ID ? 'development' : 'production'
-  final String disableSearchEngine = env.CHANGE_ID ? 'true' : 'false'
-
   properties([
     disableConcurrentBuilds(abortPrevious: true),
     buildDiscarder(logRotator(numToKeepStr: '5')),
     pipelineTriggers([cron(cronPattern)]),
   ])
+
+  if (!config.publicFolder) {
+    echo 'WARNING: buildWebsite requires a "publicFolder" parameter (e.g. publicFolder: \'public\') for preview and publication'
+  }
 
   int retryCounter = 0
   retry(count: 3, conditions: [kubernetesAgent(handleNonKubernetes: true), nonresumable()]) {
@@ -36,11 +33,8 @@ def call(Map params = [:]) {
     retryCounter++
     node(agentLabel) {
       timeout(config.timeout) {
-        withEnv([
-          "NODE_ENV=${nodeEnvironment}",
-          "DISABLE_SEARCH_ENGINE=${disableSearchEngine}",
-          'TZ=UTC',
-        ]) {
+        // NODE_ENV and TZ=UTC are set by default
+        withEnv(getWebsiteEnvVars([developement: customEnvsDevelopement, production: customEnvsProduction])) {
           stage('Checkout') {
             infra.checkoutSCM()
           }
