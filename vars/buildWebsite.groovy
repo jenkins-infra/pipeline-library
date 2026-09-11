@@ -7,6 +7,7 @@ def call(Map params = [:]) {
     typosCheck: true,
     lint: true,
     publicFolder: '',
+    packageManager: 'npm',
     customEnvsDevelopement: [],
     customEnvsProduction: [],
     preBuildCommand: '',
@@ -33,8 +34,7 @@ def call(Map params = [:]) {
     retryCounter++
     node(agentLabel) {
       timeout(config.timeout) {
-        // NODE_ENV and TZ=UTC are set by default
-        withEnv(infra.getWebsiteEnvVars([developement: config.customEnvsDevelopement, production: config.customEnvsProduction])) {
+        withEnv(infra.getWebsiteEnvVars(config)) {
           stage('Checkout') {
             infra.checkoutSCM()
           }
@@ -43,7 +43,7 @@ def call(Map params = [:]) {
             echo "Current config: ${config}"
             echo "Currently running from an agent with label '${agentLabel}'"
             sh 'node --version'
-            sh 'npm --version'
+            infra.runCommandWithPackageManager('--version')
             echo '.tool-versions & .nvmc content below for the record (should be the same as above, update them otherwise):'
             ['.tool-versions', '.nvmrc'].each {
               if (fileExists(it)) {
