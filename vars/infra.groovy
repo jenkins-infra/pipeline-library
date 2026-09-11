@@ -732,21 +732,18 @@ private Map getWebsiteConfig() {
   return (availableConfig[repositoryName] ?: [:]) + [repositoryName: repositoryName]
 }
 
-String[] getWebsiteEnvVars(Map inputConfig = [:]) {
+String[] getWebsiteEnvVars(Map customEnvs = [:]) {
   final Map config = getWebsiteConfig()
   // Default env vars
-  def envs = [
-    "PACKAGE_MANAGER=${inputConfig.packageManager}",
-    'TZ=UTC',
-  ]
+  def envs = ['TZ=UTC']
   if (env.CHANGE_ID) {
     // Pull requests
     envs += ['NODE_ENV=development']
-    envs += (inputConfig.developement ?: [])
+    envs += customEnvs.developement
   } else {
     // TODO: prevent overrides from custom envs?
     envs += ['NODE_ENV=production']
-    envs += (inputConfig.production ?: [])
+    envs += customEnvs.production
     // On other controllers than ci.jenkins.io, if on primary branch add algolia credentials if any
     if (!isCiController && env.BRANCH_IS_PRIMARY && config.algoliaCredentialsAndVars) {
       echo 'Adding Algolia credentials'
@@ -829,10 +826,16 @@ private void deployToNetlify(Map params = [:]) {
       recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'success', "https://deploy-preview-${CHANGE_ID}--${config.netlifyName}.netlify.app")
     } catch (e) {
       recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'failure', "https://deploy-preview-${CHANGE_ID}--${config.netlifyName}.netlify.app")
-      catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        error('Netlify preview deploy failed, continuing')
+      
+      // Don't fail the build if the Netlify preview failed
+      if (draft) {
+        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+          error('Netlify preview deployment failed, continuing')
+        }
+        return
+      } else {
+        error('Netlify production deployment failed')
       }
-      return
     }
   }
 }
@@ -902,15 +905,5 @@ void releaseToNpm() {
     withEnv(["REPO_NAME=${config.repositoryName}"]) {
       sh 'npx semantic-release --repositoryUrl https://x-access-token:$GITHUB_TOKEN@github.com/jenkins-infra/${REPO_NAME}.git'
     }
-  }
-}
-
-void runCommandWithPackageManager(String command = '') {
-  if (!command) {
-    error 'A command must be passed'
-  }
-  withEnv(["COMMAND=${command}"]) {
-    // No quote
-    sh '${PACKAGE_MANAGER} ${COMMAND}'
   }
 }

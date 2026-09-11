@@ -7,7 +7,6 @@ def call(Map params = [:]) {
     typosCheck: true,
     lint: true,
     publicFolder: '',
-    packageManager: 'npm',
     customEnvsDevelopement: [],
     customEnvsProduction: [],
     preBuildCommand: '',
@@ -34,17 +33,23 @@ def call(Map params = [:]) {
     retryCounter++
     node(agentLabel) {
       timeout(config.timeout) {
-        withEnv(infra.getWebsiteEnvVars(config)) {
+        withEnv(infra.getWebsiteEnvVars([
+          developement: config.customEnvsDevelopement,
+          production: config.customEnvsProduction
+        ])) {
+          Map packageManagerScripts = [:]
           stage('Checkout') {
             infra.checkoutSCM()
+            packageManagerScripts = getPackageManagerScripts()
           }
 
           stage('Sanity checks') {
             echo "Current config: ${config}"
             echo "Currently running from an agent with label '${agentLabel}'"
+            echo "Available scripts: ${packageManagerScripts}"
             sh 'node --version'
-            infra.runCommandWithPackageManager('--version')
-            echo '.tool-versions & .nvmc content below for the record (should be the same as above, update them otherwise):'
+            sh packageManagerScripts['version']
+            echo '.tool-versions & .nvmc content below for the record:'
             ['.tool-versions', '.nvmrc'].each {
               if (fileExists(it)) {
                 withEnv(["FILE_TO_CAT=${it}"]) {
@@ -56,27 +61,19 @@ def call(Map params = [:]) {
 
           if (config.typosCheck) {
             stage('Typos check') {
-              // TODO: review; on infra.ci:
-              // 19:39:39  /home/jenkins/workspace/obs_contributor-spotlight_PR-705@tmp/durable-ca76dd5d/script.sh.copy: line 1: typos-checkstyle: command not found
-              // 19:39:40  Broken pipe (os error 32)
               sh 'typos --format json | typos-checkstyle - > typos-checkstyle.xml || true'
               recordIssues(tools: [checkStyle(id: 'typos', name: 'Typos', pattern: 'typos-checkstyle.xml')])
             }
           }
 
           stage('Install') {
-            // if (fileExists('.tool-versions')) {
-            //   sh 'asdf install'
-            // }
-            // TODO: readTrusted(package.json)? Even if incomplete
-            // --ignore-scripts is passed by default since summer 2026
-            sh 'npm ci'
+            sh packageManagerScripts['install']
           }
 
           if (config.lint) {
             stage('Lint') {
               try {
-                sh 'npm run lint --if-present'
+                sh packageManagerScripts['lint']
               } catch (e) {
                 recordIssues(stopBuild: true, tools: [
                   esLint(pattern: 'eslint-results.json'),
@@ -92,20 +89,19 @@ def call(Map params = [:]) {
           }
 
           stage('Build') {
-            sh 'npm run build'
+            sh packageManagerScripts['build']
           }
 
           stage('Test') {
-            sh 'npm test --if-present'
+            sh packageManagerScripts['test']
             junit(testResults: 'test-results/**/*.xml', allowEmptyResults: true)
-            // for jenkins-io-components:
-            junit(testResults: 'junit.xml', allowEmptyResults: true)
+            junit(testResults: 'junit.xml', allowEmptyResults: true) // for jenkins-io-components
           }
 
           // cobertura seems broken on infra, and we don't need to publish it from there
           if (config.coveragePath && !infra.isInfraCiController()) {
             stage('Coverage') {
-              sh 'npm run coverage --if-present'
+              sh packageManagerScripts['coverage']
               recordCoverage name: 'coverage', sourceCodeRetention: 'NEVER', tools: [[parser: 'COBERTURA', pattern: config.coveragePath]]
             }
           }
@@ -138,4 +134,37 @@ def call(Map params = [:]) {
       }
     }
   }
+}
+
+// Must be called after checkout
+Map getPackageManagerScripts() {
+  final String packageManager = fileExists('yarn.lock') ? 'yarn' : 'npm'
+  echo "Package manager determined by checking if yarn.lock exists or not: ${packageManager}"
+  // Default (npm) scripts
+  Map scripts = [
+    '': 'echo "No script passed" && exit 1',
+    'version': "${packageManager} --version",
+    'install': "${packageManager} ci",
+    'build': "${packageManager} run build",
+    'lint': "${packageManager} run lint --if-present",
+    'test': "${packageManager} run test --if-present",
+    'coverage': "${packageManager} run coverage --if-present",
+  ]
+  // Specific yarn scripts
+  if (packageManager == 'yarn') {
+    // Equivalent of npm ci
+    scripts['install'] = 'yarn install --immutable'
+
+    // Optional scripts (yarn doesn't have any "--if-present" equivalent)
+    scripts.findAll { key, value -> value.contains('--if-present') }.keySet().each { optionalScript ->
+      withEnv(["OPTIONAL_SCRIPT=${optionalScript}"]) {
+        Boolean exist = sh(
+        script: 'node -e "process.exit(require(\'./package.json\').scripts?.${OPTIONAL_SCRIPT} ? 0 : 1)"',
+        returnStatus: true
+        ) == 0
+        scripts[optionalScript] = exist ? 'yarn ' + optionalScript : 'echo "Optional script not found in package.json: ' + optionalScript
+      }
+    }
+  }
+  return scripts
 }
