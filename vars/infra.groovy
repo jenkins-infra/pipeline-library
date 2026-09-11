@@ -768,7 +768,7 @@ void deployWebsite(String publicFolder = '') {
     skipReasons += 'A public folder is required to deploy a website'
   }
   if (publicFolder.startsWith('.')) {
-    skipReasons +=  'The public folder can\'t start with a dot'
+    skipReasons += 'The public folder can\'t start with a dot'
   }
   if (skipReasons) {
     catchError(buildResult: 'SUCCESS', stageResult: 'NOT_BUILT') {
@@ -887,14 +887,14 @@ void releaseToNpm() {
   }
   withCredentials([
     string(
-      credentialsId: config.npmToken,
-      variable: 'NPM_TOKEN'
-    ),
+        credentialsId: config.npmToken,
+        variable: 'NPM_TOKEN'
+        ),
     usernamePassword(
-      credentialsId: config.githubAppCredentials,
-      usernameVariable: 'GITHUB_APP',
-      passwordVariable: 'GITHUB_TOKEN'
-    ),
+        credentialsId: config.githubAppCredentials,
+        usernameVariable: 'GITHUB_APP',
+        passwordVariable: 'GITHUB_TOKEN'
+        ),
   ]) {
     withEnv(["REPO_NAME=${config.repositoryName}"]) {
       sh 'npx semantic-release --repositoryUrl https://x-access-token:$GITHUB_TOKEN@github.com/jenkins-infra/${REPO_NAME}.git'

@@ -45,7 +45,7 @@ def call(Map params = [:]) {
             sh 'node --version'
             sh 'npm --version'
             echo '.tool-versions & .nvmc content below for the record (should be the same as above, update them otherwise):'
-              ['.tool-versions', '.nvmrc'].each {
+            ['.tool-versions', '.nvmrc'].each {
               if (fileExists(it)) {
                 withEnv(["FILE_TO_CAT=${it}"]) {
                   sh 'cat "${FILE_TO_CAT}"'
@@ -111,8 +111,12 @@ def call(Map params = [:]) {
           }
 
           String deployStage = 'Deploy'
-          if (env.CHANGE_ID) { deployStage += ' preview' }
-          if (env.BRANCH_IS_PRIMARY) { deployStage += ' production' }
+          if (env.CHANGE_ID) {
+            deployStage += ' preview'
+          }
+          if (env.BRANCH_IS_PRIMARY) {
+            deployStage += ' production'
+          }
           stage(deployStage) {
             // Skip on ci.jenkins.io
             infra.deployWebsite(config.publicFolder)
