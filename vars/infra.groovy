@@ -678,9 +678,6 @@ private String getRepositoryName() {
 
 // From current repo
 private Map getWebsiteConfig() {
-  if (!env.GIT_URL) {
-    error 'GIT_URL is not available, required to determine the current repository'
-  }
   final String repositoryName = getRepositoryName()
   final Map availableConfig = [
     'contributor-spotlight': [
@@ -737,7 +734,7 @@ private Map getWebsiteConfig() {
 String[] getWebsiteEnvVars(Map customEnvs = [:]) {
   final Map config = getWebsiteConfig()
   // Default env vars
-  String[] envs = ['TZ=UTC']
+  def envs = ['TZ=UTC']
   if (env.CHANGE_ID) {
     // Pull requests
     envs += ['NODE_ENV=development']
