@@ -717,7 +717,7 @@ private Map getWebsiteConfig() {
     'stats.jenkins.io': [
       fileShare: 'stats-jenkins-io',
       fileShareStorageAccount: 'statsjenkinsio',
-      // netlifyName: TODO, see helpdesk#???
+      netlifyName: 'stats-jenkins-io',
       servicePrincipalCredentialsId: 'infraci-stats-jenkins-io-fileshare-service-principal-writer',
     ],
     'stories': [
