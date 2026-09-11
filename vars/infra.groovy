@@ -863,7 +863,7 @@ private void deployToAzureFileShare(String publicFolder = '') {
   }
 }
 
-Object releaseToNpm() {
+void releaseToNpm() {
   final Map config = getWebsiteConfig()
 
   // Skip check

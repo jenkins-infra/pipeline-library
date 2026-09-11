@@ -34,7 +34,7 @@ def call(Map params = [:]) {
     node(agentLabel) {
       timeout(config.timeout) {
         // NODE_ENV and TZ=UTC are set by default
-        withEnv(getWebsiteEnvVars([developement: customEnvsDevelopement, production: customEnvsProduction])) {
+        withEnv(infra.getWebsiteEnvVars([developement: config.customEnvsDevelopement, production: config.customEnvsProduction])) {
           stage('Checkout') {
             infra.checkoutSCM()
           }
