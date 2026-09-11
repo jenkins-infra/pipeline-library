@@ -24,7 +24,7 @@ def call(Map params = [:]) {
   ])
 
   if (!config.publicFolder) {
-    echo 'WARNING: buildWebsite requires a "publicFolder" parameter (e.g. publicFolder: \'public\') for preview and publication'
+    echo 'WARNING: buildWebsite requires a "publicFolder" parameter (e.g. \'public\') for preview and publication'
   }
 
   int retryCounter = 0
@@ -37,16 +37,16 @@ def call(Map params = [:]) {
         withEnv(infra.getWebsiteEnvVars([developement: config.customEnvsDevelopement, production: config.customEnvsProduction])) {
           stage('Checkout') {
             infra.checkoutSCM()
-            echo "DEBUG: publicFolder in buildWebsite = '${config.publicFolder}'"
           }
 
           stage('Sanity checks') {
+            echo "Current config: ${config}"
             echo "Currently running from an agent with label '${agentLabel}'"
             sh 'node --version'
             sh 'npm --version'
-            ['.tool-versions', '.nvmrc'].each {
+            echo '.tool-versions & .nvmc content below for the record (should be the same as above, update them otherwise):'
+              ['.tool-versions', '.nvmrc'].each {
               if (fileExists(it)) {
-                echo 'For the record; should be the same as above, update it otherwise'
                 withEnv(["FILE_TO_CAT=${it}"]) {
                   sh 'cat "${FILE_TO_CAT}"'
                 }
@@ -112,7 +112,6 @@ def call(Map params = [:]) {
 
           stage('Deploy') {
             // Skip on ci.jenkins.io
-            echo "DEBUG: publicFolder in buildWebsite = '${config.publicFolder}'"
             infra.deployWebsite(config.publicFolder)
           }
 
