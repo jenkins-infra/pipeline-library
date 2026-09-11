@@ -16,7 +16,6 @@ def call(Map params = [:]) {
   if (!config.publicFolder) {
     echo 'WARNING: buildWebsite requires a "publicFolder" parameter (e.g. publicFolder: \'public\') for preview and publication'
   }
-  final String website = config.websiteName
 
   // Do not trigger daily if not on the primary branch (e.g. not on PR, not on other branches, not on tags)
   final String cronPattern = env.BRANCH_IS_PRIMARY ? '@daily' : ''
