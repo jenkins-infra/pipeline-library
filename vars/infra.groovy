@@ -760,7 +760,7 @@ void deployWebsite(String publicFolder = '') {
   final Map config = getWebsiteConfig()
 
   // Skip checks
-  String skipReasons = []
+  def skipReasons = []
   if (isCiController()) {
     skipReasons += 'No deployment from ci.jenkins.io, only from a private controller'
   }
@@ -772,10 +772,7 @@ void deployWebsite(String publicFolder = '') {
   }
   if (skipReasons) {
     catchError(buildResult: 'SUCCESS', stageResult: 'NOT_BUILT') {
-      final String skipMessage = 'Skipping: ' + skipReasons.join(' / ')
-      echo skipReasons
-      echo skipMessage
-      error(skipMessage)
+      error('Skipping: ' + skipReasons.join(' / '))
     }
     return
   }
