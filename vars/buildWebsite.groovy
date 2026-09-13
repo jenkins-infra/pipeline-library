@@ -7,7 +7,7 @@ def call(Map params = [:]) {
     typosCheck: true,
     lint: true,
     publicFolder: '',
-    customEnvsDevelopement: [],
+    customEnvsDevelopment: [],
     customEnvsProduction: [],
     preBuildCommand: '',
     coveragePath: '',
@@ -33,9 +33,9 @@ def call(Map params = [:]) {
     retryCounter++
     node(agentLabel) {
       timeout(config.timeout) {
-        final String[] envVars = infra.getWebsiteEnvVars([
-          developement: config.customEnvsDevelopement,
-          production: config.customEnvsProduction
+        def envVars = infra.getWebsiteEnvVars([
+          developement: config.customEnvsDevelopment,
+          production: config.customEnvsProduction,
         ])
         withEnv(envVars) {
           Map packageManagerScripts = [:]
