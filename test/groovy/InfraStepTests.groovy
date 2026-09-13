@@ -554,4 +554,36 @@ class InfraStepTests extends BaseTest {
 
     assertJobStatusSuccess()
   }
+
+  @Test
+  void testGetBuildWebsiteAgentLabel() throws Exception {
+    def script = loadScript(scriptName)
+
+    def cases = [
+      // ci.jenkins.io: maven agent, only "-nonspot" suffix, no " && spot" nor " && nonspot"
+      [url: 'https://ci.jenkins.io/', retry: 0, expected: 'maven-25'],
+      [url: 'https://ci.jenkins.io/', retry: 1, expected: 'maven-25'],
+      [url: 'https://ci.jenkins.io/', retry: 2, expected: 'maven-25-nonspot'],
+      // infra.ci.jenkins.io and trusted.ci.jenkins.io: no "spot"/"nonspot" distinction at all
+      [url: 'https://infra.ci.jenkins.io/', retry: 0, expected: 'linux-arm64-docker'],
+      [url: 'https://infra.ci.jenkins.io/', retry: 2, expected: 'linux-arm64-docker'],
+      [url: 'https://trusted.ci.jenkins.io/', retry: 0, expected: 'linux-arm64-docker'],
+      // Any other controller: arm64 docker VM agent, explicit "spot"/"nonspot" suffix
+      [url: 'https://foo.jenkins.io/', retry: 0, expected: 'linux-arm64-docker && spot'],
+      [url: 'https://foo.jenkins.io/', retry: 2, expected: 'linux-arm64-docker && nonspot'],
+    ]
+
+    cases.each { c ->
+      clearCallStack()
+      env.JENKINS_URL = c.url
+      binding.setVariable('env', env)
+
+      String result = script.getBuildWebsiteAgentLabel(c.retry)
+      printCallStack()
+
+      assertEquals("Unexpected result for case: ${c}", c.expected, result)
+    }
+
+    assertJobStatusSuccess()
+  }
 }
