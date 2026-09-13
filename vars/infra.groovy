@@ -644,24 +644,25 @@ private String vmAgentLabel(String platform, Integer spotRetryCounter) {
 }
 
 private String getSpotOrNonSpotAgentLabel(String agentLabel, Integer spotRetryCounter) {
-  def spot = true
-  if (isInfraCiController()) {
-    echo 'INFO: running on infra.ci.jenkins.io, no "spot" or "nonspot" agents'
+  def suffix = ' && spot'
+  def nonSpotSuffix = ' && nonspot'
+
+  // All agents of infra.ci.jenkins.io & trusted.ci.jenkins.io are nonspot
+  if (isInfraCiController() || isTrustedCiController()) {
+    echo "INFO: running on ${isInfraCiController() ? 'infra' : 'trusted' }.ci.jenkins.io, no 'spot' or 'nonspot' agents"
     return agentLabel
   }
-  if (isTrustedCiController()) {
-    echo 'INFO: running on trusted.ci.jenkins.io, no "spot" or "nonspot" agents'
-    return agentLabel
-  }
+
   if (spotRetryCounter> 1) {
     echo 'INFO: more than one retry, using "nonspot" agent'
-    spot = false
-    return "${agentLabel} && nonspot"
+    suffix = nonSpotSuffix
   }
+
+  // maven-* agent templates are spot by default, and have a dedicated 'maven-*-nonspot' label
   if (agentLabel.contains('maven-')) {
-    return "${agentLabel}${spot ? '' : '-nonspot'}"
+    suffix = suffix.replace(' && spot', '').replace(' && nonspot', '-nonspot')
   }
-  return "${agentLabel} && ${spot ? 'spot' : 'nonspot'}"
+  return "${agentLabel}${suffix}"
 }
 
 String getBuildWebsiteAgentLabel(Integer spotRetryCounter) {
