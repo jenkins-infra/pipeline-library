@@ -697,12 +697,21 @@ private Map getWebsiteConfig() {
       githubAppCredentials: 'jenkins-io-components-ghapp',
       npmToken: 'jenkinsci-npm-token',
     ],
+    // Deployment only
+    'javadoc': [
+      fileShare: 'docs-jenkins-io',
+      fileShareStorageAccount: 'docsjenkinsio',
+    ],
     'jenkins-io-components': [
       // TODO: deploy to a file share instead?
       deployProductionToNetlify: true,
       githubAppCredentials: 'jenkins-io-components-ghapp',
       netlifyName: 'jenkins-io-components',
       npmToken: 'jenkinsci-npm-token',
+    ],
+    // Previews only
+    'jenkins.io': [
+      netlifyName: 'jenkins-io-site-pr',
     ],
     'plugin-site': [
       algoliaCredentialsAndVars: [
