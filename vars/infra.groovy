@@ -741,19 +741,17 @@ String[] getWebsiteEnvVars(Map customEnvs = [:]) {
     // Pull requests
     envs += ['NODE_ENV=development']
     envs += customEnvs.developement
-  } else {
-    // TODO: prevent overrides from custom envs?
-    envs += ['NODE_ENV=production']
-    envs += customEnvs.production
-    // On other controllers than ci.jenkins.io, if on primary branch add algolia credentials if any
-    if (!isCiController && env.BRANCH_IS_PRIMARY && config.algoliaCredentialsAndVars) {
-      echo 'Adding Algolia credentials'
-      envs += config.algoliaCredentialsAndVars.collect { credentialsId, envVarName ->
-        "${envVarName}=${credentials(credentialsId)}"
-      }
+    return envs
+  }
+  // TODO: prevent overrides from custom envs?
+  envs += ['NODE_ENV=production']
+  envs += customEnvs.production
+  // On other controllers than ci.jenkins.io, if on primary branch add algolia credentials if any
+  if (!isCiController() && env.BRANCH_IS_PRIMARY && config.algoliaCredentialsAndVars) {
+    envs += config.algoliaCredentialsAndVars.collect { credentialsId, envVarName ->
+      "${envVarName}=${credentials(credentialsId)}"
     }
   }
-  echo "Environment variables for '${config.repositoryName}': ${envs}"
   return envs
 }
 
@@ -791,16 +789,19 @@ void deployWebsite(String publicFolder = '') {
   // On pull requests
   if (env.CHANGE_ID) {
     deployToNetlify([publicFolder: publicFolder, draft: true])
+    return
   }
 
   // In production
   if (env.BRANCH_IS_PRIMARY) {
     if (config.deployProductionToNetlify) {
       deployToNetlify([publicFolder: publicFolder, draft: false])
-    } else {
-      deployToAzureFileShare(publicFolder)
+      return
     }
+    deployToAzureFileShare(publicFolder)
+    return
   }
+  echo 'Neither on a pull request nor on primary branch, no deployment'
 }
 
 private void deployToNetlify(Map params = [:]) {
@@ -827,16 +828,15 @@ private void deployToNetlify(Map params = [:]) {
       recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'success', "https://deploy-preview-${CHANGE_ID}--${config.netlifyName}.netlify.app")
     } catch (e) {
       recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'failure', "https://deploy-preview-${CHANGE_ID}--${config.netlifyName}.netlify.app")
-      
+
       // Don't fail the build if the Netlify preview failed
       if (draft) {
         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
           error('Netlify preview deployment failed, continuing')
         }
         return
-      } else {
-        error('Netlify production deployment failed')
       }
+      error('Netlify production deployment failed')
     }
   }
 }

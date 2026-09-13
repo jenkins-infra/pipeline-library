@@ -33,10 +33,11 @@ def call(Map params = [:]) {
     retryCounter++
     node(agentLabel) {
       timeout(config.timeout) {
-        withEnv(infra.getWebsiteEnvVars([
+        final String[] envVars = infra.getWebsiteEnvVars([
           developement: config.customEnvsDevelopement,
           production: config.customEnvsProduction
-        ])) {
+        ])
+        withEnv(envVars) {
           Map packageManagerScripts = [:]
           stage('Checkout') {
             infra.checkoutSCM()
@@ -44,17 +45,16 @@ def call(Map params = [:]) {
           }
 
           stage('Sanity checks') {
-            echo "Current config: ${config}"
-            echo "Currently running from an agent with label '${agentLabel}'"
+            echo "Config: ${config}"
+            echo "Running from an agent with label '${agentLabel}'"
+            echo "Environment variables: ${envVars}"
             echo "Available scripts: ${packageManagerScripts}"
             sh 'node --version'
             sh packageManagerScripts['version']
-            echo '.tool-versions & .nvmc content below for the record:'
             ['.tool-versions', '.nvmrc'].each {
-              if (fileExists(it)) {
-                withEnv(["FILE_TO_CAT=${it}"]) {
-                  sh 'cat "${FILE_TO_CAT}"'
-                }
+              withEnv(["FILE_TO_CAT=${it}"]) {
+                echo "${it} content:"
+                sh 'cat "${FILE_TO_CAT}" || echo "${FILE_TO_CAT} not found"'
               }
             }
           }
@@ -156,7 +156,9 @@ Map getPackageManagerScripts() {
     scripts['install'] = 'yarn install --immutable'
 
     // Optional scripts (yarn doesn't have any "--if-present" equivalent)
-    scripts.findAll { key, value -> value.contains('--if-present') }.keySet().each { optionalScript ->
+    scripts.findAll { key, value ->
+      value.contains('--if-present')
+    }.keySet().each { optionalScript ->
       withEnv(["OPTIONAL_SCRIPT=${optionalScript}"]) {
         Boolean exist = sh(
         script: 'node -e "process.exit(require(\'./package.json\').scripts?.${OPTIONAL_SCRIPT} ? 0 : 1)"',
