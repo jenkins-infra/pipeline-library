@@ -68,7 +68,7 @@ def call(Map params = [:]) {
             }
           }
 
-          stage('Install') {
+          stage('Dependencies install') {
             sh packageManagerScripts['install']
           }
 
