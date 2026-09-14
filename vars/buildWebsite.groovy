@@ -40,7 +40,7 @@ def call(Map params = [:]) {
         withEnv(envVars) {
           Map packageManagerScripts = [:]
           stage('Checkout') {
-            infra.checkoutSCM()
+            checkout scm
             packageManagerScripts = getPackageManagerScripts()
           }
 
