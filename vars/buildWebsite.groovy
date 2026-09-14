@@ -3,7 +3,6 @@
 def call(Map params = [:]) {
   final Map defaultConfig = [
     cronPattern: '@daily',
-    timeout: 60,
     typosCheck: true,
     lint: true,
     publicFolder: '',
@@ -32,7 +31,7 @@ def call(Map params = [:]) {
     String agentLabel = infra.getBuildWebsiteAgentLabel(retryCounter)
     retryCounter++
     node(agentLabel) {
-      timeout(config.timeout) {
+      timeout(60) {
         def envVars = infra.getWebsiteEnvVars([
           developement: config.customEnvsDevelopment,
           production: config.customEnvsProduction,
