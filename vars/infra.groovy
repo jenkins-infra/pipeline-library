@@ -818,10 +818,7 @@ private void deployToNetlify(Map params = [:]) {
   // Deployment in draft by default
   final Boolean draft = config.containsKey('draft') ? config.draft : true
 
-  // Checks
-  if (!params.deployFolder) {
-    error 'A public folder is required'
-  }
+  // Check
   if (!config.netlifyName) {
     error 'A netlify site name is required'
   }
