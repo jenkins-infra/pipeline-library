@@ -6,6 +6,7 @@ def call(Map params = [:]) {
     typosCheck: true,
     lint: true,
     publicFolder: '',
+    junitResultsPattern: 'test-results/**/*.xml',
     customEnvsDevelopment: [],
     customEnvsProduction: [],
     preBuildCommand: '',
@@ -93,8 +94,9 @@ def call(Map params = [:]) {
 
           stage('Test') {
             sh packageManagerScripts['test']
-            junit(testResults: 'test-results/**/*.xml', allowEmptyResults: true)
-            junit(testResults: 'junit.xml', allowEmptyResults: true) // for jenkins-io-components
+            if (junitResultsPattern) {
+              junit(testResults: junitResultsPattern)
+            }
           }
 
           // cobertura seems broken on infra, and we don't need to publish it from there
