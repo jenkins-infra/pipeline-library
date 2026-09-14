@@ -9,6 +9,7 @@ def call(Map params = [:]) {
     junitResultsPattern: 'test-results/**/*.xml',
     customEnvsDevelopment: [],
     customEnvsProduction: [],
+    additionalCredentialsIdsAndVars: [:],
     preBuildCommand: '',
     coveragePath: '',
     releaseToNpmFromBranches: [], // only for NPM components
@@ -33,108 +34,113 @@ def call(Map params = [:]) {
     retryCounter++
     node(agentLabel) {
       timeout(60) {
-        // TODO: prevent overrides from custom envs?
-        List envVars = ['TZ=UTC']
-        if (env.CHANGE_ID) {
-          // Pull requests
-          envVars += ['NODE_ENV=development'] + config.customEnvsDevelopment
-        } else {
-          envVars += ['NODE_ENV=production'] + config.customEnvsProduction
-        }
-        withEnv(envVars) {
-          Map packageManagerScripts = [:]
-          stage('Checkout') {
-            checkout scm
-            packageManagerScripts = getPackageManagerScripts()
-          }
-
-          /*
-          stage('Sanity checks') {
-            echo "Config: ${config}"
-            echo "Running from an agent with label '${agentLabel}'"
-            echo "Environment variables: ${envVars}"
-            echo "Available scripts: ${packageManagerScripts}"
-            sh 'node --version'
-            sh packageManagerScripts['version']
-            ['.tool-versions', '.nvmrc'].each {
-              withEnv(["FILE_TO_CAT=${it}"]) {
-                echo "${it} content:"
-                sh 'cat "${FILE_TO_CAT}" || echo "${FILE_TO_CAT} not found"'
-              }
-            }
-          }
-          */
-
-          if (config.typosCheck) {
-            stage('Typos check') {
-              sh 'typos --format json | typos-checkstyle - > typos-checkstyle.xml || true'
-              recordIssues(tools: [checkStyle(id: 'typos', name: 'Typos', pattern: 'typos-checkstyle.xml')])
-            }
-          }
-
-          stage('Dependencies install') {
-            sh packageManagerScripts['install']
-          }
-
-          if (config.lint) {
-            stage('Lint') {
-              try {
-                sh packageManagerScripts['lint']
-              } catch (e) {
-                recordIssues(stopBuild: true, tools: [
-                  esLint(pattern: 'eslint-results.json'),
-                  checkStyle(pattern: 'eslint.xml'),
-                  styleLint(pattern: 'stylelint-results.json'),
-                ])
-              }
-            }
-          }
-
-          if (config.preBuildCommand) {
-            sh config.preBuildCommand
-          }
-
-          stage('Build') {
-            sh packageManagerScripts['build']
-          }
-
-          stage('Test') {
-            sh packageManagerScripts['test']
-            if (junitResultsPattern) {
-              junit(testResults: junitResultsPattern)
-            }
-          }
-
-          // cobertura not installed on other controllers than ci.jenkins.io by design
-          if (config.coveragePath && infra.isCiController()) {
-            stage('Coverage') {
-              sh packageManagerScripts['coverage']
-              recordCoverage name: 'coverage', sourceCodeRetention: 'NEVER', tools: [[parser: 'COBERTURA', pattern: config.coveragePath]]
-            }
-          }
-
-          String deployStage = 'Deploy'
+        def additionalDeploymentCredentials = config.additionalCredentialsIdsAndVars?.collect { credentialsId, envVarName ->
+          string(credentialsId: credentialsId, variable: envVarName)
+        } ?: []
+        withCredentials(additionalDeploymentCredentials) {
+          // TODO: prevent overrides from custom envs?
+          List envVars = ['TZ=UTC']
           if (env.CHANGE_ID) {
-            deployStage += ' preview'
+            // Pull requests
+            envVars += ['NODE_ENV=development'] + config.customEnvsDevelopment
+          } else {
+            envVars += ['NODE_ENV=production'] + config.customEnvsProduction
           }
-          if (env.BRANCH_IS_PRIMARY) {
-            deployStage += ' production'
-          }
-          stage(deployStage) {
-            // Skip on ci.jenkins.io
-            infra.deployWebsite(config.deployFolder)
-          }
-
-          if (config.releaseToNpmFromBranches.contains(env.BRANCH_NAME)) {
-            stage('Release') {
-              // Skip on ci.jenkins.io
-              infra.releaseToNpm()
+          withEnv(envVars) {
+            Map packageManagerScripts = [:]
+            stage('Checkout') {
+              checkout scm
+              packageManagerScripts = getPackageManagerScripts()
             }
-          }
 
-          if (env.BRANCH_IS_PRIMARY) {
-            stage('Publish build report') {
-              publishBuildStatusReport()
+            /*
+            stage('Sanity checks') {
+              echo "Config: ${config}"
+              echo "Running from an agent with label '${agentLabel}'"
+              echo "Environment variables: ${envVars}"
+              echo "Available scripts: ${packageManagerScripts}"
+              sh 'node --version'
+              sh packageManagerScripts['version']
+              ['.tool-versions', '.nvmrc'].each {
+                withEnv(["FILE_TO_CAT=${it}"]) {
+                  echo "${it} content:"
+                  sh 'cat "${FILE_TO_CAT}" || echo "${FILE_TO_CAT} not found"'
+                }
+              }
+            }
+            */
+
+            if (config.typosCheck) {
+              stage('Typos check') {
+                sh 'typos --format json | typos-checkstyle - > typos-checkstyle.xml || true'
+                recordIssues(tools: [checkStyle(id: 'typos', name: 'Typos', pattern: 'typos-checkstyle.xml')])
+              }
+            }
+
+            stage('Dependencies install') {
+              sh packageManagerScripts['install']
+            }
+
+            if (config.lint) {
+              stage('Lint') {
+                try {
+                  sh packageManagerScripts['lint']
+                } catch (e) {
+                  recordIssues(stopBuild: true, tools: [
+                    esLint(pattern: 'eslint-results.json'),
+                    checkStyle(pattern: 'eslint.xml'),
+                    styleLint(pattern: 'stylelint-results.json'),
+                  ])
+                }
+              }
+            }
+
+            if (config.preBuildCommand) {
+              sh config.preBuildCommand
+            }
+
+            stage('Build') {
+              sh packageManagerScripts['build']
+            }
+
+            stage('Test') {
+              sh packageManagerScripts['test']
+              if (junitResultsPattern) {
+                junit(testResults: junitResultsPattern)
+              }
+            }
+
+            // cobertura not installed on other controllers than ci.jenkins.io by design
+            if (config.coveragePath && infra.isCiController()) {
+              stage('Coverage') {
+                sh packageManagerScripts['coverage']
+                recordCoverage name: 'coverage', sourceCodeRetention: 'NEVER', tools: [[parser: 'COBERTURA', pattern: config.coveragePath]]
+              }
+            }
+
+            String deployStage = 'Deploy'
+            if (env.CHANGE_ID) {
+              deployStage += ' preview'
+            }
+            if (env.BRANCH_IS_PRIMARY) {
+              deployStage += ' production'
+            }
+            stage(deployStage) {
+              // Skip on ci.jenkins.io
+              infra.deployWebsite(config.deployFolder)
+            }
+
+            if (config.releaseToNpmFromBranches.contains(env.BRANCH_NAME)) {
+              stage('Release') {
+                // Skip on ci.jenkins.io
+                infra.releaseToNpm()
+              }
+            }
+
+            if (env.BRANCH_IS_PRIMARY) {
+              stage('Publish build report') {
+                publishBuildStatusReport()
+              }
             }
           }
         }

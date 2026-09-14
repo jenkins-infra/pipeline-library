@@ -773,25 +773,20 @@ void deployWebsite(String deployFolder = '') {
     '''
   }
 
-  def additionalDeploymentCredentials = config.additionalDeploymentCredentialsIdsAndVars?.collect { credentialsId, envVarName ->
-    string(credentialsId: credentialsId, variable: envVarName)
-  } ?: []
-  withCredentials(additionalDeploymentCredentials) {
-    // On pull requests
-    if (env.CHANGE_ID) {
-      deployToNetlify([deployFolder: deployFolder, draft: true])
-      return
-    }
+  // On pull requests
+  if (env.CHANGE_ID) {
+    deployToNetlify([deployFolder: deployFolder, draft: true])
+    return
+  }
 
-    // In production
-    if (env.BRANCH_IS_PRIMARY) {
-      if (config.deployProductionToNetlify) {
-        deployToNetlify([deployFolder: deployFolder, draft: false])
-        return
-      }
-      deployToAzureFileShare(deployFolder)
+  // In production
+  if (env.BRANCH_IS_PRIMARY) {
+    if (config.deployProductionToNetlify) {
+      deployToNetlify([deployFolder: deployFolder, draft: false])
       return
     }
+    deployToAzureFileShare(deployFolder)
+    return
   }
   echo 'Neither on a pull request nor on primary branch, no deployment'
 }
