@@ -742,28 +742,6 @@ private Map getWebsiteConfig() {
   return (availableConfig[repositoryName] ?: [:]) + [repositoryName: repositoryName]
 }
 
-String[] getWebsiteEnvVars(Map customEnvs = [:]) {
-  final Map config = getWebsiteConfig()
-  // Default env vars
-  def envs = ['TZ=UTC']
-  if (env.CHANGE_ID) {
-    // Pull requests
-    envs += ['NODE_ENV=development']
-    envs += customEnvs.developement
-    return envs
-  }
-  // TODO: prevent overrides from custom envs?
-  envs += ['NODE_ENV=production']
-  envs += customEnvs.production
-  // On other controllers than ci.jenkins.io, if on primary branch add algolia credentials if any
-  if (!isCiController() && env.BRANCH_IS_PRIMARY && config.algoliaCredentialsAndVars) {
-    envs += config.algoliaCredentialsAndVars.collect { credentialsId, envVarName ->
-      "${envVarName}=${credentials(credentialsId)}"
-    }
-  }
-  return envs
-}
-
 void deployWebsite(String deployFolder = '') {
   final Map config = getWebsiteConfig()
 

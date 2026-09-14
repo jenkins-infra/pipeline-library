@@ -33,10 +33,14 @@ def call(Map params = [:]) {
     retryCounter++
     node(agentLabel) {
       timeout(60) {
-        def envVars = infra.getWebsiteEnvVars([
-          developement: config.customEnvsDevelopment,
-          production: config.customEnvsProduction,
-        ])
+        // TODO: prevent overrides from custom envs?
+        List envVars = ['TZ=UTC']
+        if (env.CHANGE_ID) {
+          // Pull requests
+          envs += ['NODE_ENV=development'] + config.customEnvsDevelopment
+        } else {
+          envs += ['NODE_ENV=production'] + config.customEnvsProduction
+        }
         withEnv(envVars) {
           Map packageManagerScripts = [:]
           stage('Checkout') {
