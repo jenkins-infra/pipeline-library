@@ -694,7 +694,7 @@ private Map getWebsiteConfig() {
       servicePrincipalCredentialsId: 'infraci-docs-jenkins-io-fileshare-service-principal-writer',
     ],
     'gatsby-plugin-jenkins-layout': [
-      githubAppCredentials: 'jenkins-io-components-ghapp',
+      githubAppCredentialsId: 'jenkins-io-components-ghapp',
       npmToken: 'jenkinsci-npm-token',
     ],
     // Deployment only
@@ -705,7 +705,7 @@ private Map getWebsiteConfig() {
     'jenkins-io-components': [
       // TODO: deploy to a file share instead?
       deployProductionToNetlify: true,
-      githubAppCredentials: 'jenkins-io-components-ghapp',
+      githubAppCredentialsId: 'jenkins-io-components-ghapp',
       netlifyName: 'jenkins-io-components',
       npmToken: 'jenkinsci-npm-token',
     ],
@@ -895,7 +895,7 @@ void releaseToNpm() {
   if (!config.npmToken) {
     error 'A NPM token is required for release'
   }
-  if (!config.githubAppId) {
+  if (!config.githubAppCredentialsId) {
     error 'A GitHub App credentials is required for release'
   }
   withCredentials([
@@ -904,7 +904,7 @@ void releaseToNpm() {
         variable: 'NPM_TOKEN'
         ),
     usernamePassword(
-        credentialsId: config.githubAppCredentials,
+        credentialsId: config.githubAppCredentialsId,
         usernameVariable: 'GITHUB_APP',
         passwordVariable: 'GITHUB_TOKEN'
         ),
