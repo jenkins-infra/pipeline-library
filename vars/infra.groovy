@@ -714,7 +714,7 @@ private Map getWebsiteConfig() {
       netlifyName: 'jenkins-io-site-pr',
     ],
     'plugin-site': [
-      algoliaCredentialsAndVars: [
+      additionalDeploymentCredentialsIdsAndVars: [
         'algolia-plugins-app-id': 'GATSBY_ALGOLIA_APP_ID',
         'algolia-plugins-search-key': 'GATSBY_ALGOLIA_SEARCH_KEY',
         'algolia-plugins-write-key': 'GATSBY_ALGOLIA_WRITE_KEY',
@@ -773,10 +773,10 @@ void deployWebsite(String deployFolder = '') {
     '''
   }
 
-  def algoliaCredentials = config.algoliaCredentialsAndVars?.collect { credentialsId, envVarName ->
+  def additionalDeploymentCredentials = config.additionalDeploymentCredentialsIdsAndVars?.collect { credentialsId, envVarName ->
     string(credentialsId: credentialsId, variable: envVarName)
   } ?: []
-  withCredentials(algoliaCredentials) {
+  withCredentials(additionalDeploymentCredentials) {
     // On pull requests
     if (env.CHANGE_ID) {
       deployToNetlify([deployFolder: deployFolder, draft: true])
