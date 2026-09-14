@@ -764,7 +764,7 @@ String[] getWebsiteEnvVars(Map customEnvs = [:]) {
   return envs
 }
 
-void deployWebsite(String publicFolder = '') {
+void deployWebsite(String deployFolder = '') {
   final Map config = getWebsiteConfig()
 
   // Skip checks
@@ -772,10 +772,10 @@ void deployWebsite(String publicFolder = '') {
   if (isCiController()) {
     skipReasons += 'No deployment from ci.jenkins.io, only from a private controller'
   }
-  if (!publicFolder) {
+  if (!deployFolder) {
     skipReasons += 'A public folder is required to deploy a website'
   }
-  if (publicFolder.startsWith('.')) {
+  if (deployFolder.startsWith('.')) {
     skipReasons += 'The public folder can\'t start with a dot'
   }
   if (skipReasons) {
@@ -786,7 +786,7 @@ void deployWebsite(String publicFolder = '') {
   }
 
   // Ensure there is something to deploy
-  withEnv(["PUBLIC_FOLDER=${publicFolder}"]) {
+  withEnv(["PUBLIC_FOLDER=${deployFolder}"]) {
     sh '''
       if [[ ! -d "${PUBLIC_FOLDER}" ]] || [[ -z "$(find "${PUBLIC_FOLDER}" -mindepth 1 -print -quit)" ]]; then
         echo "Something went wrong, the public folder '"${PUBLIC_FOLDER}"' is empty or missing"
@@ -797,17 +797,17 @@ void deployWebsite(String publicFolder = '') {
 
   // On pull requests
   if (env.CHANGE_ID) {
-    deployToNetlify([publicFolder: publicFolder, draft: true])
+    deployToNetlify([deployFolder: deployFolder, draft: true])
     return
   }
 
   // In production
   if (env.BRANCH_IS_PRIMARY) {
     if (config.deployProductionToNetlify) {
-      deployToNetlify([publicFolder: publicFolder, draft: false])
+      deployToNetlify([deployFolder: deployFolder, draft: false])
       return
     }
-    deployToAzureFileShare(publicFolder)
+    deployToAzureFileShare(deployFolder)
     return
   }
   echo 'Neither on a pull request nor on primary branch, no deployment'
@@ -819,7 +819,7 @@ private void deployToNetlify(Map params = [:]) {
   final Boolean draft = config.containsKey('draft') ? config.draft : true
 
   // Checks
-  if (!params.publicFolder) {
+  if (!params.deployFolder) {
     error 'A public folder is required'
   }
   if (!config.netlifyName) {
@@ -829,7 +829,7 @@ private void deployToNetlify(Map params = [:]) {
     try {
       withEnv([
         "NETLIFY_NAME=${config.netlifyName}",
-        "PUBLIC_FOLDER=${params.publicFolder}",
+        "PUBLIC_FOLDER=${params.deployFolder}",
         "DRAFT=${draft}",
       ]) {
         sh 'netlify-deploy --draft="${DRAFT}" --siteName "${NETLIFY_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_FOLDER}"'
@@ -850,7 +850,7 @@ private void deployToNetlify(Map params = [:]) {
   }
 }
 
-private void deployToAzureFileShare(String publicFolder = '') {
+private void deployToAzureFileShare(String deployFolder = '') {
   final Map config = getWebsiteConfig()
   // Check
   if (!config.fileShare) {
@@ -862,7 +862,7 @@ private void deployToAzureFileShare(String publicFolder = '') {
     servicePrincipalCredentialsId: config.servicePrincipalCredentialsId,
   ]) {
     try {
-      withEnv(["PUBLIC_FOLDER=${publicFolder}"]) {
+      withEnv(["PUBLIC_FOLDER=${deployFolder}"]) {
         sh '''
         # Synchronize the File Share content
         set +x

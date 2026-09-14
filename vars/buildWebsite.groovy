@@ -5,7 +5,7 @@ def call(Map params = [:]) {
     cronPattern: '@daily',
     typosCheck: true,
     lint: true,
-    publicFolder: '',
+    deployFolder: '',
     junitResultsPattern: 'test-results/**/*.xml',
     customEnvsDevelopment: [],
     customEnvsProduction: [],
@@ -23,8 +23,8 @@ def call(Map params = [:]) {
     pipelineTriggers([cron(cronPattern)]),
   ])
 
-  if (!config.publicFolder) {
-    echo 'WARNING: buildWebsite requires a "publicFolder" parameter (e.g. \'public\') for preview and publication'
+  if (!config.deployFolder) {
+    echo 'WARNING: buildWebsite requires a "deployFolder" parameter (e.g. \'public\') for preview and publication'
   }
 
   int retryCounter = 0
@@ -116,7 +116,7 @@ def call(Map params = [:]) {
           }
           stage(deployStage) {
             // Skip on ci.jenkins.io
-            infra.deployWebsite(config.publicFolder)
+            infra.deployWebsite(config.deployFolder)
           }
 
           if (config.releaseToNpmFromBranches.contains(env.BRANCH_NAME)) {
