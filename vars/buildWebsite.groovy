@@ -39,12 +39,10 @@ def call(Map params = [:]) {
         } ?: []
         withCredentials(additionalDeploymentCredentials) {
           // TODO: prevent overrides from custom envs?
-          List envVars = ['TZ=UTC']
+          List envVars = ['TZ=UTC', 'NODE_ENV=production'] + config.customEnvsProduction
+          // Pull requests
           if (env.CHANGE_ID) {
-            // Pull requests
-            envVars += ['NODE_ENV=development'] + config.customEnvsDevelopment
-          } else {
-            envVars += ['NODE_ENV=production'] + config.customEnvsProduction
+            envVars = ['TZ=UTC', 'NODE_ENV=development'] + config.customEnvsDevelopment
           }
           withEnv(envVars) {
             Map packageManagerScripts = [:]
