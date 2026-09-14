@@ -37,9 +37,9 @@ def call(Map params = [:]) {
         List envVars = ['TZ=UTC']
         if (env.CHANGE_ID) {
           // Pull requests
-          envs += ['NODE_ENV=development'] + config.customEnvsDevelopment
+          envVars += ['NODE_ENV=development'] + config.customEnvsDevelopment
         } else {
-          envs += ['NODE_ENV=production'] + config.customEnvsProduction
+          envVars += ['NODE_ENV=production'] + config.customEnvsProduction
         }
         withEnv(envVars) {
           Map packageManagerScripts = [:]
