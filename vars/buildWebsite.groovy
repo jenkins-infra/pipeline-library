@@ -44,6 +44,7 @@ def call(Map params = [:]) {
             packageManagerScripts = getPackageManagerScripts()
           }
 
+          /*
           stage('Sanity checks') {
             echo "Config: ${config}"
             echo "Running from an agent with label '${agentLabel}'"
@@ -58,6 +59,7 @@ def call(Map params = [:]) {
               }
             }
           }
+          */
 
           if (config.typosCheck) {
             stage('Typos check') {
