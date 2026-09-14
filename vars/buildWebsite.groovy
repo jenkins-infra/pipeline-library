@@ -95,11 +95,8 @@ def call(Map params = [:]) {
               }
             }
 
-            if (config.preBuildCommand) {
-              sh config.preBuildCommand
-            }
-
             stage('Build') {
+              infra.maybeWebsitePreBuildCommand()
               sh packageManagerScripts['build']
             }
 

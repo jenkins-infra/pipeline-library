@@ -712,13 +712,12 @@ private Map getWebsiteConfig() {
     // Previews only
     'jenkins.io': [
       netlifyName: 'jenkins-io-site-pr',
+      preBuildCommand: [
+        command: 'bundle config --global frozen 1 && bundle install',
+        readTrusted: ['Gemfile', 'Gemfile.lock'],
+      ],
     ],
     'plugin-site': [
-      additionalDeploymentCredentialsIdsAndVars: [
-        'algolia-plugins-app-id': 'GATSBY_ALGOLIA_APP_ID',
-        'algolia-plugins-search-key': 'GATSBY_ALGOLIA_SEARCH_KEY',
-        'algolia-plugins-write-key': 'GATSBY_ALGOLIA_WRITE_KEY',
-      ],
       fileShare: 'plugins-jenkins-io',
       fileShareStorageAccount: 'pluginsjenkinsio',
       netlifyName: 'jenkins-plugin-site-pr',
@@ -728,6 +727,10 @@ private Map getWebsiteConfig() {
       fileShare: 'stats-jenkins-io',
       fileShareStorageAccount: 'statsjenkinsio',
       netlifyName: 'stats-jenkins-io',
+      preBuildCommand: [
+        command: 'INFRASTATISTICS_LOCATION=src/data/infra-statistics ./retrieve-infra-statistics-data.sh',
+        readTrusted: ['retrieve-infra-statistics-data.sh'],
+      ],
       servicePrincipalCredentialsId: 'infraci-stats-jenkins-io-fileshare-service-principal-writer',
     ],
     'stories': [
@@ -740,6 +743,19 @@ private Map getWebsiteConfig() {
     echo "WARNING: no configuration found for website '${repositoryName}'"
   }
   return (availableConfig[repositoryName] ?: [:]) + [repositoryName: repositoryName]
+}
+
+void maybeWebsitePreBuildCommand() {
+  final Map config = getWebsiteConfig()
+  if (config.preBuildCommand) {
+    config.preBuildCommand.readTrusted.each { untrustedFile ->
+      trustedFile = readTrusted(untrustedFile)
+      writeFile(trustedFile)
+    }
+    sh config.preBuildCommand.command
+  } else {
+    echo "No prebuild command to execute for '${config.repositoryName}'"
+  }
 }
 
 void deployWebsite(String deployFolder = '') {
