@@ -101,8 +101,8 @@ def call(Map params = [:]) {
             }
           }
 
-          // cobertura seems broken on infra, and we don't need to publish it from there
-          if (config.coveragePath && !infra.isInfraCiController()) {
+          // cobertura not installed on other controllers than ci.jenkins.io by design
+          if (config.coveragePath && infra.isCiController()) {
             stage('Coverage') {
               sh packageManagerScripts['coverage']
               recordCoverage name: 'coverage', sourceCodeRetention: 'NEVER', tools: [[parser: 'COBERTURA', pattern: config.coveragePath]]
