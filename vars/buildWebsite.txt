@@ -1,0 +1,82 @@
+<p>
+    Builds, tests and deploys a Jenkins website/component following a standard
+    typos/lint/install/build/test/coverage/deploy pattern.
+</p>
+
+<p>
+    Deployment (preview on pull requests, production on the primary branch) and release-to-NPM behavior are
+    delegated to the per-repository configuration in <code>infra.groovy</code> (see <code>infra.deployWebsite()</code>
+    and <code>infra.releaseToNpm()</code> in this reference).
+</p>
+
+<p>
+    The following configuration keys are available for this function (all optional):
+</p>
+
+<dl>
+    <dt><code>deployFolder</code></dt>
+    <dd>
+        (Default: <code>''</code>) Relative path to the built site's output directory (e.g. <code>'public'</code>).
+        Required for preview and production deployment: a warning is logged if left empty, and
+        <code>infra.deployWebsite()</code> will skip deployment without it.
+    </dd>
+    <dt><code>cronPattern</code></dt>
+    <dd>
+        (Default: <code>'@daily'</code>) Cron trigger pattern. Only applied on the primary branch; ignored on
+        pull requests, other branches and tags.
+    </dd>
+    <dt><code>typosCheck</code></dt>
+    <dd>
+        (Default: <code>true</code>) Whether to run the "Typos check" stage.
+    </dd>
+    <dt><code>lint</code></dt>
+    <dd>
+        (Default: <code>true</code>) Whether to run the "Lint" stage.
+    </dd>
+    <dt><code>junitResultsPattern</code></dt>
+    <dd>
+        (Default: <code>'test-results/**/*.xml'</code>) File pattern passed to the <code>junit</code> step after
+        running tests. Set to an empty string to skip publishing test results.
+    </dd>
+    <dt><code>coveragePath</code></dt>
+    <dd>
+        (Default: <code>''</code>) Path to a Cobertura XML coverage report. When set, a "Coverage" stage records
+        it via <code>recordCoverage</code>. Only runs on <code>ci.jenkins.io</code> (Cobertura isn't installed on
+        other controllers by design).
+    </dd>
+    <dt><code>customEnvsDevelopment</code></dt>
+    <dd>
+        (Default: <code>[]</code>) Extra environment variables (<code>"NAME=value"</code> strings) added on top of
+        <code>TZ=UTC</code> and <code>NODE_ENV=development</code> when building a pull request.
+    </dd>
+    <dt><code>customEnvsProduction</code></dt>
+    <dd>
+        (Default: <code>[]</code>) Extra environment variables (<code>"NAME=value"</code> strings) added on top of
+        <code>TZ=UTC</code> and <code>NODE_ENV=production</code> when building outside of a pull request.
+    </dd>
+    <dt><code>additionalCredentialsIdsAndVars</code></dt>
+    <dd>
+        (Default: <code>[:]</code>) Map of <code>credentialsId: environmentVariableName</code> pairs. Each entry is
+        bound as a secret text credential (via <code>withCredentials</code>) for the whole build, e.g. for Algolia
+        search keys needed at build time.
+    </dd>
+    <dt><code>releaseToNpmFromBranches</code></dt>
+    <dd>
+        (Default: <code>[]</code>, NPM components only) List of branch names from which a "Release" stage should
+        call <code>infra.releaseToNpm()</code> after a successful build.
+    </dd>
+</dl>
+
+<p>
+    <b>Example:</b>
+</p>
+
+<pre><code>
+buildWebsite(
+  deployFolder: 'public'
+)
+</code></pre>
+
+<!--
+vim: ft=html
+-->
