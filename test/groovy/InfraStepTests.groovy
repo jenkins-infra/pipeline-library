@@ -610,7 +610,9 @@ class InfraStepTests extends BaseTest {
     def script = loadScript(scriptName)
     // 'stats.jenkins.io' is configured with a preBuildCommand
     mockRepositoryUrl('stats.jenkins.io')
-    helper.registerAllowedMethod('readTrusted', [String.class], { f -> "trusted content of ${f}" })
+    helper.registerAllowedMethod('readTrusted', [String.class], { f ->
+      "trusted content of ${f}"
+    })
 
     script.maybeWebsitePreBuildCommand()
     printCallStack()
@@ -759,7 +761,9 @@ class InfraStepTests extends BaseTest {
     // withFileShareServicePrincipal is only usable from infra.ci.jenkins.io or trusted.ci.jenkins.io
     env.JENKINS_URL = 'https://infra.ci.jenkins.io/'
     env.BRANCH_IS_PRIMARY = true
-    helper.registerAllowedMethod('sh', [Map.class], { m -> 'https://statsjenkinsio.file.core.windows.net/stats-jenkins-io?sas-token' })
+    helper.registerAllowedMethod('sh', [Map.class], { m ->
+      'https://statsjenkinsio.file.core.windows.net/stats-jenkins-io?sas-token'
+    })
 
     script.deployWebsite('public')
     printCallStack()
@@ -777,7 +781,9 @@ class InfraStepTests extends BaseTest {
     // withFileShareServicePrincipal is only usable from infra.ci.jenkins.io or trusted.ci.jenkins.io
     env.JENKINS_URL = 'https://infra.ci.jenkins.io/'
     env.BRANCH_IS_PRIMARY = true
-    helper.registerAllowedMethod('sh', [Map.class], { m -> 'https://statsjenkinsio.file.core.windows.net/stats-jenkins-io?sas-token' })
+    helper.registerAllowedMethod('sh', [Map.class], { m ->
+      'https://statsjenkinsio.file.core.windows.net/stats-jenkins-io?sas-token'
+    })
     helper.registerAllowedMethod('sh', [String.class], { s ->
       if (s.contains('azcopy sync')) {
         throw new Exception('azcopy failed')

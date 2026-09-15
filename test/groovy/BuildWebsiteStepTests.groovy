@@ -112,7 +112,9 @@ class BuildWebsiteStepTests extends BaseTest {
   void it_uses_yarn_when_a_yarn_lock_file_is_present() throws Exception {
     def script = loadScript(scriptName)
     mockPrincipalBranch()
-    helper.registerAllowedMethod('fileExists', [String.class], { s -> s == 'yarn.lock' })
+    helper.registerAllowedMethod('fileExists', [String.class], { s ->
+      s == 'yarn.lock'
+    })
     helper.registerAllowedMethod('sh', [Map.class], { m -> 0 })
 
     script.call([deployFolder: defaultDeployFolder])
