@@ -10,7 +10,6 @@ def call(Map params = [:]) {
     customEnvsDevelopment: [],
     customEnvsProduction: [],
     additionalCredentialsIdsAndVars: [:],
-    preBuildCommand: '',
     coveragePath: '',
     releaseToNpmFromBranches: [], // only for NPM components
   ]
