@@ -810,7 +810,7 @@ void deployWebsite(String deployFolder = '') {
 private void deployToNetlify(Map params = [:]) {
   final Map config = getWebsiteConfig()
   // Deployment in draft by default
-  final Boolean draft = config.containsKey('draft') ? config.draft : true
+  final Boolean draft = params.containsKey('draft') ? params.draft : true
 
   // Check
   if (!config.netlifyName) {
