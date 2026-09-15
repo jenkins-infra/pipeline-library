@@ -264,7 +264,39 @@ class BuildWebsiteStepTests extends BaseTest {
   }
 
   @Test
-  void it_binds_additional_deployment_credentials_when_configured() throws Exception {
+  void it_does_not_bind_additional_production_credentials_on_pull_requests() throws Exception {
+    def script = loadScript(scriptName)
+    mockPullRequest()
+
+    script.call([
+      deployFolder: defaultDeployFolder,
+      additionalCredentialsIdsAndVars: ['algolia-write-key': 'GATSBY_ALGOLIA_WRITE_KEY'],
+    ])
+    printCallStack()
+
+    assertJobStatusSuccess()
+    assertFalse(assertMethodCallContainsPattern('withCredentials', 'algolia-write-key'))
+  }
+
+  @Test
+  void it_does_not_bind_additional_production_credentials_on_ci_controller() throws Exception {
+    infraMock = new Infra(ci: true)
+    binding.setProperty('infra', infraMock)
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+
+    script.call([
+      deployFolder: defaultDeployFolder,
+      additionalCredentialsIdsAndVars: ['algolia-write-key': 'GATSBY_ALGOLIA_WRITE_KEY'],
+    ])
+    printCallStack()
+
+    assertJobStatusSuccess()
+    assertFalse(assertMethodCallContainsPattern('withCredentials', 'algolia-write-key'))
+  }
+
+  @Test
+  void it_binds_additional_production_credentials_when_configured() throws Exception {
     def script = loadScript(scriptName)
     mockPrincipalBranch()
 

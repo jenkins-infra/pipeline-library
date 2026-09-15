@@ -33,10 +33,13 @@ def call(Map params = [:]) {
     retryCounter++
     node(agentLabel) {
       timeout(60) {
-        def additionalDeploymentCredentials = config.additionalCredentialsIdsAndVars?.collect { credentialsId, envVarName ->
-          string(credentialsId: credentialsId, variable: envVarName)
-        } ?: []
-        withCredentials(additionalDeploymentCredentials) {
+        def additionalProductionCredentials = []
+        if (!env.CHANGE_ID && !infra.isCiController()) {
+          additionalProductionCredentials = config.additionalCredentialsIdsAndVars?.collect { credentialsId, envVarName ->
+            string(credentialsId: credentialsId, variable: envVarName)
+          } ?: []
+        }
+        withCredentials(additionalProductionCredentials) {
           // TODO: prevent overrides from custom envs?
           List envVars = ['TZ=UTC', 'NODE_ENV=production'] + config.customEnvsProduction
           // Pull requests
