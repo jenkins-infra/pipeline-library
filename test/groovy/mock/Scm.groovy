@@ -1,7 +1,7 @@
 package mock
 
 /**
- * Mock scm, mimicking a single-remote Git SCM (jenkins.scm.api.SCMSource / GitSCM#getUserRemoteConfigs())
+ * Mock scm, mimicking a single-remote Git SCM
  */
 class Scm implements Serializable {
   private final String url

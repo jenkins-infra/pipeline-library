@@ -2,6 +2,7 @@ import mock.Infra
 import org.junit.Before
 import org.junit.Test
 
+import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertTrue
 
@@ -78,7 +79,7 @@ class BuildWebsiteStepTests extends BaseTest {
 
     // Deployed in production, on the primary branch, outside of any PR
     assertTrue(assertMethodCallContainsPattern('stage', 'Deploy production'))
-    assertTrue(infraMock.deployedFolders.contains(defaultDeployFolder))
+    assertEquals(defaultDeployFolder, infraMock.deployedFolder)
 
     // No coverage stage outside ci.jenkins.io
     assertFalse(assertMethodCallContainsPattern('stage', 'Coverage'))

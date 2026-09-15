@@ -14,7 +14,7 @@ class Infra implements Serializable {
   private String dockerRegistryNamespace
   private final String buildWebsiteAgentLabel = 'website-agent'
 
-  List<String> deployedFolders = []
+  String deployedFolder
   boolean releaseToNpmCalled = false
   boolean maybeWebsitePreBuildCommandCalled = false
 
@@ -96,7 +96,7 @@ class Infra implements Serializable {
   }
 
   void deployWebsite(String deployFolder = '') {
-    deployedFolders << deployFolder
+    deployedFolder = deployFolder
   }
 
   void releaseToNpm() {

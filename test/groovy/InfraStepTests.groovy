@@ -30,7 +30,7 @@ class InfraStepTests extends BaseTest {
     helper.registerAllowedMethod('azureServicePrincipal', [Map.class], { m ->
       m
     })
-    // Mimic real catchError semantics: swallow the exception thrown by the body and force the configured build result
+    // Mimic catchError semantics: swallow the exception thrown by the body and force the configured build result
     helper.registerAllowedMethod('catchError', [Map.class, Closure.class], { m, body ->
       try {
         body()
@@ -38,10 +38,10 @@ class InfraStepTests extends BaseTest {
         updateBuildStatus(m.buildResult ?: 'SUCCESS')
       }
     })
-    // Github-deployments plugin step, not modeled by the test harness's default step registry
     helper.registerAllowedMethod('recordDeployment', [Object.class, Object.class, Object.class, Object.class, Object.class], { a, b, c, d, e ->
       null
     })
+    // Used to mock string credentials
     helper.registerAllowedMethod('string', [Map.class], { m -> m })
   }
 
@@ -751,6 +751,33 @@ class InfraStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withEnv', 'DRAFT=false'))
     assertFalse(assertMethodCallContainsPattern('sh', 'azcopy sync'))
     assertJobStatusSuccess()
+  }
+
+  @Test
+  void testDeployWebsiteOnPrimaryBranchFailsBuildOnNetlifyFailure() throws Exception {
+    def script = loadScript(scriptName)
+    // 'jenkins-io-components' is configured with `deployProductionToNetlify: true`
+    mockRepositoryUrl('jenkins-io-components')
+    env.JENKINS_URL = 'https://foo.jenkins.io/'
+    env.BRANCH_IS_PRIMARY = true
+    binding.setProperty('pullRequest', new PullRequest([], 'pr-head-sha'))
+    helper.registerAllowedMethod('sh', [String.class], { s ->
+      if (s.startsWith('netlify-deploy')) {
+        throw new Exception('netlify-deploy failed')
+      }
+      return s
+    })
+
+    try {
+      script.deployWebsite('public')
+    } catch (e) {
+      // NOOP: a production Netlify deployment failure is expected to fail the build
+    }
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('recordDeployment', 'failure'))
+    assertTrue(assertMethodCallContainsPattern('error', 'Netlify production deployment failed'))
+    assertJobStatusFailure()
   }
 
   @Test
