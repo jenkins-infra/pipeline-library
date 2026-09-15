@@ -6,7 +6,7 @@ def call(Map params = [:]) {
     typosCheck: true,
     lint: true,
     deployFolder: '',
-    junitResultsPattern: 'test-results/**/*.xml',
+    junitResultsPattern: '',
     customEnvsDevelopment: [],
     customEnvsProduction: [],
     additionalCredentialsIdsAndVars: [:],

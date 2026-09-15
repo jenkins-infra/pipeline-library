@@ -72,7 +72,6 @@ class BuildWebsiteStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('stage', 'Lint'))
     assertTrue(assertMethodCallContainsPattern('stage', 'Build'))
     assertTrue(assertMethodCallContainsPattern('stage', 'Test'))
-    assertTrue(assertMethodCallContainsPattern('junit', 'test-results/**/*.xml'))
 
     // Pre-build command dispatch happens as part of the Build stage
     assertTrue(infraMock.maybeWebsitePreBuildCommandCalled)
@@ -170,6 +169,18 @@ class BuildWebsiteStepTests extends BaseTest {
     printCallStack()
 
     assertTrue(assertMethodCallContainsPattern('recordIssues', 'stopBuild=true'))
+  }
+
+  @Test
+  void it_save_junit_when_junitResultsPattern_is_set() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+
+    script.call([deployFolder: defaultDeployFolder, junitResultsPattern: 'test-results/**/*.xml'])
+    printCallStack()
+
+    assertJobStatusSuccess()
+    assertTrue(assertMethodCallContainsPattern('junit', 'test-results/**/*.xml'))
   }
 
   @Test
