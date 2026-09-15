@@ -7,6 +7,7 @@ import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertEquals
 
 import mock.PullRequest
+import mock.Scm
 
 class InfraStepTests extends BaseTest {
   static final String scriptName = "vars/infra.groovy"
@@ -29,6 +30,23 @@ class InfraStepTests extends BaseTest {
     helper.registerAllowedMethod('azureServicePrincipal', [Map.class], { m ->
       m
     })
+    // Mimic real catchError semantics: swallow the exception thrown by the body and force the configured build result
+    helper.registerAllowedMethod('catchError', [Map.class, Closure.class], { m, body ->
+      try {
+        body()
+      } catch (e) {
+        updateBuildStatus(m.buildResult ?: 'SUCCESS')
+      }
+    })
+    // Github-deployments plugin step, not modeled by the test harness's default step registry
+    helper.registerAllowedMethod('recordDeployment', [Object.class, Object.class, Object.class, Object.class, Object.class], { a, b, c, d, e ->
+      null
+    })
+    helper.registerAllowedMethod('string', [Map.class], { m -> m })
+  }
+
+  void mockRepositoryUrl(String repositoryName) {
+    binding.setProperty('scm', new Scm("https://github.com/jenkins-infra/${repositoryName}.git"))
   }
 
   @Test
@@ -585,5 +603,196 @@ class InfraStepTests extends BaseTest {
     }
 
     assertJobStatusSuccess()
+  }
+
+  @Test
+  void testMaybeWebsitePreBuildCommandRunsTheConfiguredCommand() throws Exception {
+    def script = loadScript(scriptName)
+    // 'stats.jenkins.io' is configured with a preBuildCommand
+    mockRepositoryUrl('stats.jenkins.io')
+    helper.registerAllowedMethod('readTrusted', [String.class], { f -> "trusted content of ${f}" })
+
+    script.maybeWebsitePreBuildCommand()
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('readTrusted', 'retrieve-infra-statistics-data.sh'))
+    assertTrue(assertMethodCallContainsPattern('writeFile', 'file=retrieve-infra-statistics-data.sh'))
+    assertTrue(assertMethodCallContainsPattern('writeFile', 'text=trusted content of retrieve-infra-statistics-data.sh'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'INFRASTATISTICS_LOCATION=src/data/infra-statistics ./retrieve-infra-statistics-data.sh'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testMaybeWebsitePreBuildCommandDoesNothingWithoutConfiguredCommand() throws Exception {
+    def script = loadScript(scriptName)
+    // 'stories' has no preBuildCommand configured
+    mockRepositoryUrl('stories')
+
+    script.maybeWebsitePreBuildCommand()
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('echo', "No prebuild command to execute for 'stories'"))
+    assertFalse(assertMethodCall('sh'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testDeployWebsiteSkipsOnCiController() throws Exception {
+    def script = loadScript(scriptName)
+    mockRepositoryUrl('stats.jenkins.io')
+    env.JENKINS_URL = 'https://ci.jenkins.io/'
+
+    script.deployWebsite('public')
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('error', 'Skipping: No deployment from ci.jenkins.io, only from a private controller'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testDeployWebsiteSkipsWithoutDeployFolder() throws Exception {
+    def script = loadScript(scriptName)
+    mockRepositoryUrl('stats.jenkins.io')
+    env.JENKINS_URL = 'https://foo.jenkins.io/'
+
+    script.deployWebsite('')
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('error', 'Skipping: A public folder is required to deploy a website'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testDeployWebsiteSkipsWithDotPrefixedDeployFolder() throws Exception {
+    def script = loadScript(scriptName)
+    mockRepositoryUrl('stats.jenkins.io')
+    env.JENKINS_URL = 'https://foo.jenkins.io/'
+
+    script.deployWebsite('.hidden')
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('error', 'Skipping: The public folder can\'t start with a dot'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testDeployWebsiteDoesNothingOutsidePullRequestOrPrimaryBranch() throws Exception {
+    def script = loadScript(scriptName)
+    mockRepositoryUrl('stats.jenkins.io')
+    env.JENKINS_URL = 'https://foo.jenkins.io/'
+
+    script.deployWebsite('public')
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('echo', 'Neither on a pull request nor on primary branch, no deployment'))
+    assertFalse(assertMethodCallContainsPattern('sh', 'netlify-deploy'))
+    assertFalse(assertMethodCallContainsPattern('sh', 'azcopy sync'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testDeployWebsiteOnPullRequestDeploysDraftToNetlify() throws Exception {
+    def script = loadScript(scriptName)
+    mockRepositoryUrl('stats.jenkins.io')
+    env.JENKINS_URL = 'https://foo.jenkins.io/'
+    env.CHANGE_ID = '42'
+    binding.setProperty('pullRequest', new PullRequest([], 'pr-head-sha'))
+
+    script.deployWebsite('public')
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('withCredentials', 'netlify-auth-token'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'NETLIFY_NAME=stats-jenkins-io'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'DRAFT=true'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'netlify-deploy'))
+    assertTrue(assertMethodCallContainsPattern('recordDeployment', 'success'))
+    // Not on the primary branch: no production dispatch on top of the preview
+    assertFalse(assertMethodCallContainsPattern('sh', 'azcopy sync'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testDeployWebsiteOnPullRequestSurvivesNetlifyFailure() throws Exception {
+    def script = loadScript(scriptName)
+    mockRepositoryUrl('stats.jenkins.io')
+    env.JENKINS_URL = 'https://foo.jenkins.io/'
+    env.CHANGE_ID = '42'
+    binding.setProperty('pullRequest', new PullRequest([], 'pr-head-sha'))
+    helper.registerAllowedMethod('sh', [String.class], { s ->
+      if (s.startsWith('netlify-deploy')) {
+        throw new Exception('netlify-deploy failed')
+      }
+      return s
+    })
+
+    script.deployWebsite('public')
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('recordDeployment', 'failure'))
+    // A draft (preview) failure must not fail the overall build
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testDeployWebsiteOnPrimaryBranchDeploysToNetlifyWhenConfigured() throws Exception {
+    def script = loadScript(scriptName)
+    // 'jenkins-io-components' is configured with `deployProductionToNetlify: true`
+    mockRepositoryUrl('jenkins-io-components')
+    env.JENKINS_URL = 'https://foo.jenkins.io/'
+    env.BRANCH_IS_PRIMARY = true
+    binding.setProperty('pullRequest', new PullRequest([], 'pr-head-sha'))
+
+    script.deployWebsite('public')
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'NETLIFY_NAME=jenkins-io-components'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'DRAFT=false'))
+    assertFalse(assertMethodCallContainsPattern('sh', 'azcopy sync'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testDeployWebsiteOnPrimaryBranchDeploysToAzureFileShareByDefault() throws Exception {
+    def script = loadScript(scriptName)
+    // 'stats.jenkins.io' has no `deployProductionToNetlify` in its website config
+    mockRepositoryUrl('stats.jenkins.io')
+    // withFileShareServicePrincipal is only usable from infra.ci.jenkins.io or trusted.ci.jenkins.io
+    env.JENKINS_URL = 'https://infra.ci.jenkins.io/'
+    env.BRANCH_IS_PRIMARY = true
+    helper.registerAllowedMethod('sh', [Map.class], { m -> 'https://statsjenkinsio.file.core.windows.net/stats-jenkins-io?sas-token' })
+
+    script.deployWebsite('public')
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('sh', 'azcopy sync'))
+    // 'stats.jenkins.io' is configured with a service principal credentials id
+    assertTrue(assertMethodCallContainsPattern('withCredentials', 'infraci-stats-jenkins-io-fileshare-service-principal-writer'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testDeployWebsiteOnPrimaryBranchFailsBuildOnAzureFileShareFailure() throws Exception {
+    def script = loadScript(scriptName)
+    mockRepositoryUrl('stats.jenkins.io')
+    // withFileShareServicePrincipal is only usable from infra.ci.jenkins.io or trusted.ci.jenkins.io
+    env.JENKINS_URL = 'https://infra.ci.jenkins.io/'
+    env.BRANCH_IS_PRIMARY = true
+    helper.registerAllowedMethod('sh', [Map.class], { m -> 'https://statsjenkinsio.file.core.windows.net/stats-jenkins-io?sas-token' })
+    helper.registerAllowedMethod('sh', [String.class], { s ->
+      if (s.contains('azcopy sync')) {
+        throw new Exception('azcopy failed')
+      }
+      return s
+    })
+
+    try {
+      script.deployWebsite('public')
+    } catch (e) {
+      // NOOP: a production Azure File Share failure is expected to fail the build
+    }
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('error', 'Failure during the synchronization to Azure File Share'))
+    assertJobStatusFailure()
   }
 }

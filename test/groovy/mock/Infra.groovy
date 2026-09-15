@@ -12,6 +12,11 @@ class Infra implements Serializable {
   private boolean ci
   private boolean buildError
   private String dockerRegistryNamespace
+  private final String buildWebsiteAgentLabel = 'website-agent'
+
+  List<String> deployedFolders = []
+  boolean releaseToNpmCalled = false
+  boolean maybeWebsitePreBuildCommandCalled = false
 
   public void checkoutSCM(String repo = null) { }
 
@@ -84,5 +89,21 @@ class Infra implements Serializable {
   Object withContainerRegistry(String containerRegistry = '', Closure body) {
     body()
     return
+  }
+
+  String getBuildWebsiteAgentLabel(Integer spotRetryCounter) {
+    return "${buildWebsiteAgentLabel}-${spotRetryCounter}"
+  }
+
+  void deployWebsite(String deployFolder = '') {
+    deployedFolders << deployFolder
+  }
+
+  void releaseToNpm() {
+    releaseToNpmCalled = true
+  }
+
+  void maybeWebsitePreBuildCommand() {
+    maybeWebsitePreBuildCommandCalled = true
   }
 }
