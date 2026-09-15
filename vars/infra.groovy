@@ -767,10 +767,10 @@ void deployWebsite(String deployFolder = '') {
     skipReasons += 'No deployment from ci.jenkins.io, only from a private controller'
   }
   if (!deployFolder) {
-    skipReasons += 'A public folder is required to deploy a website'
+    skipReasons += 'A deployment folder is required'
   }
   if (deployFolder.startsWith('.')) {
-    skipReasons += 'The public folder can\'t start with a dot'
+    skipReasons += 'The deployment folder can\'t start with a dot'
   }
   if (skipReasons) {
     catchError(buildResult: 'SUCCESS', stageResult: 'NOT_BUILT') {
@@ -780,10 +780,10 @@ void deployWebsite(String deployFolder = '') {
   }
 
   // Ensure there is something to deploy
-  withEnv(["PUBLIC_FOLDER=${deployFolder}"]) {
+  withEnv(["DEPLOY_FOLDER=${deployFolder}"]) {
     sh '''
-      if [[ ! -d "${PUBLIC_FOLDER}" ]] || [[ -z "$(find "${PUBLIC_FOLDER}" -mindepth 1 -print -quit)" ]]; then
-        echo "Something went wrong, the public folder '"${PUBLIC_FOLDER}"' is empty or missing"
+      if [[ ! -d "${DEPLOY_FOLDER}" ]] || [[ -z "$(find "${DEPLOY_FOLDER}" -mindepth 1 -print -quit)" ]]; then
+        echo "Something went wrong, the public folder '"${DEPLOY_FOLDER}"' is empty or missing"
         exit 1
       fi
     '''

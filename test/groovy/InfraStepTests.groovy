@@ -660,7 +660,7 @@ class InfraStepTests extends BaseTest {
     script.deployWebsite('')
     printCallStack()
 
-    assertTrue(assertMethodCallContainsPattern('error', 'Skipping: A public folder is required to deploy a website'))
+    assertTrue(assertMethodCallContainsPattern('error', 'Skipping: A deployment folder is required'))
     assertJobStatusSuccess()
   }
 
@@ -673,7 +673,7 @@ class InfraStepTests extends BaseTest {
     script.deployWebsite('.hidden')
     printCallStack()
 
-    assertTrue(assertMethodCallContainsPattern('error', 'Skipping: The public folder can\'t start with a dot'))
+    assertTrue(assertMethodCallContainsPattern('error', 'Skipping: The deployment folder can\'t start with a dot'))
     assertJobStatusSuccess()
   }
 
