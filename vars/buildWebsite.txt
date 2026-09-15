@@ -73,7 +73,7 @@
 
 <pre><code>
 buildWebsite(
-  deployFolder: 'public'
+  deployFolder: 'public',
 )
 </code></pre>
 
