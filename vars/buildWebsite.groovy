@@ -50,23 +50,6 @@ def call(Map params = [:]) {
               scripts = getPackageManagerScripts()
             }
 
-            /*
-             stage('Sanity checks') {
-             echo "Config: ${config}"
-             echo "Running from an agent with label '${agentLabel}'"
-             echo "Environment variables: ${envVars}"
-             echo "Available scripts: ${scripts}"
-             sh 'node --version'
-             sh scripts['version']
-             ['.tool-versions', '.nvmrc'].each {
-             withEnv(["FILE_TO_CAT=${it}"]) {
-             echo "${it} content:"
-             sh 'cat "${FILE_TO_CAT}" || echo "${FILE_TO_CAT} not found"'
-             }
-             }
-             }
-             */
-
             if (config.typosCheck) {
               stage('Typos check') {
                 sh 'typos --format json | typos-checkstyle - > typos-checkstyle.xml || true'
