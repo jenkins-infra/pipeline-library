@@ -705,9 +705,9 @@ class InfraStepTests extends BaseTest {
 
     assertTrue(assertMethodCallContainsPattern('withCredentials', 'netlify-auth-token'))
     assertTrue(assertMethodCallContainsPattern('withEnv', 'NETLIFY_NAME=stats-jenkins-io'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'DRAFT=true'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'netlify-deploy'))
-    assertTrue(assertMethodCallContainsPattern('recordDeployment', 'success'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'netlify-deploy --draft=true'))
+    assertTrue(assertMethodCallContainsPattern('sh', '--alias "deploy-preview-${CHANGE_ID}"'))
+    assertTrue(assertMethodCallContainsPattern('recordDeployment', 'jenkins-infra, stats.jenkins.io, pr-head-sha, success, https://deploy-preview-42--stats-jenkins-io.netlify.app'))
     // Not on the primary branch: no production dispatch on top of the preview
     assertFalse(assertMethodCallContainsPattern('sh', 'azcopy sync'))
     assertJobStatusSuccess()
@@ -742,13 +742,17 @@ class InfraStepTests extends BaseTest {
     mockRepositoryUrl('jenkins-io-components')
     env.JENKINS_URL = 'https://foo.jenkins.io/'
     env.BRANCH_IS_PRIMARY = true
+    env.GIT_COMMIT = 'commit-sha'
     binding.setProperty('pullRequest', new PullRequest([], 'pr-head-sha'))
 
     script.deployWebsite('public')
     printCallStack()
 
     assertTrue(assertMethodCallContainsPattern('withEnv', 'NETLIFY_NAME=jenkins-io-components'))
-    assertTrue(assertMethodCallContainsPattern('withEnv', 'DRAFT=false'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'netlify-deploy --draft=false'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'Production deployment of ${GIT_COMMIT}'))
+    // Production deploys are tracked against the commit
+    assertTrue(assertMethodCallContainsPattern('recordDeployment', 'jenkins-infra, jenkins-io-components, commit-sha, success, https://jenkins-io-components.netlify.app'))
     assertFalse(assertMethodCallContainsPattern('sh', 'azcopy sync'))
     assertJobStatusSuccess()
   }
@@ -760,6 +764,7 @@ class InfraStepTests extends BaseTest {
     mockRepositoryUrl('jenkins-io-components')
     env.JENKINS_URL = 'https://foo.jenkins.io/'
     env.BRANCH_IS_PRIMARY = true
+    env.GIT_COMMIT = 'commit-sha'
     binding.setProperty('pullRequest', new PullRequest([], 'pr-head-sha'))
     helper.registerAllowedMethod('sh', [String.class], { s ->
       if (s.startsWith('netlify-deploy')) {
@@ -775,7 +780,8 @@ class InfraStepTests extends BaseTest {
     }
     printCallStack()
 
-    assertTrue(assertMethodCallContainsPattern('recordDeployment', 'failure'))
+    // Production deploys are tracked against the commit
+    assertTrue(assertMethodCallContainsPattern('recordDeployment', 'jenkins-infra, jenkins-io-components, commit-sha, failure, https://jenkins-io-components.netlify.app'))
     assertTrue(assertMethodCallContainsPattern('error', 'Netlify production deployment failed'))
     assertJobStatusFailure()
   }

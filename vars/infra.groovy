@@ -817,26 +817,33 @@ private void deployToNetlify(Map params = [:]) {
     error 'A netlify site name is required'
   }
   withCredentials([string(credentialsId: 'netlify-auth-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
-    try {
-      withEnv([
-        "NETLIFY_NAME=${config.netlifyName}",
-        "PUBLIC_FOLDER=${params.deployFolder}",
-        "DRAFT=${draft}",
-      ]) {
-        sh 'netlify-deploy --draft="${DRAFT}" --siteName "${NETLIFY_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_FOLDER}"'
+    withEnv([
+      "NETLIFY_NAME=${config.netlifyName}",
+      "PUBLIC_FOLDER=${params.deployFolder}",
+    ]) {
+      String netlifyCommand = 'netlify-deploy --draft=true --siteName "${NETLIFY_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_FOLDER}"'
+      String recordRef = pullRequest.head
+      String recordUrl = "https://deploy-preview-${env.CHANGE_ID}--${config.netlifyName}.netlify.app"
+      if (!draft) {
+        netlifyCommand = 'netlify-deploy --draft=false --siteName "${NETLIFY_NAME}" --title "Production deployment of ${GIT_COMMIT}" -d "${PUBLIC_FOLDER}"'
+        recordRef = env.GIT_COMMIT
+        recordUrl = "https://${config.repositoryName}.netlify.app"
       }
-      recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'success', "https://deploy-preview-${env.CHANGE_ID}--${config.netlifyName}.netlify.app")
-    } catch (e) {
-      recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'failure', "https://deploy-preview-${env.CHANGE_ID}--${config.netlifyName}.netlify.app")
+      try {
+        sh netlifyCommand
+        recordDeployment('jenkins-infra', config.repositoryName, recordRef, 'success', recordUrl)
+      } catch (e) {
+        recordDeployment('jenkins-infra', config.repositoryName, recordRef, 'failure', recordUrl)
 
-      // Don't fail the build if the Netlify preview failed
-      if (draft) {
-        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-          error('Netlify preview deployment failed, continuing')
+        // Don't fail the build if the Netlify preview failed
+        if (draft) {
+          catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+            error('Netlify preview deployment failed, continuing')
+          }
+          return
         }
-        return
+        error('Netlify production deployment failed')
       }
-      error('Netlify production deployment failed')
     }
   }
 }
