@@ -45,10 +45,10 @@ def call(Map params = [:]) {
             envVars = ['TZ=UTC', 'NODE_ENV=development'] + config.customEnvsDevelopment
           }
           withEnv(envVars) {
-            Map packageManagerScripts = [:]
+            Map scripts = [:]
             stage('Checkout') {
               checkout scm
-              packageManagerScripts = getPackageManagerScripts()
+              scripts = getPackageManagerScripts()
             }
 
             /*
@@ -56,9 +56,9 @@ def call(Map params = [:]) {
               echo "Config: ${config}"
               echo "Running from an agent with label '${agentLabel}'"
               echo "Environment variables: ${envVars}"
-              echo "Available scripts: ${packageManagerScripts}"
+              echo "Available scripts: ${scripts}"
               sh 'node --version'
-              sh packageManagerScripts['version']
+              sh scripts['version']
               ['.tool-versions', '.nvmrc'].each {
                 withEnv(["FILE_TO_CAT=${it}"]) {
                   echo "${it} content:"
@@ -76,13 +76,13 @@ def call(Map params = [:]) {
             }
 
             stage('Dependencies install') {
-              sh packageManagerScripts['install']
+              sh scripts['install']
             }
 
             if (config.lint) {
               stage('Lint') {
                 try {
-                  sh packageManagerScripts['lint']
+                  sh scripts['lint']
                 } catch (e) {
                   recordIssues(stopBuild: true, tools: [
                     esLint(pattern: 'eslint-results.json'),
@@ -95,20 +95,20 @@ def call(Map params = [:]) {
 
             stage('Build') {
               infra.maybeWebsitePreBuildCommand()
-              sh packageManagerScripts['build']
+              sh scripts['build']
             }
 
             stage('Test') {
-              sh packageManagerScripts['test']
-              if (junitResultsPattern) {
-                junit(testResults: junitResultsPattern)
+              sh scripts['test']
+              if (config.junitResultsPattern) {
+                junit(testResults: config.junitResultsPattern)
               }
             }
 
             // cobertura not installed on other controllers than ci.jenkins.io by design
             if (config.coveragePath && infra.isCiController()) {
               stage('Coverage') {
-                sh packageManagerScripts['coverage']
+                sh scripts['coverage']
                 recordCoverage name: 'coverage', sourceCodeRetention: 'NEVER', tools: [[parser: 'COBERTURA', pattern: config.coveragePath]]
               }
             }

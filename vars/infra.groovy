@@ -748,9 +748,9 @@ private Map getWebsiteConfig() {
 void maybeWebsitePreBuildCommand() {
   final Map config = getWebsiteConfig()
   if (config.preBuildCommand) {
-    config.preBuildCommand.readTrusted.each { untrustedFile ->
-      trustedFile = readTrusted(untrustedFile)
-      writeFile(trustedFile)
+    config.preBuildCommand.readTrusted.each { file ->
+      final String trustedFileContent = readTrusted(file)
+      writeFile(file: file, text: trustedFileContent)
     }
     sh config.preBuildCommand.command
   } else {
@@ -825,9 +825,9 @@ private void deployToNetlify(Map params = [:]) {
       ]) {
         sh 'netlify-deploy --draft="${DRAFT}" --siteName "${NETLIFY_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_FOLDER}"'
       }
-      recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'success', "https://deploy-preview-${CHANGE_ID}--${config.netlifyName}.netlify.app")
+      recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'success', "https://deploy-preview-${env.CHANGE_ID}--${config.netlifyName}.netlify.app")
     } catch (e) {
-      recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'failure', "https://deploy-preview-${CHANGE_ID}--${config.netlifyName}.netlify.app")
+      recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, 'failure', "https://deploy-preview-${env.CHANGE_ID}--${config.netlifyName}.netlify.app")
 
       // Don't fail the build if the Netlify preview failed
       if (draft) {
@@ -847,7 +847,7 @@ private void deployToAzureFileShare(String deployFolder = '') {
   if (!config.fileShare) {
     error 'A file share name is required to deploy to Azure File Share'
   }
-  infra.withFileShareServicePrincipal([
+  withFileShareServicePrincipal([
     fileShare: config.fileShare,
     fileShareStorageAccount: config.fileShareStorageAccount,
     servicePrincipalCredentialsId: config.servicePrincipalCredentialsId,
