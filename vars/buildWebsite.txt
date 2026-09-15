@@ -35,8 +35,8 @@
     </dd>
     <dt><code>junitResultsPattern</code></dt>
     <dd>
-        (Default: <code>'test-results/**/*.xml'</code>) File pattern passed to the <code>junit</code> step after
-        running tests. Set to an empty string to skip publishing test results.
+        (Default: <code>''</code>) File pattern passed to the <code>junit</code> step after running tests. Test
+        results are only published when this is set to a non-empty pattern (e.g. <code>'test-results/**/*.xml'</code>).
     </dd>
     <dt><code>coveragePath</code></dt>
     <dd>
@@ -56,9 +56,11 @@
     </dd>
     <dt><code>additionalCredentialsIdsAndVars</code></dt>
     <dd>
-        (Default: <code>[:]</code>) Map of <code>credentialsId: environmentVariableName</code> pairs. Each entry is
-        bound as a secret text credential (via <code>withCredentials</code>) for the whole build, e.g. for Algolia
-        search keys needed at build time.
+        (Default: <code>[:]</code>) Map of <code>credentialsId: environmentVariableName</code> pairs, e.g. for
+        Algolia search keys needed at build time. Each entry is bound as a secret text credential (via
+        <code>withCredentials</code>) for the whole build, but only outside of pull requests and outside of
+        <code>ci.jenkins.io</code> &mdash; these are production-only secrets, never exposed to PR builds or the
+        public controller.
     </dd>
     <dt><code>releaseToNpmFromBranches</code></dt>
     <dd>

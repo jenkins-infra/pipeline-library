@@ -834,4 +834,53 @@ class InfraStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('error', 'Failure during the synchronization to Azure File Share'))
     assertJobStatusFailure()
   }
+
+  @Test
+  void testReleaseToNpmSkipsOnCiController() throws Exception {
+    def script = loadScript(scriptName)
+    mockRepositoryUrl('jenkins-io-components')
+    env.JENKINS_URL = 'https://ci.jenkins.io/'
+
+    script.releaseToNpm()
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('error', 'Skipping, no release to NPM from ci.jenkins.io'))
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testReleaseToNpmFailsWithoutConfiguredCredentials() throws Exception {
+    def script = loadScript(scriptName)
+    // No website configuration exists for this repository, so neither npmToken nor githubAppCredentialsId is set
+    mockRepositoryUrl('some-unconfigured-repo')
+    env.JENKINS_URL = 'https://foo.jenkins.io/'
+
+    try {
+      script.releaseToNpm()
+    } catch (e) {
+      // NOOP: missing release credentials are expected to fail the build
+    }
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('error', 'A NPM token is required for release'))
+    assertJobStatusFailure()
+  }
+
+  @Test
+  void testReleaseToNpmSucceedsWithConfiguredCredentials() throws Exception {
+    def script = loadScript(scriptName)
+    // 'jenkins-io-components' is configured with both npmToken and githubAppCredentialsId
+    mockRepositoryUrl('jenkins-io-components')
+    env.JENKINS_URL = 'https://foo.jenkins.io/'
+    helper.registerAllowedMethod('usernamePassword', [Map.class], { m -> m })
+
+    script.releaseToNpm()
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('withCredentials', 'credentialsId=jenkinsci-npm-token, variable=NPM_TOKEN'))
+    assertTrue(assertMethodCallContainsPattern('withCredentials', 'credentialsId=jenkins-io-components-ghapp, usernameVariable=GITHUB_APP, passwordVariable=GITHUB_TOKEN'))
+    assertTrue(assertMethodCallContainsPattern('withEnv', 'REPO_NAME=jenkins-io-components'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'npx semantic-release'))
+    assertJobStatusSuccess()
+  }
 }

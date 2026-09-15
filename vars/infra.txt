@@ -145,8 +145,9 @@
 
 <p>
     Return the agent label to use for <code>buildWebsite()</code>: a <code>maven-25</code> container on
-    <code>ci.jenkins.io</code>, or a <code>linux-arm64-docker</code> VM agent everywhere else. A <code>spot</code>/<code>nonspot</code> suffix is added as
-    for <code>infra.getBuildAgentLabel()</code>, except on private controllers which have no spot/nonspot distinction.
+    <code>ci.jenkins.io</code>, or a <code>linux-arm64-docker</code> VM agent everywhere else as some websites builds need
+    more memory than the default amd64 spot agents of private controllers. A <code>spot</code>/<code>nonspot</code> suffix is added as
+    for <code>infra.getBuildAgentLabel()</code> for retries, except on private controllers which have no spot/nonspot distinction.
 </p>
 
 <strong>infra.deployWebsite(String deployFolder = '')</strong>

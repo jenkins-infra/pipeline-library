@@ -667,7 +667,7 @@ private String getSpotOrNonSpotAgentLabel(String agentLabel, Integer spotRetryCo
 
 String getBuildWebsiteAgentLabel(Integer spotRetryCounter) {
   // ci.jenkins.io has the default spot amd64 used by Java builds
-  // while infra.ci.jenkins.io defaults to arm64 VM agents (due to Gastby memory requirements)
+  // while infra.ci.jenkins.io defaults to arm64 VM agents (due to Gatsby memory requirements)
   String agentLabel = isCiController() ? 'maven-25' : 'linux-arm64-docker'
   return getSpotOrNonSpotAgentLabel(agentLabel, spotRetryCounter)
 }
@@ -783,7 +783,7 @@ void deployWebsite(String deployFolder = '') {
   withEnv(["DEPLOY_FOLDER=${deployFolder}"]) {
     sh '''
       if [[ ! -d "${DEPLOY_FOLDER}" ]] || [[ -z "$(find "${DEPLOY_FOLDER}" -mindepth 1 -print -quit)" ]]; then
-        echo "Something went wrong, the public folder '"${DEPLOY_FOLDER}"' is empty or missing"
+        echo "Something went wrong, the deployment folder '"${DEPLOY_FOLDER}"' is empty or missing"
         exit 1
       fi
     '''
