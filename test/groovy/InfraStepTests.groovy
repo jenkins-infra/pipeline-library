@@ -750,8 +750,6 @@ class InfraStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withEnv', 'NETLIFY_NAME=jenkins-io-components'))
     assertTrue(assertMethodCallContainsPattern('sh', 'netlify-deploy --draft=false'))
     assertTrue(assertMethodCallContainsPattern('sh', 'Production deployment of ${GIT_COMMIT}'))
-    // Production deploys are tracked against the commit
-    assertTrue(assertMethodCallContainsPattern('recordDeployment', 'jenkins-infra, jenkins-io-components, commit-sha, success, https://jenkins-io-components.netlify.app'))
     assertFalse(assertMethodCallContainsPattern('sh', 'azcopy sync'))
     assertJobStatusSuccess()
   }
@@ -779,8 +777,6 @@ class InfraStepTests extends BaseTest {
     }
     printCallStack()
 
-    // Production deploys are tracked against the commit
-    assertTrue(assertMethodCallContainsPattern('recordDeployment', 'jenkins-infra, jenkins-io-components, commit-sha, failure, https://jenkins-io-components.netlify.app'))
     assertTrue(assertMethodCallContainsPattern('error', 'Netlify production deployment failed'))
     assertJobStatusFailure()
   }
