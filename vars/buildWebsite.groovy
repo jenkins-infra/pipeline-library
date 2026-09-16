@@ -150,7 +150,12 @@ Map getPackageManagerScripts() {
     // Equivalent of npm ci
     scripts['install'] = 'yarn install --immutable'
 
-    // Optional scripts (yarn doesn't have any "--if-present" equivalent)
+    // As yarn doesn't have any "--if-present" npm argument equivalent,
+    // it fails when called with a script that is not present in the "scripts" section of package.json
+    // To avoid this while keeping those "if-present" scripts as opt-out buildWebsite parameters,
+    // the following part iterates over them to check if they're actually present
+    // and to return their short form without "run" (required only for npm),
+    // and replace them by an echo otherwise
     scripts.findAll { key, value ->
       value.contains('--if-present')
     }.keySet().each { optionalScript ->
