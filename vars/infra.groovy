@@ -667,7 +667,8 @@ private String getSpotOrNonSpotAgentLabel(String agentLabel, Integer spotRetryCo
 
 String getBuildWebsiteAgentLabel(Integer spotRetryCounter) {
   // ci.jenkins.io has the default spot amd64 used by Java builds
-  // while infra.ci.jenkins.io defaults to arm64 VM agents (due to Gatsby memory requirements)
+  // while other controllers like infra.ci.jenkins defaults to arm64 (cheaper in Azure) VM agents
+  // due to Gatsby memory requirements
   String agentLabel = isCiController() ? 'maven-25' : 'linux-arm64-docker'
   return getSpotOrNonSpotAgentLabel(agentLabel, spotRetryCounter)
 }
