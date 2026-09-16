@@ -37,6 +37,49 @@ class BuildWebsiteStepTests extends BaseTest {
   }
 
   @Test
+  void it_configures_short_lived_builds_by_default() throws Exception {
+    def script = loadScript(scriptName)
+
+    script.call([deployFolder: defaultDeployFolder])
+    printCallStack()
+
+    assertJobStatusSuccess()
+    assertTrue(assertMethodCallContainsPattern('disableConcurrentBuilds', 'abortPrevious=true'))
+    assertTrue(assertMethodCallContainsPattern('logRotator', 'numToKeepStr=5'))
+    // Not on the primary branch: no cron trigger
+    assertFalse(assertMethodCallContainsPattern('cron', '@daily'))
+  }
+
+  @Test
+  void it_keeps_more_builds_and_does_not_abort_previous_ones_on_primary_branch() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+
+    script.call([deployFolder: defaultDeployFolder])
+    printCallStack()
+
+    assertJobStatusSuccess()
+    assertTrue(assertMethodCallContainsPattern('disableConcurrentBuilds', 'abortPrevious=false'))
+    assertTrue(assertMethodCallContainsPattern('logRotator', 'numToKeepStr=20'))
+    assertTrue(assertMethodCallContainsPattern('cron', '@daily'))
+  }
+
+  @Test
+  void it_keeps_more_builds_and_does_not_abort_previous_ones_on_npm_release_branches() throws Exception {
+    def script = loadScript(scriptName)
+    addEnvVar('BRANCH_NAME', 'release-branch')
+
+    script.call([deployFolder: defaultDeployFolder, releaseToNpmFromBranches: ['release-branch']])
+    printCallStack()
+
+    assertJobStatusSuccess()
+    assertTrue(assertMethodCallContainsPattern('disableConcurrentBuilds', 'abortPrevious=false'))
+    assertTrue(assertMethodCallContainsPattern('logRotator', 'numToKeepStr=20'))
+    // Cron scheduling stays primary-branch only, even though this branch releases to NPM
+    assertFalse(assertMethodCallContainsPattern('cron', '@daily'))
+  }
+
+  @Test
   void it_warns_when_deployFolder_is_missing() throws Exception {
     def script = loadScript(scriptName)
     script.call([:])

@@ -17,9 +17,16 @@ def call(Map params = [:]) {
 
   // Do not trigger daily if not on the primary branch (e.g. not on PR, not on other branches, not on tags)
   final String cronPattern = env.BRANCH_IS_PRIMARY ? config.cronPattern : ''
+  Boolean abortPrevious = true
+  int numBuildToKeep = 5
+  // Don't abort previous builds and keep more of them on primary or NPM release branches
+  if (env.BRANCH_IS_PRIMARY || (config.releaseToNpmFromBranches && config.releaseToNpmFromBranches.contains(env.BRANCH_NAME))) {
+    abortPrevious = false
+    numBuildToKeep = 20
+  }
   properties([
-    disableConcurrentBuilds(abortPrevious: true),
-    buildDiscarder(logRotator(numToKeepStr: '5')),
+    disableConcurrentBuilds(abortPrevious: abortPrevious),
+    buildDiscarder(logRotator(numToKeepStr: numBuildToKeep)),
     pipelineTriggers([cron(cronPattern)]),
   ])
 
