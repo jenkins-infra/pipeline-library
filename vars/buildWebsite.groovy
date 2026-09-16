@@ -26,7 +26,7 @@ def call(Map params = [:]) {
   }
   properties([
     disableConcurrentBuilds(abortPrevious: abortPrevious),
-    buildDiscarder(logRotator(numToKeepStr: numBuildToKeep)),
+    buildDiscarder(logRotator(numToKeepStr: numBuildToKeep.toString())),
     pipelineTriggers([cron(cronPattern)]),
   ])
 
