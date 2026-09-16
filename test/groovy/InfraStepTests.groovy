@@ -743,7 +743,6 @@ class InfraStepTests extends BaseTest {
     env.JENKINS_URL = 'https://foo.jenkins.io/'
     env.BRANCH_IS_PRIMARY = true
     env.GIT_COMMIT = 'commit-sha'
-    binding.setProperty('pullRequest', new PullRequest([], 'pr-head-sha'))
 
     script.deployWebsite('public')
     printCallStack()

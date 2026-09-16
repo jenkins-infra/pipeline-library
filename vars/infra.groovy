@@ -819,12 +819,12 @@ private void deployToNetlify(Map params = [:]) {
   }
   withCredentials([string(credentialsId: 'netlify-auth-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
     withEnv(["NETLIFY_NAME=${config.netlifyName}", "PUBLIC_FOLDER=${params.deployFolder}",]) {
+      // Never evaluate pullRequest outside of an actual pull request
+      String recordRef = (draft && env.CHANGE_ID) ? pullRequest.head : env.GIT_COMMIT
       String netlifyCommand = 'netlify-deploy --draft=true --siteName "${NETLIFY_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_FOLDER}"'
-      String recordRef = pullRequest.head
       String recordUrl = "https://deploy-preview-${env.CHANGE_ID}--${config.netlifyName}.netlify.app"
       if (!draft) {
         netlifyCommand = 'netlify-deploy --draft=false --siteName "${NETLIFY_NAME}" --title "Production deployment of ${GIT_COMMIT}" -d "${PUBLIC_FOLDER}"'
-        recordRef = env.GIT_COMMIT
         recordUrl = "https://${config.repositoryName}.netlify.app"
       }
       try {
