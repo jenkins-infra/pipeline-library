@@ -71,7 +71,7 @@ def call(Map params = [:]) {
                 try {
                   sh scripts['lint']
                 } catch (e) {
-                  recordIssues(stopBuild: true, tools: [
+                  recordIssues(tools: [
                     esLint(pattern: 'eslint-results.json'),
                     checkStyle(pattern: 'eslint.xml'),
                     styleLint(pattern: 'stylelint-results.json'),
