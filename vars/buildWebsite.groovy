@@ -57,8 +57,8 @@ def call(Map params = [:]) {
 
             if (config.typosCheck) {
               stage('Typos check') {
-                sh 'typos --format json | typos-checkstyle - > typos-checkstyle.xml || true'
-                recordIssues(tools: [checkStyle(id: 'typos', name: 'Typos', pattern: 'typos-checkstyle.xml')])
+                sh 'typos --format sarif | tee -a typos.sarif'
+                recordIssues(tools: [sarif(id: 'typos', name: 'Typos', pattern: 'typos.sarif')], qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]])
               }
             }
 
@@ -71,7 +71,7 @@ def call(Map params = [:]) {
                 try {
                   sh scripts['lint']
                 } catch (e) {
-                  recordIssues(stopBuild: true, tools: [
+                  recordIssues(tools: [
                     esLint(pattern: 'eslint-results.json'),
                     checkStyle(pattern: 'eslint.xml'),
                     styleLint(pattern: 'stylelint-results.json'),
