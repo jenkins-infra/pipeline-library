@@ -73,6 +73,8 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('javaDoc', [], { 'javadoc' })
     helper.registerAllowedMethod('spotBugs', [Map.class], { 'spotbugs' })
     helper.registerAllowedMethod('checkStyle', [Map.class], { 'checkstyle' })
+    helper.registerAllowedMethod('styleLint', [Map.class], { 'styleLint' })
+    helper.registerAllowedMethod('sarif', [Map.class], { 'sarif' })
     helper.registerAllowedMethod('pmdParser', [Map.class], { 'pmd' })
     helper.registerAllowedMethod('cpd', [Map.class], { 'cpd' })
     helper.registerAllowedMethod('taskScanner', [Map.class], { 'tasks' })
