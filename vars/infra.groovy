@@ -683,7 +683,7 @@ private Map getWebsiteConfig() {
   final String repositoryName = getRepositoryName()
   final Map availableConfig = [
     'contributor-spotlight': [
-      fileShare: 'contributor-jenkins-io',
+      fileShare: 'contributors-jenkins-io',
       fileShareStorageAccount: 'contributorsjenkinsio',
       netlifyName: 'contributors-spotlight',
       servicePrincipalCredentialsId: 'contributors-jenkins-io-fileshare-service-principal-writer',
