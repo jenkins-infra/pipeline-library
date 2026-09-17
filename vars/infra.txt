@@ -141,6 +141,42 @@
     Log a warning to the build console and publish a deprecation check via the Checks API.
 </p>
 
+<strong>infra.getBuildWebsiteAgentLabel(Integer spotRetryCounter)</strong>
+
+<p>
+    Return the agent label to use for <code>buildWebsite()</code>: a <code>maven-25</code> container on
+    <code>ci.jenkins.io</code>, or a <code>linux-arm64-docker</code> (cheaper) VM agent everywhere else as some websites builds need
+    more memory than the default amd64 spot agents of private controllers. A <code>spot</code>/<code>nonspot</code> suffix is added as
+    for <code>infra.getBuildAgentLabel()</code> for retries, except on private controllers which have no spot/nonspot distinction.
+</p>
+
+<strong>infra.deployWebsite(String deployFolder = '')</strong>
+
+<p>
+    Deploy the website found in <code>deployFolder</code> for the current repository, based on its
+    per-repository configuration. Deploys a Netlify draft preview on pull requests, and on the primary branch
+    either a Netlify production deploy or a sync to an Azure File Share, depending on the repository's
+    configuration. Does nothing (and marks the stage <code>NOT_BUILT</code>) when running on
+    <code>ci.jenkins.io</code>, when <code>deployFolder</code> is empty, or when it starts with a dot.
+</p>
+
+<strong>infra.releaseToNpm()</strong>
+
+<p>
+    Release the current repository to NPM via <code>semantic-release</code>, using the repository's configured
+    NPM token and GitHub App credentials. Does nothing (and marks the stage <code>NOT_BUILT</code>) when running
+    on <code>ci.jenkins.io</code>.
+</p>
+
+<strong>infra.maybeWebsitePreBuildCommand()</strong>
+
+<p>
+    Run the current repository's configured pre-build command (if any) ahead of the website's own build command.
+    Note: any file listed in the command's <code>readTrusted</code> configuration is first re-read from the trusted
+    branch/commit via <code>readTrusted()</code> and written back to its original path, so the build always uses
+    the vetted version rather than one potentially altered in a pull request.
+</p>
+
 <!--
 vim: ft=html
 -->

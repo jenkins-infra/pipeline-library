@@ -644,13 +644,271 @@ private String vmAgentLabel(String platform, Integer spotRetryCounter) {
 }
 
 private String getSpotOrNonSpotAgentLabel(String agentLabel, Integer spotRetryCounter) {
-  if (isTrustedCiController()) {
-    echo 'INFO: running on trusted.ci.jenkins.io, no "spot" or "nonspot" agents'
+  def suffix = ' && spot'
+  def nonSpotSuffix = ' && nonspot'
+
+  // All agents of infra.ci.jenkins.io & trusted.ci.jenkins.io are nonspot
+  if (isInfraCiController() || isTrustedCiController()) {
+    echo "INFO: running on ${isInfraCiController() ? 'infra' : 'trusted' }.ci.jenkins.io, no 'spot' or 'nonspot' agents"
     return agentLabel
   }
+
   if (spotRetryCounter> 1) {
     echo 'INFO: more than one retry, using "nonspot" agent'
-    return "${agentLabel} && nonspot"
+    suffix = nonSpotSuffix
   }
-  return "${agentLabel} && spot"
+
+  // maven-* agent templates are spot by default, and have a dedicated 'maven-*-nonspot' label
+  if (agentLabel.contains('maven-')) {
+    suffix = suffix.replace(' && spot', '').replace(' && nonspot', '-nonspot')
+  }
+  return "${agentLabel}${suffix}"
+}
+
+String getBuildWebsiteAgentLabel(Integer spotRetryCounter) {
+  // ci.jenkins.io has the default spot amd64 used by Java builds
+  // while other controllers like infra.ci.jenkins defaults to arm64 (cheaper in Azure) VM agents
+  // due to Gatsby memory requirements
+  String agentLabel = isCiController() ? 'maven-25' : 'linux-arm64-docker'
+  return getSpotOrNonSpotAgentLabel(agentLabel, spotRetryCounter)
+}
+
+private String getRepositoryName() {
+  final String repositoryUrl = scm.getUserRemoteConfigs()[0].getUrl()
+  return repositoryUrl.tokenize('/').last().replaceFirst(/\.git$/, '')
+}
+
+// From current repo
+private Map getWebsiteConfig() {
+  final String repositoryName = getRepositoryName()
+  final Map availableConfig = [
+    'contributor-spotlight': [
+      fileShare: 'contributor-jenkins-io',
+      fileShareStorageAccount: 'contributorjenkinsio',
+      netlifyName: 'contributor-spotlight',
+      servicePrincipalCredentialsId: 'contributor-jenkins-io-fileshare-service-principal-writer',
+    ],
+    'docs.jenkins.io': [
+      fileShare: 'docs-jenkins-io',
+      fileShareStorageAccount: 'docsjenkinsio',
+      netlifyName: 'docs-jenkins-io-pr',
+      servicePrincipalCredentialsId: 'infraci-docs-jenkins-io-fileshare-service-principal-writer',
+    ],
+    'gatsby-plugin-jenkins-layout': [
+      githubAppCredentialsId: 'jenkins-io-components-ghapp',
+      npmToken: 'jenkinsci-npm-token',
+    ],
+    // Deployment only
+    'javadoc': [
+      fileShare: 'docs-jenkins-io',
+      fileShareStorageAccount: 'docsjenkinsio',
+    ],
+    'jenkins-io-components': [
+      // TODO: deploy to a file share instead?
+      deployProductionToNetlify: true,
+      githubAppCredentialsId: 'jenkins-io-components-ghapp',
+      netlifyName: 'jenkins-io-components',
+      npmToken: 'jenkinsci-npm-token',
+    ],
+    // Previews only
+    'jenkins.io': [
+      netlifyName: 'jenkins-io-site-pr',
+      preBuildCommand: [
+        command: 'bundle config --global frozen 1 && bundle install',
+        readTrusted: ['Gemfile', 'Gemfile.lock'],
+      ],
+    ],
+    'plugin-site': [
+      fileShare: 'plugins-jenkins-io',
+      fileShareStorageAccount: 'pluginsjenkinsio',
+      netlifyName: 'jenkins-plugin-site-pr',
+      servicePrincipalCredentialsId: 'infraci-pluginsjenkinsio-fileshare-service-principal-writer',
+    ],
+    'stats.jenkins.io': [
+      fileShare: 'stats-jenkins-io',
+      fileShareStorageAccount: 'statsjenkinsio',
+      netlifyName: 'stats-jenkins-io',
+      preBuildCommand: [
+        command: 'INFRASTATISTICS_LOCATION=src/data/infra-statistics ./retrieve-infra-statistics-data.sh',
+        readTrusted: ['retrieve-infra-statistics-data.sh'],
+      ],
+      servicePrincipalCredentialsId: 'infraci-stats-jenkins-io-fileshare-service-principal-writer',
+    ],
+    'stories': [
+      // TODO: deploy to a file share instead?
+      deployProductionToNetlify: true,
+      netlifyName: 'jenkins-is-the-way',
+    ],
+  ]
+  if (!availableConfig.containsKey(repositoryName)) {
+    echo "WARNING: no configuration found for website '${repositoryName}'"
+  }
+  return (availableConfig[repositoryName] ?: [:]) + [repositoryName: repositoryName]
+}
+
+void maybeWebsitePreBuildCommand() {
+  final Map config = getWebsiteConfig()
+  if (config.preBuildCommand) {
+    config.preBuildCommand.readTrusted.each { file ->
+      final String trustedFileContent = readTrusted(file)
+      writeFile(file: file, text: trustedFileContent)
+    }
+    sh config.preBuildCommand.command
+  } else {
+    echo "No prebuild command to execute for '${config.repositoryName}'"
+  }
+}
+
+void deployWebsite(String deployFolder = '') {
+  final Map config = getWebsiteConfig()
+
+  // Skip checks
+  def skipReasons = []
+  if (isCiController()) {
+    skipReasons += 'No deployment from ci.jenkins.io, only from a private controller'
+  }
+  if (!deployFolder) {
+    skipReasons += 'A deployment folder is required'
+  }
+  if (deployFolder.startsWith('.')) {
+    skipReasons += 'The deployment folder can\'t start with a dot'
+  }
+  if (skipReasons) {
+    catchError(buildResult: 'SUCCESS', stageResult: 'NOT_BUILT') {
+      error('Skipping: ' + skipReasons.join(' / '))
+    }
+    return
+  }
+
+  // Ensure there is something to deploy
+  withEnv(["DEPLOY_FOLDER=${deployFolder}"]) {
+    sh '''
+      if [[ ! -d "${DEPLOY_FOLDER}" ]] || [[ -z "$(find "${DEPLOY_FOLDER}" -mindepth 1 -print -quit)" ]]; then
+        echo "Something went wrong, the deployment folder '"${DEPLOY_FOLDER}"' is empty or missing"
+        exit 1
+      fi
+    '''
+  }
+
+  // On pull requests
+  if (env.CHANGE_ID) {
+    deployToNetlify([deployFolder: deployFolder, draft: true])
+    return
+  }
+
+  // In production
+  if (env.BRANCH_IS_PRIMARY) {
+    if (config.deployProductionToNetlify) {
+      deployToNetlify([deployFolder: deployFolder, draft: false])
+      return
+    }
+    deployToAzureFileShare(deployFolder)
+    return
+  }
+  echo 'Neither on a pull request nor on primary branch, no deployment'
+}
+
+private void deployToNetlify(Map params = [:]) {
+  final Map config = getWebsiteConfig()
+  // Deployment in draft by default
+  final Boolean draft = params.containsKey('draft') ? params.draft : true
+  String recordResult = 'failure'
+
+  // Check
+  if (!config.netlifyName) {
+    error 'A netlify site name is required'
+  }
+  withCredentials([string(credentialsId: 'netlify-auth-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
+    withEnv(["NETLIFY_NAME=${config.netlifyName}", "PUBLIC_FOLDER=${params.deployFolder}",]) {
+      String netlifyCommand = 'netlify-deploy --draft=true --siteName "${NETLIFY_NAME}" --title "Preview deploy for ${CHANGE_ID}" --alias "deploy-preview-${CHANGE_ID}" -d "${PUBLIC_FOLDER}"'
+      if (!draft) {
+        netlifyCommand = 'netlify-deploy --draft=false --siteName "${NETLIFY_NAME}" --title "Production deployment of ${GIT_COMMIT}" -d "${PUBLIC_FOLDER}"'
+      }
+      try {
+        sh netlifyCommand
+        recordResult = 'success'
+      } catch (e) {
+        // Don't fail the build if the Netlify preview failed
+        if (draft) {
+          catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+            error('Netlify preview deployment failed, continuing')
+          }
+          return
+        }
+        error('Netlify production deployment failed')
+      } finally {
+        if (env.CHANGE_ID) {
+          recordDeployment('jenkins-infra', config.repositoryName, pullRequest.head, recordResult, "https://deploy-preview-${env.CHANGE_ID}--${config.netlifyName}.netlify.app")
+        }
+      }
+    }
+  }
+}
+
+private void deployToAzureFileShare(String deployFolder = '') {
+  final Map config = getWebsiteConfig()
+  // Check
+  if (!config.fileShare) {
+    error 'A file share name is required to deploy to Azure File Share'
+  }
+  withFileShareServicePrincipal([
+    fileShare: config.fileShare,
+    fileShareStorageAccount: config.fileShareStorageAccount,
+    servicePrincipalCredentialsId: config.servicePrincipalCredentialsId,
+  ]) {
+    try {
+      withEnv(["PUBLIC_FOLDER=${deployFolder}"]) {
+        sh '''
+        # Synchronize the File Share content
+        set +x
+        azcopy sync \
+          --skip-version-check \
+          --recursive=true \
+          --delete-destination=true \
+          "${PUBLIC_FOLDER}" "${FILESHARE_SIGNED_URL}"
+        '''
+      }
+    } catch (e) {
+      // Only collect azcopy logs when the deployment fails (heavy)
+      sh 'cat /home/jenkins/.azcopy/*.log > azcopy.log'
+      archiveArtifacts 'azcopy.log'
+
+      error('Failure during the synchronization to Azure File Share')
+    }
+  }
+}
+
+void releaseToNpm() {
+  final Map config = getWebsiteConfig()
+
+  // Skip check
+  if (isCiController()) {
+    catchError(buildResult: 'SUCCESS', stageResult: 'NOT_BUILT') {
+      error 'Skipping, no release to NPM from ci.jenkins.io'
+    }
+    return
+  }
+
+  // Checks
+  if (!config.npmToken) {
+    error 'A NPM token is required for release'
+  }
+  if (!config.githubAppCredentialsId) {
+    error 'A GitHub App credentials is required for release'
+  }
+  withCredentials([
+    string(
+        credentialsId: config.npmToken,
+        variable: 'NPM_TOKEN'
+        ),
+    usernamePassword(
+        credentialsId: config.githubAppCredentialsId,
+        usernameVariable: 'GITHUB_APP',
+        passwordVariable: 'GITHUB_TOKEN'
+        ),
+  ]) {
+    withEnv(["REPO_NAME=${config.repositoryName}"]) {
+      sh 'npx semantic-release --repositoryUrl https://x-access-token:$GITHUB_TOKEN@github.com/jenkins-infra/${REPO_NAME}.git'
+    }
+  }
 }
