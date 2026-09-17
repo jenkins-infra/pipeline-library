@@ -685,7 +685,7 @@ private Map getWebsiteConfig() {
     'contributor-spotlight': [
       fileShare: 'contributors-jenkins-io',
       fileShareStorageAccount: 'contributorsjenkinsio',
-      netlifyName: 'contributors-spotlight',
+      netlifyName: 'contributor-spotlight',
       servicePrincipalCredentialsId: 'contributors-jenkins-io-fileshare-service-principal-writer',
     ],
     'docs.jenkins.io': [
