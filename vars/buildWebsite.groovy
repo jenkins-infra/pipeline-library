@@ -48,7 +48,12 @@ def call(Map params = [:]) {
         }
         withCredentials(additionalProductionCredentials) {
           // TODO: prevent overrides from custom envs?
-          withEnv(['TZ=UTC', 'NODE_ENV=development'] + (env.CHANGE_ID ? config.customEnvsDevelopment : config.customEnvsProduction)) {
+          List envVars = ['TZ=UTC', 'NODE_ENV=production'] + config.customEnvsProduction
+          // Pull requests
+          if (env.CHANGE_ID) {
+            envVars = ['TZ=UTC', 'NODE_ENV=development'] + config.customEnvsDevelopment
+          }
+          withEnv(envVars) {
             Map scripts = [:]
             stage('Checkout') {
               checkout scm
