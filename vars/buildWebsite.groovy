@@ -47,7 +47,6 @@ def call(Map params = [:]) {
           } ?: []
         }
         withCredentials(additionalProductionCredentials) {
-          // TODO: prevent overrides from custom envs?
           List envVars = ['TZ=UTC']
           // Pull requests
           if (env.CHANGE_ID) {

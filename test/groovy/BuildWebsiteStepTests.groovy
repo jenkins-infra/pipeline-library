@@ -102,6 +102,9 @@ class BuildWebsiteStepTests extends BaseTest {
     // No warning about the missing deployFolder
     assertFalse(assertMethodCallContainsPattern('echo', 'WARNING: buildWebsite requires a "deployFolder" parameter'))
 
+    // Default env vars
+    assertTrue(assertMethodCallContainsPattern('withEnv', '[TZ=UTC, NODE_ENV=production]'))
+
     // npm is used by default (no yarn.lock)
     assertTrue(assertMethodCallContainsPattern('sh', 'npm ci'))
     assertTrue(assertMethodCallContainsPattern('sh', 'npm run build'))
@@ -135,6 +138,20 @@ class BuildWebsiteStepTests extends BaseTest {
   }
 
   @Test
+  void it_allows_to_override_default_env_vars() throws Exception {
+    def script = loadScript(scriptName)
+    mockPrincipalBranch()
+
+    script.call([deployFolder: defaultDeployFolder, customEnvsProduction: ['TZ=CEST', 'NODE_ENV=other']])
+    printCallStack()
+
+    assertJobStatusSuccess()
+
+    // Default env vars are overriden (last declaration wins)
+    assertTrue(assertMethodCallContainsPattern('withEnv', '[TZ=UTC, NODE_ENV=production, TZ=CEST, NODE_ENV=other]'))
+  }
+
+  @Test
   void it_deploys_preview_on_pull_requests_and_skips_build_status_report() throws Exception {
     def script = loadScript(scriptName)
     mockPullRequest()
@@ -143,6 +160,8 @@ class BuildWebsiteStepTests extends BaseTest {
     printCallStack()
 
     assertJobStatusSuccess()
+
+    assertTrue(assertMethodCallContainsPattern('withEnv', '[TZ=UTC, NODE_ENV=development]'))
 
     assertTrue(assertMethodCallContainsPattern('stage', 'Deploy preview'))
     assertFalse(assertMethodCallContainsPattern('stage', 'Deploy production'))
