@@ -63,8 +63,11 @@ def call(Map params = [:]) {
 
             if (config.typosCheck) {
               stage('Typos check') {
-                sh 'typos --format json | typos-checkstyle - > typos-checkstyle.xml || true'
-                recordIssues(tools: [checkStyle(id: 'typos', name: 'Typos', pattern: 'typos-checkstyle.xml')])
+                sh 'typos --format sarif | tee -a typos.sarif'
+                recordIssues(
+                    tools: [sarif(id: 'typos', name: 'Typos', pattern: 'typos.sarif')],
+                    qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]]
+                    )
               }
             }
 
