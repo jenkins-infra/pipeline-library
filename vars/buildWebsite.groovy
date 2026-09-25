@@ -145,7 +145,7 @@ Map getPackageManagerScripts() {
   Map scripts = [
     '': 'echo "No script passed" && exit 1',
     'version': "${packageManager} --version",
-    'install': "${packageManager} ci",
+    'install': "${packageManager} ci --include=dev",
     'build': "${packageManager} run build",
     'lint': "${packageManager} run lint --if-present",
     'test': "${packageManager} run test --if-present",

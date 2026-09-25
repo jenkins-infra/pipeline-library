@@ -106,7 +106,7 @@ class BuildWebsiteStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withEnv', '[TZ=UTC, NODE_ENV=production]'))
 
     // npm is used by default (no yarn.lock)
-    assertTrue(assertMethodCallContainsPattern('sh', 'npm ci'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'npm ci --include=dev'))
     assertTrue(assertMethodCallContainsPattern('sh', 'npm run build'))
     assertTrue(assertMethodCallContainsPattern('sh', 'npm run test --if-present'))
     assertTrue(assertMethodCallContainsPattern('sh', 'npm run lint --if-present'))
