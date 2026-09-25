@@ -145,7 +145,7 @@ Map getPackageManagerScripts() {
   Map scripts = [
     '': 'echo "No script passed" && exit 1',
     'version': "${packageManager} --version",
-    'install': "${packageManager} ci",
+    'install': "${packageManager} ci --include=dev",
     'build': "${packageManager} run build",
     'lint': "${packageManager} run lint --if-present",
     'test': "${packageManager} run test --if-present",
@@ -154,7 +154,7 @@ Map getPackageManagerScripts() {
   // Specific yarn scripts
   if (packageManager == 'yarn') {
     // Equivalent of npm ci
-    scripts['install'] = 'yarn install --immutable'
+    scripts['install'] = 'yarn install --immutable --production=false'
 
     // As yarn doesn't have any "--if-present" npm argument equivalent,
     // it fails when called with a script that is not present in the "scripts" section of package.json

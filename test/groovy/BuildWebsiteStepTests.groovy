@@ -106,7 +106,7 @@ class BuildWebsiteStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('withEnv', '[TZ=UTC, NODE_ENV=production]'))
 
     // npm is used by default (no yarn.lock)
-    assertTrue(assertMethodCallContainsPattern('sh', 'npm ci'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'npm ci --include=dev'))
     assertTrue(assertMethodCallContainsPattern('sh', 'npm run build'))
     assertTrue(assertMethodCallContainsPattern('sh', 'npm run test --if-present'))
     assertTrue(assertMethodCallContainsPattern('sh', 'npm run lint --if-present'))
@@ -184,7 +184,7 @@ class BuildWebsiteStepTests extends BaseTest {
 
     assertJobStatusSuccess()
     assertTrue(assertMethodCallContainsPattern('echo', 'Package manager determined by checking if yarn.lock exists or not: yarn'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'yarn install --immutable'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'yarn install --immutable --production=false'))
     assertTrue(assertMethodCallContainsPattern('sh', 'yarn run build'))
   }
 
