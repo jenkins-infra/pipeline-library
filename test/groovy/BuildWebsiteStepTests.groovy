@@ -184,7 +184,7 @@ class BuildWebsiteStepTests extends BaseTest {
 
     assertJobStatusSuccess()
     assertTrue(assertMethodCallContainsPattern('echo', 'Package manager determined by checking if yarn.lock exists or not: yarn'))
-    assertTrue(assertMethodCallContainsPattern('sh', 'yarn install --immutable --production=false'))
+    assertTrue(assertMethodCallContainsPattern('sh', 'yarn install --production=false --immutable'))
     assertTrue(assertMethodCallContainsPattern('sh', 'yarn run build'))
   }
 
