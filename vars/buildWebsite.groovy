@@ -156,6 +156,9 @@ Map getPackageManagerScripts() {
     // Equivalent of npm ci
     scripts['install'] = 'NODE_ENV=development yarn install --immutable'
 
+    // Debug for plugin-site
+    scripts['test'] = 'NODE_ENV=development yarn test'
+
     // As yarn doesn't have any "--if-present" npm argument equivalent,
     // it fails when called with a script that is not present in the "scripts" section of package.json
     // To avoid this while keeping those "if-present" scripts as opt-out buildWebsite parameters,
