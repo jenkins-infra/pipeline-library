@@ -69,11 +69,11 @@ Object withContainerRegistry(String containerRegistry = '', Closure body) {
   // empty value means credential-less (aka. Azure workload identity)
   final Map containerRegistriesCredentials = [
     'infra.ci.jenkins.io': [
-      'index.docker.io': 'jenkinsinfraadmin-dockerhub-push',
+      'docker.io': 'jenkinsinfraadmin-dockerhub-push',
       'dockerhubmirror.azurecr.io': '',
     ],
     'trusted.ci.jenkins.io': [
-      'index.docker.io': 'jenkinsciinfra-dockerhub-push',
+      'docker.io': 'jenkinsciinfra-dockerhub-push',
     ],
     'cert.ci.jenkins.io': [
       'dockerhubmirror.azurecr.io': 'azure-container-registry-push',
@@ -82,14 +82,14 @@ Object withContainerRegistry(String containerRegistry = '', Closure body) {
   // Extract "hostname" without using the getHost() method (as it would need to be allowed in the pipeline groovy sandbox) by stripping slashes and URL scheme.
   // Assuming there are no URI (otherwise hostname and URI would be concatened by the removal of slashes) but that would still work for the map where we search for keys.
   final String jenkinsHostname = env.JENKINS_URL.replaceAll(/\//, '').replaceAll(/^https\:/, '')
-  final String containerRegistryURL = containerRegistry ?: 'index.docker.io'
+  final String containerRegistryURL = containerRegistry ?: 'docker.io'
 
   // Check if the current context is allowed to log-in
   if (!containerRegistriesCredentials.containsKey(jenkinsHostname)) {
     error "Unknown Jenkins host (${jenkinsHostname}): cannot log-in to container registry."
   }
   if (!containerRegistriesCredentials[jenkinsHostname].containsKey(containerRegistryURL)) {
-    error "Unsupported container registry (${containerRegistryURL}) for this Jenkins host (${jenkinsHostname})cannot log-in to container registry."
+    error "Unsupported container registry (${containerRegistryURL}) for this Jenkins host (${jenkinsHostname}) cannot log-in to container registry."
   }
 
   final String credentialId = containerRegistriesCredentials[jenkinsHostname][containerRegistryURL]
