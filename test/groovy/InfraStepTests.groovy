@@ -878,4 +878,17 @@ class InfraStepTests extends BaseTest {
     assertTrue(assertMethodCallContainsPattern('sh', 'npx semantic-release'))
     assertJobStatusSuccess()
   }
+
+  @Test
+  void testAlwaysDeployToProductionWhenRunningFromTrustedCiController() throws Exception {
+    def script = loadScript(scriptName)
+    mockRepositoryUrl('javadoc')
+    env.JENKINS_URL = 'https://trusted.ci.jenkins.io/'
+
+    script.deployWebsite('dist')
+    printCallStack()
+
+    assertTrue(assertMethodCallContainsPattern('withEnv', '[STORAGE_NAME=javadocjenkinsio, STORAGE_FILESHARE=javadoc-jenkins-io, STORAGE_DURATION_IN_MINUTE=10, STORAGE_PERMISSIONS=dlrw]'))
+    assertJobStatusSuccess()
+  }
 }
