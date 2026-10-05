@@ -799,7 +799,7 @@ void deployWebsite(String deployFolder = '') {
   // In production
   // As no BRANCH_IS_PRIMARY nor BRANCH_NAME env vars is set in some trusted.ci.jenkins.io jobs,
   // considering all of them as production
-  if (env.BRANCH_IS_PRIMARY || infra.isTrustedCiController()) {
+  if (env.BRANCH_IS_PRIMARY || isTrustedCiController()) {
     if (config.deployProductionToNetlify) {
       deployToNetlify([deployFolder: deployFolder, draft: false])
       return
