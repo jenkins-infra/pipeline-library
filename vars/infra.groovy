@@ -700,8 +700,8 @@ private Map getWebsiteConfig() {
     ],
     // Deployment only
     'javadoc': [
-      fileShare: 'docs-jenkins-io',
-      fileShareStorageAccount: 'docsjenkinsio',
+      fileShare: 'javadoc-jenkins-io',
+      fileShareStorageAccount: 'javadocjenkinsio',
     ],
     'jenkins-io-components': [
       // TODO: deploy to a file share instead?
