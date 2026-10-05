@@ -371,4 +371,17 @@ class BuildWebsiteStepTests extends BaseTest {
     assertJobStatusSuccess()
     assertTrue(assertMethodCallContainsPattern('withCredentials', 'credentialsId=algolia-write-key, variable=GATSBY_ALGOLIA_WRITE_KEY'))
   }
+
+
+  @Test
+  void it_always_deploy_to_production_when_running_from_trusted_ci_jenkins_io() throws Exception {
+    infraMock = new Infra(trustedCi: true)
+    binding.setProperty('infra', infraMock)
+    def script = loadScript(scriptName)
+    script.call([:])
+    printCallStack()
+
+    assertJobStatusSuccess()
+    assertTrue(assertMethodCallContainsPattern('stage', 'Deploy production'))
+  }
 }

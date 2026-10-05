@@ -110,7 +110,8 @@ def call(Map params = [:]) {
             if (env.CHANGE_ID) {
               deployStage += ' preview'
             }
-            if (env.BRANCH_IS_PRIMARY) {
+            // No BRANCH_IS_PRIMARY nor BRANCH_NAME env vars set in some trusted.ci.jenkins.io jobs
+            if (env.BRANCH_IS_PRIMARY || infra.isTrustedCiController()) {
               deployStage += ' production'
             }
             stage(deployStage) {
