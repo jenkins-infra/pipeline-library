@@ -72,23 +72,24 @@ def call(Map params = [:]) {
               sh scripts['install']
             }
 
+            stage('Build') {
+              infra.maybeWebsitePreBuildCommand()
+              sh scripts['build']
+            }
+
             if (config.lint) {
               stage('Lint') {
                 try {
                   sh scripts['lint']
                 } catch (e) {
-                  recordIssues(stopBuild: true, tools: [
+                  recordIssues(tools: [
                     esLint(pattern: 'eslint-results.json'),
                     checkStyle(pattern: 'eslint.xml'),
                     styleLint(pattern: 'stylelint-results.json'),
                   ])
+                  error "${scripts['lint']} failed"
                 }
               }
-            }
-
-            stage('Build') {
-              infra.maybeWebsitePreBuildCommand()
-              sh scripts['build']
             }
 
             stage('Test') {

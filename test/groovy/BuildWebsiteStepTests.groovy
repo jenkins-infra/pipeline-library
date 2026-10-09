@@ -226,11 +226,12 @@ class BuildWebsiteStepTests extends BaseTest {
     try {
       script.call([deployFolder: defaultDeployFolder])
     } catch (e) {
-      // NOOP: recordIssues(stopBuild: true) is expected to abort the build
+      // NOOP: the build is expected to be aborted
     }
     printCallStack()
 
-    assertTrue(assertMethodCallContainsPattern('recordIssues', 'stopBuild=true'))
+    assertTrue(assertMethodCallContainsPattern('recordIssues', 'Lint'))
+    assertJobStatusFailure()
   }
 
   @Test
