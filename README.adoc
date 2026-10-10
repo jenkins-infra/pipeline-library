@@ -219,6 +219,44 @@ buildDockerAndPublishImage('inbound-agent-maven:jdk8-nanoserver', [
     ])
 ----
 
+=== buildWebsite
+
+Builds, tests, and deploys a website using its `package.json` scripts. The package manager is detected automatically: `yarn` is used when a `yarn.lock` file exists; otherwise, `npm` is used.
+
+// TODO: enforce NODE_ENV=production only cf https://github.com/jenkins-infra/helpdesk/issues/5305
+Pull requests are built with `NODE_ENV=development` and deployed as previews. Production builds use `NODE_ENV=production` by default. Additional environment variables can be configured separately for development and production.
+
+.Jenkinsfile
+[source,groovy]
+----
+buildWebsite(
+    deployFolder: 'public',
+)
+----
+
+==== Optional arguments
+
+* `deployFolder` (default: `''`) - directory containing the generated website to preview or publish. Set this parameter for deployment; omitting it produces a warning.
+* `typosCheck` (default: `true`) - run the typos checker and publish its results.
+* `lint` (default: `true`) - run the lint script and report lint issues when available.
+* `coveragePath` (default: `''`) - optional Cobertura coverage report path. Coverage is collected only on `ci.jenkins.io`.
+* `junitResultsPattern` (default: `''`) - optional Ant-style pattern for JUnit test result files to publish.
+* `customEnvsDevelopment` (default: `[]`) - additional environment variables applied to pull-request builds, alongside `NODE_ENV=development` and `TZ=UTC`.
+* `customEnvsProduction` (default: `[]`) - additional environment variables applied to non-pull-request builds, alongside `NODE_ENV=production` and `TZ=UTC`.
+* `releaseToNpmFromBranches` (default: `[]`) - list of branch names allowed to publish an NPM release. When a listed branch is built, a `Release` stage invokes `infra.releaseToNpm()`.
+* `additionalCredentialsIdsAndVars` (default: `[:]`) - map of Jenkins string credential IDs to environment variable names. These credentials are bound only for non-pull-request builds outside `ci.jenkins.io`.
+* `cronPattern` (default: `'@daily'`) - cron expression for scheduled builds on the primary branch. Scheduled triggers are disabled on other branches and pull requests.
+
+==== Build scripts
+
+The following scripts are run from `package.json`, using the detected package manager:
+
+* `install` - install dependencies (`npm ci --include=dev` or `yarn install --immutable`).
+* `build` - run `build`.
+* `lint` - run `lint`, if present and enabled by `lint`.
+* `test` - run `test`, if present.
+* `coverage` - run `coverage`, if present and coverage collection is enabled and supported by the controller.
+
 == Contribute
 
 === Requirements
