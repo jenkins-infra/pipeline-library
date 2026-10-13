@@ -117,7 +117,7 @@ class BuildDockerAndPublishImageStepTests extends BaseTest {
     return assertMethodCallContainsPattern(
         'recordIssues',
         "{skipPublishingChecks=${skipChecks}, enabledForFailure=true, aggregatingResults=false, tool={id=${reportId}, pattern=${reportId}.json}}",
-        )
+    )
   }
 
   Boolean assertTagPushed(String newVersion) {

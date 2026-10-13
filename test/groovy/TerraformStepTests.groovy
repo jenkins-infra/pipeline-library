@@ -237,7 +237,7 @@ class TerraformStepTests extends BaseTest {
         stagingCredentials: stagingCustomCreds,
         productionCredentials: productionCustomCreds,
         agentLabel: customLabel,
-        )
+    )
     printCallStack()
 
     // Then we expect a successful build

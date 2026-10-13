@@ -97,7 +97,7 @@ def call(Map params = [:]) {
                   sourceCodeEncoding: 'UTF-8',
                   skipBlames: true,
                   trendChartType: 'TOOLS_ONLY'
-                  )
+              )
 
               // Default configuration for SpotBugs can be overwritten using a `spotbugs`, `checkstyle', etc. parameter (map).
               // Configuration see: https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration
@@ -137,7 +137,7 @@ def call(Map params = [:]) {
                   sourceCodeEncoding: 'UTF-8',
                   skipBlames: true,
                   trendChartType: 'NONE'
-                  )
+              )
               if (failFast && currentBuild.result == 'UNSTABLE') {
                 error 'Static analysis quality gates not passed; halting early'
               }

@@ -154,7 +154,7 @@ def call(Map params = [:]) {
                     junit(
                         testResults: '**/target/surefire-reports/**/*.xml,**/target/failsafe-reports/**/*.xml,**/target/invoker-reports/**/*.xml',
                         testDataPublishers: [attachments()],
-                        )
+                    )
                     if (first) {
                       discoverReferenceBuild()
                       // Default configuration for JaCoCo can be overwritten using a `jacoco` parameter (map).
@@ -192,7 +192,7 @@ def call(Map params = [:]) {
                       tool: mavenConsole(),
                       skipBlames: true,
                       trendChartType: 'TOOLS_ONLY'
-                      )
+                  )
                   recordIssues(
                       qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]],
                       tools: [esLint(pattern: '**/target/eslint-warnings.xml')],
@@ -207,7 +207,7 @@ def call(Map params = [:]) {
                       sourceCodeEncoding: 'UTF-8',
                       skipBlames: true,
                       trendChartType: 'TOOLS_ONLY'
-                      )
+                  )
 
                   // Default configuration for SpotBugs can be overwritten using a `spotbugs`, `checkstyle', etc. parameter (map).
                   // Configuration see: https://github.com/jenkinsci/warnings-ng-plugin/blob/master/doc/Documentation.md#configuration
@@ -258,7 +258,7 @@ def call(Map params = [:]) {
                       sourceCodeEncoding: 'UTF-8',
                       skipBlames: true,
                       trendChartType: 'NONE'
-                      )
+                  )
                   if (failFast && currentBuild.result == 'UNSTABLE') {
                     error 'Static analysis quality gates not passed; halting early'
                   }
