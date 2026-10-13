@@ -177,7 +177,7 @@ def call(String imageShortName, Map userConfig =[:]) {
                   enabledForFailure: true,
                   aggregatingResults: false,
                   tool: hadoLint(id: hadolintReportId, pattern: hadoLintReportFile)
-                  )
+              )
             } else {
               // Print the hadolint report file to stdout in case of error when no warnings plugin is available
               if (isUnix()) {

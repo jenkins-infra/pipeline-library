@@ -169,8 +169,8 @@ Map getPackageManagerScripts() {
     }.keySet().each { optionalScript ->
       withEnv(["OPTIONAL_SCRIPT=${optionalScript}"]) {
         Boolean exist = sh(
-        script: 'node -e "process.exit(require(\'./package.json\').scripts?.${OPTIONAL_SCRIPT} ? 0 : 1)"',
-        returnStatus: true
+            script: 'node -e "process.exit(require(\'./package.json\').scripts?.${OPTIONAL_SCRIPT} ? 0 : 1)"',
+            returnStatus: true
         ) == 0
         scripts[optionalScript] = exist ? 'yarn ' + optionalScript : 'echo "Optional script not found in package.json: ' + optionalScript
       }
