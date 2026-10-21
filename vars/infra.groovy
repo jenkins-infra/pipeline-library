@@ -359,7 +359,7 @@ Object loadMavenLocalCacheIfAny(String mvnLocalRepo, String cachePath = '') {
           # The copy lands in the parent of MVN_LOCAL_REPO which has sufficient disk space.
           cache_archive_name="$(dirname "${MVN_LOCAL_REPO}")/$(basename "${MVN_CACHE_PATH}")"
           time cp "${MVN_CACHE_PATH}" "${cache_archive_name}"
-          time tar xzf "${cache_archive_name}" -C "${MVN_LOCAL_REPO}"
+          time tar xf "${cache_archive_name}" -C "${MVN_LOCAL_REPO}"
           rm -f "${cache_archive_name}"
         else
           echo "${MVN_CACHE_PATH} archive not found: skipping maven cache retrieval."
@@ -388,7 +388,7 @@ Object loadMavenLocalCacheIfAny(String mvnLocalRepo, String cachePath = '') {
           $elapsed = (Measure-Command { Copy-Item $env:MVN_CACHE_PATH $cacheArchiveName }).TotalSeconds
           Write-Host "cp: ${elapsed}s"
 
-          $elapsed = (Measure-Command { tar xzf $cacheArchiveName -C $env:MVN_LOCAL_REPO }).TotalSeconds
+          $elapsed = (Measure-Command { tar xf $cacheArchiveName -C $env:MVN_LOCAL_REPO }).TotalSeconds
           Write-Host "tar: ${elapsed}s"
 
           Remove-Item -Force $cacheArchiveName
