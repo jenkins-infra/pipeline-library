@@ -20,11 +20,7 @@ class BuildWebsiteStepTests extends BaseTest {
     infraMock = new Infra()
     binding.setProperty('infra', infraMock)
 
-    // Default: npm project (no yarn.lock)
-    helper.registerAllowedMethod('fileExists', [String.class], { s -> false })
-    helper.registerAllowedMethod('styleLint', [Map.class], { 'styleLint' })
     helper.registerAllowedMethod('publishBuildStatusReport', [], { true })
-    helper.registerAllowedMethod('checkout', [Object.class], { true })
     helper.registerAllowedMethod('string', [Map.class], { m -> m })
   }
 
