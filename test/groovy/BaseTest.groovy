@@ -93,6 +93,9 @@ class BaseTest extends DeclarativePipelineTest {
     helper.registerAllowedMethod('withCredentials', [List.class, Closure.class], { list, body ->
       body()
     })
+    helper.registerAllowedMethod('catchError', [Map.class, Closure.class], { m, body ->
+      body()
+    })
     helper.registerAllowedMethod('withEnv', [List.class, Closure.class], { list, body ->
       body()
     })
