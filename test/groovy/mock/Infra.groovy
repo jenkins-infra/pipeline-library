@@ -18,6 +18,8 @@ class Infra implements Serializable {
   boolean releaseToNpmCalled = false
   boolean maybeWebsitePreBuildCommandCalled = false
 
+  List<List<String>> runMavenCalls = []
+
   public void checkoutSCM(String repo = null) { }
 
   public Object withArtifactCachingProxy(Boolean useArtifactCachingProxy, Closure body) {
@@ -29,6 +31,7 @@ class Infra implements Serializable {
   }
 
   public Object runMaven(List<String> options, String jdk = null, List<String> extraEnv = null, Boolean addToolEnv = null, Boolean useArtifactCachingProxy = true) {
+    runMavenCalls << options
     def command = "mvn ${options.join(' ')}"
     return runWithMaven(command, jdk, extraEnv, addToolEnv)
   }
