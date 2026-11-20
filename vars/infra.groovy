@@ -326,7 +326,7 @@ Object runMaven(List<String> options, String jdk = '8', List<String> extraEnv = 
     if (foundLocalRepo) {
       m2repo = foundLocalRepo.split('=')[1]
       if (m2repo != "${env.HOME}/.m2/repository") {
-        echo "WARNING: maven.repo.local set to ${m2repo}, this build won't benefit from the prepoMaven cache prepopulated in /home/jenkins/.m2/repository"
+        echo "WARNING: maven.repo.local set to ${m2repo}, this build won't benefit from the prepopulated Maven cache in /home/jenkins/.m2/repository"
       }
     }
 
