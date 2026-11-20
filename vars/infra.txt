@@ -79,6 +79,7 @@
 <p>
     Run Maven with the specified options in the current workspace.
     If <code>useArtifactCachingProxy</code> is <code>true</code>, Maven settings will be added using <code>infra.withArtifactCachingProxy()</code> if possible (i.e. the server is available, reachable and not skipped).
+    If a <code>maven.repo.local</code> option different than <code>/home/jenkins/.m2/repository</code> is specified, the build won't benefit from the prepopulated Maven cache.
 </p>
 
 <p>
