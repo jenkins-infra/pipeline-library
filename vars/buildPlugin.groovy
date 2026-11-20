@@ -103,7 +103,7 @@ def call(Map params = [:]) {
               String m2repo
 
               stage("Build (${stageIdentifier})") {
-                m2repo = "${pwd tmp: true}/m2repo"
+                m2repo = "${env.HOME}/.m2/repository"
                 List<String> mavenOptions = [
                   '--update-snapshots',
                   "-Dmaven.repo.local=$m2repo",
