@@ -49,7 +49,7 @@ def call(Map params = [:]) {
           List<String> changelist
 
           stage("Build (${stageIdentifier})") {
-            m2repo = "${pwd tmp: true}/m2repo"
+            m2repo = "${env.HOME}/.m2/repository"
             //TODO(oleg-nenashev): Once supported by Gradle JPI Plugin, pass jenkinsVersion
             if (jenkinsVersion) {
               infra.publishDeprecationCheck('Remove jenkinsVersion', 'The "jenkinsVersion" parameter is not supported in buildPluginWithGradle(). It will be ignored.')
