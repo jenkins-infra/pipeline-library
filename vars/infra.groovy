@@ -540,7 +540,9 @@ String getBuildAgentLabel(Map params = [:]) {
   String platform = params.containsKey('platform') ? params.platform : null
   String jdk = params.containsKey('jdk') ? params.jdk : null
   Integer spotRetryCounter = params.containsKey('spotRetryCounter') ? params.spotRetryCounter : 0
-  return useContainerAgent ? containerAgentLabel(platform, jdk) : vmAgentLabel(platform, spotRetryCounter)
+  String resultingLabel = useContainerAgent ? containerAgentLabel(platform, jdk) : vmAgentLabel(platform, spotRetryCounter)
+  echo "INFO: returning '${resultingLabel}' label from the following inputs: ${param}"
+  return resultingLabel
 }
 
 private String containerAgentLabel(String platform, String jdk) {
