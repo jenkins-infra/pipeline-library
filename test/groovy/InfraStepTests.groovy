@@ -580,14 +580,16 @@ class InfraStepTests extends BaseTest {
     def cases = [
       // ci.jenkins.io: maven agent, only "-nonspot" suffix, no " && spot" nor " && nonspot"
       [url: 'https://ci.jenkins.io/', retry: 0, expected: 'maven-25'],
-      [url: 'https://ci.jenkins.io/', retry: 1, expected: 'maven-25'],
+      [url: 'https://ci.jenkins.io/', retry: 1, expected: 'maven-25-nonspot'],
       [url: 'https://ci.jenkins.io/', retry: 2, expected: 'maven-25-nonspot'],
       // infra.ci.jenkins.io and trusted.ci.jenkins.io: nonspot by default, no "spot"
       [url: 'https://infra.ci.jenkins.io/', retry: 0, expected: 'linux-arm64-docker'],
-      [url: 'https://infra.ci.jenkins.io/', retry: 2, expected: 'linux-arm64-docker'],
+      [url: 'https://infra.ci.jenkins.io/', retry: 1, expected: 'linux-arm64-docker'],
       [url: 'https://trusted.ci.jenkins.io/', retry: 0, expected: 'linux-arm64-docker'],
+      [url: 'https://trusted.ci.jenkins.io/', retry: 1, expected: 'linux-arm64-docker'],
       // Any other controller: arm64 docker VM agent, explicit "spot"/"nonspot" suffix
       [url: 'https://foo.jenkins.io/', retry: 0, expected: 'linux-arm64-docker && spot'],
+      [url: 'https://foo.jenkins.io/', retry: 1, expected: 'linux-arm64-docker && nonspot'],
       [url: 'https://foo.jenkins.io/', retry: 2, expected: 'linux-arm64-docker && nonspot'],
     ]
 
