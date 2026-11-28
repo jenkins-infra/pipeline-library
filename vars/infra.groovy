@@ -52,17 +52,6 @@ String getDockerRegistryNamespace() {
   }
 }
 
-/**
- * Method kept for backward compatibility until all consumers are removed:
- * - https://github.com/jenkinsci/docker/blob/c0cda9f24f6e05ffe34b713aa3d477c53c9db97e/Jenkinsfile#L106
- * - https://github.com/jenkinsci/docker-agents/blob/a72bee7bd8967866790bcf65c8c82bc4cc78c55d/Jenkinsfile#L154
- * - https://github.com/jenkinsci/docker-ssh-agent/blob/6e5cd9050638ae4f2e17a5d63084db4f13cd78d7/Jenkinsfile#L81
- **/
-Object withDockerCredentials(Closure body) {
-  // It's only an alias
-  return withContainerRegistry(body)
-}
-
 // withContainerRegistry is a step which ensures the agent's Docker Engine is logged-in to the specified container registry or DockerHub if unspecified.
 // It fails if the specified registry is unknown or forbidden (no credentials, blocker, etc.)
 Object withContainerRegistry(String containerRegistry = '', Closure body) {
