@@ -95,22 +95,36 @@ class InfraStepTests extends BaseTest {
   }
 
   @Test
-  void testWithContainerRegistryOutsideInfra() throws Exception {
+  void testWithContainerRegistryOnUnknownHost() throws Exception {
     def script = loadScript(scriptName)
     env.JENKINS_URL = 'https://foo/'
     def isOK = false
+    script.withContainerRegistry() {
+      isOK = true
+    }
+    printCallStack()
+    assertTrue(isOK)
+    assertJobStatusSuccess()
+    assertTrue(assertMethodCallContainsPattern('echo', 'WARNING: unknown Jenkins host (foo): cannot log-in to container registry, pushes will fail.'))
+  }
+
+  @Test
+  void testWithUnsupportedContainerRegistry() throws Exception {
+    def script = loadScript(scriptName)
+    env.JENKINS_URL = 'https://infra.ci.jenkins.io/'
+    def isOK = false
     try {
-      script.withContainerRegistry() {
+      script.withContainerRegistry('https://unsupported.registry.io/') {
         isOK = true
       }
     } catch(e) {
       //NOOP
     }
+
     printCallStack()
     assertFalse(isOK)
     assertJobStatusFailure()
-    printCallStack()
-    assertTrue(assertMethodCallContainsPattern('error', 'Unknown Jenkins host (foo): cannot log-in to container registry.'))
+    assertTrue(assertMethodCallContainsPattern('error', 'Unsupported container registry (https://unsupported.registry.io/) for this Jenkins host (infra.ci.jenkins.io) cannot log-in to container registry.'))
   }
 
   @Test
