@@ -75,8 +75,7 @@ Object withContainerRegistry(String containerRegistry = '', Closure body) {
 
   // Check if the current context is allowed to log-in
   if (!containerRegistriesCredentials.containsKey(jenkinsHostname)) {
-    echo "WARNING: unknown Jenkins host (${jenkinsHostname}): cannot log-in to container registry, pushes will fail."
-    return body.call()
+    error "Unknown Jenkins host (${jenkinsHostname}): cannot log-in to container registry."
   }
   if (!containerRegistriesCredentials[jenkinsHostname].containsKey(containerRegistryURL)) {
     error "Unsupported container registry (${containerRegistryURL}) for this Jenkins host (${jenkinsHostname}) cannot log-in to container registry."
