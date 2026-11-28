@@ -578,7 +578,7 @@ private String getSpotOrNonSpotAgentLabel(String agentLabel, Integer spotRetryCo
     return agentLabel
   }
 
-  if (spotRetryCounter> 1) {
+  if (spotRetryCounter> 0) {
     echo 'INFO: more than one retry, using "nonspot" agent'
     suffix = nonSpotSuffix
   }
